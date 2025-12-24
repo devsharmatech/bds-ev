@@ -1,0 +1,61 @@
+import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
+import { supabase } from "@/lib/supabaseAdmin";
+
+export async function GET() {
+  try {
+    // 1️⃣ Read token from HTTP-only cookie
+    const cookieStore = await cookies();
+    const token = cookieStore.get("bds_token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ user: null }, { status: 401 });
+    }
+
+    // 2️⃣ Verify JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ user: null }, { status: 401 });
+    }
+    
+    // 3️⃣ Fetch user from DB
+    const { data: user, error } = await supabase
+      .from("users")
+      .select(
+        `
+        id,
+        full_name,
+        full_name_ar,
+        email,
+        role,
+        membership_type,
+        membership_expiry_date
+      `
+      )
+      .eq("id", decoded.user_id)
+      .single();
+
+    if (error || !user) {
+      return NextResponse.json({ user: null, error }, { status: 404 });
+    }
+
+    // 4️⃣ Return safe user object
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        full_name: user.full_name,
+        full_name_ar: user.full_name_ar,
+        email: user.email,
+        role: user.role,
+        membership_type: user.membership_type,
+        membership_expiry_date: user.membership_expiry_date,
+      },
+    });
+  } catch (err) {
+    console.error("AUTH_ME_ERROR:", err);
+    return NextResponse.json({ user: null }, { status: 500 });
+  }
+}

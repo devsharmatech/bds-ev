@@ -1,0 +1,188 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  
+  /* New Color Theme */
+  --color-primary: #03215F;
+  --color-secondary: #AE9B66;
+  --color-accent-1: #b8352d;
+  --color-accent-2: #9cc2ed;
+  --color-accent-3: #ECCF0F;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden !important;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  
+  /* Primary Color - 40% */
+  --color-primary: #03215F;
+  --color-primary-50: #e6eaf5;
+  --color-primary-100: #b3c0e0;
+  --color-primary-200: #8096cb;
+  --color-primary-300: #4d6cb6;
+  --color-primary-400: #1a42a1;
+  --color-primary-500: #03215F;
+  --color-primary-600: #021a4d;
+  --color-primary-700: #02133b;
+  --color-primary-800: #010c29;
+  --color-primary-900: #000517;
+  
+  /* Secondary Color - 30% */
+  --color-secondary: #AE9B66;
+  --color-secondary-50: #f5f3ed;
+  --color-secondary-100: #e0d9c4;
+  --color-secondary-200: #cbbf9b;
+  --color-secondary-300: #b6a572;
+  --color-secondary-400: #ae9b66;
+  --color-secondary-500: #9c8855;
+  --color-secondary-600: #7a6d44;
+  --color-secondary-700: #585233;
+  --color-secondary-800: #363722;
+  --color-secondary-900: #141b11;
+  
+  /* Accent Colors - 10% each */
+  --color-accent-red: #b8352d;
+  --color-accent-blue: #9cc2ed;
+  --color-accent-yellow: #ECCF0F;
+}
+
+/* Dark mode removed - using light mode only */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+button , a {
+  cursor: pointer !important;
+} 
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--foreground) !important;
+}   
+
+/* For Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9; /* slate-100 */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #03215F, #AE9B66);
+  border-radius: 10px;
+  border: 2px solid #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #021a4d, #9c8855);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #03215F #f1f5f9;
+}
+
+/* Dark mode scrollbar styles removed - using light mode only */
+
+/* Custom Scrollbar Utilities for Specific Elements */
+.custom-scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-track {
+  background: #f3f4f6; /* gray-100 */
+  border-radius: 6px;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #03215F;
+  border-radius: 6px;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #03215F;
+}
+
+/* Dark mode scrollbar styles removed */
+
+/* Ultra Thin Scrollbar */
+.custom-scrollbar-ultra-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar-ultra-thin::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 2px;
+}
+
+.custom-scrollbar-ultra-thin::-webkit-scrollbar-thumb {
+  background: #03215F;
+  border-radius: 2px;
+}
+
+/* Dark mode scrollbar styles removed */
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Smooth scroll behavior for the entire site */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Firefox scrollbar utilities */
+.custom-scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #03215F #f3f4f6;
+}
+
+.custom-scrollbar-ultra-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #03215F #f3f4f6;
+}
+
+/* Modal-specific scrollbar (for your modal example) */
+.modal-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.5); /* gray-100 with opacity */
+  border-radius: 10px;
+  margin: 4px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #03215F, #AE9B66);
+  border-radius: 10px;
+}
+
+/* Dark mode modal scrollbar styles removed */

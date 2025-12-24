@@ -1,0 +1,129 @@
+// app/api/dashboard/events/route.js
+import { supabase } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
+
+export async function GET(req) {
+  try {
+    // Authentication
+    const cookieStore = await cookies();
+    const token = cookieStore.get("bds_token")?.value;
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.user_id;
+
+    // Fetch user's events with all related data
+    const { data: events, error } = await supabase
+      .from("event_members")
+      .select(`
+        id,
+        checked_in,
+        checked_in_at,
+        price_paid,
+        token,
+        joined_at,
+        events (
+          id,
+          title,
+          slug,
+          description,
+          banner_url,
+          start_datetime,
+          end_datetime,
+          venue_name,
+          address,
+          city,
+          state,
+          pin_code,
+          google_map_url,
+          capacity,
+          is_paid,
+          regular_price,
+          member_price,
+          status,
+          created_at,
+          event_hosts (
+            id,
+            name,
+            email,
+            phone,
+            bio,
+            profile_image,
+            is_primary,
+            display_order
+          ),
+          event_agendas (
+            id,
+            agenda_date,
+            title,
+            description,
+            start_time,
+            end_time
+          )
+        )
+      `)
+      .eq("user_id", userId)
+      .order("joined_at", { ascending: false });
+
+    if (error) throw error;
+
+    // Format events data
+    const formattedEvents = (events || []).map(item => ({
+      id: item.events?.id,
+      event_member_id: item.id,
+      title: item.events?.title,
+      slug: item.events?.slug,
+      description: item.events?.description,
+      banner_url: item.events?.banner_url,
+      start_datetime: item.events?.start_datetime,
+      end_datetime: item.events?.end_datetime,
+      venue_name: item.events?.venue_name,
+      address: item.events?.address,
+      city: item.events?.city,
+      state: item.events?.state,
+      pin_code: item.events?.pin_code,
+      google_map_url: item.events?.google_map_url,
+      capacity: item.events?.capacity,
+      is_paid: item.events?.is_paid,
+      regular_price: item.events?.regular_price,
+      member_price: item.events?.member_price,
+      event_status: item.events?.status,
+      checked_in: item.checked_in,
+      checked_in_at: item.checked_in_at,
+      price_paid: item.price_paid,
+      token: item.token,
+      joined_at: item.joined_at,
+      event_hosts: item.events?.event_hosts || [],
+      event_agendas: item.events?.event_agendas || []
+    })).filter(event => event.id); // Filter out null events
+
+    return NextResponse.json({
+      success: true,
+      events: formattedEvents,
+      count: formattedEvents.length
+    });
+
+  } catch (error) {
+    console.error("EVENTS API ERROR:", error);
+    
+    if (error.name === 'JsonWebTokenError') {
+      return NextResponse.json(
+        { success: false, message: "Invalid token" },
+        { status: 401 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch events" },
+      { status: 500 }
+    );
+  }
+}
