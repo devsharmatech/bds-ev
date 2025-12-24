@@ -47,35 +47,18 @@ export default function MembershipPage() {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
-        if (data.user) {
-          fetchUserSubscription();
-        }
+        // Subscription data will be fetched in fetchPlans if user is logged in
       }
     } catch (error) {
+      // User is not logged in - this is fine
       console.error("Error checking user:", error);
-    }
-  };
-
-  const fetchUserSubscription = async () => {
-    try {
-      const response = await fetch("/api/dashboard/subscriptions", {
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setCurrentSubscription(data.currentSubscription);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching subscription:", error);
     }
   };
 
   const fetchPlans = async () => {
     try {
       setLoading(true);
+      // Plans can be fetched without authentication
       const response = await fetch("/api/dashboard/subscriptions", {
         credentials: "include",
       });
@@ -84,6 +67,10 @@ export default function MembershipPage() {
 
       if (data.success) {
         setPlans(data.plans || []);
+        // If user is logged in, also set current subscription
+        if (data.currentSubscription) {
+          setCurrentSubscription(data.currentSubscription);
+        }
       } else {
         toast.error("Failed to load subscription plans");
       }

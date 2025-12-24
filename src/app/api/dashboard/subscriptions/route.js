@@ -5,24 +5,15 @@ import { cookies } from 'next/headers';
 
 /**
  * GET /api/dashboard/subscriptions
- * Get all available subscription plans and current user's subscription
+ * Get all available subscription plans and current user's subscription (if logged in)
+ * Plans are publicly accessible, user data requires authentication
  */
 export async function GET(request) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('bds_token')?.value;
 
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.user_id;
-
-    // Get all active subscription plans
+    // Get all active subscription plans (public - no auth required)
     const { data: plans, error: plansError } = await supabase
       .from('subscription_plans')
       .select('*')
@@ -35,6 +26,33 @@ export async function GET(request) {
         { success: false, message: 'Failed to fetch subscription plans' },
         { status: 500 }
       );
+    }
+
+    // If user is not logged in, return only plans
+    if (!token) {
+      return NextResponse.json({
+        success: true,
+        plans: plans || [],
+        currentSubscription: null,
+        subscriptionHistory: [],
+        userMembership: null
+      });
+    }
+
+    // User is logged in - fetch user-specific data
+    let userId = null;
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decoded.user_id;
+    } catch (error) {
+      // Invalid token - return only plans
+      return NextResponse.json({
+        success: true,
+        plans: plans || [],
+        currentSubscription: null,
+        subscriptionHistory: [],
+        userMembership: null
+      });
     }
 
     // Get user's current subscription
@@ -94,17 +112,27 @@ export async function GET(request) {
   } catch (error) {
     console.error('Subscriptions API error:', error);
     
-    if (error.name === 'JsonWebTokenError') {
+    // Even on error, try to return plans if available
+    try {
+      const { data: plans } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      return NextResponse.json({
+        success: true,
+        plans: plans || [],
+        currentSubscription: null,
+        subscriptionHistory: [],
+        userMembership: null
+      });
+    } catch (fallbackError) {
       return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
+        { success: false, message: 'Failed to fetch subscriptions' },
+        { status: 500 }
       );
     }
-
-    return NextResponse.json(
-      { success: false, message: 'Failed to fetch subscriptions' },
-      { status: 500 }
-    );
   }
 }
 
