@@ -5,15 +5,11 @@ import { cookies } from 'next/headers';
 
 /**
  * GET /api/dashboard/subscriptions
- * Get all available subscription plans and current user's subscription (if logged in)
- * Plans are publicly accessible, user data requires authentication
+ * Get all available subscription plans (public) and current user's subscription (if logged in)
  */
 export async function GET(request) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('bds_token')?.value;
-
-    // Get all active subscription plans (public - no auth required)
+    // Get all active subscription plans (PUBLIC - no auth required)
     const { data: plans, error: plansError } = await supabase
       .from('subscription_plans')
       .select('*')
@@ -28,7 +24,11 @@ export async function GET(request) {
       );
     }
 
-    // If user is not logged in, return only plans
+    // Check if user is logged in
+    const cookieStore = await cookies();
+    const token = cookieStore.get('bds_token')?.value;
+
+    // If not logged in, return only plans
     if (!token) {
       return NextResponse.json({
         success: true,
@@ -112,7 +112,7 @@ export async function GET(request) {
   } catch (error) {
     console.error('Subscriptions API error:', error);
     
-    // Even on error, try to return plans if available
+    // Even on error, try to return plans if available (for public access)
     try {
       const { data: plans } = await supabase
         .from('subscription_plans')

@@ -25,9 +25,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import MainLayout from "@/components/MainLayout";
+import { useSearchParams } from "next/navigation";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +40,9 @@ export default function RegisterPage() {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const countdownRef = useRef(null);
   const redirectingRef = useRef(false);
+  const [plans, setPlans] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [selectedPlanFromUrl, setSelectedPlanFromUrl] = useState(null);
 
   const [formData, setFormData] = useState({
     // Step 1: Personal & Account Information
@@ -63,6 +68,7 @@ export default function RegisterPage() {
 
     // Step 3: Membership & Payment
     membershipType: "",
+    subscriptionPlanId: "", // Store selected plan ID
     typeOfApplication: "",
     membershipDate: "",
     agreeTerms: false,
@@ -80,21 +86,57 @@ export default function RegisterPage() {
     "Others (Non Dental)",
   ];
 
-  // Membership types from Excel column E
-  const membershipTypes = [
-    {
-      id: "free",
-      name: "Free Membership",
-      price: "0 BHD",
-      description: "No discount on events",
-    },
-    {
-      id: "paid",
-      name: "Paid Membership",
-      price: "40 BHD / year",
-      description: "Discounted price on all events",
-    },
-  ];
+  // Fetch subscription plans on mount
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  // Set selected plan from URL parameter when plans are loaded
+  useEffect(() => {
+    if (plans.length > 0) {
+      const planParam = searchParams?.get('plan');
+      if (planParam) {
+        const plan = plans.find(p => p.name === planParam);
+        if (plan) {
+          setSelectedPlanFromUrl(planParam);
+          setFormData(prev => ({
+            ...prev,
+            membershipType: plan.name === 'free' ? 'free' : 'paid',
+            subscriptionPlanId: plan.id
+          }));
+        }
+      }
+    }
+  }, [plans, searchParams]);
+
+  const fetchPlans = async () => {
+    try {
+      setPlansLoading(true);
+      const response = await fetch("/api/dashboard/subscriptions", {
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setPlans(data.plans || []);
+      }
+    } catch (error) {
+      console.error("Error fetching plans:", error);
+    } finally {
+      setPlansLoading(false);
+    }
+  };
+
+  const formatBHD = (amount) => {
+    if (!amount) return "FREE";
+    return new Intl.NumberFormat("en-BH", {
+      style: "currency",
+      currency: "BHD",
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
+    }).format(amount);
+  };
 
   // Work sectors from Excel column Q
   const workSectors = [
@@ -298,6 +340,7 @@ export default function RegisterPage() {
           address: formData.address,
 
           membershipType: formData.membershipType,
+          subscriptionPlanId: formData.subscriptionPlanId,
           typeOfApplication: formData.typeOfApplication,
           membershipDate:
             formData.membershipDate || new Date().toISOString().split("T")[0],
@@ -340,17 +383,24 @@ export default function RegisterPage() {
         position: "top-center",
       });
 
+      // Check if selected plan requires payment
+      const selectedPlan = plans.find(p => p.id === formData.subscriptionPlanId);
+      const requiresPayment = selectedPlan && 
+        ((selectedPlan.registration_fee > 0 && !selectedPlan.registration_waived) ||
+         (selectedPlan.annual_fee > 0 && !selectedPlan.annual_waived));
+
       // Show redirect toast
       const redirectToastId = toast.loading(
-        `Redirecting to ${formData.membershipType === "paid" ? "payment" : "login"}...`,
+        `Redirecting to ${requiresPayment ? "payment" : "login"}...`,
         { duration: 3000 }
       );
 
       // Wait for 3 seconds then redirect
       setTimeout(() => {
         toast.dismiss(redirectToastId);
-        if (formData.membershipType === "paid") {
-          router.push("/auth/register/payment");
+        if (requiresPayment && data.data?.paymentRequired) {
+          // Redirect to payment page with email
+          router.push(`/auth/register/payment?email=${encodeURIComponent(formData.email)}`);
         } else {
           router.push("/auth/login");
         }
@@ -896,41 +946,102 @@ export default function RegisterPage() {
           Select Membership Type *
         </h3>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {membershipTypes.map((type) => (
-            <div key={type.id} className="relative">
-              <input
-                type="radio"
-                id={type.id}
-                name="membershipType"
-                required
-                checked={formData.membershipType === type.id}
-                onChange={(e) =>
-                  setFormData({ ...formData, membershipType: e.target.value })
-                }
-                value={type.id}
-                className="hidden peer"
-              />
-              <label
-                htmlFor={type.id}
-                className="block p-6 border-2 border-gray-300 rounded-xl hover:border-[#03215F] peer-checked:border-[#03215F] peer-checked:bg-[#03215F]/5 cursor-pointer transition-all h-full"
-              >
-                <h4 className="font-semibold text-gray-900 mb-2">
-                  {type.name}
-                </h4>
-                <div className="text-sm text-gray-600 mb-2">
-                  {type.id}
+        {plansLoading ? (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-2 border-[#03215F] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+            <p className="text-gray-600">Loading subscription plans...</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plans.map((plan) => {
+              const isSelected = formData.subscriptionPlanId === plan.id;
+              const isHighlighted = selectedPlanFromUrl === plan.name;
+              const totalPrice = (plan.registration_fee || 0) + (plan.annual_fee || 0);
+              const isFree = plan.registration_waived && plan.annual_waived;
+              
+              return (
+                <div key={plan.id} className="relative">
+                  {isHighlighted && (
+                    <div className="absolute -top-2 -right-2 px-2 py-1 bg-[#ECCF0F] text-[#03215F] rounded-full text-xs font-bold z-10">
+                      Selected
+                    </div>
+                  )}
+                  <input
+                    type="radio"
+                    id={plan.id}
+                    name="membershipType"
+                    required
+                    checked={isSelected}
+                    onChange={() =>
+                      setFormData({ 
+                        ...formData, 
+                        membershipType: isFree ? 'free' : 'paid',
+                        subscriptionPlanId: plan.id 
+                      })
+                    }
+                    value={plan.id}
+                    className="hidden peer"
+                  />
+                  <label
+                    htmlFor={plan.id}
+                    className={`block p-6 border-2 rounded-xl cursor-pointer transition-all h-full ${
+                      isSelected || isHighlighted
+                        ? "border-[#03215F] bg-[#03215F]/5 shadow-lg"
+                        : "border-gray-300 hover:border-[#03215F]"
+                    }`}
+                  >
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      {plan.display_name}
+                    </h4>
+                    {plan.subtitle && (
+                      <div className="text-sm text-gray-600 mb-2">
+                        {plan.subtitle}
+                      </div>
+                    )}
+                    <div className="text-2xl font-bold text-[#03215F] mb-2">
+                      {isFree ? "FREE" : formatBHD(totalPrice)}
+                    </div>
+                    {!isFree && (
+                      <div className="text-xs text-gray-500 mb-3 space-y-1">
+                        {!plan.registration_waived && plan.registration_fee > 0 && (
+                          <div>Registration: {formatBHD(plan.registration_fee)}</div>
+                        )}
+                        {!plan.annual_waived && plan.annual_fee > 0 && (
+                          <div>Annual: {formatBHD(plan.annual_fee)}</div>
+                        )}
+                      </div>
+                    )}
+                    {plan.description && (
+                      <div className="text-sm text-gray-500 mb-3">
+                        {plan.description}
+                      </div>
+                    )}
+                    {plan.core_benefits && plan.core_benefits.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                          Key Benefits
+                        </div>
+                        <div className="space-y-1">
+                          {plan.core_benefits.slice(0, 3).map((benefit, idx) => (
+                            <div key={idx} className="flex items-center gap-1 text-xs text-gray-600">
+                              <Check className="w-3 h-3 text-[#03215F]" />
+                              <span className="line-clamp-1">{benefit}</span>
+                            </div>
+                          ))}
+                          {plan.core_benefits.length > 3 && (
+                            <div className="text-xs text-gray-500">
+                              +{plan.core_benefits.length - 3} more
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </label>
                 </div>
-                <div className="text-2xl font-bold text-gray-900 mb-4">
-                  {type.price}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {type.description}
-                </div>
-              </label>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Terms & Conditions */}
@@ -990,15 +1101,33 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      <div className="bg-[#9cc2ed] border border-[#9cc2ed] rounded-lg p-4 mt-4">
-        <h4 className="font-semibold text-[#03215F] mb-2">
-          Payment Information
-        </h4>
-        <p className="text-sm text-[#03215F]">
-          Paid membership (40 BHD) is valid for one year. Event discounts will
-          be available only after payment approval.
-        </p>
-      </div>
+      {formData.subscriptionPlanId && (() => {
+        const selectedPlan = plans.find(p => p.id === formData.subscriptionPlanId);
+        const requiresPayment = selectedPlan && 
+          ((selectedPlan.registration_fee > 0 && !selectedPlan.registration_waived) ||
+           (selectedPlan.annual_fee > 0 && !selectedPlan.annual_waived));
+        
+        if (requiresPayment) {
+          return (
+            <div className="bg-[#9cc2ed] border border-[#9cc2ed] rounded-lg p-4 mt-4">
+              <h4 className="font-semibold text-[#03215F] mb-2">
+                Payment Information
+              </h4>
+              <p className="text-sm text-[#03215F]">
+                {selectedPlan.display_name} requires payment. 
+                {selectedPlan.registration_fee > 0 && !selectedPlan.registration_waived && (
+                  <span> Registration fee: {formatBHD(selectedPlan.registration_fee)}. </span>
+                )}
+                {selectedPlan.annual_fee > 0 && !selectedPlan.annual_waived && (
+                  <span> Annual fee: {formatBHD(selectedPlan.annual_fee)}. </span>
+                )}
+                Event discounts will be available only after payment approval.
+              </p>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       <div className="flex space-x-4 pt-4">
         <button

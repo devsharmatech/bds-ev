@@ -37,8 +37,31 @@ export async function POST(req) {
     // STATUS CHECK
     // -----------------------------------
     if (user.membership_status !== "active") {
+      if (user.membership_status === "pending") {
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: "Payment required. Please complete your registration payment to activate your account.",
+            requiresPayment: true,
+            email: user.email
+          },
+          { status: 403 }
+        );
+      }
+      if (user.membership_status === "inactive") {
+        return NextResponse.json(
+          { success: false, message: "Account is inactive. Please contact support." },
+          { status: 403 }
+        );
+      }
+      if (user.membership_status === "blocked") {
+        return NextResponse.json(
+          { success: false, message: "Account is blocked. Please contact support." },
+          { status: 403 }
+        );
+      }
       return NextResponse.json(
-        { success: false, message: "Account is inactive or blocked" },
+        { success: false, message: "Account is not active" },
         { status: 403 }
       );
     }

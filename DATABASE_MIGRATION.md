@@ -136,6 +136,15 @@ ADD COLUMN IF NOT EXISTS payment_gateway TEXT DEFAULT 'myfatoorah';
 CREATE INDEX IF NOT EXISTS idx_membership_payments_subscription_id ON membership_payments(subscription_id);
 CREATE INDEX IF NOT EXISTS idx_membership_payments_invoice_id ON membership_payments(invoice_id);
 
+-- Update users table membership_status constraint to allow 'pending' status
+-- This is needed for registration flow where users need to complete payment before account activation
+ALTER TABLE users 
+DROP CONSTRAINT IF EXISTS users_membership_status_check;
+
+ALTER TABLE users 
+ADD CONSTRAINT users_membership_status_check 
+CHECK (membership_status = ANY (ARRAY['active'::text, 'inactive'::text, 'blocked'::text, 'pending'::text]));
+
 -- Insert default subscription plans
 INSERT INTO subscription_plans (name, display_name, subtitle, description, registration_fee, annual_fee, registration_waived, annual_waived, sort_order, icon_name, governance_rights, core_benefits) VALUES
 ('free', 'Free Membership', 'Basic Access', 'No discount on events', 0, 0, TRUE, TRUE, 0, 'user', 

@@ -47,18 +47,36 @@ export default function MembershipPage() {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
-        // Subscription data will be fetched in fetchPlans if user is logged in
+        if (data.user) {
+          fetchUserSubscription();
+        }
       }
     } catch (error) {
-      // User is not logged in - this is fine
       console.error("Error checking user:", error);
+    }
+  };
+
+  const fetchUserSubscription = async () => {
+    try {
+      const response = await fetch("/api/dashboard/subscriptions", {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setCurrentSubscription(data.currentSubscription);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
     }
   };
 
   const fetchPlans = async () => {
     try {
       setLoading(true);
-      // Plans can be fetched without authentication
+      // Plans can be fetched without authentication (public endpoint)
       const response = await fetch("/api/dashboard/subscriptions", {
         credentials: "include",
       });
