@@ -9,7 +9,7 @@ function MembershipCard({ member }) {
   return (
     <div
       className="
-      bg-gradient-to-br from-[#AE9B66] to-[#AE9B66]
+      bg-gradient-to-br from-[#03215F] to-[#03215F]
       relative w-full max-w-md mx-auto
       rounded-2xl shadow-2xl text-white
       overflow-hidden
@@ -45,9 +45,9 @@ function MembershipCard({ member }) {
 
         <span
           className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase
-          rounded-full bg-[#AE9B66]/20 border border-[#AE9B66]/30 text-[#AE9B66]"
+          rounded-full bg-green-600/20 border border-green-600/30 text-green-600"
         >
-          <span className="w-1.5 h-1.5 bg-[#AE9B66] rounded-full animate-pulse" />
+          <span className="w-1.5 h-1.5 bg-green-600 rounded-full animate-pulse" />
           Active
         </span>
       </div>
@@ -260,7 +260,7 @@ export default function HeroSection() {
                 {/* Card Back */}
                 <div
                   className={`absolute inset-0 ${CARD_HEIGHT}
-    bg-black rounded-2xl shadow-2xl text-white
+    bg-[#03215F] rounded-2xl shadow-2xl text-white
     flex items-center justify-center p-6`}
                   style={{
                     backfaceVisibility: "hidden",
