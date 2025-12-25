@@ -7,6 +7,9 @@ import MainLayout from "@/components/MainLayout";
 import { toast } from "sonner";
 import Link from "next/link";
 
+// Force dynamic rendering because we use useSearchParams()
+export const dynamic = 'force-dynamic';
+
 export default function RegistrationPaymentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();

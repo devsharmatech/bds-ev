@@ -27,6 +27,9 @@ import { toast } from "sonner";
 import MainLayout from "@/components/MainLayout";
 import { useSearchParams } from "next/navigation";
 
+// Force dynamic rendering because we use useSearchParams()
+export const dynamic = 'force-dynamic';
+
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
