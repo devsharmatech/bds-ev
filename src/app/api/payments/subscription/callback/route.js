@@ -28,24 +28,86 @@ export async function GET(request) {
       return redirect('/member/dashboard/subscriptions?error=invalid_callback');
     }
 
-    // Get payment record
+    // Get payment record with retry logic for connection timeouts
     console.log('[PAYMENT-CALLBACK] Fetching payment record:', { payment_id: paymentId });
-    const { data: payment, error: paymentError } = await supabase
-      .from('membership_payments')
-      .select(`
-        *,
-        user:users (id, full_name, email)
-      `)
-      .eq('id', paymentId)
-      .single();
+    
+    let payment = null;
+    let paymentError = null;
+    const maxRetries = 3;
+    const retryDelay = 1000; // Start with 1 second
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await Promise.race([
+          supabase
+            .from('membership_payments')
+            .select(`
+              *,
+              user:users (id, full_name, email)
+            `)
+            .eq('id', paymentId)
+            .single()
+            .then(result => ({ data: result.data, error: result.error })),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Database query timeout')), 15000)
+          )
+        ]);
+        
+        paymentError = result.error;
+        payment = result.data;
+        
+        if (!paymentError && payment) {
+          break; // Success, exit retry loop
+        }
+        
+        // If it's not a timeout/connection error, don't retry
+        const isTimeoutError = paymentError?.message?.includes('timeout') || 
+                              paymentError?.message?.includes('ECONNREFUSED') || 
+                              paymentError?.message?.includes('ConnectTimeoutError') ||
+                              paymentError?.code === 'PGRST116' ||
+                              paymentError?.code === 'PGRST301';
+        
+        if (!isTimeoutError) {
+          break; // Don't retry for non-timeout errors
+        }
+        
+        if (attempt < maxRetries) {
+          const delay = retryDelay * Math.pow(2, attempt - 1); // Exponential backoff
+          console.warn(`[PAYMENT-CALLBACK] Retry attempt ${attempt}/${maxRetries} after ${delay}ms:`, {
+            error: paymentError?.message,
+            code: paymentError?.code,
+            payment_id: paymentId
+          });
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      } catch (error) {
+        const isTimeoutError = error.message?.includes('timeout') || 
+                              error.message?.includes('ECONNREFUSED') || 
+                              error.message?.includes('ConnectTimeoutError');
+        
+        paymentError = error;
+        
+        if (attempt < maxRetries && isTimeoutError) {
+          const delay = retryDelay * Math.pow(2, attempt - 1);
+          console.warn(`[PAYMENT-CALLBACK] Retry attempt ${attempt}/${maxRetries} after ${delay}ms:`, {
+            error: error.message,
+            payment_id: paymentId
+          });
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          break;
+        }
+      }
+    }
 
     if (paymentError) {
-      console.error('[PAYMENT-CALLBACK] Error fetching payment:', {
+      console.error('[PAYMENT-CALLBACK] Error fetching payment after retries:', {
         error: paymentError,
         code: paymentError.code,
         message: paymentError.message,
         details: paymentError.details,
-        payment_id: paymentId
+        payment_id: paymentId,
+        attempts: maxRetries
       });
       return redirect('/member/dashboard/subscriptions?error=payment_not_found');
     }

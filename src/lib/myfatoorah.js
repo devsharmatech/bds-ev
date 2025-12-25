@@ -69,6 +69,7 @@ export async function createEventPaymentInvoice({
 
 /**
  * Create payment invoice for subscriptions
+ * Uses SendPayment endpoint (same as events) - proven to work reliably
  */
 export async function createSubscriptionPaymentInvoice({
   invoiceAmount,
@@ -80,18 +81,7 @@ export async function createSubscriptionPaymentInvoice({
   errorUrl,
   referenceId
 }) {
-  const startTime = Date.now();
-  
   try {
-    console.log('[MYFATOORAH] Creating subscription payment invoice:', {
-      invoiceAmount,
-      customerEmail,
-      referenceId,
-      baseUrl: MYFATOORAH_BASE_URL,
-      hasApiKey: !!MYFATOORAH_SUBSCRIPTION_API_KEY,
-      timestamp: new Date().toISOString()
-    });
-
     if (!MYFATOORAH_SUBSCRIPTION_API_KEY) {
       console.error('[MYFATOORAH] Subscription API Key is not configured');
       return {
@@ -101,38 +91,13 @@ export async function createSubscriptionPaymentInvoice({
       };
     }
 
-    // Validate and format request data
-    // MyFatoorah may require CustomerMobile to be in a specific format or may not accept empty strings
-    const formattedMobile = customerMobile && customerMobile.trim() ? customerMobile.trim() : null;
-    
-    // Validate InvoiceItems format
-    if (!invoiceItems || !Array.isArray(invoiceItems) || invoiceItems.length === 0) {
-      console.error('[MYFATOORAH] Invalid InvoiceItems:', { invoiceItems });
-      return {
-        success: false,
-        message: 'Invalid invoice items format',
-        error: 'InvoiceItems must be a non-empty array'
-      };
-    }
-
-    // Validate each invoice item
-    for (const item of invoiceItems) {
-      if (!item.ItemName || item.Quantity === undefined || item.UnitPrice === undefined) {
-        console.error('[MYFATOORAH] Invalid invoice item:', { item, allItems: invoiceItems });
-        return {
-          success: false,
-          message: 'Invalid invoice item format',
-          error: 'Each invoice item must have ItemName, Quantity, and UnitPrice'
-        };
-      }
-    }
-
+    // Use SendPayment - same endpoint and format as event payments (proven to work)
     const requestBody = {
       InvoiceAmount: invoiceAmount,
       CurrencyIso: 'BHD',
       CustomerName: customerName,
       CustomerEmail: customerEmail,
-      ...(formattedMobile && { CustomerMobile: formattedMobile }), // Only include if not null/empty
+      CustomerMobile: customerMobile || '', // SendPayment accepts empty string
       CallBackUrl: callbackUrl,
       ErrorUrl: errorUrl,
       InvoiceItems: invoiceItems,
@@ -140,52 +105,22 @@ export async function createSubscriptionPaymentInvoice({
       ReferenceId: referenceId
     };
 
-    // Log full InvoiceItems structure
-    console.log('[MYFATOORAH] InvoiceItems details:', {
-      count: invoiceItems.length,
-      items: invoiceItems.map(item => ({
-        ItemName: item.ItemName,
-        Quantity: item.Quantity,
-        UnitPrice: item.UnitPrice,
-        ItemValue: item.ItemValue
-      }))
-    });
-
-    console.log('[MYFATOORAH] Formatted request body:', {
-      InvoiceAmount: requestBody.InvoiceAmount,
-      CurrencyIso: requestBody.CurrencyIso,
-      CustomerName: requestBody.CustomerName,
-      CustomerEmail: requestBody.CustomerEmail,
-      CustomerMobile: formattedMobile ? '***' : 'NOT_INCLUDED',
-      CallBackUrl: requestBody.CallBackUrl,
-      ErrorUrl: requestBody.ErrorUrl,
-      InvoiceItems: requestBody.InvoiceItems,
-      DisplayCurrencyIso: requestBody.DisplayCurrencyIso,
-      ReferenceId: requestBody.ReferenceId
-    });
-
-    // Check if CallBackUrl is localhost - MyFatoorah might reject it
-    if (callbackUrl.includes('localhost') || callbackUrl.includes('127.0.0.1')) {
-      console.error('[MYFATOORAH] ERROR: CallBackUrl uses localhost - MyFatoorah typically rejects localhost URLs!', {
-        callbackUrl,
-        errorUrl,
-        note: 'MyFatoorah requires public URLs for callbacks. Use ngrok or a public domain for testing.'
-      });
-    }
-
-    // Log the exact JSON being sent (for debugging)
-    const requestBodyJson = JSON.stringify(requestBody);
-    console.log('[MYFATOORAH] Request JSON being sent:', {
-      jsonLength: requestBodyJson.length,
-      jsonPreview: requestBodyJson.substring(0, 800),
-      invoiceItemsJson: JSON.stringify(invoiceItems)
-    });
-
-    console.log('[MYFATOORAH] Sending request to MyFatoorah:', {
+    // Log full request details
+    console.log('[MYFATOORAH] SendPayment Request (Subscriptions):', {
       url: `${MYFATOORAH_BASE_URL}/v2/SendPayment`,
       method: 'POST',
-      hasAuth: !!MYFATOORAH_SUBSCRIPTION_API_KEY,
-      apiKeyPrefix: MYFATOORAH_SUBSCRIPTION_API_KEY ? MYFATOORAH_SUBSCRIPTION_API_KEY.substring(0, 10) + '...' : 'MISSING'
+      hasApiKey: !!MYFATOORAH_SUBSCRIPTION_API_KEY,
+      apiKeyPrefix: MYFATOORAH_SUBSCRIPTION_API_KEY ? MYFATOORAH_SUBSCRIPTION_API_KEY.substring(0, 15) + '...' : 'MISSING',
+      requestBody: {
+        ...requestBody,
+        CustomerMobile: customerMobile ? '***' : 'EMPTY',
+        Authorization: '***'
+      },
+      invoiceItemsDetails: invoiceItems.map(item => ({
+        ItemName: item.ItemName,
+        Quantity: item.Quantity,
+        UnitPrice: item.UnitPrice
+      }))
     });
 
     const response = await fetch(`${MYFATOORAH_BASE_URL}/v2/SendPayment`, {
@@ -194,40 +129,19 @@ export async function createSubscriptionPaymentInvoice({
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${MYFATOORAH_SUBSCRIPTION_API_KEY}`
       },
-      body: requestBodyJson
+      body: JSON.stringify(requestBody)
     });
 
     const responseStatus = response.status;
     const responseText = await response.text();
     
-    console.log('[MYFATOORAH] Response received:', {
+    console.log('[MYFATOORAH] SendPayment Response (Subscriptions):', {
       status: responseStatus,
       statusText: response.statusText,
-      hasBody: !!responseText,
-      bodyLength: responseText.length,
-      duration_ms: Date.now() - startTime,
+      responseLength: responseText.length,
+      responsePreview: responseText.substring(0, 500),
       headers: Object.fromEntries(response.headers.entries())
     });
-
-    // Always log full response for debugging (especially for errors)
-    if (responseStatus !== 200 || responseText.includes('error') || responseText.includes('Error')) {
-      console.error('[MYFATOORAH] Error response - Full body:', {
-        status: responseStatus,
-        statusText: response.statusText,
-        fullResponseText: responseText,
-        responseLength: responseText.length,
-        requestBody: {
-          ...requestBody,
-          CustomerMobile: customerMobile ? '***' : null,
-          Authorization: '***'
-        }
-      });
-    } else {
-      // Log successful response too (first 500 chars)
-      console.log('[MYFATOORAH] Success response preview:', {
-        responsePreview: responseText.substring(0, 500)
-      });
-    }
 
     let data;
     try {
@@ -235,139 +149,101 @@ export async function createSubscriptionPaymentInvoice({
     } catch (parseError) {
       console.error('[MYFATOORAH] Failed to parse response:', {
         error: parseError,
-        responseText: responseText.substring(0, 1000), // Log more of the response
-        status: responseStatus,
-        responseHeaders: Object.fromEntries(response.headers.entries())
+        responseText: responseText,
+        status: responseStatus
       });
       return {
         success: false,
         message: 'Invalid response from payment gateway',
         error: {
-          name: parseError.name,
-          message: parseError.message,
-          responseStatus,
-          responseText: responseText.substring(0, 500)
+          parseError: parseError.message,
+          responseText: responseText.substring(0, 500),
+          status: responseStatus
         }
       };
     }
 
-    console.log('[MYFATOORAH] Parsed response:', {
-      IsSuccess: data.IsSuccess,
-      Message: data.Message,
-      hasData: !!data.Data,
-      InvoiceId: data.Data?.InvoiceId,
-      InvoiceURL: data.Data?.InvoiceURL ? '***' : null,
-      ValidationErrors: data.ValidationErrors,
-      Errors: data.Errors
-    });
-
-    // Log validation errors if present
-    if (data.ValidationErrors && data.ValidationErrors.length > 0) {
-      console.error('[MYFATOORAH] Validation errors:', {
-        errors: data.ValidationErrors,
-        fullResponse: data
-      });
-    }
-
-    // Log other errors if present
-    if (data.Errors && data.Errors.length > 0) {
-      console.error('[MYFATOORAH] API errors:', {
-        errors: data.Errors,
-        fullResponse: data
-      });
-    }
-
     if (data.IsSuccess) {
-      if (!data.Data || !data.Data.InvoiceId || !data.Data.InvoiceURL) {
-        console.error('[MYFATOORAH] Invalid success response structure:', {
+      // SendPayment returns InvoiceURL
+      const paymentUrl = data.Data?.InvoiceURL || data.Data?.PaymentURL || data.Data?.PaymentLink;
+      const invoiceId = data.Data?.InvoiceId || data.InvoiceId || referenceId;
+      
+      if (!paymentUrl) {
+        console.error('[MYFATOORAH] SendPayment response missing InvoiceURL:', {
           Data: data.Data,
           fullResponse: data
         });
         return {
           success: false,
           message: 'Invalid response from payment gateway',
-          error: 'Missing invoice data in response'
+          error: 'Missing payment URL in response',
+          fullResponse: data
         };
       }
 
-      console.log('[MYFATOORAH] Invoice created successfully:', {
-        invoiceId: data.Data.InvoiceId,
-        referenceId,
-        duration_ms: Date.now() - startTime
+      console.log('[MYFATOORAH] SendPayment success:', {
+        invoiceId: invoiceId,
+        paymentUrl: paymentUrl ? '***' : null
       });
 
       return {
         success: true,
-        invoiceId: data.Data.InvoiceId,
-        invoiceURL: data.Data.InvoiceURL,
-        paymentUrl: data.Data.InvoiceURL
+        invoiceId: invoiceId,
+        invoiceURL: paymentUrl,
+        paymentUrl: paymentUrl
       };
     } else {
-      // Log full error response for debugging
-      console.error('[MYFATOORAH] Invoice creation failed:', {
+      // Log comprehensive error details for debugging
+      console.error('[MYFATOORAH] SendPayment failed - Full details:', {
         IsSuccess: data.IsSuccess,
         Message: data.Message,
         ValidationErrors: data.ValidationErrors,
         Errors: data.Errors,
         Data: data.Data,
-        fullResponse: data, // Log entire response for debugging
-        referenceId,
+        fullResponse: data,
         requestBody: {
           ...requestBody,
-          CustomerMobile: '***', // Don't log full mobile
-          Authorization: '***' // Don't log API key
-        }
+          CustomerMobile: customerMobile ? '***' : 'EMPTY',
+          Authorization: '***'
+        },
+        responseStatus: responseStatus,
+        responseText: responseText
       });
-
+      
       // Build detailed error message
       let errorMessage = data.Message || 'Failed to create payment invoice';
       const errorDetails = [];
-
-      if (data.ValidationErrors && data.ValidationErrors.length > 0) {
+      
+      if (data.ValidationErrors && Array.isArray(data.ValidationErrors) && data.ValidationErrors.length > 0) {
         errorDetails.push(`Validation Errors: ${JSON.stringify(data.ValidationErrors)}`);
       }
-
-      if (data.Errors && data.Errors.length > 0) {
+      
+      if (data.Errors && Array.isArray(data.Errors) && data.Errors.length > 0) {
         errorDetails.push(`API Errors: ${JSON.stringify(data.Errors)}`);
       }
-
+      
       if (errorDetails.length > 0) {
         errorMessage += ` - ${errorDetails.join('; ')}`;
       }
-
+      
       return {
         success: false,
         message: errorMessage,
         error: {
-          message: data.Message,
           validationErrors: data.ValidationErrors,
           errors: data.Errors,
-          fullResponse: data
+          fullResponse: data,
+          requestBody: requestBody,
+          responseStatus: responseStatus
         }
       };
     }
   } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error('[MYFATOORAH] Unexpected error creating invoice:', {
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        cause: error.cause
-      },
-      referenceId,
-      duration_ms: duration,
-      timestamp: new Date().toISOString()
-    });
-
+    console.error('[MYFATOORAH] Subscription payment error:', error);
     return {
       success: false,
       message: 'Payment gateway error',
-      error: {
-        name: error.name,
-        message: error.message,
-        ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-      }
+      error: error.message
     };
   }
 }
