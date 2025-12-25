@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -22,6 +22,7 @@ import {
   UserCheck,
   Check,
   PartyPopper,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import MainLayout from "@/components/MainLayout";
@@ -30,7 +31,7 @@ import { useSearchParams } from "next/navigation";
 // Force dynamic rendering because we use useSearchParams()
 export const dynamic = 'force-dynamic';
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
@@ -1245,5 +1246,25 @@ export default function RegisterPage() {
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+// Wrap the component in Suspense to handle useSearchParams()
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <MainLayout>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <Loader2 className="w-16 h-16 text-[#03215F] animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Loading registration form...</p>
+            </div>
+          </div>
+        </MainLayout>
+      }
+    >
+      <RegisterPageContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CreditCard, AlertCircle, CheckCircle, ArrowRight, Lock } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
@@ -10,7 +10,7 @@ import Link from "next/link";
 // Force dynamic rendering because we use useSearchParams()
 export const dynamic = 'force-dynamic';
 
-export default function RegistrationPaymentPage() {
+function RegistrationPaymentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -247,6 +247,26 @@ export default function RegistrationPaymentPage() {
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+// Wrap the component in Suspense to handle useSearchParams()
+export default function RegistrationPaymentPage() {
+  return (
+    <Suspense
+      fallback={
+        <MainLayout>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <Loader2 className="w-16 h-16 text-[#03215F] animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Loading payment page...</p>
+            </div>
+          </div>
+        </MainLayout>
+      }
+    >
+      <RegistrationPaymentPageContent />
+    </Suspense>
   );
 }
 
