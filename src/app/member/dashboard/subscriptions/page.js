@@ -72,17 +72,36 @@ export default function SubscriptionsPage() {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    fetchSubscriptions();
-    
-    // Check for payment success/error in URL
+    // Check for payment success/error in URL first
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'payment_completed') {
-      toast.success("Payment completed successfully! Your subscription has been activated.");
+    const success = urlParams.get('success');
+    const error = urlParams.get('error');
+    
+    if (success === 'payment_completed') {
+      toast.success("Payment completed successfully! Your subscription has been activated.", {
+        duration: 5000,
+        icon: '✅',
+      });
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
-    } else if (urlParams.get('error')) {
-      toast.error("Payment failed. Please try again.");
+      // Refresh subscription data after a short delay to ensure backend has processed
+      setTimeout(() => {
+        fetchSubscriptions();
+      }, 1000);
+    } else if (error) {
+      const errorMessages = {
+        'payment_failed': 'Payment failed. Please try again.',
+        'payment_not_found': 'Payment record not found. Please contact support.',
+        'invalid_callback': 'Invalid payment callback. Please contact support.',
+        'payment_error': 'An error occurred during payment processing. Please try again.',
+      };
+      toast.error(errorMessages[error] || 'Payment failed. Please try again.', {
+        duration: 5000,
+      });
       window.history.replaceState({}, '', window.location.pathname);
+    } else {
+      // Normal load
+      fetchSubscriptions();
     }
   }, []);
 
@@ -244,23 +263,53 @@ export default function SubscriptionsPage() {
     );
   }
 
-  const currentPlan = plans.find(p => p.name === currentSubscription?.subscription_plan_name || userMembership?.plan_name);
+  // Determine current plan - check by ID first, then by name
+  let currentPlan = null;
+  if (currentSubscription) {
+    // First try to match by subscription_plan_id from the relation
+    if (currentSubscription.subscription_plan?.id) {
+      currentPlan = plans.find(p => p.id === currentSubscription.subscription_plan.id);
+    }
+    // If not found, try matching by subscription_plan_id directly
+    if (!currentPlan && currentSubscription.subscription_plan_id) {
+      currentPlan = plans.find(p => p.id === currentSubscription.subscription_plan_id);
+    }
+    // If still not found, try matching by plan name (subscription_plan_name is display_name, so match against display_name or name)
+    if (!currentPlan && currentSubscription.subscription_plan_name) {
+      currentPlan = plans.find(p => 
+        p.display_name === currentSubscription.subscription_plan_name || 
+        p.name === currentSubscription.subscription_plan_name.toLowerCase().replace(/\s+/g, '_')
+      );
+    }
+  }
+  // Fallback to userMembership if currentSubscription didn't match
+  if (!currentPlan && userMembership) {
+    if (userMembership.plan_id) {
+      currentPlan = plans.find(p => p.id === userMembership.plan_id);
+    }
+    if (!currentPlan && userMembership.plan_name) {
+      currentPlan = plans.find(p => 
+        p.display_name === userMembership.plan_name || 
+        p.name === userMembership.plan_name.toLowerCase().replace(/\s+/g, '_')
+      );
+    }
+  }
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pb-16">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
             Subscriptions
           </h1>
-          <p className="text-gray-600 mt-2">Upgrade or renew your membership</p>
+          <p className="text-gray-600 mt-2 text-base md:text-lg">Upgrade or renew your membership</p>
         </div>
         {currentSubscription && (
           <button
             onClick={handleRenew}
             disabled={processing}
-            className="px-6 py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+            className="px-6 py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 shadow-lg hover:shadow-xl"
           >
             {processing ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -277,46 +326,52 @@ export default function SubscriptionsPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border-2 border-[#03215F]/20 shadow-lg"
+          className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 md:p-8 border-2 border-[#03215F]/20 shadow-xl"
         >
-          <div className="flex items-start justify-between mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-[#03215F] mb-2">Current Subscription</h2>
-              <p className="text-gray-600">{currentSubscription.subscription_plan?.display_name || currentSubscription.subscription_plan_name}</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-[#03215F] mb-2">Current Subscription</h2>
+              <p className="text-gray-600 text-base md:text-lg">{currentSubscription.subscription_plan?.display_name || currentSubscription.subscription_plan_name || "No Plan"}</p>
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+            <span className={`px-5 py-2.5 rounded-full text-sm md:text-base font-semibold whitespace-nowrap ${
               currentSubscription.status === 'active'
-                ? 'bg-[#AE9B66] text-white'
+                ? 'bg-[#AE9B66] text-white shadow-md'
                 : 'bg-gray-200 text-gray-700'
             }`}>
               {currentSubscription.status === 'active' ? 'Active' : currentSubscription.status}
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200">
-              <Calendar className="w-5 h-5 text-[#03215F]" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="flex items-center gap-4 p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="p-3 bg-[#03215F]/10 rounded-lg">
+                <Calendar className="w-6 h-6 text-[#03215F]" />
+              </div>
               <div>
-                <p className="text-sm text-gray-500">Started</p>
-                <p className="font-semibold text-gray-900">
+                <p className="text-sm text-gray-500 mb-1">Started</p>
+                <p className="font-semibold text-gray-900 text-base">
                   {formatDate(currentSubscription.started_at)}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200">
-              <Calendar className="w-5 h-5 text-[#AE9B66]" />
+            <div className="flex items-center gap-4 p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="p-3 bg-[#AE9B66]/10 rounded-lg">
+                <Calendar className="w-6 h-6 text-[#AE9B66]" />
+              </div>
               <div>
-                <p className="text-sm text-gray-500">Expires</p>
-                <p className="font-semibold text-gray-900">
+                <p className="text-sm text-gray-500 mb-1">Expires</p>
+                <p className="font-semibold text-gray-900 text-base">
                   {currentSubscription.expires_at ? formatDate(currentSubscription.expires_at) : "Never"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200">
-              <CheckCircle className="w-5 h-5 text-[#03215F]" />
+            <div className="flex items-center gap-4 p-5 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="p-3 bg-[#03215F]/10 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-[#03215F]" />
+              </div>
               <div>
-                <p className="text-sm text-gray-500">Payment Status</p>
-                <p className="font-semibold text-gray-900">
+                <p className="text-sm text-gray-500 mb-1">Payment Status</p>
+                <p className="font-semibold text-gray-900 text-base">
                   {currentSubscription.registration_paid && currentSubscription.annual_paid
                     ? "Fully Paid"
                     : currentSubscription.registration_paid
@@ -333,8 +388,8 @@ export default function SubscriptionsPage() {
 
       {/* Subscription Plans */}
       <div>
-        <h2 className="text-2xl font-bold text-[#03215F] mb-6">Available Plans</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <h2 className="text-2xl md:text-3xl font-bold text-[#03215F] mb-6 md:mb-8">Available Plans</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 md:gap-8">
           {plans.map((plan) => {
             const Icon = planIcons[plan.name] || CreditCard;
             const colors = planColors[plan.name] || planColors.free;
@@ -347,25 +402,25 @@ export default function SubscriptionsPage() {
                 key={plan.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`relative bg-white rounded-2xl p-6 border-2 ${
+                className={`relative bg-white rounded-2xl p-6 md:p-8 border-2 min-w-[280px] ${
                   isCurrentPlan
-                    ? "border-[#03215F] shadow-xl"
-                    : "border-gray-200 shadow-lg hover:shadow-xl"
-                } transition-all`}
+                    ? "border-[#03215F] shadow-2xl ring-4 ring-[#03215F]/10"
+                    : "border-gray-200 shadow-lg hover:shadow-2xl hover:border-[#03215F]/30"
+                } transition-all duration-300`}
               >
                 {isCurrentPlan && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1 bg-[#03215F] text-white rounded-full text-sm font-semibold">
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-5 py-1.5 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-full text-sm font-bold shadow-lg">
                     Current Plan
                   </div>
                 )}
 
                 <div className="text-center mb-6">
-                  <div className={`inline-flex p-4 rounded-2xl ${colors.bg} mb-4`}>
-                    <Icon className={`w-8 h-8 ${colors.text}`} />
+                  <div className={`inline-flex p-5 rounded-2xl ${colors.bg} mb-4 shadow-md`}>
+                    <Icon className={`w-10 h-10 ${colors.text}`} />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.display_name}</h3>
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">{plan.display_name}</h3>
                   {plan.subtitle && (
-                    <p className="text-sm text-gray-600 mb-4">{plan.subtitle}</p>
+                    <p className="text-sm md:text-base text-gray-600 mb-4">{plan.subtitle}</p>
                   )}
                 </div>
 
@@ -375,15 +430,15 @@ export default function SubscriptionsPage() {
 
                 {/* Pricing */}
                 <div className="space-y-3 mb-6">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-700">Registration</span>
-                    <span className="font-bold text-[#03215F]">
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                    <span className="text-sm md:text-base font-semibold text-gray-700">Registration</span>
+                    <span className="font-bold text-lg text-[#03215F]">
                       {plan.registration_waived ? "Waived" : formatBHD(plan.registration_fee)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-700">Annual Fee</span>
-                    <span className="font-bold text-[#03215F]">
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                    <span className="text-sm md:text-base font-semibold text-gray-700">Annual Fee</span>
+                    <span className="font-bold text-lg text-[#03215F]">
                       {plan.annual_waived ? "Waived" : formatBHD(plan.annual_fee)}
                     </span>
                   </div>
@@ -426,22 +481,22 @@ export default function SubscriptionsPage() {
                 <button
                   onClick={() => handleUpgrade(plan)}
                   disabled={processing || isCurrentPlan || plan.name === 'free'}
-                  className={`w-full py-3 rounded-xl font-semibold transition-opacity flex items-center justify-center gap-2 ${
+                  className={`w-full py-3.5 md:py-4 rounded-xl font-semibold text-base transition-all flex items-center justify-center gap-2 shadow-md ${
                     isCurrentPlan
                       ? "bg-gray-200 text-gray-600 cursor-not-allowed"
                       : plan.name === 'free'
                       ? "bg-gray-200 text-gray-600 cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white hover:opacity-90"
-                  } disabled:opacity-50`}
+                      : "bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white hover:opacity-90 hover:shadow-xl hover:scale-[1.02]"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {processing ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin" />
                       Processing...
                     </>
                   ) : isCurrentPlan ? (
                     <>
-                      <CheckCircle className="w-4 h-4" />
+                      <CheckCircle className="w-5 h-5" />
                       Current Plan
                     </>
                   ) : plan.name === 'free' ? (
@@ -449,7 +504,7 @@ export default function SubscriptionsPage() {
                   ) : (
                     <>
                       {isUpgrade ? "Upgrade" : isDowngrade ? "Downgrade" : "Select"}
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-5 h-5" />
                     </>
                   )}
                 </button>
@@ -462,30 +517,30 @@ export default function SubscriptionsPage() {
       {/* Subscription History */}
       {subscriptionHistory.length > 0 && (
         <div>
-          <h2 className="text-2xl font-bold text-[#03215F] mb-6">Subscription History</h2>
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#03215F] mb-6 md:mb-8">Subscription History</h2>
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                   <tr>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Plan</th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Status</th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Started</th>
-                    <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">Expires</th>
+                    <th className="text-left py-4 px-6 text-sm md:text-base font-bold text-gray-700">Plan</th>
+                    <th className="text-left py-4 px-6 text-sm md:text-base font-bold text-gray-700">Status</th>
+                    <th className="text-left py-4 px-6 text-sm md:text-base font-bold text-gray-700">Started</th>
+                    <th className="text-left py-4 px-6 text-sm md:text-base font-bold text-gray-700">Expires</th>
                   </tr>
                 </thead>
                 <tbody>
                   {subscriptionHistory.map((sub) => (
-                    <tr key={sub.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={sub.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                       <td className="py-4 px-6">
-                        <span className="font-medium text-gray-900">
+                        <span className="font-semibold text-gray-900 text-sm md:text-base">
                           {sub.subscription_plan?.display_name || sub.subscription_plan_name}
                         </span>
                       </td>
                       <td className="py-4 px-6">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        <span className={`px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold ${
                           sub.status === 'active'
-                            ? 'bg-[#AE9B66] text-white'
+                            ? 'bg-[#AE9B66] text-white shadow-sm'
                             : sub.status === 'expired'
                             ? 'bg-gray-200 text-gray-700'
                             : 'bg-gray-100 text-gray-600'
@@ -493,10 +548,10 @@ export default function SubscriptionsPage() {
                           {sub.status}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-sm text-gray-600">
+                      <td className="py-4 px-6 text-sm md:text-base text-gray-600">
                         {formatDate(sub.started_at)}
                       </td>
-                      <td className="py-4 px-6 text-sm text-gray-600">
+                      <td className="py-4 px-6 text-sm md:text-base text-gray-600">
                         {sub.expires_at ? formatDate(sub.expires_at) : "Never"}
                       </td>
                     </tr>

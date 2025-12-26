@@ -265,6 +265,20 @@ export async function GET(request) {
               });
             }
 
+            // Handle renewal payments - extend expiry date
+            if (payment.payment_type === 'subscription_renewal') {
+              const currentExpiry = subscription.expires_at 
+                ? new Date(subscription.expires_at)
+                : new Date();
+              const newExpiryDate = new Date(currentExpiry);
+              newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);
+              subscriptionUpdates.expires_at = newExpiryDate.toISOString();
+              console.log('[PAYMENT-CALLBACK] Renewal payment - extending expiry date:', {
+                current_expiry: subscription.expires_at,
+                new_expiry: newExpiryDate.toISOString()
+              });
+            }
+
             // Also check if subscription will be fully paid after this payment
             const willBeFullyPaid = 
               (payment.payment_type === 'subscription_registration' && (subscription.annual_paid || subscription.subscription_plan?.annual_waived)) ||
@@ -274,6 +288,9 @@ export async function GET(request) {
             if (shouldActivate || willBeFullyPaid || subscription.status === 'active') {
               subscriptionUpdates.status = 'active';
               
+              // Determine expiry date (use new expiry from renewal if applicable)
+              const finalExpiryDate = subscriptionUpdates.expires_at || subscription.expires_at;
+              
               // Update user's membership and activate account if it was pending
               updatePromises.push(
                 supabase
@@ -282,7 +299,7 @@ export async function GET(request) {
                     current_subscription_plan_id: subscription.subscription_plan_id,
                     current_subscription_plan_name: subscription.subscription_plan_name,
                     membership_type: subscription.subscription_plan?.registration_waived && subscription.subscription_plan?.annual_waived ? 'free' : 'paid',
-                    membership_expiry_date: subscription.expires_at,
+                    membership_expiry_date: finalExpiryDate,
                     membership_status: 'active' // Activate account after payment confirmation
                   })
                   .eq('id', payment.user_id)
@@ -290,7 +307,8 @@ export async function GET(request) {
               
               console.log('[PAYMENT-CALLBACK] User account will be activated:', {
                 user_id: payment.user_id,
-                reason: shouldActivate ? 'payment_type_requires_activation' : willBeFullyPaid ? 'fully_paid' : 'already_active'
+                reason: shouldActivate ? 'payment_type_requires_activation' : willBeFullyPaid ? 'fully_paid' : 'already_active',
+                expiry_date: finalExpiryDate
               });
             } else {
               console.log('[PAYMENT-CALLBACK] Account not activated - waiting for additional payments:', {
