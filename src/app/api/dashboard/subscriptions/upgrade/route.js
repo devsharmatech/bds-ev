@@ -64,8 +64,22 @@ export async function POST(request) {
       );
     }
 
+    // Check if user has already paid registration fee in any previous subscription
+    // This is important: if user was on free plan and upgrades to paid, 
+    // they should only pay registration fee if they haven't paid it before
+    const { data: previousPaidRegistrations } = await supabase
+      .from('membership_payments')
+      .select('id, paid, payment_type')
+      .eq('user_id', userId)
+      .eq('payment_type', 'subscription_registration')
+      .eq('paid', true)
+      .limit(1);
+
+    const hasPaidRegistrationFee = previousPaidRegistrations && previousPaidRegistrations.length > 0;
+
     // Calculate fees
-    const registrationFee = plan.registration_waived ? 0 : plan.registration_fee;
+    // If user already paid registration fee before, they don't need to pay it again
+    const registrationFee = (plan.registration_waived || hasPaidRegistrationFee) ? 0 : plan.registration_fee;
     const annualFee = plan.annual_waived ? 0 : plan.annual_fee;
     const totalAmount = registrationFee + annualFee;
 
@@ -126,6 +140,7 @@ export async function POST(request) {
     const endDate = new Date(new Date().setFullYear(startDate.getFullYear() + 1));
 
     // Create pending subscription
+    // Mark registration as paid if user already paid it before or if it's waived
     const { data: pendingSubscription, error: pendingError } = await supabase
       .from('user_subscriptions')
       .insert({
@@ -135,7 +150,7 @@ export async function POST(request) {
         status: 'pending_payment',
         started_at: startDate.toISOString(),
         expires_at: endDate.toISOString(),
-        registration_paid: false,
+        registration_paid: hasPaidRegistrationFee || plan.registration_waived,
         annual_paid: false,
         auto_renew: false
       })

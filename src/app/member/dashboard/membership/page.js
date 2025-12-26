@@ -35,6 +35,8 @@ import {
   Gem as Diamond,
   Award as Trophy,
   Star as StarIcon,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { QRCodeCanvas } from "qrcode.react";
@@ -61,7 +63,7 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick }) {
       : "N/A";
 
   return (
-    <div className="relative w-full max-w-[420px] mx-auto rounded-2xl overflow-hidden shadow-xl bg-gradient-to-br from-[#03215F] to-[#03215F] text-white isolate">
+    <div className="relative w-full max-w-[420px] min-w-[340px] mx-auto rounded-2xl overflow-hidden shadow-xl bg-gradient-to-br from-[#03215F] to-[#03215F] text-white isolate" style={{ minWidth: '340px' }}>
       {/* 🔒 Locked Badge for Free Members - Non-blocking */}
       {isFreeMember && (
         <div className="absolute top-4 right-4 z-30 flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full text-xs font-semibold">
@@ -164,7 +166,10 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick }) {
 export default function MembershipCardPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [currentSubscription, setCurrentSubscription] = useState(null);
+  const [plans, setPlans] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const qrRef = useRef(null);
   const cardRef = useRef(null);
   const router = useRouter();
@@ -173,6 +178,7 @@ export default function MembershipCardPage() {
 
   useEffect(() => {
     fetchMembershipData();
+    fetchSubscriptions();
   }, []);
 
   const fetchMembershipData = async () => {
@@ -197,12 +203,85 @@ export default function MembershipCardPage() {
     }
   };
 
+  const fetchSubscriptions = async () => {
+    try {
+      const res = await fetch("/api/dashboard/subscriptions", {
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setCurrentSubscription(data.currentSubscription);
+          setPlans(data.plans || []);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+    }
+  };
+
   const handleUpgradeClick = () => {
     // Redirect to membership upgrade page or show upgrade modal
     toast.loading("Redirecting to membership upgrade...");
     setTimeout(() => {
       router.push("/membership");
     }, 1000);
+  };
+
+  const handleRenew = async () => {
+    if (processing || !currentSubscription) return;
+
+    setProcessing(true);
+    try {
+      const response = await fetch("/api/dashboard/subscriptions/renew", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.payment) {
+          // Payment required - create invoice
+          const invoiceResponse = await fetch("/api/payments/subscription/create-invoice", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              subscription_id: data.subscription.id,
+              payment_id: data.payment.payment_id,
+              amount: data.payment.amount,
+              payment_type: "subscription_renewal",
+            }),
+          });
+
+          const invoiceData = await invoiceResponse.json();
+
+          if (invoiceData.success) {
+            window.location.href = invoiceData.paymentUrl;
+          } else {
+            toast.error(invoiceData.message || "Failed to create payment invoice");
+          }
+        } else {
+          toast.success("Subscription renewed successfully!");
+          fetchMembershipData();
+          fetchSubscriptions();
+        }
+      } else {
+        toast.error(data.message || "Failed to renew subscription");
+      }
+    } catch (error) {
+      console.error("Error renewing subscription:", error);
+      toast.error("Failed to renew subscription");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   // Helper function to replace lab() color functions
@@ -1090,7 +1169,7 @@ export default function MembershipCardPage() {
                     </div>
                   </div>
 
-                  {isFreeMember && (
+                  {(isFreeMember || (currentSubscription && currentSubscription.subscription_plan_name === 'free')) && (
                     <div className="text-center px-3 py-2 bg-[#9cc2ed] rounded-lg">
                       <span className="text-[#03215F] font-medium">
                         Current Plan
@@ -1158,7 +1237,7 @@ export default function MembershipCardPage() {
                     onClick={handleUpgradeClick}
                     className="w-full px-4 py-3 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg font-bold hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
                   >
-                    {!isFreeMember ? (
+                    {(!isFreeMember && currentSubscription && currentSubscription.subscription_plan_name !== 'free') ? (
                       <>
                         <Crown className="w-5 h-5 text-[#03215F]" />
                         Current Plan
@@ -1200,7 +1279,7 @@ export default function MembershipCardPage() {
                   <div className="flex items-center">
                     <Crown className="w-4 h-4 text-gray-500 mr-3" />
                     <span className="text-gray-600">
-                      Type
+                      Plan
                     </span>
                   </div>
                   <span
@@ -1210,7 +1289,10 @@ export default function MembershipCardPage() {
                         : "text-[#03215F]"
                     }`}
                   >
-                    {!isFreeMember ? "Premium" : "Standard"}
+                    {currentSubscription?.subscription_plan?.display_name || 
+                     currentSubscription?.subscription_plan_name || 
+                     user?.current_subscription_plan_name ||
+                     (!isFreeMember ? "Premium" : "Standard")}
                   </span>
                 </div>
 
@@ -1242,7 +1324,15 @@ export default function MembershipCardPage() {
                     </span>
                   </div>
                   <span className="font-semibold text-gray-900">
-                    {user?.membership_date
+                    {currentSubscription?.started_at
+                      ? new Date(currentSubscription.started_at).toLocaleDateString(
+                          "en-BH",
+                          {
+                            year: "numeric",
+                            month: "short",
+                          }
+                        )
+                      : user?.membership_date
                       ? new Date(user.membership_date).toLocaleDateString(
                           "en-BH",
                           {
@@ -1253,7 +1343,51 @@ export default function MembershipCardPage() {
                       : "N/A"}
                   </span>
                 </div>
+
+                {currentSubscription?.expires_at && (
+                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg">
+                    <div className="flex items-center">
+                      <Clock className="w-4 h-4 text-gray-500 mr-3" />
+                      <span className="text-gray-600">
+                        Expires
+                      </span>
+                    </div>
+                    <span className="font-semibold text-gray-900">
+                      {new Date(currentSubscription.expires_at).toLocaleDateString(
+                        "en-BH",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
+
+              {/* Renew Button */}
+              {currentSubscription && !isFreeMember && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={handleRenew}
+                    disabled={processing}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {processing ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-5 h-5" />
+                        Renew Subscription
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
 
             {isFreeMember && (

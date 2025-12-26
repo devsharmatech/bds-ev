@@ -12,7 +12,7 @@ export default function WelcomeSection() {
       <div className="container mx-auto px-4">
         {/* Header Section */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-[#AE9B66]/5 text-white mb-6">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-[#AE9B66]/60 text-white mb-6">
             <Heart className="w-4 h-4 mr-2" />
             <span className="text-sm font-medium">Professional Community</span>
           </div>
@@ -36,7 +36,7 @@ export default function WelcomeSection() {
           <div className="space-y-6">
             <div className="prose prose-lg max-w-none">
               <p className="text-[#03215F] leading-relaxed text-lg">
-                The <span className="font-semibold text-[#AE9B66]">Bahrain Dental Society (BDS)</span> is the professional body representing dentists in the Kingdom of Bahrain. Since its establishment in 1934, the Society has been dedicated to advancing the science and art of dentistry, promoting professional excellence, and serving as the collective voice of the dental community in Bahrain.
+                The <span className="font-semibold text-[#AE9B66]">Bahrain Dental Society (BDS)</span> is the professional body representing dentists in the Kingdom of Bahrain. Since its establishment in 1994, the Society has been dedicated to advancing the science and art of dentistry, promoting professional excellence, and serving as the collective voice of the dental community in Bahrain.
               </p>
               
               <p className="text-[#03215F] leading-relaxed text-lg">
@@ -65,11 +65,11 @@ export default function WelcomeSection() {
                     <Award className="w-6 h-6 text-[#AE9B66]" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-[#03215F]">90+</div>
+                    <div className="text-2xl font-bold text-[#03215F]">30+</div>
                     <div className="text-sm text-gray-600">Years Serving</div>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">Since 1934</p>
+                <p className="text-xs text-gray-500">Since 1994</p>
               </div>
               
               <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
@@ -78,7 +78,7 @@ export default function WelcomeSection() {
                     <Users className="w-6 h-6 text-[#AE9B66]" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-[#03215F]">500+</div>
+                    <div className="text-2xl font-bold text-[#03215F]">350+</div>
                     <div className="text-sm text-gray-600">Active Members</div>
                   </div>
                 </div>

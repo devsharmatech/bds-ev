@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import MainLayout from "@/components/MainLayout";
@@ -27,8 +27,11 @@ import {
   Globe,
   TrendingUp,
   Info,
+  QrCode,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { QRCodeCanvas } from "qrcode.react";
 import LoginModal from "@/components/modals/LoginModal";
 import EventModal from "@/components/modals/EventModal";
 
@@ -124,6 +127,8 @@ export default function EventDetailsPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showQR, setShowQR] = useState(false);
+  const qrRef = useRef(null);
 
   useEffect(() => {
     fetchEvent();
@@ -697,18 +702,93 @@ export default function EventDetailsPage() {
                         Register for Event
                       </button>
                     ) : (
-                      <div className="p-5 bg-gradient-to-br from-[#AE9B66]/20 to-[#AE9B66]/10 rounded-xl border-2 border-[#AE9B66]">
-                        <div className="flex items-center gap-2 text-[#AE9B66] mb-3">
-                          <CheckCircle className="w-6 h-6" />
-                          <span className="font-bold text-lg">You're Registered!</span>
-                        </div>
-                        {event.event_member_data?.token && (
-                          <div className="bg-white p-3 rounded-lg border border-[#AE9B66]/30">
-                            <p className="text-xs text-gray-500 mb-1">Your Registration Token</p>
-                            <p className="font-mono font-bold text-[#03215F] text-sm break-all">
-                              {event.event_member_data.token}
-                            </p>
+                      <div className="space-y-4">
+                        <div className="p-5 bg-gradient-to-br from-[#AE9B66]/20 to-[#AE9B66]/10 rounded-xl border-2 border-[#AE9B66]">
+                          <div className="flex items-center gap-2 text-[#AE9B66] mb-3">
+                            <CheckCircle className="w-6 h-6" />
+                            <span className="font-bold text-lg">You're Registered!</span>
                           </div>
+                          {event.event_member_data?.token && (
+                            <div className="bg-white p-3 rounded-lg border border-[#AE9B66]/30 mb-3">
+                              <p className="text-xs text-gray-500 mb-1">Your Registration Token</p>
+                              <p className="font-mono font-bold text-[#03215F] text-sm break-all">
+                                {event.event_member_data.token}
+                              </p>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => setShowQR(!showQR)}
+                            className="w-full px-4 py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                          >
+                            <QrCode className="w-5 h-5" />
+                            {showQR ? "Hide QR Code" : "Show QR Code"}
+                          </button>
+                        </div>
+
+                        {/* QR Code Section */}
+                        {showQR && event.event_member_data?.token && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl p-6 border-2 border-[#03215F]/20"
+                          >
+                            <div className="text-center mb-6">
+                              <h3 className="text-2xl font-bold text-[#03215F] mb-2 flex items-center justify-center gap-2">
+                                <QrCode className="w-6 h-6" />
+                                Your Event Ticket
+                              </h3>
+                              <p className="text-gray-600">Show this QR code at the registration desk</p>
+                            </div>
+
+                            {/* QR Code Display */}
+                            <div
+                              ref={qrRef}
+                              className="bg-white p-6 rounded-xl shadow-lg inline-block mx-auto mb-6"
+                            >
+                              <QRCodeCanvas
+                                value={JSON.stringify({
+                                  type: "EVENT_CHECKIN",
+                                  token: event.event_member_data.token,
+                                  event_id: event.id,
+                                })}
+                                size={220}
+                                bgColor="#ffffff"
+                                fgColor="#000000"
+                                level="H"
+                                includeMargin
+                              />
+                            </div>
+
+                            {/* Download Button */}
+                            <button
+                              onClick={() => {
+                                const canvas = qrRef.current?.querySelector("canvas");
+                                if (!canvas) return;
+
+                                const pngUrl = canvas
+                                  .toDataURL("image/png")
+                                  .replace("image/png", "image/octet-stream");
+
+                                const downloadLink = document.createElement("a");
+                                downloadLink.href = pngUrl;
+                                downloadLink.download = `event-qr-${event.id}.png`;
+                                document.body.appendChild(downloadLink);
+                                downloadLink.click();
+                                document.body.removeChild(downloadLink);
+                                toast.success("QR code downloaded!");
+                              }}
+                              className="w-full px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg"
+                            >
+                              <Download className="w-5 h-5" />
+                              Download QR Code
+                            </button>
+
+                            <div className="mt-4 text-center">
+                              <p className="text-xs text-gray-500">
+                                Valid for: {formatDate(event.start_datetime)}
+                              </p>
+                            </div>
+                          </motion.div>
                         )}
                       </div>
                     )}

@@ -3,9 +3,28 @@
 import { ArrowRight, Calendar, Shield, Sparkles, QrCode } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import { QRCodeCanvas } from "qrcode.react";
 
 // MembershipCard Component
-function MembershipCard({ member }) {
+function MembershipCard({ user, qrRef }) {
+  if (!user) return null;
+
+  const formatDate = (date) =>
+    date
+      ? new Date(date).toLocaleDateString("en-BH", {
+          month: "numeric",
+          year: "numeric",
+        })
+      : "N/A";
+
+  const qrValue = JSON.stringify({
+    type: "MEMBERSHIP_VERIFICATION",
+    membership_id: user.membership_code,
+    member_name: user.full_name,
+    member_type: user.membership_type,
+    expiry_date: user.membership_expiry_date,
+  });
+
   return (
     <div
       className="
@@ -27,9 +46,10 @@ function MembershipCard({ member }) {
         <div className="flex items-center gap-3">
           <div className="bg-white rounded-lg p-1">
             <img
-              src="https://bds-web-iota.vercel.app/logo.png"
+              src="/logo.png"
               alt="BDS Logo"
               className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+              crossOrigin="anonymous"
             />
           </div>
 
@@ -44,11 +64,21 @@ function MembershipCard({ member }) {
         </div>
 
         <span
-          className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase
-          rounded-full bg-green-600/20 border border-green-600/30 text-green-600"
+          className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase
+          rounded-full ${
+            user.membership_status === "active"
+              ? "bg-green-600/20 border border-green-600/30 text-green-600"
+              : "bg-[#b8352d]/20 border border-[#b8352d]/30 text-[#b8352d]"
+          }`}
         >
-          <span className="w-1.5 h-1.5 bg-green-600 rounded-full animate-pulse" />
-          Active
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              user.membership_status === "active"
+                ? "bg-green-600 animate-pulse"
+                : "bg-[#b8352d]"
+            }`}
+          />
+          {user.membership_status || "Active"}
         </span>
       </div>
 
@@ -56,34 +86,36 @@ function MembershipCard({ member }) {
       <div className="relative flex justify-between items-end mt-4 gap-3">
         <div className="flex-1">
           <p className="text-[10px] text-slate-300 uppercase">Member Name</p>
-          <h2 className="font-bold leading-tight text-[clamp(14px,4vw,18px)]">
-            {member.name}
+          <h2 className="font-bold leading-tight text-[clamp(14px,4vw,18px)] truncate">
+            {user.full_name}
           </h2>
 
           <div className="grid grid-cols-2 gap-3 mt-3">
             <div>
               <p className="text-[10px] text-slate-300 uppercase">Member ID</p>
               <p className="text-xs sm:text-sm font-mono truncate">
-                {member.id}
+                {user.membership_code || "N/A"}
               </p>
             </div>
             <div>
               <p className="text-[10px] text-slate-300 uppercase">Expires</p>
-              <p className="text-xs sm:text-sm font-mono">{member.expiry}</p>
+              <p className="text-xs sm:text-sm font-mono">
+                {formatDate(user.membership_expiry_date)}
+              </p>
             </div>
           </div>
 
           <div className="mt-3">
             <p className="text-[10px] text-slate-300 uppercase">Type</p>
             <p className="text-xs sm:text-sm text-[#9cc2ed] font-medium">
-              {member.type}
+              {user.membership_type === "paid" ? "Premium Member" : "Standard Member"}
             </p>
           </div>
         </div>
 
-        {/* QR */}
-        <div className="bg-white rounded-lg p-2 shrink-0">
-          <QrCode className="w-14 h-14 sm:w-16 sm:h-16 text-[#03215F]" />
+        {/* QR Code */}
+        <div ref={qrRef} className="bg-white rounded-lg p-2 shrink-0">
+          <QRCodeCanvas value={qrValue} size={72} level="H" includeMargin />
         </div>
       </div>
     </div>
@@ -97,17 +129,66 @@ export default function HeroSection() {
   const [isFlipped, setIsFlipped] = useState(false);
   const videoRef = useRef(null);
   const [particles, setParticles] = useState([]);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const qrRef = useRef(null);
+  const qrBackRef = useRef(null);
 
-  // Sample member data
-  const memberData = {
-    name: "DR. ABBAS AlFardan",
-    id: "BDS-2000-0000",
-    expiry: "12/2029",
-    type: "Premium Member",
+  // Dummy member data for non-logged-in or non-paid members
+  const dummyMemberData = {
+    full_name: "DR. ABBAS AlFardan",
+    membership_code: "BDS-2000-0000",
+    membership_expiry_date: "2029-12-31",
+    membership_type: "paid",
+    membership_status: "active",
   };
+
+  // Prevent hydration mismatch by only rendering client-side content after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Check if user is logged in and has paid membership
+  useEffect(() => {
+    if (!mounted) return;
+
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user && data.user.membership_type === "paid") {
+            // Fetch full membership data
+            const membershipRes = await fetch("/api/dashboard/membership-info", {
+              credentials: "include",
+            });
+
+            if (membershipRes.ok) {
+              const membershipData = await membershipRes.json();
+              if (membershipData.success) {
+                setUser(membershipData.user);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [mounted]);
 
   // Generate consistent particles on client only
   useEffect(() => {
+    if (!mounted) return;
+
     const generatedParticles = Array.from({ length: 20 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
@@ -116,7 +197,7 @@ export default function HeroSection() {
       animationDuration: 10 + Math.random() * 10,
     }));
     setParticles(generatedParticles);
-  }, []);
+  }, [mounted]);
 
   // Handle video playback safely
   useEffect(() => {
@@ -151,23 +232,25 @@ export default function HeroSection() {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/50 to-white"></div>
           <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/20 "></div>
 
-          {/* Animated Particles Effect - Render only on client */}
-          <div className="absolute inset-0">
-            {particles.length > 0
-              ? particles.map((particle) => (
-                  <div
-                    key={particle.id}
-                    className="absolute w-1 h-1 bg-[#AE9B66]/20 rounded-full animate-float"
-                    style={{
-                      left: `${particle.left}%`,
-                      top: `${particle.top}%`,
-                      animationDelay: `${particle.animationDelay}s`,
-                      animationDuration: `${particle.animationDuration}s`,
-                    }}
-                  />
-                ))
-              : null}
-          </div>
+          {/* Animated Particles Effect - Render only on client after mount */}
+          {mounted && (
+            <div className="absolute inset-0">
+              {particles.length > 0
+                ? particles.map((particle) => (
+                    <div
+                      key={particle.id}
+                      className="absolute w-1 h-1 bg-[#AE9B66]/20 rounded-full animate-float"
+                      style={{
+                        left: `${particle.left}%`,
+                        top: `${particle.top}%`,
+                        animationDelay: `${particle.animationDelay}s`,
+                        animationDuration: `${particle.animationDuration}s`,
+                      }}
+                    />
+                  ))
+                : null}
+            </div>
+          )}
         </div>
 
         {/* Decorative Elements */}
@@ -238,81 +321,111 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Membership Card Section */}
-          <div className="relative flex flex-col items-center">
-            {/* Flippable Card Container */}
-            <div className="relative w-full max-w-md sm:max-w-md perspective-1000">
-              <div
-                className={`relative w-full transition-transform duration-700  ${CARD_HEIGHT} ${
-                  isFlipped ? "rotate-y-180" : ""
-                }`}
-                onClick={() => setIsFlipped(!isFlipped)}
-                style={{ transformStyle: "preserve-3d" }}
-              >
-                {/* Card Front */}
+          {/* Membership Card Section - Show real card for paid members, dummy card for others */}
+          {mounted && (
+            <div className="relative flex flex-col items-center">
+              {/* Flippable Card Container */}
+              <div className="relative w-full max-w-md sm:max-w-md perspective-1000">
                 <div
-                  className={`absolute inset-0 ${CARD_HEIGHT}`}
-                  style={{ backfaceVisibility: "hidden" }}
+                  className={`relative w-full transition-transform duration-700  ${CARD_HEIGHT} ${
+                    isFlipped ? "rotate-y-180" : ""
+                  }`}
+                  onClick={() => setIsFlipped(!isFlipped)}
+                  style={{ transformStyle: "preserve-3d" }}
                 >
-                  <MembershipCard member={memberData} />
-                </div>
+                  {/* Card Front */}
+                  <div
+                    className={`absolute inset-0 ${CARD_HEIGHT}`}
+                    style={{ backfaceVisibility: "hidden" }}
+                  >
+                    <MembershipCard 
+                      user={!loading && user && user.membership_type === "paid" ? user : dummyMemberData} 
+                      qrRef={qrRef} 
+                    />
+                  </div>
 
-                {/* Card Back */}
-                <div
-                  className={`absolute inset-0 ${CARD_HEIGHT}
+                  {/* Card Back */}
+                  <div
+                    className={`absolute inset-0 ${CARD_HEIGHT}
     bg-[#03215F] rounded-2xl shadow-2xl text-white
     flex items-center justify-center p-6`}
-                  style={{
-                    backfaceVisibility: "hidden",
-                    transform: "rotateY(180deg)",
-                  }}
-                >
-                  <div className="rounded-2xl shadow-2xl text-white w-full max-w-md relative overflow-hidden flex flex-col justify-center items-center p-6">
-                    {/* Card Back Content */}
-                    <div className="z-10 text-center">
-                      <div className="mb-0">
-                        <div className="bg-white/10 p-4 rounded-xl backdrop-blur-sm inline-block">
-                          <QrCode className="h-14 w-14 text-white" />
+                    style={{
+                      backfaceVisibility: "hidden",
+                      transform: "rotateY(180deg)",
+                    }}
+                  >
+                    <div className="rounded-2xl shadow-2xl text-white w-full max-w-md relative overflow-hidden flex flex-col justify-center items-center p-6">
+                      {/* Card Back Content */}
+                      <div className="z-10 text-center">
+                        <div className="mb-0">
+                          <div className="bg-white/10 p-2 rounded-xl backdrop-blur-sm inline-block">
+                            <div ref={qrBackRef}>
+                              <QRCodeCanvas
+                                value={JSON.stringify({
+                                  type: "MEMBERSHIP_VERIFICATION",
+                                  membership_id: (!loading && user && user.membership_type === "paid") 
+                                    ? user.membership_code 
+                                    : dummyMemberData.membership_code,
+                                  member_name: (!loading && user && user.membership_type === "paid") 
+                                    ? user.full_name 
+                                    : dummyMemberData.full_name,
+                                  member_type: (!loading && user && user.membership_type === "paid") 
+                                    ? user.membership_type 
+                                    : dummyMemberData.membership_type,
+                                  expiry_date: (!loading && user && user.membership_type === "paid") 
+                                    ? user.membership_expiry_date 
+                                    : dummyMemberData.membership_expiry_date,
+                                })}
+                                size={80}
+                                level="H"
+                                includeMargin
+                                bgColor="#ffffff"
+                                fgColor="#000000"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-bold uppercase tracking-wide">
+                            Membership Card
+                          </h3>
+                          <p className="text-sm text-gray-300 max-w-xs   mb-0">
+                            Scan QR code for membership verification and event
+                            check-ins
+                          </p>
+
+                          <div className="pt-1 border-t border-white/10">
+                            <p className="text-xs text-gray-400 uppercase mb-1">
+                              Contact Information
+                            </p>
+                            <p className="text-sm">
+                              Bahrain.ds94@gmail.com
+                            </p>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <h3 className="text-lg font-bold uppercase tracking-wide">
-                          Membership Card
-                        </h3>
-                        <p className="text-sm text-gray-300 max-w-xs   mb-0">
-                          Scan QR code for membership verification and event
-                          check-ins
-                        </p>
-
-                        <div className="pt-1 border-t border-white/10">
-                          <p className="text-xs text-gray-400 uppercase mb-1">
-                            Contact Information
-                          </p>
-                          <p className="text-sm">
-                            Bahrain.ds94@gmail.com
-                          </p>
-                        </div>
-                      </div>
+                      {/* Security Strip */}
+                      <div className="absolute bottom-3 left-4 right-4 h-6 bg-gradient-to-r from-transparent via-white/2 to-transparent rounded-full"></div>
                     </div>
-
-                    {/* Security Strip */}
-                    <div className="absolute bottom-3 left-4 right-4 h-6 bg-gradient-to-r from-transparent via-white/2 to-transparent rounded-full"></div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Card Instructions */}
-            <div className="text-center mt-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-white/20">
-                <Sparkles className="w-4 h-4 text-[#ECCF0F]" />
-                <span className="text-sm text-gray-700">
-                  Click card to view back side
-                </span>
+              {/* Card Instructions */}
+              <div className="text-center mt-6">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-white/20">
+                  <Sparkles className="w-4 h-4 text-[#ECCF0F]" />
+                  <span className="text-sm text-gray-700">
+                    {!loading && user && user.membership_type === "paid" 
+                      ? "Click card to view back side" 
+                      : "Join as a premium member to unlock your digital membership card"}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

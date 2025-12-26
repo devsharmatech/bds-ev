@@ -349,22 +349,22 @@ export default function EventDetailsModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-50 overflow-y-auto touch-none">
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-50 overflow-y-auto">
         <motion.div
           ref={modalRef}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] md:max-h-[90vh] flex flex-col overflow-hidden border border-white/20 my-2 md:my-4"
+          className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden border border-white/20 my-2 md:my-4"
           style={{
-            // Ensure modal doesn't overflow viewport on mobile
             maxWidth: isMobile ? "calc(100vw - 16px)" : "",
-            margin: isMobile ? "8px" : "auto",
+            maxHeight: "calc(100vh - 2rem)",
+            minHeight: "min(90vh, 600px)",
           }}
         >
-          {/* Header with Gradient - Fixed */}
-          <div className="relative flex-shrink-0 h-48 md:h-64 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden">
+          {/* Header with Gradient - Responsive Height */}
+          <div className="relative flex-shrink-0 h-32 sm:h-40 md:h-48 lg:h-56 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden">
             {event?.banner_url ? (
               <>
                 <img
@@ -586,7 +586,12 @@ export default function EventDetailsModal({
           </div>
 
           {/* Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-3 md:p-6 min-h-0 touch-pan-y">
+          <div 
+            className="flex-1 overflow-y-auto p-3 md:p-6 min-h-0"
+            style={{
+              maxHeight: "calc(100vh - 300px)",
+            }}
+          >
             {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="space-y-4 md:space-y-6">
@@ -1149,8 +1154,8 @@ export default function EventDetailsModal({
             )}
           </div>
 
-          {/* Footer - Fixed */}
-          <div className="flex-shrink-0 border-t border-gray-200 p-3 md:p-6 bg-white">
+          {/* Footer - Fixed with responsive padding */}
+          <div className="flex-shrink-0 border-t border-gray-200 p-2 sm:p-3 md:p-4 lg:p-6 bg-white">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="text-xs md:text-sm text-gray-600 text-center md:text-left">
                 Need help? Contact us at Bahrain.ds94@gmail.com

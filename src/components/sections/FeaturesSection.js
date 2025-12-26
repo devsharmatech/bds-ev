@@ -55,7 +55,7 @@ export default function FeaturesSection() {
     <section className="py-20 pt-10 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-[#AE9B66]/10 text-white mb-4">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-[#AE9B66]/70 text-white mb-4">
             <Zap className="w-4 h-4 mr-2" />
             <span className="text-sm font-medium">Why Join BDS?</span>
           </div>

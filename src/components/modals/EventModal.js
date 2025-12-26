@@ -562,17 +562,17 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4 sm:my-8 flex flex-col overflow-hidden border border-white/20"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-2 sm:my-4 md:my-8 flex flex-col overflow-hidden border border-white/20"
         style={{
-          maxHeight: 'calc(100vh - 2rem)',
-          minHeight: 'min(90vh, 600px)'
+          maxHeight: 'calc(100vh - 1rem)',
+          minHeight: 'min(90vh, 500px)'
         }}
       >
         {/* Glowing Top Border */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#03215F] via-[#03215F] to-[#03215F]"></div>
         
-        {/* Fixed Header with Event Banner - RESPONSIVE HEIGHT */}
-        <div className="relative h-48 sm:h-56 md:h-40 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden flex-shrink-0">
+        {/* Fixed Header with Event Banner - RESPONSIVE HEIGHT for small screens */}
+        <div className="relative h-32 sm:h-40 md:h-48 lg:h-56 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden flex-shrink-0">
           {event.banner_url ? (
             <div className="w-full h-full">
               <img
@@ -659,12 +659,13 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
           </div>
         </div>
 
-        {/* Scrollable Content Area - RESPONSIVE */}
+        {/* Scrollable Content Area - RESPONSIVE for small height screens */}
         <div 
           ref={contentRef}
           className="flex-1 overflow-y-auto min-h-0"
           style={{
-            maxHeight: 'calc(100vh - 400px)'
+            maxHeight: 'calc(100vh - 250px)',
+            minHeight: '200px'
           }}
         >
           <div className="p-4 md:p-6">
@@ -933,8 +934,8 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
           </div>
         </div>
 
-        {/* Fixed Footer with Action Buttons - RESPONSIVE */}
-        <div className="border-t border-gray-200 p-3 sm:p-4 md:p-6 bg-gradient-to-t from-white to-gray-50 flex-shrink-0">
+        {/* Fixed Footer with Action Buttons - RESPONSIVE for small screens */}
+        <div className="border-t border-gray-200 p-2 sm:p-3 md:p-4 lg:p-6 bg-gradient-to-t from-white to-gray-50 flex-shrink-0">
           {/* Payment Methods Selection - Step 2 */}
           {paymentStep === 2 && paymentMethods.length > 0 && (
             <div className="space-y-4">

@@ -67,7 +67,7 @@ export default function ContactSection() {
       <div className="container mx-auto px-4">
         {/* Header Section */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-[#AE9B66]/10 text-white mb-6">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-[#AE9B66]/70 text-white mb-6">
             <MessageSquare className="w-4 h-4 mr-2" />
             <span className="text-sm font-medium">Contact Us</span>
           </div>

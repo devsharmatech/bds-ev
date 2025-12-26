@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Facebook,
@@ -12,27 +15,36 @@ import {
 } from "lucide-react";
 
 export default function Footer() {
+  // Use state to set year only on client to avoid hydration mismatch
+  const [currentYear, setCurrentYear] = useState(2025);
+
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
   const footerLinks = {
     "Quick Links": [
       { name: "Home", href: "/" },
+      { name: "About Us", href: "/about" },
       { name: "Events", href: "/events" },
       { name: "Members", href: "/members" },
-      { name: "About Us", href: "/about" },
+      { name: "Our Team", href: "/team" },
+      { name: "Committees", href: "/committees" },
     ],
     Resources: [
-      { name: "Research Papers", href: "/research" },
-      { name: "Guidelines", href: "/guidelines" },
+      { name: "Membership", href: "/membership" },
+      { name: "Gallery", href: "/gallery" },
+      { name: "Podcast", href: "/podcast" },
       { name: "FAQs", href: "/faq" },
+      { name: "Contact Us", href: "/contact" },
     ],
     Legal: [
       { name: "Privacy Policy", href: "/privacy" },
       { name: "Terms of Service", href: "/terms" },
-      { name: "Cookie Policy", href: "/cookies" },
     ],
   };
 
   return (
-    <footer className="bg-[#03215F] text-white">
+    <footer className="bg-[#AE9B66] text-white">
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
@@ -41,7 +53,7 @@ export default function Footer() {
               <img src="https://bds-web-iota.vercel.app/long-logo.png" alt="BDS Logo" className="h-12 rounded-sm" />
             </Link>
 
-            <p className="text-gray-400">
+            <p className="text-gray-50">
               Advancing dental excellence through education, collaboration, and
               professional development.
             </p>
@@ -78,7 +90,7 @@ export default function Footer() {
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-gray-400 hover:text-white transition-colors"
+                      className="text-gray-50 hover:text-white transition-colors"
                     >
                       {link.name}
                     </Link>
@@ -94,35 +106,35 @@ export default function Footer() {
           <div className="space-y-3 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="flex items-start space-x-3">
               <MapPin className="w-5 h-5 text-[#03215F] mt-1" />
-              <span className="text-gray-400">
+              <span className="text-gray-50">
                  Building 1487, Road 2425, Block 324, Juffair, Kingdom of Bahrain.🇧🇭
               </span>
             </div>
             <div>
               <div className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-[#03215F]" />
-                <span className="text-gray-400">+973 3799 0963</span>
+                <span className="text-gray-50">+973 3799 0963</span>
               </div>
               <div className="flex mt-4 items-center space-x-3">
                 <Mail className="w-5 h-5 text-[#03215F]" />
-                <span className="text-gray-400">Bahrain.ds94@gmail.com</span>
+                <span className="text-gray-50">Bahrain.ds94@gmail.com</span>
               </div>
             </div>
           </div>
         </div>
-        <div className="mt-12 pt-8 border-t border-gray-800 text-center">
-          <p className="text-gray-400">
-            © {new Date().getFullYear()} Bahrain Dental Society. All rights
+        <div className="mt-12 pt-8 border-t border-gray-100 text-center">
+          <p className="text-gray-50">
+            © {currentYear} Bahrain Dental Society. All rights
             reserved.
           </p>
 
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-gray-50">
             Developed by{" "}
             <a
               href="https://365neo.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-300 hover:text-white transition"
+              className="text-gray-50 hover:text-white transition"
             >
               365Neo
             </a>
