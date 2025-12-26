@@ -35,7 +35,8 @@ import {
   Send,
   Menu,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  AlertCircle
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -144,11 +145,17 @@ const Confetti = () => {
 
 export default function EventModal({ event, isOpen, onClose, user, onLoginRequired, onJoinSuccess }) {
   const [loading, setLoading] = useState(false)
+  const [loadingMethods, setLoadingMethods] = useState(false)
+  const [processing, setProcessing] = useState(false)
   const [activeTab, setActiveTab] = useState('details')
   const [showSuccess, setShowSuccess] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
+  const [paymentMethods, setPaymentMethods] = useState([])
+  const [selectedMethod, setSelectedMethod] = useState(null)
+  const [paymentStep, setPaymentStep] = useState(1) // 1: join button, 2: payment methods, 3: processing
+  const [error, setError] = useState(null)
   const contentRef = useRef(null)
   const modalRef = useRef(null)
 
@@ -157,6 +164,10 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
       setActiveTab('details')
       setShowSuccess(false)
       setShowConfetti(false)
+      setPaymentStep(1)
+      setPaymentMethods([])
+      setSelectedMethod(null)
+      setError(null)
     }
   }, [isOpen])
 
@@ -199,6 +210,14 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
       return
     }
 
+    // If event is paid, initiate payment flow
+    if (event.is_paid) {
+      setPaymentStep(2)
+      handleInitiatePayment()
+      return
+    }
+
+    // Free event - join directly
     setLoading(true)
     
     try {
@@ -209,7 +228,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
         },
         body: JSON.stringify({
           event_id: event.id,
-          payment_reference: event.is_paid ? `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` : null
+          payment_reference: null
         })
       })
       
@@ -238,6 +257,86 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
       console.error('Join error:', error)
       toast.error('Failed to join event. Please try again.')
       setLoading(false)
+    }
+  }
+
+  const handleInitiatePayment = async () => {
+    if (!user || loadingMethods) return
+
+    setLoadingMethods(true)
+    setError(null)
+    
+    try {
+      const response = await fetch('/api/payments/event/create-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event_id: event.id,
+          user_id: user.id
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.paymentMethods) {
+        setPaymentMethods(data.paymentMethods)
+        toast.success('Please select a payment method')
+      } else {
+        setError(data.message || 'Failed to load payment methods')
+        toast.error(data.message || 'Failed to load payment methods')
+        setPaymentStep(1)
+      }
+    } catch (err) {
+      console.error('Error initiating payment:', err)
+      setError('Failed to load payment methods. Please try again.')
+      toast.error('Failed to load payment methods. Please try again.')
+      setPaymentStep(1)
+    } finally {
+      setLoadingMethods(false)
+    }
+  }
+
+  const handleSelectMethod = (method) => {
+    setSelectedMethod(method)
+  }
+
+  const handleExecutePayment = async () => {
+    if (!user || !selectedMethod || processing) return
+
+    setProcessing(true)
+    setError(null)
+    
+    try {
+      const response = await fetch('/api/payments/event/execute-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event_id: event.id,
+          user_id: user.id,
+          payment_method_id: selectedMethod.id
+        })
+      })
+
+      const executeData = await response.json()
+
+      if (executeData.success && executeData.paymentUrl) {
+        setPaymentStep(3)
+        // Redirect to MyFatoorah payment page
+        window.location.href = executeData.paymentUrl
+      } else {
+        setError(executeData.message || 'Failed to process payment')
+        toast.error(executeData.message || 'Failed to process payment')
+        setProcessing(false)
+      }
+    } catch (err) {
+      console.error('Error executing payment:', err)
+      setError('Failed to process payment. Please try again.')
+      toast.error('Failed to process payment. Please try again.')
+      setProcessing(false)
     }
   }
 
@@ -457,19 +556,23 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto">
       <motion.div
         ref={modalRef}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl h-[95vh] sm:h-[90vh] max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden border border-white/20"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4 sm:my-8 flex flex-col overflow-hidden border border-white/20"
+        style={{
+          maxHeight: 'calc(100vh - 2rem)',
+          minHeight: 'min(90vh, 600px)'
+        }}
       >
         {/* Glowing Top Border */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#03215F] via-[#03215F] to-[#03215F]"></div>
         
-        {/* Fixed Header with Event Banner - FIXED HEIGHT */}
-        <div className="relative h-64 md:h-40 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden flex-shrink-0">
+        {/* Fixed Header with Event Banner - RESPONSIVE HEIGHT */}
+        <div className="relative h-48 sm:h-56 md:h-40 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden flex-shrink-0">
           {event.banner_url ? (
             <div className="w-full h-full">
               <img
@@ -556,10 +659,13 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
           </div>
         </div>
 
-        {/* Scrollable Content Area */}
+        {/* Scrollable Content Area - RESPONSIVE */}
         <div 
           ref={contentRef}
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto min-h-0"
+          style={{
+            maxHeight: 'calc(100vh - 400px)'
+          }}
         >
           <div className="p-4 md:p-6">
             {/* Details Tab */}
@@ -827,98 +933,204 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
           </div>
         </div>
 
-        {/* Fixed Footer with Action Buttons */}
-        <div className="border-t border-gray-200 p-4 md:p-6 bg-gradient-to-t from-white to-gray-50 flex-shrink-0">
-          {/* Pricing Summary */}
-          <div className="mb-4 md:mb-6">
-            <div className="flex items-center justify-between mb-2 md:mb-3">
-              <div className="text-xs md:text-sm font-medium text-gray-700">
-                Registration Summary
+        {/* Fixed Footer with Action Buttons - RESPONSIVE */}
+        <div className="border-t border-gray-200 p-3 sm:p-4 md:p-6 bg-gradient-to-t from-white to-gray-50 flex-shrink-0">
+          {/* Payment Methods Selection - Step 2 */}
+          {paymentStep === 2 && paymentMethods.length > 0 && (
+            <div className="space-y-4">
+              <div className="mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Select Payment Method</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Choose your preferred payment method</p>
               </div>
-              <div className="text-xl md:text-2xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
-                {formatBHD(priceToPay)}
-              </div>
-            </div>
-            
-            {event.is_paid && (
-              <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Regular Price</span>
-                  <span className="text-gray-700">
-                    {formatBHD(event.regular_price)}
-                  </span>
+
+              {/* Error Message */}
+              {error && (
+                <div className="p-3 bg-[#b8352d] border border-[#b8352d] rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
+                    <p className="text-white text-xs sm:text-sm font-medium">{error}</p>
+                  </div>
                 </div>
-                {user?.membership_type === 'paid' && event.member_price && (
-                  <div className="flex items-center justify-between text-[#AE9B66]">
-                    <span className="flex items-center gap-1">
-                      <Gift className="w-3 h-3 md:w-4 md:h-4" />
-                      Member Discount
-                    </span>
-                    <span>-{formatBHD(memberSavings)}</span>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 max-h-48 sm:max-h-64 overflow-y-auto">
+                {paymentMethods.map((method) => (
+                  <button
+                    key={method.id}
+                    onClick={() => handleSelectMethod(method)}
+                    className={`p-3 sm:p-4 border-2 rounded-lg transition-all text-left ${
+                      selectedMethod?.id === method.id
+                        ? 'border-[#03215F] bg-[#03215F]/5 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      {method.imageUrl && (
+                        <div className="flex-shrink-0">
+                          <img
+                            src={method.imageUrl}
+                            alt={method.name}
+                            className="w-10 h-7 sm:w-12 sm:h-8 object-contain"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{method.name}</div>
+                        {method.serviceCharge > 0 && (
+                          <div className="text-xs text-gray-500">
+                            Service Charge: {method.serviceCharge.toFixed(3)} {method.currency}
+                          </div>
+                        )}
+                      </div>
+                      {selectedMethod?.id === method.id && (
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#03215F] flex-shrink-0" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {selectedMethod && (
+                <button
+                  onClick={handleExecutePayment}
+                  disabled={processing}
+                  className="w-full py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-semibold hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                >
+                  {processing ? (
+                    <>
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm sm:text-base">Processing Payment...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-sm sm:text-base">Pay with {selectedMethod.name}</span>
+                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </>
+                  )}
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  setPaymentStep(1);
+                  setSelectedMethod(null);
+                  setPaymentMethods([]);
+                  setError(null);
+                }}
+                className="w-full py-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
+              >
+                ← Back
+              </button>
+            </div>
+          )}
+
+          {/* Processing - Step 3 */}
+          {paymentStep === 3 && (
+            <div className="text-center py-6">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#03215F] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-gray-600 text-sm sm:text-base">Redirecting to payment gateway...</p>
+            </div>
+          )}
+
+          {/* Default Join Button - Step 1 */}
+          {paymentStep === 1 && (
+            <>
+              {/* Pricing Summary */}
+              <div className="mb-3 sm:mb-4 md:mb-6">
+                <div className="flex items-center justify-between mb-2 md:mb-3">
+                  <div className="text-xs md:text-sm font-medium text-gray-700">
+                    Registration Summary
+                  </div>
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
+                    {formatBHD(priceToPay)}
+                  </div>
+                </div>
+                
+                {event.is_paid && (
+                  <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Regular Price</span>
+                      <span className="text-gray-700">
+                        {formatBHD(event.regular_price)}
+                      </span>
+                    </div>
+                    {user?.membership_type === 'paid' && event.member_price && (
+                      <div className="flex items-center justify-between text-[#AE9B66]">
+                        <span className="flex items-center gap-1">
+                          <Gift className="w-3 h-3 md:w-4 md:h-4" />
+                          Member Discount
+                        </span>
+                        <span>-{formatBHD(memberSavings)}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-gray-200 pt-1 md:pt-2 mt-1 md:mt-2">
+                      <div className="flex items-center justify-between font-semibold">
+                        <span>Amount to Pay</span>
+                        <span className="flex items-center gap-1">
+                          <BahrainFlag />
+                          {formatBHD(priceToPay)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
-                <div className="border-t border-gray-200 pt-1 md:pt-2 mt-1 md:mt-2">
-                  <div className="flex items-center justify-between font-semibold">
-                    <span>Amount to Pay</span>
-                    <span className="flex items-center gap-1">
-                      <BahrainFlag />
-                      {formatBHD(priceToPay)}
-                    </span>
+              </div>
+
+              {/* Join Button */}
+              <button
+                onClick={handleJoinEvent}
+                disabled={loading || event.joined || loadingMethods}
+                className={`w-full py-2.5 sm:py-3 md:py-4 rounded-xl font-bold text-sm sm:text-base md:text-lg transition-all relative overflow-hidden group ${
+                  event.joined
+                    ? "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white cursor-not-allowed"
+                    : loading || loadingMethods
+                    ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed"
+                    : user
+                    ? "bg-gradient-to-r from-[#03215F] to-[#03215F] hover:from-[#03215F] hover:to-[#03215F] text-white hover:shadow-lg"
+                    : "bg-gradient-to-r from-[#03215F] to-[#03215F] hover:from-[#03215F] hover:to-[#9cc2ed] text-white hover:shadow-lg"
+                }`}
+              >
+                {loading || loadingMethods ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs sm:text-sm md:text-base">Processing...</span>
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
+                ) : event.joined ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
+                    <span className="text-xs sm:text-sm md:text-base">Already Joined</span>
+                  </div>
+                ) : user ? (
+                  <>
+                    <span className="text-xs sm:text-sm md:text-base">
+                      {event.is_paid ? (
+                        `Pay ${formatBHD(priceToPay)} & Join Now`
+                      ) : (
+                        'Join Event for Free'
+                      )}
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 group-hover:translate-x-full transition-transform duration-1000"></div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <LogIn className="w-4 h-4 md:w-5 md:h-5" />
+                    <span className="text-xs sm:text-sm md:text-base">Login to Join</span>
+                  </div>
+                )}
+              </button>
 
-          {/* Join Button */}
-          <button
-            onClick={handleJoinEvent}
-            disabled={loading || event.joined}
-            className={`w-full py-3 md:py-4 rounded-xl font-bold text-base md:text-lg transition-all relative overflow-hidden group ${
-              event.joined
-                ? "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white cursor-not-allowed"
-                : loading
-                ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed"
-                : user
-                ? "bg-gradient-to-r from-[#03215F] to-[#03215F] hover:from-[#03215F] hover:to-[#03215F] text-white hover:shadow-lg"
-                : "bg-gradient-to-r from-[#03215F] to-[#03215F] hover:from-[#03215F] hover:to-[#9cc2ed] text-white hover:shadow-lg"
-            }`}
-          >
-            {loading ? (
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm md:text-base">Processing...</span>
+              {/* Security Notice */}
+              <div className="mt-2 sm:mt-3 md:mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
+                <Lock className="w-3 h-3" />
+                <span className="hidden xs:inline">Secure registration • Powered by MyFatoorah • 256-bit SSL</span>
+                <span className="xs:hidden">Secure registration</span>
               </div>
-            ) : event.joined ? (
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-sm md:text-base">Already Joined</span>
-              </div>
-            ) : user ? (
-              <>
-                <span className="text-sm md:text-base">
-                  {event.is_paid ? (
-                    `Pay ${formatBHD(priceToPay)} & Join Now`
-                  ) : (
-                    'Join Event for Free'
-                  )}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 group-hover:translate-x-full transition-transform duration-1000"></div>
-              </>
-            ) : (
-              <div className="flex items-center justify-center gap-2">
-                <LogIn className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-sm md:text-base">Login to Join</span>
-              </div>
-            )}
-          </button>
-
-          {/* Security Notice */}
-          <div className="mt-3 md:mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
-            <Lock className="w-3 h-3" />
-            <span className="hidden xs:inline">Secure registration • Powered by MyFatoorah • 256-bit SSL</span>
-            <span className="xs:hidden">Secure registration</span>
-          </div>
+            </>
+          )}
         </div>
       </motion.div>
     </div>

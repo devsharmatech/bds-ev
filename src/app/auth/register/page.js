@@ -498,7 +498,7 @@ function RegisterPageContent() {
     <form onSubmit={handleStep1Submit} className="space-y-6">
       {error && (
         <div className="p-4 bg-[#b8352d] border border-[#b8352d] rounded-lg">
-          <p className="text-[#b8352d] text-sm">{error}</p>
+          <p className="text-white text-sm font-medium">{error}</p>
         </div>
       )}
 
@@ -703,7 +703,7 @@ function RegisterPageContent() {
     <form onSubmit={handleStep2Submit} className="space-y-6">
       {error && (
         <div className="p-4 bg-[#b8352d] border border-[#b8352d] rounded-lg">
-          <p className="text-[#b8352d] text-sm">{error}</p>
+          <p className="text-white text-sm font-medium">{error}</p>
         </div>
       )}
 
@@ -893,7 +893,7 @@ function RegisterPageContent() {
     <form onSubmit={handleFinalSubmitWithToast} className="space-y-6">
       {error && (
         <div className="p-4 bg-[#b8352d] border border-[#b8352d] rounded-lg">
-          <p className="text-[#b8352d] text-sm">{error}</p>
+          <p className="text-white text-sm font-medium">{error}</p>
         </div>
       )}
 

@@ -510,7 +510,7 @@ export default function ManageUsersPage() {
             <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-[#AE9B66] rounded-lg">
-                  <UserCheck className="w-6 h-6 text-[#AE9B66]" />
+                  <UserCheck className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Active</p>
@@ -522,7 +522,7 @@ export default function ManageUsersPage() {
             <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-[#b8352d] rounded-lg">
-                  <Shield className="w-6 h-6 text-[#b8352d]" />
+                  <Shield className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Admins</p>

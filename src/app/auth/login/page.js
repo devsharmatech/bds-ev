@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, LogIn, User, Shield } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Mail, Lock, Eye, EyeOff, LogIn, User, Shield, CheckCircle, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import MainLayout from "@/components/MainLayout";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -16,6 +17,56 @@ export default function LoginPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [urlMessage, setUrlMessage] = useState(null);
+  const [urlMessageType, setUrlMessageType] = useState(null);
+
+  // Check for URL parameters (success/error messages from payment callback)
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const errorParam = searchParams.get('error');
+    const message = searchParams.get('message');
+
+    if (success || errorParam) {
+      const messageType = success ? 'success' : 'error';
+      let displayMessage = message;
+      
+      if (!displayMessage) {
+        if (success === 'payment_completed') {
+          displayMessage = 'Registration payment completed successfully! Please login to access your account.';
+        } else if (errorParam === 'payment_failed') {
+          displayMessage = 'Payment was not completed. Please try again.';
+        } else if (errorParam === 'payment_error') {
+          displayMessage = 'An error occurred during payment processing. Please contact support if payment was deducted.';
+        } else if (errorParam === 'invalid_callback') {
+          displayMessage = 'Invalid payment callback. Please contact support.';
+        } else if (errorParam === 'payment_not_found') {
+          displayMessage = 'Payment record not found. Please contact support.';
+        } else {
+          displayMessage = errorParam || success || 'An error occurred.';
+        }
+      }
+
+      setUrlMessageType(messageType);
+      setUrlMessage(displayMessage);
+
+      // Show toast notification
+      if (messageType === 'success') {
+        toast.success(success === 'payment_completed' ? 'Payment Completed!' : 'Success', {
+          description: displayMessage,
+          duration: 5000,
+        });
+      } else {
+        toast.error('Error', {
+          description: displayMessage,
+          duration: 5000,
+        });
+      }
+
+      // Clear URL parameters after displaying message
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -104,11 +155,54 @@ export default function LoginPage() {
 
           {/* Form */}
           <div className="bg-white rounded-2xl shadow-xl p-8">
+            {/* URL Success/Error Message */}
+            {urlMessage && (
+              <div className={`mb-6 p-4 rounded-lg border ${
+                urlMessageType === 'success' 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-[#b8352d] border-[#b8352d]'
+              }`}>
+                <div className="flex items-start gap-3">
+                  {urlMessageType === 'success' ? (
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
+                  )}
+                  <p className={`text-sm font-medium flex-1 ${
+                    urlMessageType === 'success' ? 'text-green-800' : 'text-white'
+                  }`}>
+                    {urlMessage}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setUrlMessage(null);
+                      setUrlMessageType(null);
+                    }}
+                    className={`flex-shrink-0 ${
+                      urlMessageType === 'success' ? 'text-green-600 hover:text-green-700' : 'text-white hover:text-gray-200'
+                    }`}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Form Error Message */}
             {error && (
               <div className="mb-6 p-4 bg-[#b8352d] border border-[#b8352d] rounded-lg">
-                <p className="text-[#b8352d] text-sm">
-                  {error}
-                </p>
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
+                  <p className="text-white text-sm font-medium flex-1">
+                    {error}
+                  </p>
+                  <button
+                    onClick={() => setError("")}
+                    className="text-white hover:text-gray-200 flex-shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -221,5 +315,25 @@ export default function LoginPage() {
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+// Wrap the component in Suspense to handle useSearchParams()
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <MainLayout>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-[#03215F] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading login page...</p>
+            </div>
+          </div>
+        </MainLayout>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
   );
 }

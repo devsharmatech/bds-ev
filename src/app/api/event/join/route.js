@@ -99,9 +99,41 @@ export async function POST(req) {
         ? event.member_price ?? event.regular_price
         : event.regular_price;
 
-      if (!payment_reference) {
+      // For paid events, check if payment has been confirmed
+      // Look for event member record with paid status
+      const { data: pendingMember } = await supabase
+        .from("event_members")
+        .select("id, price_paid, paid, invoice_id")
+        .eq("event_id", event_id)
+        .eq("user_id", loggedInUser.id)
+        .maybeSingle();
+
+      if (pendingMember) {
+        // If payment is confirmed, allow join
+        if (pendingMember.paid && pendingMember.price_paid > 0) {
+          // Payment confirmed, proceed with join
+          price_paid = pendingMember.price_paid;
+        } else {
+          // Payment not confirmed yet, return payment required
+          return NextResponse.json(
+            { 
+              success: false, 
+              message: "Payment required. Please complete payment first.",
+              requiresPayment: true,
+              event_id: event_id
+            },
+            { status: 402 }
+          );
+        }
+      } else {
+        // No payment record found, payment required
         return NextResponse.json(
-          { success: false, message: "Payment reference required" },
+          { 
+            success: false, 
+            message: "Payment required. Please complete payment first.",
+            requiresPayment: true,
+            event_id: event_id
+          },
           { status: 402 }
         );
       }

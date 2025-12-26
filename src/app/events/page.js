@@ -35,10 +35,12 @@ import {
   ChevronRight as ChevronRightIcon,
   User as UserIcon,
   TrendingUp,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { jwtDecode } from "jwt-decode";
@@ -205,8 +207,9 @@ const getEventStatus = (startDate, endDate, status) => {
   return "ongoing";
 };
 
-export default function EventsPage() {
+function EventsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("all"); // 'all', 'upcoming', 'running'
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -223,6 +226,8 @@ export default function EventsPage() {
   const [selectedDetailsEvent, setSelectedDetailsEvent] = useState(null);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [selectedJoinEvent, setSelectedJoinEvent] = useState(null);
+  const [urlMessage, setUrlMessage] = useState(null);
+  const [urlMessageType, setUrlMessageType] = useState(null);
 
   const categories = [
     "All",
@@ -238,6 +243,66 @@ export default function EventsPage() {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Check for URL parameters (success/error messages from payment callback)
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const errorParam = searchParams.get('error');
+    const message = searchParams.get('message');
+    const eventName = searchParams.get('event');
+
+    if (success || errorParam) {
+      const messageType = success ? 'success' : 'error';
+      let displayMessage = message;
+      
+      if (!displayMessage) {
+        if (success === 'payment_completed') {
+          displayMessage = eventName 
+            ? `Payment completed successfully! You are now registered for "${eventName}".`
+            : 'Payment completed successfully! You are now registered for the event.';
+        } else if (errorParam === 'payment_failed') {
+          displayMessage = message || 'Payment was not completed. Please try again.';
+        } else if (errorParam === 'payment_error') {
+          displayMessage = 'An error occurred during payment processing. Please contact support if payment was deducted.';
+        } else if (errorParam === 'invalid_callback') {
+          displayMessage = 'Invalid payment callback. Please contact support.';
+        } else if (errorParam === 'payment_not_found') {
+          displayMessage = 'Payment record not found. Please contact support if payment was deducted.';
+        } else if (errorParam === 'payment_update_failed') {
+          displayMessage = 'Payment was successful but could not update registration. Please contact support.';
+        } else if (errorParam === 'payment_verification_failed') {
+          displayMessage = 'Payment verification failed. Please contact support if payment was deducted.';
+        } else {
+          displayMessage = errorParam || success || 'An error occurred.';
+        }
+      }
+
+      setUrlMessageType(messageType);
+      setUrlMessage(displayMessage);
+
+      // Show toast notification
+      if (messageType === 'success') {
+        toast.success('Payment Completed!', {
+          description: displayMessage,
+          duration: 5000,
+        });
+      } else {
+        toast.error('Payment Error', {
+          description: displayMessage,
+          duration: 5000,
+        });
+      }
+
+      // Clear URL parameters after displaying message
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+
+      // Refresh events to update joined status
+      if (success === 'payment_completed') {
+        fetchEvents(currentPage);
+      }
+    }
+  }, [searchParams, currentPage]);
 
   const checkAuth = async () => {
     try {
@@ -477,6 +542,41 @@ export default function EventsPage() {
 
   return (
     <MainLayout>
+      {/* URL Success/Error Message Banner */}
+      {urlMessage && (
+        <div className={`sticky top-0 z-40 p-4 border-b ${
+          urlMessageType === 'success' 
+            ? 'bg-green-50 border-green-200' 
+            : 'bg-[#b8352d] border-[#b8352d]'
+        }`}>
+          <div className="container mx-auto">
+            <div className="flex items-start gap-3 max-w-7xl mx-auto">
+              {urlMessageType === 'success' ? (
+                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
+              )}
+              <p className={`text-sm font-medium flex-1 ${
+                urlMessageType === 'success' ? 'text-green-800' : 'text-white'
+              }`}>
+                {urlMessage}
+              </p>
+              <button
+                onClick={() => {
+                  setUrlMessage(null);
+                  setUrlMessageType(null);
+                }}
+                className={`flex-shrink-0 ${
+                  urlMessageType === 'success' ? 'text-green-600 hover:text-green-700' : 'text-white hover:text-gray-200'
+                }`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section with EventSection Style */}
       <div className="relative bg-gradient-to-r from-[#03215F] to-[#03215F] py-16 md:py-20">
         <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-10"></div>
@@ -1166,5 +1266,25 @@ export default function EventsPage() {
         }}
       />
     </MainLayout>
+  );
+}
+
+// Wrap the component in Suspense to handle useSearchParams()
+export default function EventsPage() {
+  return (
+    <Suspense
+      fallback={
+        <MainLayout>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <Loader2 className="w-16 h-16 text-[#03215F] animate-spin mx-auto mb-4" />
+              <p className="text-gray-600">Loading events...</p>
+            </div>
+          </div>
+        </MainLayout>
+      }
+    >
+      <EventsPageContent />
+    </Suspense>
   );
 }

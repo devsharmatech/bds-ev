@@ -126,8 +126,27 @@ export async function GET(request) {
       invoice_id: payment.invoice_id
     });
 
-    // Get invoice ID from payment or use provided one
-    const invoiceIdToCheck = payment.invoice_id || invoiceId;
+    // Get invoice ID from payment record (should be saved from ExecutePayment)
+    // The invoiceId from URL is the payment transaction ID, not the InvoiceId
+    // We need to use the InvoiceId that was saved in the payment record
+    let invoiceIdToCheck = payment.invoice_id;
+
+    // If invoice_id is not in payment record, try to extract from URL parameter
+    // MyFatoorah sometimes sends InvoiceId in different formats
+    if (!invoiceIdToCheck) {
+      // Try to use the paymentId from URL as fallback (might be InvoiceId in some cases)
+      if (invoiceId) {
+        // Check if it looks like an InvoiceId (numeric) vs payment transaction ID (longer)
+        // InvoiceId from ExecutePayment is typically shorter (e.g., 6392471)
+        // Payment transaction IDs are longer (e.g., 07076392471322677873)
+        // If it's a long number, it's likely a transaction ID, not InvoiceId
+        const isLikelyInvoiceId = invoiceId.length < 15 && /^\d+$/.test(invoiceId);
+        if (isLikelyInvoiceId) {
+          invoiceIdToCheck = invoiceId;
+          console.warn('[PAYMENT-CALLBACK] Using invoiceId from URL as fallback:', invoiceIdToCheck);
+        }
+      }
+    }
 
     if (!invoiceIdToCheck) {
       console.error('[PAYMENT-CALLBACK] No invoice ID found:', {
@@ -146,19 +165,47 @@ export async function GET(request) {
 
     console.log('[PAYMENT-CALLBACK] Checking payment status with MyFatoorah:', {
       invoice_id: invoiceIdToCheck,
-      payment_id: paymentId
+      payment_id: paymentId,
+      url_invoice_id: invoiceId
     });
 
-    // Check payment status with MyFatoorah
-    const statusResult = await getPaymentStatus(invoiceIdToCheck, true);
+    // Check payment status with MyFatoorah using InvoiceId
+    let statusResult = await getPaymentStatus(invoiceIdToCheck, true, 'InvoiceId');
+    
+    // If that fails and we have a different ID from URL, try as PaymentId
+    if (!statusResult.success && invoiceId && invoiceId !== invoiceIdToCheck) {
+      console.log('[PAYMENT-CALLBACK] Trying PaymentId format:', invoiceId);
+      statusResult = await getPaymentStatus(invoiceId, true, 'PaymentId');
+    }
 
     console.log('[PAYMENT-CALLBACK] Payment status result:', {
       success: statusResult.success,
       status: statusResult.status,
-      invoice_id: invoiceIdToCheck
+      invoice_id: invoiceIdToCheck,
+      fullResult: statusResult
     });
 
-    if (statusResult.success && statusResult.status === 'Paid') {
+    // Check if payment is confirmed as paid
+    // MyFatoorah returns status as 'Paid' for successful payments
+    // Also check for other possible success statuses
+    const isPaid = statusResult.success && (
+      statusResult.status === 'Paid' || 
+      statusResult.status === 'paid' ||
+      statusResult.status === 'PAID'
+    );
+
+    // If status check failed but we have invoice_id, log warning but continue
+    // (MyFatoorah callback being triggered is usually a good sign payment was processed)
+    if (!statusResult.success) {
+      console.warn('[PAYMENT-CALLBACK] Payment status check failed, but callback was triggered:', {
+        statusResult,
+        invoice_id: invoiceIdToCheck,
+        payment_id: paymentId,
+        note: 'Proceeding with caution - callback trigger suggests payment may have been processed'
+      });
+    }
+
+    if (isPaid) {
           console.log('[PAYMENT-CALLBACK] Payment confirmed as paid, updating records');
           
           // Payment successful - update records
@@ -171,9 +218,7 @@ export async function GET(request) {
               .update({
                 paid: true,
                 paid_at: new Date().toISOString(),
-                payment_gateway: 'myfatoorah',
-                payment_reference: invoiceIdToCheck,
-                updated_at: new Date().toISOString()
+                payment_gateway: 'myfatoorah'
               })
               .eq('id', paymentId)
           );
@@ -201,11 +246,32 @@ export async function GET(request) {
             .single();
 
           if (subscription) {
+            // Determine if account should be activated
+            let shouldActivate = false;
+            
+            if (payment.payment_type === 'subscription_registration') {
+              // For registration payments, always activate the account after payment
+              // User can pay annual fee later, but should be able to login after registration payment
+              shouldActivate = true;
+              console.log('[PAYMENT-CALLBACK] Registration payment confirmed - activating account');
+            } else if (payment.payment_type === 'subscription_annual' || payment.payment_type === 'subscription_renewal') {
+              // For annual payments, activate only if registration is already paid/waived
+              const registrationPaidOrWaived = subscription.registration_paid || subscription.subscription_plan?.registration_waived;
+              shouldActivate = registrationPaidOrWaived || subscription.status === 'active';
+              console.log('[PAYMENT-CALLBACK] Annual payment confirmed - checking if should activate:', {
+                registrationPaidOrWaived,
+                currentStatus: subscription.status,
+                shouldActivate
+              });
+            }
+
+            // Also check if subscription will be fully paid after this payment
             const willBeFullyPaid = 
               (payment.payment_type === 'subscription_registration' && (subscription.annual_paid || subscription.subscription_plan?.annual_waived)) ||
               ((payment.payment_type === 'subscription_annual' || payment.payment_type === 'subscription_renewal') && (subscription.registration_paid || subscription.subscription_plan?.registration_waived));
 
-            if (willBeFullyPaid || subscription.status === 'active') {
+            // Activate if should activate OR if fully paid OR if already active
+            if (shouldActivate || willBeFullyPaid || subscription.status === 'active') {
               subscriptionUpdates.status = 'active';
               
               // Update user's membership and activate account if it was pending
@@ -217,21 +283,30 @@ export async function GET(request) {
                     current_subscription_plan_name: subscription.subscription_plan_name,
                     membership_type: subscription.subscription_plan?.registration_waived && subscription.subscription_plan?.annual_waived ? 'free' : 'paid',
                     membership_expiry_date: subscription.expires_at,
-                    membership_status: 'active', // Activate account after payment confirmation
-                    updated_at: new Date().toISOString()
+                    membership_status: 'active' // Activate account after payment confirmation
                   })
                   .eq('id', payment.user_id)
               );
+              
+              console.log('[PAYMENT-CALLBACK] User account will be activated:', {
+                user_id: payment.user_id,
+                reason: shouldActivate ? 'payment_type_requires_activation' : willBeFullyPaid ? 'fully_paid' : 'already_active'
+              });
+            } else {
+              console.log('[PAYMENT-CALLBACK] Account not activated - waiting for additional payments:', {
+                payment_type: payment.payment_type,
+                registration_paid: subscription.registration_paid,
+                annual_paid: subscription.annual_paid,
+                registration_waived: subscription.subscription_plan?.registration_waived,
+                annual_waived: subscription.subscription_plan?.annual_waived
+              });
             }
 
             if (Object.keys(subscriptionUpdates).length > 0) {
               updatePromises.push(
                 supabase
                   .from('user_subscriptions')
-                  .update({
-                    ...subscriptionUpdates,
-                    updated_at: new Date().toISOString()
-                  })
+                  .update(subscriptionUpdates)
                   .eq('id', payment.subscription_id)
               );
             }
@@ -240,10 +315,28 @@ export async function GET(request) {
 
           const updateResults = await Promise.all(updatePromises);
           
-          console.log('[PAYMENT-CALLBACK] Records updated successfully:', {
+          // Check for update errors
+          const updateErrors = updateResults.filter(result => result.error);
+          if (updateErrors.length > 0) {
+            console.error('[PAYMENT-CALLBACK] Some updates failed:', {
+              errors: updateErrors.map(e => e.error),
+              payment_id: paymentId
+            });
+          }
+          
+          console.log('[PAYMENT-CALLBACK] Records updated:', {
             payment_id: paymentId,
             updates_count: updateResults.length,
-            duration_ms: Date.now() - startTime
+            errors_count: updateErrors.length,
+            duration_ms: Date.now() - startTime,
+            update_results: updateResults.map((result, index) => ({
+              index,
+              success: !result.error,
+              error: result.error ? {
+                code: result.error.code,
+                message: result.error.message
+              } : null
+            }))
           });
 
           // Check if user is logged in (registration flow vs member dashboard flow)
@@ -279,6 +372,12 @@ export async function GET(request) {
         }
       }
   } catch (error) {
+    // Next.js redirect() throws a NEXT_REDIRECT error internally - this is expected behavior
+    // We should not catch it as an error, but if we do, we need to re-throw it
+    if (error.message === 'NEXT_REDIRECT' || error.digest?.startsWith('NEXT_REDIRECT')) {
+      throw error; // Re-throw redirect errors so Next.js can handle them
+    }
+
     const duration = Date.now() - startTime;
     console.error('[PAYMENT-CALLBACK] Unexpected error:', {
       error: {
@@ -302,6 +401,10 @@ export async function GET(request) {
         return redirect('/auth/login?error=payment_error');
       }
     } catch (cookieError) {
+      // If cookieError is also a redirect, re-throw it
+      if (cookieError.message === 'NEXT_REDIRECT' || cookieError.digest?.startsWith('NEXT_REDIRECT')) {
+        throw cookieError;
+      }
       console.error('[PAYMENT-CALLBACK] Error accessing cookies:', cookieError);
       return redirect('/auth/login?error=payment_error');
     }

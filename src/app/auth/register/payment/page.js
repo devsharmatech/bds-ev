@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, CreditCard, AlertCircle, CheckCircle, ArrowRight, Lock } from "lucide-react";
+import { Loader2, CreditCard, AlertCircle, CheckCircle, ArrowRight, Lock, Shield } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -11,9 +11,13 @@ function RegistrationPaymentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
+  const [loadingMethods, setLoadingMethods] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [selectedMethod, setSelectedMethod] = useState(null);
   const [error, setError] = useState(null);
+  const [step, setStep] = useState(1); // 1: payment summary, 2: select method, 3: processing
 
   const email = searchParams.get('email');
 
@@ -47,17 +51,18 @@ function RegistrationPaymentPageContent() {
     }
   };
 
-  const handlePayment = async () => {
-    if (!paymentData || processing) return;
+  const handleInitiatePayment = async () => {
+    if (!paymentData || loadingMethods) return;
 
-    setProcessing(true);
+    setLoadingMethods(true);
+    setError(null);
     try {
       // Start with registration payment if it exists
       const paymentToProcess = paymentData.payments.registration || paymentData.payments.annual;
       
       if (!paymentToProcess) {
         toast.error("No payment to process");
-        setProcessing(false);
+        setLoadingMethods(false);
         return;
       }
 
@@ -65,7 +70,7 @@ function RegistrationPaymentPageContent() {
         ? 'subscription_registration' 
         : 'subscription_annual';
 
-      // Create MyFatoorah invoice
+      // Initiate payment to get payment methods
       const response = await fetch("/api/payments/subscription/create-invoice", {
         method: "POST",
         headers: {
@@ -81,15 +86,68 @@ function RegistrationPaymentPageContent() {
 
       const invoiceData = await response.json();
 
-      if (invoiceData.success) {
-        // Redirect to MyFatoorah payment page
-        window.location.href = invoiceData.paymentUrl;
+      if (invoiceData.success && invoiceData.paymentMethods) {
+        setPaymentMethods(invoiceData.paymentMethods);
+        setStep(2); // Move to payment method selection
+        toast.success("Please select a payment method");
       } else {
-        toast.error(invoiceData.message || "Failed to create payment invoice");
+        setError(invoiceData.message || "Failed to load payment methods");
+        toast.error(invoiceData.message || "Failed to load payment methods");
+      }
+    } catch (err) {
+      console.error("Error initiating payment:", err);
+      setError("Failed to load payment methods. Please try again.");
+      toast.error("Failed to load payment methods. Please try again.");
+    } finally {
+      setLoadingMethods(false);
+    }
+  };
+
+  const handleSelectMethod = (method) => {
+    setSelectedMethod(method);
+  };
+
+  const handleExecutePayment = async () => {
+    if (!paymentData || !selectedMethod || processing) return;
+
+    setProcessing(true);
+    setError(null);
+    try {
+      const paymentToProcess = paymentData.payments.registration || paymentData.payments.annual;
+      
+      if (!paymentToProcess) {
+        toast.error("No payment to process");
+        setProcessing(false);
+        return;
+      }
+
+      // Execute payment with selected method
+      const response = await fetch("/api/payments/subscription/execute-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscription_id: paymentData.subscription.id,
+          payment_id: paymentToProcess.id,
+          payment_method_id: selectedMethod.id,
+        }),
+      });
+
+      const executeData = await response.json();
+
+      if (executeData.success && executeData.paymentUrl) {
+        setStep(3);
+        // Redirect to MyFatoorah payment page
+        window.location.href = executeData.paymentUrl;
+      } else {
+        setError(executeData.message || "Failed to process payment");
+        toast.error(executeData.message || "Failed to process payment");
         setProcessing(false);
       }
     } catch (err) {
-      console.error("Error creating payment invoice:", err);
+      console.error("Error executing payment:", err);
+      setError("Failed to process payment. Please try again.");
       toast.error("Failed to process payment. Please try again.");
       setProcessing(false);
     }
@@ -123,10 +181,10 @@ function RegistrationPaymentPageContent() {
       <MainLayout>
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-2xl mx-auto">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Payment Not Found</h2>
-              <p className="text-gray-600 mb-6">{error || "No pending payment found for this account."}</p>
+            <div className="bg-[#b8352d] border border-[#b8352d] rounded-lg p-6 text-center">
+              <AlertCircle className="w-12 h-12 text-white mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-white mb-2">Payment Not Found</h2>
+              <p className="text-white mb-6">{error || "No pending payment found for this account."}</p>
               <Link
                 href="/auth/login"
                 className="inline-flex items-center px-6 py-3 bg-[#03215F] text-white rounded-lg hover:bg-[#03215F]/90 transition-colors"
@@ -206,25 +264,127 @@ function RegistrationPaymentPageContent() {
               </div>
             </div>
 
-            {/* Payment Button */}
-            <button
-              onClick={handlePayment}
-              disabled={processing}
-              className="w-full py-4 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-semibold hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-            >
-              {processing ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CreditCard className="w-5 h-5" />
-                  Proceed to Payment
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-[#b8352d] border border-[#b8352d] rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
+                  <p className="text-white text-sm font-medium">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Button - Step 1: Initiate Payment */}
+            {step === 1 && (
+              <button
+                onClick={handleInitiatePayment}
+                disabled={loadingMethods}
+                className="w-full py-4 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-semibold hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              >
+                {loadingMethods ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Loading Payment Methods...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-5 h-5" />
+                    Continue to Payment
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Payment Methods Selection - Step 2 */}
+            {step === 2 && paymentMethods.length > 0 && (
+              <div className="space-y-4">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Select Payment Method</h3>
+                  <p className="text-sm text-gray-600">Choose your preferred payment method</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                  {paymentMethods.map((method) => (
+                    <button
+                      key={method.id}
+                      onClick={() => handleSelectMethod(method)}
+                      className={`p-4 border-2 rounded-lg transition-all text-left ${
+                        selectedMethod?.id === method.id
+                          ? 'border-[#03215F] bg-[#03215F]/5 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {method.imageUrl && (
+                          <div className="flex-shrink-0">
+                            <img
+                              src={method.imageUrl}
+                              alt={method.name}
+                              className="w-12 h-8 object-contain"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-900">{method.name}</div>
+                          {method.serviceCharge > 0 && (
+                            <div className="text-xs text-gray-500">
+                              Service Charge: {method.serviceCharge.toFixed(3)} {method.currency}
+                            </div>
+                          )}
+                        </div>
+                        {selectedMethod?.id === method.id && (
+                          <CheckCircle className="w-5 h-5 text-[#03215F] flex-shrink-0" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {selectedMethod && (
+                  <button
+                    onClick={handleExecutePayment}
+                    disabled={processing}
+                    className="w-full py-4 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-semibold hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                  >
+                    {processing ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing Payment...
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="w-5 h-5" />
+                        Pay with {selectedMethod.name}
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setStep(1);
+                    setSelectedMethod(null);
+                    setPaymentMethods([]);
+                  }}
+                  className="w-full py-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  ← Back
+                </button>
+              </div>
+            )}
+
+            {/* Processing - Step 3 */}
+            {step === 3 && (
+              <div className="text-center py-8">
+                <Loader2 className="w-12 h-12 text-[#03215F] animate-spin mx-auto mb-4" />
+                <p className="text-gray-600">Redirecting to payment gateway...</p>
+              </div>
+            )}
 
             {/* Help Text */}
             <p className="text-center text-sm text-gray-500 mt-4">

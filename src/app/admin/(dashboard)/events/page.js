@@ -700,7 +700,7 @@ export default function EventsPage() {
                               </button>
                               <button
                                 onClick={() => handleDeleteClick(event)}
-                                className="p-2 rounded-lg bg-gradient-to-r from-[#b8352d] to-[#b8352d] text-[#b8352d] hover:text-[#b8352d] transition-colors hover:scale-110 active:scale-95"
+                                className="p-2 rounded-lg bg-gradient-to-r from-[#b8352d] to-[#b8352d] text-white hover:opacity-90 transition-colors hover:scale-110 active:scale-95"
                                 title="Delete Event"
                               >
                                 <Trash2 className="w-4 h-4" />

@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabaseAdmin';
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
-import { createSubscriptionPaymentInvoice } from '@/lib/myfatoorah';
+import { initiateSubscriptionPayment } from '@/lib/myfatoorah';
 
 /**
  * POST /api/payments/subscription/create-invoice
@@ -423,7 +423,7 @@ export async function POST(request) {
     // Ensure customerMobile is a valid string (not null or undefined)
     const customerMobile = (user.mobile || user.phone || '').trim() || null;
     
-    console.log('[CREATE-INVOICE] Calling MyFatoorah with:', {
+    console.log('[CREATE-INVOICE] Calling MyFatoorah InitiatePayment with:', {
       invoiceAmount: amount,
       customerName: user.full_name,
       customerEmail: user.email,
@@ -438,7 +438,8 @@ export async function POST(request) {
       referenceId: payment_id
     });
 
-    const invoiceResult = await createSubscriptionPaymentInvoice({
+    // Step 1: Initiate payment to get available payment methods
+    const initiateResult = await initiateSubscriptionPayment({
       invoiceAmount: amount,
       customerName: user.full_name,
       customerEmail: user.email,
@@ -449,9 +450,9 @@ export async function POST(request) {
       referenceId: payment_id
     });
 
-    if (!invoiceResult.success) {
-      console.error('[CREATE-INVOICE] MyFatoorah invoice creation failed:', {
-        error: invoiceResult.message,
+    if (!initiateResult.success) {
+      console.error('[CREATE-INVOICE] MyFatoorah InitiatePayment failed:', {
+        error: initiateResult.message,
         payment_id,
         subscription_id,
         amount,
@@ -460,8 +461,8 @@ export async function POST(request) {
       return NextResponse.json(
         { 
           success: false, 
-          message: invoiceResult.message || 'Failed to create payment invoice',
-          error: invoiceResult.error || invoiceResult.message,
+          message: initiateResult.message || 'Failed to initiate payment',
+          error: initiateResult.error || initiateResult.message,
           payment_id,
           subscription_id
         },
@@ -469,51 +470,40 @@ export async function POST(request) {
       );
     }
 
-    console.log('[CREATE-INVOICE] MyFatoorah invoice created successfully:', {
-      invoiceId: invoiceResult.invoiceId,
-      paymentUrl: invoiceResult.paymentUrl,
+    console.log('[CREATE-INVOICE] MyFatoorah InitiatePayment successful:', {
+      paymentMethodsCount: initiateResult.paymentMethods?.length || 0,
       payment_id
     });
 
-    // Update payment record with invoice ID
-    console.log('[CREATE-INVOICE] Updating payment record with invoice ID:', {
-      payment_id,
-      invoice_id: invoiceResult.invoiceId
-    });
-    
-    const { error: updateError } = await supabase
-      .from('membership_payments')
-      .update({
-        invoice_id: invoiceResult.invoiceId,
-        payment_gateway: 'myfatoorah',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', payment_id);
-
-    if (updateError) {
-      console.error('[CREATE-INVOICE] Error updating payment record:', {
-        error: updateError,
-        code: updateError.code,
-        message: updateError.message,
-        payment_id,
-        invoice_id: invoiceResult.invoiceId
-      });
-      // Don't fail the request, invoice was created successfully
-    } else {
-      console.log('[CREATE-INVOICE] Payment record updated successfully');
-    }
+    // Format payment methods for frontend
+    const formattedPaymentMethods = (initiateResult.paymentMethods || []).map(method => ({
+      id: method.PaymentMethodId,
+      name: method.PaymentMethodEn,
+      nameAr: method.PaymentMethodAr,
+      code: method.PaymentMethodCode,
+      imageUrl: method.ImageUrl,
+      isDirectPayment: method.IsDirectPayment,
+      serviceCharge: method.ServiceCharge,
+      totalAmount: method.TotalAmount,
+      currency: method.CurrencyIso,
+      paymentCurrency: method.PaymentCurrencyIso,
+      isEmbeddedSupported: method.IsEmbeddedSupported
+    }));
 
     const duration = Date.now() - startTime;
     console.log('[CREATE-INVOICE] Request completed successfully:', {
       payment_id,
-      invoice_id: invoiceResult.invoiceId,
+      paymentMethodsCount: formattedPaymentMethods.length,
       duration_ms: duration
     });
 
     return NextResponse.json({
       success: true,
-      paymentUrl: invoiceResult.paymentUrl,
-      invoiceId: invoiceResult.invoiceId
+      paymentMethods: formattedPaymentMethods,
+      amount: amount,
+      currency: 'BHD',
+      payment_id: payment_id,
+      subscription_id: subscription_id
     });
 
   } catch (error) {

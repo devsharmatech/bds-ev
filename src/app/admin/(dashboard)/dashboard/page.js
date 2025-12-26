@@ -81,13 +81,21 @@ const StatCard = ({ title, value, icon: Icon, color, isLoading, change, trendDir
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-gray-600 text-sm font-medium mb-2">
+              <p className={`text-sm font-medium mb-2 ${
+                color === 'indigo' || color === 'red' || color === 'orange' 
+                  ? 'text-white/90' 
+                  : 'text-gray-600'
+              }`}>
                 {title}
               </p>
               {isLoading ? (
                 <div className="h-8 w-20 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg animate-pulse" />
               ) : (
-                <p className="text-2xl font-bold text-gray-900">
+                <p className={`text-2xl font-bold ${
+                  color === 'indigo' || color === 'red' || color === 'orange' 
+                    ? 'text-white' 
+                    : 'text-gray-900'
+                }`}>
                   {typeof value === 'number' ? value.toLocaleString() : value ?? 0}
                 </p>
               )}
@@ -112,7 +120,11 @@ const StatCard = ({ title, value, icon: Icon, color, isLoading, change, trendDir
                 )}
                 <span className="font-semibold">{change}</span>
               </div>
-              <span className="text-gray-500 text-xs">
+              <span className={`text-xs ${
+                color === 'indigo' || color === 'red' || color === 'orange' 
+                  ? 'text-white/80' 
+                  : 'text-gray-500'
+              }`}>
                 from last month
               </span>
             </div>
@@ -524,16 +536,16 @@ export default function Page() {
               <div className="mt-6 pt-6 border-t border-gray-200/50">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-4 rounded-xl bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed]">
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-[#03215F]">
                       {stats?.today_attendance || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Today's Attendance</p>
+                    <p className="text-sm text-[#03215F]/80">Today's Attendance</p>
                   </div>
                   <div className="text-center p-4 rounded-xl bg-gradient-to-br from-[#AE9B66] to-[#AE9B66]">
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-white">
                       {stats?.conversion_rate || 0}%
                     </p>
-                    <p className="text-sm text-gray-600">Check-in Rate</p>
+                    <p className="text-sm text-white/90">Check-in Rate</p>
                   </div>
                 </div>
               </div>
@@ -731,15 +743,15 @@ export default function Page() {
                     <AlertCircle className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">Blocked</p>
-                    <p className="text-xs text-gray-600">Suspended accounts</p>
+                    <p className="font-semibold text-white">Blocked</p>
+                    <p className="text-xs text-white/90">Suspended accounts</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-white">
                     {stats?.blocked_members || 0}
                   </p>
-                  <p className="text-xs text-[#b8352d] font-medium">
+                  <p className="text-xs text-white/80 font-medium">
                     {stats?.total_members ? Math.round((stats.blocked_members / stats.total_members) * 100) : 0}% of total
                   </p>
                 </div>
@@ -749,16 +761,16 @@ export default function Page() {
               <div className="mt-6 pt-6 border-t border-gray-200/50">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-3 rounded-xl bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed]">
-                    <p className="text-xl font-bold text-gray-900">
+                    <p className="text-xl font-bold text-[#03215F]">
                       {stats?.event_members || 0}
                     </p>
-                    <p className="text-xs text-gray-600">Event Registrations</p>
+                    <p className="text-xs text-[#03215F]/80">Event Registrations</p>
                   </div>
                   <div className="text-center p-3 rounded-xl bg-gradient-to-br from-[#03215F] to-[#03215F]">
-                    <p className="text-xl font-bold text-gray-900">
+                    <p className="text-xl font-bold text-white">
                       {stats?.checked_in_members || 0}
                     </p>
-                    <p className="text-xs text-gray-600">Checked-in Members</p>
+                    <p className="text-xs text-white/90">Checked-in Members</p>
                   </div>
                 </div>
               </div>
