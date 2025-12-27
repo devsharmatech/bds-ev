@@ -1,7 +1,8 @@
 'use client'
 
-import { Mail, Phone, MapPin, Clock, MessageSquare, FileText, User, Calendar } from 'lucide-react'
+import { Mail, Phone, MapPin, Clock, MessageSquare, FileText, User, Calendar, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 export default function ContactSection() {
   const [formData, setFormData] = useState({
@@ -11,13 +12,40 @@ export default function ContactSection() {
     email: '',
     message: ''
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState(null)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Handle form submission here
-    console.log('Form submitted:', formData)
-    alert('Message sent successfully!')
-    setFormData({ name: '', title: '', phone: '', email: '', message: '' })
+    setIsSubmitting(true)
+    setSubmitStatus(null)
+
+    try {
+      const response = await fetch('/api/contact/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setSubmitStatus('success')
+        toast.success('Message sent successfully! We will get back to you soon.')
+        setFormData({ name: '', title: '', phone: '', email: '', message: '' })
+      } else {
+        setSubmitStatus('error')
+        toast.error(data.message || 'Failed to send message. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error submitting contact form:', error)
+      setSubmitStatus('error')
+      toast.error('An error occurred. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e) => {
@@ -94,6 +122,31 @@ export default function ContactSection() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Success/Error Messages */}
+              {submitStatus === 'success' && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-green-800 font-medium">Message sent successfully!</p>
+                      <p className="text-green-700 text-sm mt-1">We will get back to you soon.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {submitStatus === 'error' && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-red-800 font-medium">Failed to send message</p>
+                      <p className="text-red-700 text-sm mt-1">Please try again or contact us directly.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Divider */}
               <div className="border-t border-gray-200 /70 pt-6">
                 <div className="flex items-center gap-3 mb-6">
@@ -218,9 +271,20 @@ export default function ContactSection() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full py-4 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg hover:shadow-xl hover:shadow-[#03215F]/30 transition-all duration-300 font-semibold text-lg"
+                disabled={isSubmitting}
+                className="w-full py-4 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg hover:shadow-xl hover:shadow-[#03215F]/30 transition-all duration-300 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Send Message
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare className="w-5 h-5" />
+                    Send Message
+                  </>
+                )}
               </button>
             </form>
           </div>

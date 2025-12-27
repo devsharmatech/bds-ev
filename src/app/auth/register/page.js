@@ -27,6 +27,8 @@ import {
 import { toast } from "sonner";
 import MainLayout from "@/components/MainLayout";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
+import PhoneInput from "@/components/PhoneInput";
 
 function RegisterPageContent() {
   const router = useRouter();
@@ -150,14 +152,28 @@ function RegisterPageContent() {
   // Positions from Excel column S
   const positions = ["General Dentist", "Specialist", "Consultant"];
 
-  // Nationalities
+  // Nationalities - All Countries
   const nationalities = [
-    "Bahraini",
-    "Other GCC",
-    "Arab Nationality",
-    "Asian",
-    "Western",
-    "Other",
+    "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
+    "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+    "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
+    "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica",
+    "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt",
+    "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon",
+    "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
+    "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
+    "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kosovo", "Kuwait", "Kyrgyzstan",
+    "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar",
+    "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia",
+    "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal",
+    "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan",
+    "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar",
+    "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia",
+    "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa",
+    "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan",
+    "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan",
+    "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City",
+    "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
   ];
 
   // Application types from Excel column O
@@ -427,7 +443,6 @@ function RegisterPageContent() {
     // Validate required fields
     if (
       !formData.fullNameEng ||
-      !formData.cpr ||
       !formData.email ||
       !formData.mobile ||
       !formData.password ||
@@ -437,10 +452,12 @@ function RegisterPageContent() {
       return;
     }
 
-    // CPR validation (Bahraini CPR is 9 digits)
-    if (formData.cpr.length !== 9 || !/^\d+$/.test(formData.cpr)) {
-      setError("CPR must be 9 digits");
-      return;
+    // CPR validation (optional, but if provided, should be valid format)
+    if (formData.cpr && formData.cpr.length > 0) {
+      if (formData.cpr.length !== 9 || !/^\d+$/.test(formData.cpr)) {
+        setError("CPR must be 9 digits if provided");
+        return;
+      }
     }
 
     // Password validation
@@ -461,9 +478,10 @@ function RegisterPageContent() {
       return;
     }
 
-    // Mobile validation (Bahraini mobile numbers)
-    if (!/^[0-9]{8,}$/.test(formData.mobile.replace(/\s/g, ""))) {
-      setError("Please enter a valid mobile number");
+    // Mobile validation (should have country code and number)
+    const mobileClean = formData.mobile.replace(/\s/g, "");
+    if (!mobileClean || mobileClean.length < 10) {
+      setError("Please enter a valid mobile number with country code");
       return;
     }
 
@@ -543,19 +561,18 @@ function RegisterPageContent() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <FileText className="inline w-4 h-4 mr-2" />
-            CPR Number *
+            CPR Number
           </label>
           <input
             type="text"
-            required
             value={formData.cpr}
             onChange={(e) => setFormData({ ...formData, cpr: e.target.value })}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#03215F]"
-            placeholder="930910630"
+            placeholder="930910630 (Optional)"
             maxLength={9}
           />
           <p className="text-xs text-gray-500 mt-1">
-            9-digit Bahraini CPR
+            9-digit Bahraini CPR (Optional)
           </p>
         </div>
 
@@ -583,15 +600,11 @@ function RegisterPageContent() {
             <Phone className="inline w-4 h-4 mr-2" />
             Mobile Number *
           </label>
-          <input
-            type="tel"
-            required
+          <PhoneInput
             value={formData.mobile}
-            onChange={(e) =>
-              setFormData({ ...formData, mobile: e.target.value })
-            }
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#03215F]"
+            onChange={(value) => setFormData({ ...formData, mobile: value })}
             placeholder="36381138"
+            required
           />
         </div>
 
@@ -1196,11 +1209,19 @@ function RegisterPageContent() {
             </div>
           </div>
 
+         
           {/* Form Container */}
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] mb-4">
-                <Shield className="w-8 h-8 text-white" />
+              <div className="flex justify-center mb-4">
+                <Image
+                  src="/logo2.png"
+                  alt="Bahrain Dental Society Logo"
+                  width={120}
+                  height={50}
+                  className="object-contain"
+                  priority
+                />
               </div>
               <h1 className="text-3xl font-bold text-gray-900">
                 Bahrain Dental Society - Member Registration

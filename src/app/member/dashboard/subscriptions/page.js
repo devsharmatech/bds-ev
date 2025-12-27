@@ -221,6 +221,7 @@ export default function SubscriptionsPage() {
           payment_id: paymentId,
           amount: amount,
           payment_type: paymentType,
+          redirect_to: "/member/dashboard/subscriptions", // Redirect back to subscriptions page after payment
         }),
       });
 
@@ -233,6 +234,7 @@ export default function SubscriptionsPage() {
           payment_id: paymentId,
           amount: amount,
           payment_type: paymentType,
+          redirect_to: "/member/dashboard/subscriptions",
         });
         setShowPaymentModal(true);
       } else {
@@ -345,7 +347,7 @@ export default function SubscriptionsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pb-16">
+    <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 space-y-8 pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -624,6 +626,7 @@ export default function SubscriptionsPage() {
         payment_type={paymentData?.payment_type}
         loading={loadingPaymentMethods}
         onPaymentExecute={handlePaymentExecute}
+        redirect_to={paymentData?.redirect_to || "/member/dashboard/subscriptions"}
       />
     </div>
   );

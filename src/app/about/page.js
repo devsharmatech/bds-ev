@@ -14,6 +14,8 @@ import {
   CheckCircle,
   Instagram,
   Linkedin,
+  Mail,
+  Phone,
 } from "lucide-react";
 import Link from "next/link";
 import MainLayout from "@/components/MainLayout";
@@ -380,49 +382,60 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
             {boardMembers.map((member, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl shadow-md p-6 flex gap-5 items-center"
+                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 flex gap-6 items-center border border-gray-100 hover:border-[#03215F]/20 group"
               >
                 {/* Profile Image */}
-                <div className="flex-shrink-0">
+                <div className="relative flex-shrink-0">
                   <img
                     src={member.image}
                     alt={member.name}
-                    className="w-24 h-24 rounded-lg object-cover border"
+                    className="w-32 h-32 rounded-xl object-cover border-2 border-gray-200 group-hover:border-[#03215F] transition-colors duration-300"
                   />
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#03215F]/0 to-[#03215F]/0 group-hover:from-[#03215F]/10 group-hover:to-[#AE9B66]/10 transition-all duration-300"></div>
                 </div>
 
                 {/* Details */}
-                <div className="flex-1">
-                  <p className="text-sm text-[#03215F] font-semibold mb-1">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-[#03215F] mb-2 uppercase tracking-wide">
                     {member.position}
                   </p>
 
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#03215F] transition-colors">
                     {member.name}
                   </h3>
 
-                  <p className="text-sm text-gray-600">
-                    {member.email}
-                  </p>
+                  <div className="space-y-2 mb-4">
+                    <a 
+                      href={`mailto:${member.email}`}
+                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#03215F] transition-colors group/email"
+                    >
+                      <Mail className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{member.email}</span>
+                    </a>
 
-                  <p className="text-sm text-gray-600 mb-3">
-                    {member.phone}
-                  </p>
+                    <a 
+                      href={`tel:${member.phone}`}
+                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#03215F] transition-colors"
+                    >
+                      <Phone className="w-4 h-4 flex-shrink-0" />
+                      <span>{member.phone}</span>
+                    </a>
+                  </div>
 
                   {/* Social Icons */}
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 pt-2 border-t border-gray-100">
                     {member.instagram && (
                       <a
                         href={member.instagram}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-8 h-8 flex items-center justify-center rounded-full border hover:bg-[#03215F] hover:text-white transition"
+                        className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-200 hover:border-[#03215F] hover:bg-[#03215F] hover:text-white transition-all duration-300 group/social"
                       >
-                        <Instagram className="w-4 h-4" />
+                        <Instagram className="w-5 h-5 group-hover/social:scale-110 transition-transform" />
                       </a>
                     )}
 
@@ -431,9 +444,9 @@ export default function AboutPage() {
                         href={member.linkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-8 h-8 flex items-center justify-center rounded-full border hover:bg-[#03215F] hover:text-white transition"
+                        className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-200 hover:border-[#03215F] hover:bg-[#03215F] hover:text-white transition-all duration-300 group/social"
                       >
-                        <Linkedin className="w-4 h-4" />
+                        <Linkedin className="w-5 h-5 group-hover/social:scale-110 transition-transform" />
                       </a>
                     )}
                   </div>

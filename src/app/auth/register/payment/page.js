@@ -81,6 +81,7 @@ function RegistrationPaymentPageContent() {
           payment_id: paymentToProcess.id,
           amount: paymentToProcess.amount,
           payment_type: paymentType,
+          redirect_to: "/auth/login", // Redirect to login after payment completion
         }),
       });
 
@@ -131,6 +132,7 @@ function RegistrationPaymentPageContent() {
           subscription_id: paymentData.subscription.id,
           payment_id: paymentToProcess.id,
           payment_method_id: selectedMethod.id,
+          redirect_to: "/auth/login", // Redirect to login after payment completion
         }),
       });
 

@@ -14,7 +14,7 @@ export async function POST(request) {
   
   try {
     requestData = await request.json();
-    const { subscription_id, payment_id, amount, payment_type } = requestData;
+    const { subscription_id, payment_id, amount, payment_type, redirect_to } = requestData;
 
     console.log('[CREATE-INVOICE] Request received:', {
       subscription_id,
@@ -386,7 +386,12 @@ export async function POST(request) {
       host: request.headers.get('host')
     });
     
-    const callbackUrl = `${baseUrl}/api/payments/subscription/callback?payment_id=${payment_id}`;
+    // Build callback URL with redirect_to parameter if provided
+    let callbackUrl = `${baseUrl}/api/payments/subscription/callback?payment_id=${payment_id}`;
+    if (redirect_to) {
+      callbackUrl += `&redirect_to=${encodeURIComponent(redirect_to)}`;
+    }
+    
     // Use login page for registration flow, member dashboard for logged-in users
     const isAuthenticated = token && userId === payment.user_id;
     const errorUrl = isAuthenticated

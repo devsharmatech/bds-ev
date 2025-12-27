@@ -145,6 +145,7 @@ export default function MembershipPage() {
           payment_id: paymentId,
           amount: amount,
           payment_type: paymentType,
+          redirect_to: "/membership", // Redirect back to membership page after payment
         }),
       });
 
@@ -157,6 +158,7 @@ export default function MembershipPage() {
           payment_id: paymentId,
           amount: amount,
           payment_type: paymentType,
+          redirect_to: "/membership",
         });
         setShowPaymentModal(true);
       } else {
@@ -648,6 +650,7 @@ export default function MembershipPage() {
         payment_type={paymentData?.payment_type}
         loading={loadingPaymentMethods}
         onPaymentExecute={handlePaymentExecute}
+        redirect_to={paymentData?.redirect_to || "/membership"}
       />
     </MainLayout>
   );

@@ -3,9 +3,10 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, LogIn, User, Shield, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, LogIn, User, CheckCircle, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import MainLayout from "@/components/MainLayout";
+import Image from "next/image";
 
 function LoginPageContent() {
   const router = useRouter();
@@ -25,6 +26,10 @@ function LoginPageContent() {
     const success = searchParams.get('success');
     const errorParam = searchParams.get('error');
     const message = searchParams.get('message');
+    const redirectTo = searchParams.get('redirect_to');
+
+    // Store redirect_to in state if present (will be used after login)
+    // This is handled in the login handler, so we just need to preserve it in URL
 
     if (success || errorParam) {
       const messageType = success ? 'success' : 'error';
@@ -32,7 +37,7 @@ function LoginPageContent() {
       
       if (!displayMessage) {
         if (success === 'payment_completed') {
-          displayMessage = 'Registration payment completed successfully! Please login to access your account.';
+          displayMessage = 'Payment completed successfully! Please login to access your account.';
         } else if (errorParam === 'payment_failed') {
           displayMessage = 'Payment was not completed. Please try again.';
         } else if (errorParam === 'payment_error') {
@@ -62,9 +67,20 @@ function LoginPageContent() {
         });
       }
 
-      // Clear URL parameters after displaying message
-      const newUrl = window.location.pathname;
+      // Clear URL parameters after displaying message (but keep redirect_to for after login)
+      const params = new URLSearchParams();
+      if (redirectTo) {
+        params.set('redirect_to', redirectTo);
+      }
+      const newUrl = params.toString() 
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
       window.history.replaceState({}, '', newUrl);
+    } else if (redirectTo) {
+      // If only redirect_to is present (no success/error), keep it in URL
+      const params = new URLSearchParams();
+      params.set('redirect_to', redirectTo);
+      window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
     }
   }, [searchParams]);
 
@@ -93,9 +109,27 @@ function LoginPageContent() {
         return;
       }
 
+      // Get redirect_to parameter from URL
+      const redirectTo = searchParams.get('redirect_to');
+      
+      // Determine redirect path
+      let redirectPath = "/";
+      if (redirectTo) {
+        // Decode and use redirect_to parameter
+        try {
+          const decodedPath = decodeURIComponent(redirectTo);
+          // Validate it's a relative path (starts with /)
+          if (decodedPath.startsWith('/')) {
+            redirectPath = decodedPath;
+          }
+        } catch (err) {
+          console.error('Error decoding redirect_to:', err);
+        }
+      }
+
       // Show success toast
       toast.success("Login Successful!", {
-        description: "Welcome back! Redirecting to dashboard...",
+        description: "Welcome back! Redirecting...",
         duration: 3000,
         position: "top-center",
         icon: (
@@ -113,7 +147,7 @@ function LoginPageContent() {
 
       // Optional: Add a small delay before redirecting to show the toast
       setTimeout(() => {
-        router.push("/");
+        router.push(redirectPath);
       }, 1500);
 
     } catch (err) {
@@ -142,15 +176,23 @@ function LoginPageContent() {
         <div className="max-w-md w-full py-10">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] mb-4">
-              <Shield className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900">
               Welcome Back
             </h1>
             <p className="text-gray-600 mt-2">
               Sign in to your BDS member account
             </p>
+            <div className="flex justify-center mb-4">
+              <Image
+                src="/logo2.png"
+                alt="Bahrain Dental Society Logo"
+                width={120}
+                height={50}
+                className="object-contain mt-4"
+                priority
+              />
+            </div>
+            
           </div>
 
           {/* Form */}

@@ -34,6 +34,7 @@ export default function PaymentMethodModal({
   payment_type,
   loading = false,
   onPaymentExecute,
+  redirect_to,
 }) {
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [processing, setProcessing] = useState(false);
@@ -68,6 +69,7 @@ export default function PaymentMethodModal({
           subscription_id,
           payment_id,
           payment_method_id: selectedMethod.id,
+          redirect_to: redirect_to,
         }),
       });
 

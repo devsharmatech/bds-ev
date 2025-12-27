@@ -65,6 +65,7 @@ export default function Sidebar({
     { name: "Members", icon: Users, href: "/admin/members", badge: null },
     { name: "CheckIn", icon: Users, href: "/admin/check-in", badge: null },
     { name: "Subscriptions", icon: CreditCard, href: "/admin/subscriptions", badge: null },
+    { name: "Contact Messages", icon: Mail, href: "/admin/contact-messages", badge: null },
     { name: "Notifications", icon: Bell, href: "/admin/notifications", badge: null },
   ];
 

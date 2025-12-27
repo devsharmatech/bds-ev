@@ -14,7 +14,7 @@ export async function POST(request) {
   
   try {
     requestData = await request.json();
-    const { subscription_id, payment_id, payment_method_id } = requestData;
+    const { subscription_id, payment_id, payment_method_id, redirect_to } = requestData;
 
     console.log('[EXECUTE-PAYMENT] Request received:', {
       subscription_id,
@@ -192,7 +192,12 @@ export async function POST(request) {
     
     baseUrl = baseUrl.replace(/\/$/, '');
     
-    const callbackUrl = `${baseUrl}/api/payments/subscription/callback?payment_id=${payment_id}`;
+    // Build callback URL with redirect_to parameter if provided
+    let callbackUrl = `${baseUrl}/api/payments/subscription/callback?payment_id=${payment_id}`;
+    if (redirect_to) {
+      callbackUrl += `&redirect_to=${encodeURIComponent(redirect_to)}`;
+    }
+    
     const isAuthenticated = token && userId === payment.user_id;
     const errorUrl = isAuthenticated
       ? `${baseUrl}/member/dashboard/subscriptions?error=payment_failed`

@@ -15,10 +15,12 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const paymentId = searchParams.get('payment_id');
     const invoiceId = searchParams.get('paymentId');
+    const redirectTo = searchParams.get('redirect_to');
 
     console.log('[PAYMENT-CALLBACK] Callback received:', {
       payment_id: paymentId,
       paymentId: invoiceId,
+      redirect_to: redirectTo,
       allParams: Object.fromEntries(searchParams.entries()),
       timestamp: new Date().toISOString()
     });
@@ -357,19 +359,17 @@ export async function GET(request) {
             }))
           });
 
-          // Check if user is logged in (registration flow vs member dashboard flow)
-          const cookieStore = await cookies();
-          const token = cookieStore.get('bds_token')?.value;
+          // Always redirect to login page with query parameters
+          // Login page will handle navigation based on redirect_to parameter
+          let loginUrl = '/auth/login?success=payment_completed&message=' + encodeURIComponent('Payment completed successfully! Please login to access your account.');
           
-          if (token) {
-            // User is logged in - redirect to membership page
-            console.log('[PAYMENT-CALLBACK] Redirecting logged-in user to membership page');
-            return redirect('/member/dashboard/membership?success=payment_completed&message=' + encodeURIComponent('Payment completed successfully! Your subscription has been updated.'));
-          } else {
-            // User is not logged in (registration flow) - redirect to login
-            console.log('[PAYMENT-CALLBACK] Redirecting unauthenticated user to login');
-            return redirect('/auth/login?success=payment_completed&message=' + encodeURIComponent('Registration payment completed. Please login to access your account.'));
+          // Add redirect_to parameter if provided
+          if (redirectTo) {
+            loginUrl += `&redirect_to=${encodeURIComponent(redirectTo)}`;
           }
+          
+          console.log('[PAYMENT-CALLBACK] Redirecting to login page:', loginUrl);
+          return redirect(loginUrl);
       } else {
         console.warn('[PAYMENT-CALLBACK] Payment not confirmed as paid:', {
           success: statusResult.success,
@@ -379,15 +379,15 @@ export async function GET(request) {
           payment_id: paymentId
         });
         
-        // Payment failed - check if user is logged in
-        const cookieStore = await cookies();
-        const token = cookieStore.get('bds_token')?.value;
+        // Payment failed - redirect to login page
+        let loginUrl = '/auth/login?error=payment_failed&message=' + encodeURIComponent('Payment was not completed. Please try again.');
         
-        if (token) {
-          return redirect('/member/dashboard/membership?error=payment_failed&message=' + encodeURIComponent('Payment was not completed. Please try again.'));
-        } else {
-          return redirect('/auth/login?error=payment_failed&message=' + encodeURIComponent('Payment was not completed. Please try again.'));
+        // Add redirect_to parameter if provided
+        if (redirectTo) {
+          loginUrl += `&redirect_to=${encodeURIComponent(redirectTo)}`;
         }
+        
+        return redirect(loginUrl);
       }
   } catch (error) {
     // Next.js redirect() throws a NEXT_REDIRECT error internally - this is expected behavior
@@ -408,22 +408,22 @@ export async function GET(request) {
       timestamp: new Date().toISOString()
     });
     
-    // Check if user is logged in
+    // Error occurred - redirect to login page
     try {
-      const cookieStore = await cookies();
-      const token = cookieStore.get('bds_token')?.value;
+      let loginUrl = '/auth/login?error=payment_error&message=' + encodeURIComponent('An error occurred during payment processing. Please try again.');
       
-      if (token) {
-        return redirect('/member/dashboard/membership?error=payment_error&message=' + encodeURIComponent('An error occurred during payment processing. Please try again.'));
-      } else {
-        return redirect('/auth/login?error=payment_error');
+      // Add redirect_to parameter if provided
+      if (redirectTo) {
+        loginUrl += `&redirect_to=${encodeURIComponent(redirectTo)}`;
       }
+      
+      return redirect(loginUrl);
     } catch (cookieError) {
       // If cookieError is also a redirect, re-throw it
       if (cookieError.message === 'NEXT_REDIRECT' || cookieError.digest?.startsWith('NEXT_REDIRECT')) {
         throw cookieError;
       }
-      console.error('[PAYMENT-CALLBACK] Error accessing cookies:', cookieError);
+      console.error('[PAYMENT-CALLBACK] Error:', cookieError);
       return redirect('/auth/login?error=payment_error');
     }
   }
