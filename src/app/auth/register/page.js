@@ -1215,7 +1215,7 @@ function RegisterPageContent() {
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
                 <Image
-                  src="/logo2.png"
+                  src="/long-logo.png"
                   alt="Bahrain Dental Society Logo"
                   width={120}
                   height={50}
