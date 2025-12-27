@@ -1908,10 +1908,15 @@ export default function EventModal({
     -translate-x-1/2 -translate-y-1/2
     z-[101]
     w-[95vw] max-w-6xl
-    h-[90vh]                
+    max-h-[95vh]
     rounded-2xl shadow-2xl
-    overflow-hidden
+    overflow-y-scroll
   "
+        style={{
+          display: "flex",
+          WebkitOverflowScrolling: "touch",
+          flexDirection: "column",
+        }}
       >
         <div className="bg-gradient-to-br from-white to-gray-50 w-full h-full flex flex-col">
           {/* Header - Fixed */}
@@ -1942,7 +1947,13 @@ export default function EventModal({
           <div className="flex-shrink-0 px-4 sm:px-6">{NavigationTabs}</div>
 
           {/* Form Content - Scrollable Area */}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-0 ">
+          <div 
+            className="flex-1 px-4 sm:px-6 py-0"
+            style={{
+              flex: "1 1 auto",
+              minHeight: 0,
+            }}
+          >
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Tab Content */}
               {activeTab === "basic" && BasicInfoTab}
@@ -1950,7 +1961,7 @@ export default function EventModal({
               {activeTab === "agendas" && AgendasTab}
 
               {/* Form Actions */}
-              <div className="sticky bottom-0 bg-white border-t border-gray-200 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 p-4 sm:p-6 mt-6">
+              <div className="sticky bottom-0 bg-white border-t border-gray-200 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 p-4 sm:p-6 mt-6 z-10">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-2">

@@ -345,7 +345,7 @@ export default function Page() {
   // Loading UI
   if (loading && !stats) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-[#9cc2ed] p-4">
+      <div className="min-h-screen flex items-center justify-center bg-white p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}

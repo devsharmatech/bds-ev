@@ -184,7 +184,10 @@ export default function ViewModal({ event, onClose, onEdit }) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto flex flex-col"
+        style={{
+          WebkitOverflowScrolling: "touch",
+        }}
       >
         {/* Header with Banner - Fixed */}
         <div className="relative flex-shrink-0">
@@ -277,7 +280,7 @@ export default function ViewModal({ event, onClose, onEdit }) {
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 min-h-0">
+        <div className="flex-1  p-3 sm:p-6 space-y-4 sm:space-y-6 min-h-0">
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border border-[#9cc2ed]/50">

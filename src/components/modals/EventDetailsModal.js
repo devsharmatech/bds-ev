@@ -356,15 +356,34 @@ export default function EventDetailsModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden border border-white/20 my-2 md:my-4"
+          className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-6xl flex flex-col overflow-y-auto max-h-[95vh] border border-white/20 relative"
           style={{
+            WebkitOverflowScrolling: "touch",
             maxWidth: isMobile ? "calc(100vw - 16px)" : "",
-            maxHeight: "calc(100vh - 2rem)",
-            minHeight: "min(90vh, 600px)",
+            
+            height: "auto",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          {/* Header with Gradient - Responsive Height */}
-          <div className="relative flex-shrink-0 h-32 sm:h-40 md:h-48 lg:h-56 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden">
+          {/* Close Button - Fixed Position */}
+          <button
+            onClick={onClose}
+            className="absolute top-2 md:top-4 right-2 md:right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 hover:text-gray-900 transition-colors hover:scale-110 shadow-lg active:scale-95 z-30"
+            aria-label="Close modal"
+          >
+            <X className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+
+          {/* Scrollable Content Container */}
+          <div 
+            className="flex-1"
+            style={{
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            {/* Header with Gradient - Responsive Height */}
+            <div className="relative h-24 sm:h-32 md:h-40 lg:h-48 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden">
             {event?.banner_url ? (
               <>
                 <img
@@ -380,15 +399,6 @@ export default function EventDetailsModal({
                 <Calendar className="w-16 h-16 md:w-20 md:h-20 text-white/50" />
               </div>
             )}
-
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="absolute top-2 md:top-4 right-2 md:right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 hover:text-gray-900 transition-colors hover:scale-110 shadow-lg active:scale-95"
-              aria-label="Close modal"
-            >
-              <X className="w-4 h-4 md:w-5 md:h-5" />
-            </button>
 
             {/* Event Title and Action Buttons */}
             <div className="absolute bottom-3 md:bottom-4 left-3 md:left-6 right-3 md:right-6">
@@ -447,8 +457,8 @@ export default function EventDetailsModal({
             </div>
           </div>
 
-          {/* User Status Bar - Mobile Optimized - Fixed */}
-          <div className="flex-shrink-0 border-b border-gray-200 bg-white">
+            {/* User Status Bar */}
+            <div className="border-b border-gray-200 bg-white">
             <div className="px-3 md:px-6 py-3 md:py-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div className="flex items-center gap-2 md:gap-3">
@@ -522,8 +532,8 @@ export default function EventDetailsModal({
             </div>
           </div>
 
-          {/* Tabs - Hidden on mobile (replaced by bottom nav) - Fixed */}
-          <div className="hidden md:flex flex-shrink-0 border-b border-gray-200 bg-white">
+            {/* Tabs - Hidden on mobile (replaced by bottom nav) */}
+            <div className="hidden md:flex border-b border-gray-200 bg-white">
             <div className="flex overflow-x-auto">
               <button
                 onClick={() => setActiveTab("overview")}
@@ -585,13 +595,8 @@ export default function EventDetailsModal({
             </div>
           </div>
 
-          {/* Content - Scrollable */}
-          <div 
-            className="flex-1 overflow-y-auto p-3 md:p-6 min-h-0"
-            style={{
-              maxHeight: "calc(100vh - 300px)",
-            }}
-          >
+            {/* Content */}
+            <div className="p-3 md:p-6">
             {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="space-y-4 md:space-y-6">
@@ -1154,8 +1159,8 @@ export default function EventDetailsModal({
             )}
           </div>
 
-          {/* Footer - Fixed with responsive padding */}
-          <div className="flex-shrink-0 border-t border-gray-200 p-2 sm:p-3 md:p-4 lg:p-6 bg-white">
+            {/* Footer */}
+            <div className="border-t border-gray-200 p-2 sm:p-3 md:p-4 lg:p-6 bg-white">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="text-xs md:text-sm text-gray-600 text-center md:text-left">
                 Need help? Contact us at Bahrain.ds94@gmail.com
@@ -1179,6 +1184,7 @@ export default function EventDetailsModal({
                   </button>
                 )}
               </div>
+            </div>
             </div>
           </div>
         </motion.div>

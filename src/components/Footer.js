@@ -41,7 +41,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="relative bg-gradient-to-br from-[#03215F] via-[#03215F] to-[#1a3a7a] text-white overflow-hidden rounded-t-3xl">
+    <footer className="relative mt-10 bg-gradient-to-br from-[#03215F] via-[#03215F] to-[#1a3a7a] text-white overflow-hidden rounded-t-3xl">
       
 
       {/* Decorative Background Elements */}
@@ -229,7 +229,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="text-[#AE9B66] hover:text-[#ECCF0F] transition-colors duration-300 font-semibold"
             >
-              365Neo
+              365Neo Digital Services
             </a>
           </p>
         </div>

@@ -562,17 +562,36 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-2 sm:my-4 md:my-8 flex flex-col overflow-hidden border border-white/20"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-y-auto max-h-[95vh] border border-white/20 relative"
         style={{
-          maxHeight: 'calc(100vh - 1rem)',
-          minHeight: 'min(90vh, 500px)'
+         
+          WebkitOverflowScrolling: "touch",
+          
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {/* Glowing Top Border */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#03215F] via-[#03215F] to-[#03215F]"></div>
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#03215F] via-[#03215F] to-[#03215F] z-20"></div>
         
-        {/* Fixed Header with Event Banner - RESPONSIVE HEIGHT for small screens */}
-        <div className="relative h-32 sm:h-40 md:h-48 lg:h-56 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden flex-shrink-0">
+        {/* Close Button - Fixed Position */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 hover:text-gray-900 transition-colors hover:scale-110 z-30"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Scrollable Content Container */}
+        <div 
+          className="flex-1"
+          style={{
+           
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {/* Header with Event Banner - RESPONSIVE HEIGHT for small screens */}
+          <div className="relative h-24 sm:h-32 md:h-40 lg:h-48 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden">
           {event.banner_url ? (
             <div className="w-full h-full">
               <img
@@ -587,14 +606,6 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
               <Calendar className="w-12 h-12 md:w-16 md:h-16 text-white/50" />
             </div>
           )}
-          
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 hover:text-gray-900 transition-colors hover:scale-110"
-          >
-            <X className="w-5 h-5" />
-          </button>
           
           {/* Event Title and Badges */}
           <div className="absolute bottom-4 py-4 px-4 md:px-6 left-0 right-0">
@@ -617,8 +628,8 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
           </div>
         </div>
 
-        {/* Tabs - Fixed position under header */}
-        <div className="border-b border-gray-200 flex-shrink-0">
+          {/* Tabs */}
+          <div className="border-b border-gray-200 bg-white">
           <div className="flex">
             <button
               onClick={() => setActiveTab('details')}
@@ -659,16 +670,11 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
           </div>
         </div>
 
-        {/* Scrollable Content Area - RESPONSIVE for small height screens */}
-        <div 
-          ref={contentRef}
-          className="flex-1 overflow-y-auto min-h-0"
-          style={{
-            maxHeight: 'calc(100vh - 250px)',
-            minHeight: '200px'
-          }}
-        >
-          <div className="p-4 md:p-6">
+          {/* Content Area */}
+          <div 
+            ref={contentRef}
+            className="p-4 md:p-6"
+          >
             {/* Details Tab */}
             {activeTab === 'details' && (
               <div className="space-y-6">
@@ -932,10 +938,9 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
               </div>
             )}
           </div>
-        </div>
 
-        {/* Fixed Footer with Action Buttons - RESPONSIVE for small screens */}
-        <div className="border-t border-gray-200 p-2 sm:p-3 md:p-4 lg:p-6 bg-gradient-to-t from-white to-gray-50 flex-shrink-0">
+          {/* Footer with Action Buttons */}
+          <div className="border-t border-gray-200 p-2 sm:p-3 md:p-4 lg:p-6 bg-gradient-to-t from-white to-gray-50">
           {/* Payment Methods Selection - Step 2 */}
           {paymentStep === 2 && paymentMethods.length > 0 && (
             <div className="space-y-4">
@@ -1132,6 +1137,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
               </div>
             </>
           )}
+          </div>
         </div>
       </motion.div>
     </div>
