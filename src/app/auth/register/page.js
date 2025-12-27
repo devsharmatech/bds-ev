@@ -628,7 +628,7 @@ function RegisterPageContent() {
         </div>
 
         {/* Nationality */}
-        <div>
+        <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <Globe className="inline w-4 h-4 mr-2" />
             Nationality
