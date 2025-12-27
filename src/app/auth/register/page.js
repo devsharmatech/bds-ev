@@ -568,11 +568,11 @@ function RegisterPageContent() {
             value={formData.cpr}
             onChange={(e) => setFormData({ ...formData, cpr: e.target.value })}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#03215F]"
-            placeholder="930910630 (Optional)"
+            placeholder="930910630"
             maxLength={9}
           />
           <p className="text-xs text-gray-500 mt-1">
-            9-digit Bahraini CPR (Optional)
+            9-digit Bahraini CPR
           </p>
         </div>
 
