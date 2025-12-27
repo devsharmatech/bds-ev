@@ -41,6 +41,8 @@ import {
 import toast from "react-hot-toast";
 import { QRCodeCanvas } from "qrcode.react";
 import { useRouter } from "next/navigation";
+import PaymentMethodModal from "@/components/modals/PaymentMethodModal";
+import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 
 // Membership Card Component
 function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick }) {
@@ -170,6 +172,11 @@ export default function MembershipCardPage() {
   const [plans, setPlans] = useState([]);
   const [copied, setCopied] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [paymentData, setPaymentData] = useState(null);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const qrRef = useRef(null);
   const cardRef = useRef(null);
   const router = useRouter();
@@ -179,7 +186,37 @@ export default function MembershipCardPage() {
   useEffect(() => {
     fetchMembershipData();
     fetchSubscriptions();
-  }, []);
+    
+    // Check for payment success/error messages from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const error = urlParams.get('error');
+    const message = urlParams.get('message');
+    
+    if (success === 'payment_completed') {
+      toast.success(message ? decodeURIComponent(message) : "Payment completed successfully! Your subscription has been updated.", {
+        duration: 5000,
+      });
+      // Clean URL
+      router.replace('/member/dashboard/membership');
+      // Refresh data
+      setTimeout(() => {
+        fetchMembershipData();
+        fetchSubscriptions();
+      }, 1000);
+    } else if (error) {
+      const errorMessages = {
+        'payment_failed': 'Payment failed. Please try again.',
+        'payment_not_found': 'Payment record not found. Please contact support.',
+        'invalid_callback': 'Invalid payment callback. Please contact support.',
+        'payment_error': 'An error occurred during payment processing. Please try again.',
+      };
+      toast.error(message ? decodeURIComponent(message) : (errorMessages[error] || 'Payment failed. Please try again.'), {
+        duration: 5000,
+      });
+      router.replace('/member/dashboard/membership');
+    }
+  }, [router]);
 
   const fetchMembershipData = async () => {
     try {
@@ -233,6 +270,7 @@ export default function MembershipCardPage() {
     if (processing || !currentSubscription) return;
 
     setProcessing(true);
+    setLoadingPaymentMethods(true);
     try {
       const response = await fetch("/api/dashboard/subscriptions/renew", {
         method: "POST",
@@ -245,8 +283,8 @@ export default function MembershipCardPage() {
       const data = await response.json();
 
       if (data.success) {
-        if (data.payment) {
-          // Payment required - create invoice
+        if (data.payment && data.payment.amount > 0) {
+          // Payment required - create invoice to get payment methods
           const invoiceResponse = await fetch("/api/payments/subscription/create-invoice", {
             method: "POST",
             headers: {
@@ -263,10 +301,18 @@ export default function MembershipCardPage() {
 
           const invoiceData = await invoiceResponse.json();
 
-          if (invoiceData.success) {
-            window.location.href = invoiceData.paymentUrl;
+          if (invoiceData.success && invoiceData.paymentMethods) {
+            // Show payment method selection modal
+            setPaymentMethods(invoiceData.paymentMethods);
+            setPaymentData({
+              subscription_id: data.subscription.id,
+              payment_id: data.payment.payment_id,
+              amount: data.payment.amount,
+              payment_type: "subscription_renewal",
+            });
+            setShowPaymentModal(true);
           } else {
-            toast.error(invoiceData.message || "Failed to create payment invoice");
+            toast.error(invoiceData.message || "Failed to load payment methods");
           }
         } else {
           toast.success("Subscription renewed successfully!");
@@ -281,7 +327,111 @@ export default function MembershipCardPage() {
       toast.error("Failed to renew subscription");
     } finally {
       setProcessing(false);
+      setLoadingPaymentMethods(false);
     }
+  };
+
+  const handleUpgrade = async (plan) => {
+    if (processing || !plan) return;
+
+    setProcessing(true);
+    setLoadingPaymentMethods(true);
+    setShowPlanModal(false); // Close plan selection modal
+    
+    try {
+      const response = await fetch("/api/dashboard/subscriptions/upgrade", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          plan_id: plan.id,
+          plan_name: plan.name,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.payment && data.payment.total_amount > 0) {
+          // Payment required - create invoice to get payment methods
+          const paymentId = data.payment.registration_fee > 0 
+            ? (data.payment.registration_payment_id || data.subscription.id)
+            : (data.payment.annual_payment_id || data.subscription.id);
+          const paymentType = data.payment.registration_fee > 0 
+            ? 'subscription_registration' 
+            : 'subscription_annual';
+
+          const invoiceResponse = await fetch("/api/payments/subscription/create-invoice", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              subscription_id: data.subscription.id,
+              payment_id: paymentId,
+              amount: data.payment.total_amount,
+              payment_type: paymentType,
+            }),
+          });
+
+          const invoiceData = await invoiceResponse.json();
+
+          if (invoiceData.success && invoiceData.paymentMethods) {
+            // Show payment method selection modal
+            setPaymentMethods(invoiceData.paymentMethods);
+            setPaymentData({
+              subscription_id: data.subscription.id,
+              payment_id: paymentId,
+              amount: data.payment.total_amount,
+              payment_type: paymentType,
+            });
+            setShowPaymentModal(true);
+          } else {
+            toast.error(invoiceData.message || "Failed to load payment methods");
+            setProcessing(false);
+            setLoadingPaymentMethods(false);
+          }
+        } else {
+          toast.success("Subscription updated successfully!");
+          fetchMembershipData();
+          fetchSubscriptions();
+          setProcessing(false);
+          setLoadingPaymentMethods(false);
+        }
+      } else {
+        toast.error(data.message || "Failed to update subscription");
+        setProcessing(false);
+        setLoadingPaymentMethods(false);
+      }
+    } catch (error) {
+      console.error("Error updating subscription:", error);
+      toast.error("Failed to update subscription");
+      setProcessing(false);
+      setLoadingPaymentMethods(false);
+    }
+  };
+
+  const handleDowngrade = async (plan) => {
+    // Downgrade is similar to upgrade
+    await handleUpgrade(plan);
+  };
+
+  const handlePlanSelect = (plan) => {
+    // Determine if it's upgrade or downgrade and call appropriate handler
+    handleUpgrade(plan);
+  };
+
+  const handleUpgradeDowngradeClick = () => {
+    // Show plan selection modal
+    setShowPlanModal(true);
+  };
+
+  const handlePaymentExecute = (paymentUrl) => {
+    // Redirect to payment gateway
+    window.location.href = paymentUrl;
   };
 
   // Helper function to replace lab() color functions
@@ -1366,9 +1516,9 @@ export default function MembershipCardPage() {
                 )}
               </div>
 
-              {/* Renew Button */}
+              {/* Renew/Upgrade/Downgrade Buttons */}
               {currentSubscription && !isFreeMember && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
                   <button
                     onClick={handleRenew}
                     disabled={processing}
@@ -1385,6 +1535,15 @@ export default function MembershipCardPage() {
                         Renew Subscription
                       </>
                     )}
+                  </button>
+                  
+                  <button
+                    onClick={handleUpgradeDowngradeClick}
+                    disabled={processing}
+                    className="w-full px-4 py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <ArrowRight className="w-5 h-5" />
+                    Upgrade/Downgrade Plan
                   </button>
                 </div>
               )}
@@ -1469,6 +1628,46 @@ export default function MembershipCardPage() {
           </div>
         )}
       </div>
+
+      {/* Plan Selection Modal */}
+      <PlanSelectionModal
+        isOpen={showPlanModal}
+        onClose={() => {
+          setShowPlanModal(false);
+        }}
+        plans={plans}
+        currentPlanId={
+          currentSubscription?.subscription_plan?.id ||
+          currentSubscription?.subscription_plan_id ||
+          (currentSubscription?.subscription_plan_name && plans.find(p => 
+            p.display_name === currentSubscription.subscription_plan_name || 
+            p.name === currentSubscription.subscription_plan_name.toLowerCase().replace(/\s+/g, '_')
+          )?.id) ||
+          null
+        }
+        loading={processing}
+        onPlanSelect={handlePlanSelect}
+      />
+
+      {/* Payment Method Selection Modal */}
+      <PaymentMethodModal
+        isOpen={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false);
+          setPaymentMethods([]);
+          setPaymentData(null);
+          setProcessing(false);
+          setLoadingPaymentMethods(false);
+        }}
+        paymentMethods={paymentMethods}
+        amount={paymentData?.amount || 0}
+        currency="BHD"
+        subscription_id={paymentData?.subscription_id}
+        payment_id={paymentData?.payment_id}
+        payment_type={paymentData?.payment_type}
+        loading={loadingPaymentMethods}
+        onPaymentExecute={handlePaymentExecute}
+      />
     </div>
   );
 }

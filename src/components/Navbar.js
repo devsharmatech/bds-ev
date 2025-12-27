@@ -165,9 +165,9 @@ export default function Navbar() {
             {/* Logo - static */}
             <Link href="/" className="flex items-center space-x-3">
               <img
-                src="https://bds-web-iota.vercel.app/logo2.png"
+                src="https://bds-web-iota.vercel.app/long-logo.png"
                 alt="Bahrain Dental Society Logo"
-                className="w-24 h-24 rounded-full"
+                className=" h-10 "
               />
             </Link>
 

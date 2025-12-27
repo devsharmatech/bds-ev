@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import PaymentMethodModal from "@/components/modals/PaymentMethodModal";
 
 const planIcons = {
   free: Users,
@@ -70,6 +71,10 @@ export default function SubscriptionsPage() {
   const [userMembership, setUserMembership] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [paymentData, setPaymentData] = useState(null);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
 
   useEffect(() => {
     // Check for payment success/error in URL first
@@ -151,37 +156,12 @@ export default function SubscriptionsPage() {
 
       if (data.success) {
         if (data.payment && data.payment.total_amount > 0) {
-          // Payment required - create invoice for total amount
-          // Use registration payment ID if registration fee exists, otherwise annual
-          const paymentId = data.payment.registration_fee > 0 
-            ? (data.payment.registration_payment_id || data.subscription.id)
-            : (data.payment.annual_payment_id || data.subscription.id);
-          const paymentType = data.payment.registration_fee > 0 
-            ? 'subscription_registration' 
-            : 'subscription_annual';
-
-          const invoiceResponse = await fetch("/api/payments/subscription/create-invoice", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify({
-              subscription_id: data.subscription.id,
-              payment_id: paymentId,
-              amount: data.payment.total_amount,
-              payment_type: paymentType,
-            }),
-          });
-
-          const invoiceData = await invoiceResponse.json();
-
-          if (invoiceData.success) {
-            // Redirect to payment page
-            window.location.href = invoiceData.paymentUrl;
-          } else {
-            toast.error(invoiceData.message || "Failed to create payment invoice");
-          }
+          // Payment required - initiate payment and show modal
+          await initiatePaymentFlow(
+            data.subscription.id,
+            data.payment,
+            'upgrade'
+          );
         } else {
           toast.success("Subscription upgraded successfully!");
           fetchSubscriptions();
@@ -195,6 +175,86 @@ export default function SubscriptionsPage() {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const initiatePaymentFlow = async (subscriptionId, payment, actionType) => {
+    setLoadingPaymentMethods(true);
+    setShowPaymentModal(false);
+    setPaymentMethods([]);
+    setPaymentData(null);
+
+    try {
+      // Determine which payment to process
+      // The upgrade API already checks if user has paid registration fee before
+      // If registration_fee > 0, user needs to pay it (they haven't paid before)
+      // If registration_fee = 0, user already paid it or it's waived, so only pay annual fee
+      let paymentId;
+      let paymentType;
+      let amount;
+
+      if (payment.registration_fee > 0) {
+        // User needs to pay registration fee (they haven't paid it before)
+        paymentId = payment.registration_payment_id || payment.subscription_id;
+        paymentType = 'subscription_registration';
+        amount = payment.registration_fee;
+      } else if (payment.annual_fee > 0) {
+        // User only needs to pay annual fee (registration already paid or waived)
+        paymentId = payment.annual_payment_id || payment.subscription_id;
+        paymentType = actionType === 'renew' ? 'subscription_renewal' : 'subscription_annual';
+        amount = payment.annual_fee;
+      } else {
+        // Fallback: use total amount (shouldn't happen if logic is correct)
+        paymentId = payment.annual_payment_id || payment.registration_payment_id || payment.subscription_id;
+        paymentType = actionType === 'renew' ? 'subscription_renewal' : 'subscription_annual';
+        amount = payment.total_amount;
+      }
+
+      // Create invoice and get payment methods
+      const invoiceResponse = await fetch("/api/payments/subscription/create-invoice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          subscription_id: subscriptionId,
+          payment_id: paymentId,
+          amount: amount,
+          payment_type: paymentType,
+        }),
+      });
+
+      const invoiceData = await invoiceResponse.json();
+
+      if (invoiceData.success && invoiceData.paymentMethods) {
+        setPaymentMethods(invoiceData.paymentMethods);
+        setPaymentData({
+          subscription_id: subscriptionId,
+          payment_id: paymentId,
+          amount: amount,
+          payment_type: paymentType,
+        });
+        setShowPaymentModal(true);
+      } else {
+        toast.error(invoiceData.message || "Failed to load payment methods");
+      }
+    } catch (error) {
+      console.error("Error initiating payment:", error);
+      toast.error("Failed to initiate payment. Please try again.");
+    } finally {
+      setLoadingPaymentMethods(false);
+    }
+  };
+
+  const handlePaymentExecute = (paymentUrl) => {
+    // Redirect to payment gateway
+    window.location.href = paymentUrl;
+  };
+
+  const handlePaymentModalClose = () => {
+    setShowPaymentModal(false);
+    setPaymentMethods([]);
+    setPaymentData(null);
   };
 
   const handleRenew = async () => {
@@ -214,29 +274,18 @@ export default function SubscriptionsPage() {
 
       if (data.success) {
         if (data.payment) {
-          // Payment required - create invoice
-          const invoiceResponse = await fetch("/api/payments/subscription/create-invoice", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
+          // Payment required - initiate payment and show modal
+          await initiatePaymentFlow(
+            data.subscription.id,
+            {
+              total_amount: data.payment.amount,
+              annual_fee: data.payment.amount,
+              registration_fee: 0,
+              annual_payment_id: data.payment.payment_id,
+              registration_payment_id: null,
             },
-            credentials: "include",
-            body: JSON.stringify({
-              subscription_id: data.subscription.id,
-              payment_id: data.payment.payment_id,
-              amount: data.payment.amount,
-              payment_type: "subscription_renewal",
-            }),
-          });
-
-          const invoiceData = await invoiceResponse.json();
-
-          if (invoiceData.success) {
-            // Redirect to payment page
-            window.location.href = invoiceData.paymentUrl;
-          } else {
-            toast.error(invoiceData.message || "Failed to create payment invoice");
-          }
+            'renew'
+          );
         } else {
           toast.success("Subscription renewed successfully!");
           fetchSubscriptions();
@@ -562,6 +611,20 @@ export default function SubscriptionsPage() {
           </div>
         </div>
       )}
+
+      {/* Payment Method Modal */}
+      <PaymentMethodModal
+        isOpen={showPaymentModal}
+        onClose={handlePaymentModalClose}
+        paymentMethods={paymentMethods}
+        amount={paymentData?.amount || 0}
+        currency="BHD"
+        subscription_id={paymentData?.subscription_id}
+        payment_id={paymentData?.payment_id}
+        payment_type={paymentData?.payment_type}
+        loading={loadingPaymentMethods}
+        onPaymentExecute={handlePaymentExecute}
+      />
     </div>
   );
 }

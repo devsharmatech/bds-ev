@@ -362,13 +362,13 @@ export async function GET(request) {
           const token = cookieStore.get('bds_token')?.value;
           
           if (token) {
-            // User is logged in - redirect to member dashboard
-            console.log('[PAYMENT-CALLBACK] Redirecting logged-in user to dashboard');
-            return redirect('/member/dashboard/subscriptions?success=payment_completed');
+            // User is logged in - redirect to membership page
+            console.log('[PAYMENT-CALLBACK] Redirecting logged-in user to membership page');
+            return redirect('/member/dashboard/membership?success=payment_completed&message=' + encodeURIComponent('Payment completed successfully! Your subscription has been updated.'));
           } else {
             // User is not logged in (registration flow) - redirect to login
             console.log('[PAYMENT-CALLBACK] Redirecting unauthenticated user to login');
-            return redirect('/auth/login?success=payment_completed&message=Registration payment completed. Please login to access your account.');
+            return redirect('/auth/login?success=payment_completed&message=' + encodeURIComponent('Registration payment completed. Please login to access your account.'));
           }
       } else {
         console.warn('[PAYMENT-CALLBACK] Payment not confirmed as paid:', {
@@ -384,9 +384,9 @@ export async function GET(request) {
         const token = cookieStore.get('bds_token')?.value;
         
         if (token) {
-          return redirect('/member/dashboard/subscriptions?error=payment_failed');
+          return redirect('/member/dashboard/membership?error=payment_failed&message=' + encodeURIComponent('Payment was not completed. Please try again.'));
         } else {
-          return redirect('/auth/login?error=payment_failed&message=Payment was not completed. Please try again.');
+          return redirect('/auth/login?error=payment_failed&message=' + encodeURIComponent('Payment was not completed. Please try again.'));
         }
       }
   } catch (error) {
@@ -414,7 +414,7 @@ export async function GET(request) {
       const token = cookieStore.get('bds_token')?.value;
       
       if (token) {
-        return redirect('/member/dashboard/subscriptions?error=payment_error');
+        return redirect('/member/dashboard/membership?error=payment_error&message=' + encodeURIComponent('An error occurred during payment processing. Please try again.'));
       } else {
         return redirect('/auth/login?error=payment_error');
       }
