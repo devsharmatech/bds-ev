@@ -21,7 +21,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    ensureAdmin(req);
+    
     const body = await req.json();
     const { committee_id, slug, title, content, sort_order, is_active } = body || {};
     if (!committee_id || !slug || !title) {

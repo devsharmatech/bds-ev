@@ -60,14 +60,9 @@ export default function ProfessionalAffairsCommitteePage() {
               in other countries, fostering international collaboration and ensuring that Bahraini 
               dentists remain engaged with global advancements in the field.`}
             </p>
-            <div className="mt-6">
-              <a
-                href="#join"
-                className="inline-flex items-center px-5 py-2.5 bg-white text-[#03215F] rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-              >
-                Click Here
-              </a>
-              <span className="ml-3 text-white/90">
+            <div className="my-2">
+             
+              <span className=" text-white/90">
                 Want to become part of the committee? Please fill out the registration form below to join.
               </span>
             </div>

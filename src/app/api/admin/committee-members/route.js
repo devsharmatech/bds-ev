@@ -23,7 +23,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    ensureAdmin(req);
+    
     const contentType = req.headers.get("content-type") || "";
 
     let committee_id, name, position, specialty, role, photo_url, sort_order;

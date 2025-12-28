@@ -121,13 +121,35 @@ export default function AdminCommitteesPage() {
       <div className="mx-auto space-y-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Committees</h1>
-          <button
-            onClick={openNew}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:opacity-90"
-          >
-            <Plus className="w-4 h-4" />
-            New Committee
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/admin/committees/seed", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({}),
+                  });
+                  const data = await res.json();
+                  if (!data.success) throw new Error(data.message || "Seed failed");
+                  toast.success("Seed completed");
+                  await load();
+                } catch (e) {
+                  toast.error(e.message);
+                }
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 border-2 border-[#03215F] text-[#03215F] rounded-lg hover:bg-gray-50"
+            >
+              Create Defaults
+            </button>
+            <button
+              onClick={openNew}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:opacity-90"
+            >
+              <Plus className="w-4 h-4" />
+              New Committee
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -183,21 +205,27 @@ export default function AdminCommitteesPage() {
         )}
       </div>
 
-      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editing ? "Edit Committee" : "New Committee"} size="lg">
+      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title={editing ? "Edit Committee" : "New Committee"} size="xl">
         <form onSubmit={save} className="space-y-6">
           {/* Basic Info */}
-          <div>
+          <div className="bg-white border rounded-xl p-4 shadow-sm">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Basic Information</h3>
             <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-              <input
+              <select
                 value={form.slug}
                 onChange={(e) => setForm({ ...form, slug: e.target.value })}
                 required
-                className="w-full px-3 py-2 border rounded bg-white"
-                placeholder="professional-affairs-committee"
-              />
+                disabled={!!editing}
+                className="w-full px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#03215F] disabled:bg-gray-100 disabled:text-gray-500"
+              >
+                <option value="">Select slug</option>
+                <option value="professional-affairs-committee">professional-affairs-committee</option>
+                <option value="scientific-committee">scientific-committee</option>
+                <option value="social-and-public-health-committee">social-and-public-health-committee</option>
+                <option value="media-committee">media-committee</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -205,7 +233,7 @@ export default function AdminCommitteesPage() {
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
-                className="w-full px-3 py-2 border rounded bg-white"
+                className="w-full px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#03215F]"
                 placeholder="Professional Affairs Committee"
               />
             </div>
@@ -213,7 +241,7 @@ export default function AdminCommitteesPage() {
           </div>
 
           {/* Hero Text */}
-          <div>
+          <div className="bg-white border rounded-xl p-4 shadow-sm">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Hero Text</h3>
             <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -221,7 +249,7 @@ export default function AdminCommitteesPage() {
               <input
                 value={form.hero_title}
                 onChange={(e) => setForm({ ...form, hero_title: e.target.value })}
-                className="w-full px-3 py-2 border rounded bg-white"
+                className="w-full px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#03215F]"
               />
             </div>
             <div>
@@ -229,68 +257,76 @@ export default function AdminCommitteesPage() {
               <input
                 value={form.hero_subtitle}
                 onChange={(e) => setForm({ ...form, hero_subtitle: e.target.value })}
-                className="w-full px-3 py-2 border rounded bg-white"
+                className="w-full px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#03215F]"
               />
             </div>
           </div>
           </div>
 
           {/* Focus & Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Focus</label>
-            <input
-              value={form.focus}
-              onChange={(e) => setForm({ ...form, focus: e.target.value })}
-              className="w-full px-3 py-2 border rounded bg-white"
-              placeholder="Promoting high standards of practice..."
-            />
+          <div className="bg-white border rounded-xl p-4 shadow-sm">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Focus</label>
+                <input
+                  value={form.focus}
+                  onChange={(e) => setForm({ ...form, focus: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#03215F]"
+                  placeholder="Promoting high standards of practice..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full px-3 py-2 border rounded h-[90px] bg-white focus:outline-none focus:ring-2 focus:ring-[#03215F]"
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full px-3 py-2 border rounded h-28 bg-white"
-            />
-          </div>
+
           {/* Media & Meta */}
-          <div className="grid md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image URL</label>
-              <input
-                value={form.banner_image}
-                onChange={(e) => setForm({ ...form, banner_image: e.target.value })}
-                className="w-full px-3 py-2 border rounded bg-white"
-              />
+          <div className="bg-white border rounded-xl p-4 shadow-sm">
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image URL</label>
+                <input
+                  value={form.banner_image}
+                  onChange={(e) => setForm({ ...form, banner_image: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#03215F]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+                <input
+                  type="email"
+                  value={form.contact_email}
+                  onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#03215F]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+                <input
+                  type="number"
+                  value={form.sort_order}
+                  onChange={(e) => setForm({ ...form, sort_order: e.target.value })}
+                  className="w-full px-3 py-2 border rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#03215F]"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+            <div className="flex items-center gap-2 mt-3">
               <input
-                type="email"
-                value={form.contact_email}
-                onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
-                className="w-full px-3 py-2 border rounded bg-white"
+                id="is_active"
+                type="checkbox"
+                checked={form.is_active}
+                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
-              <input
-                type="number"
-                value={form.sort_order}
-                onChange={(e) => setForm({ ...form, sort_order: e.target.value })}
-                className="w-full px-3 py-2 border rounded bg-white"
-              />
+              <label htmlFor="is_active" className="text-sm text-gray-700">Active</label>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              id="is_active"
-              type="checkbox"
-              checked={form.is_active}
-              onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-            />
-            <label htmlFor="is_active" className="text-sm text-gray-700">Active</label>
-          </div>
+
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   X,
@@ -26,7 +26,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { jwtDecode } from "jwt-decode";
 
 // Bahrain flag SVG
 const BahrainFlag = () => (
@@ -239,6 +238,7 @@ export default function EventModal({
   bahrainGovernorates,
 }) {
   const [userInfo, setUserInfo] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -274,26 +274,48 @@ export default function EventModal({
   const [errors, setErrors] = useState({});
   const [removeBanner, setRemoveBanner] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
-
+  const fetchedRef = useRef(false);
+  const [userLoaded, setUserLoaded] = useState(false);
   // Get user info from JWT token
+  
   useEffect(() => {
-    const tokenCookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("bds_token="));
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
 
-    if (tokenCookie) {
-      const token = tokenCookie.split("=")[1];
+    const fetchUser = async () => {
       try {
-        const decoded = jwtDecode(token);
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUserData(data.user);
+        } else {
+          // mark loaded; don't toast yet to avoid early flash
+        }
+
+      } catch {
+        // silent; we'll show a visible banner below
+      } finally {
+        setUserLoaded(true);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  useEffect(() => {
+    if (userData) {
+      try {
         setUserInfo({
-          id: decoded.sub || decoded.id || decoded.user_id || "",
-          name: decoded.name || "Admin User",
-          email: decoded.email || "admin@bds.com",
-          role: decoded.role || "Administrator",
+          id: userData.id || userData.uid || userData.user_id || "",
+          name: userData.full_name || "Admin User",
+          email: userData.email || "admin@bds.com",
+          role: userData.role || "Administrator",
         });
 
         if (mode === "create") {
-          const userId = decoded.sub || decoded.id || decoded.userId;
+          const userId = userData.id || userData.uid || userData.user_id || "";
           if (userId) {
             setFormData((prev) => ({
               ...prev,
@@ -302,13 +324,11 @@ export default function EventModal({
           }
         }
       } catch (error) {
-        console.error("Failed to decode JWT:", error);
+        console.error("Failed to set user info:", error);
         toast.error("Failed to get user information. Please login again.");
       }
-    } else {
-      toast.error("No authentication token found. Please login.");
     }
-  }, [mode]);
+  }, [mode, userData]);
 
   // Initialize form with event data for edit mode
   useEffect(() => {
@@ -741,14 +761,6 @@ export default function EventModal({
     agendas,
   ]);
 
-  // Get authorization token from cookies
-  const getAuthToken = useCallback(() => {
-    const tokenCookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("bds_token="));
-    return tokenCookie ? tokenCookie.split("=")[1] : null;
-  }, []);
-
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -764,13 +776,6 @@ export default function EventModal({
 
     try {
       const formDataToSend = formatFormData();
-      const token = getAuthToken();
-
-      if (!token) {
-        toast.error("Authentication token missing. Please login again.");
-        setLoading(false);
-        return;
-      }
 
       const url =
         mode === "create"
@@ -781,9 +786,7 @@ export default function EventModal({
       const response = await fetch(url, {
         method,
         body: formDataToSend,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -810,29 +813,30 @@ export default function EventModal({
   const UserInfo = useMemo(() => {
     if (!userInfo) {
       return (
-        <div className="flex items-center gap-2 text-sm text-[#b8352d] bg-[#b8352d] p-3 rounded-xl mb-4">
+        <div className="flex items-center gap-2 text-sm bg-[#b8352d]/10 text-[#b8352d] border border-[#b8352d]/30 p-3 rounded-xl mb-4">
           <AlertCircle className="w-4 h-4" />
-          <span>Not logged in. Please login to create events.</span>
+          <span>
+            {userLoaded
+              ? "Not logged in. Please login to manage events."
+              : "Checking your session..."}
+          </span>
         </div>
       );
     }
 
     return (
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm bg-gradient-to-r from-[#9cc2ed] to-[#03215F] p-3 rounded-xl mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm bg-[#03215F] text-white p-3 rounded-xl mb-4">
         <div className="flex items-center gap-2 text-gray-700">
-          <User className="w-4 h-4 text-[#03215F]" />
-          <span>Logged in as:</span>
-          <span className="font-semibold text-[#03215F]">
+          <User className="w-4 h-4 text-white" />
+          <span className="text-white">Logged in as:</span>
+          <span className="font-semibold text-white">
             {userInfo.name || userInfo.email || "Unknown User"}
           </span>
           <span className="text-xs px-2 py-1 bg-[#03215F]/10 text-white rounded">
             {userInfo.role}
           </span>
         </div>
-        <div className="text-xs text-gray-500">
-          User ID:{" "}
-          <span className="font-mono">{userInfo.id?.substring(0, 8)}...</span>
-        </div>
+       
       </div>
     );
   }, [userInfo]);

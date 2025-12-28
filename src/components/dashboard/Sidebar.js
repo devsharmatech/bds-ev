@@ -27,6 +27,7 @@ import {
   MapPin
 } from "lucide-react";
 // import { jwtDecode } from "jwt-decode";
+import { Image as ImageIcon } from "lucide-react";
 
 export default function Sidebar({
   role = "admin",
@@ -81,6 +82,7 @@ export default function Sidebar({
     { name: "Committees", icon: Globe, href: "/admin/committees", badge: null },
     { name: "Committee Pages", icon: FileText, href: "/admin/committee-pages", badge: null },
     { name: "Committee Members", icon: Users, href: "/admin/committee-members", badge: null },
+    { name: "Gallery", icon: ImageIcon, href: "/admin/gallery", badge: null },
     { name: "Subscriptions", icon: CreditCard, href: "/admin/subscriptions", badge: null },
     { name: "Contact Messages", icon: Mail, href: "/admin/contact-messages", badge: null },
     { name: "Notifications", icon: Bell, href: "/admin/notifications", badge: null },

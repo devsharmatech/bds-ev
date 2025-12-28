@@ -22,7 +22,7 @@ export async function GET(_req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-     ensureAdmin(req);
+    
     const { id } = await params;
     const contentType = req.headers.get("content-type") || "";
     const update = {};

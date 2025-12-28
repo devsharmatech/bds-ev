@@ -1,3 +1,43 @@
+Gallery CMS (Supabase)
+
+SQL (run in Supabase SQL editor)
+
+```sql
+-- Buckets
+-- Create a dedicated bucket for gallery assets if not exists
+select storage.create_bucket('gallery', jsonb_build_object('public', true));
+
+-- Tables
+create table if not exists public.galleries (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  slug text unique,
+  featured_image_url text,
+  tag1 text,
+  tag2 text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_galleries_active on public.galleries(is_active);
+
+create table if not exists public.gallery_images (
+  id uuid primary key default gen_random_uuid(),
+  gallery_id uuid not null references public.galleries(id) on delete cascade,
+  image_url text not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_gallery_images_gallery on public.gallery_images(gallery_id);
+```
+
+Notes
+- Storage bucket: `gallery` (public) to store both featured and family images.
+- Tags: two simple text columns (`tag1`, `tag2`) per the requirement.
+- Slug is optional (generated from title in API).
+*** End Patch
 # Database Migration for Push Notifications
 
 ## Committees CMS

@@ -184,7 +184,7 @@ export default function EventsPage() {
         ...filters,
       });
 
-      const response = await fetch(`/api/admin/events?${params}`);
+      const response = await fetch(`/api/admin/events?${params}`, { credentials: "include" });
       const data = await response.json();
 
       if (data.success) {
@@ -250,6 +250,7 @@ export default function EventsPage() {
     try {
       const response = await fetch(`/api/admin/events/${selectedEvent.id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       const data = await response.json();
 

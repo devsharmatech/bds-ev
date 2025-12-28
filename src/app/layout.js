@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { Toaster as ToastContainer } from "react-hot-toast";
+import TailwindSafelist from "@/components/admin/TailwindSafelist";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -44,6 +45,7 @@ export default function RootLayout({ children }) {
         className={`${inter.className} bg-gray-50 overflow-x-hidden`}
       >
         {children}
+        <TailwindSafelist />
         <Toaster
           position="top-right"
           richColors
