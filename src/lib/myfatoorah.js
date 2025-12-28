@@ -10,6 +10,26 @@ const MYFATOORAH_EVENT_API_KEY = process.env.MYFATOORAH_EVENT_API_KEY;
 const MYFATOORAH_SUBSCRIPTION_API_KEY = process.env.MYFATOORAH_SUBSCRIPTION_API_KEY;
 
 /**
+ * Sanitize mobile for MyFatoorah:
+ * - Digits only
+ * - Remove leading country code (e.g., 973) when present
+ * - Max 11 digits (keep last 11 if longer)
+ * - Return '' if invalid/too short to avoid validation error
+ */
+function sanitizeMobileForMyFatoorrah(mobile) {
+  if (!mobile) return '';
+  let digits = String(mobile).replace(/\D/g, '');
+  if (!digits) return '';
+  // Remove leading Bahrain country code if present
+  if (digits.startsWith('973') && digits.length > 8) {
+    digits = digits.slice(3);
+  }
+  if (digits.length > 11) digits = digits.slice(-11);
+  if (digits.length < 6) return '';
+  return digits;
+}
+
+/**
  * Initiate payment for events - Get available payment methods
  */
 export async function initiateEventPayment({
@@ -37,7 +57,7 @@ export async function initiateEventPayment({
       CurrencyIso: 'BHD',
       CustomerName: customerName,
       CustomerEmail: customerEmail,
-      CustomerMobile: customerMobile || '',
+      CustomerMobile: sanitizeMobileForMyFatoorrah(customerMobile),
       CallBackUrl: callbackUrl,
       ErrorUrl: errorUrl,
       InvoiceItems: invoiceItems,
@@ -183,7 +203,7 @@ export async function executeEventPayment({
       CurrencyIso: 'BHD',
       CustomerName: customerName,
       CustomerEmail: customerEmail,
-      CustomerMobile: customerMobile || '',
+      CustomerMobile: sanitizeMobileForMyFatoorrah(customerMobile),
       CallBackUrl: callbackUrl,
       ErrorUrl: errorUrl,
       InvoiceItems: invoiceItems,
@@ -341,7 +361,7 @@ export async function createEventPaymentInvoice({
         CurrencyIso: 'BHD',
         CustomerName: customerName,
         CustomerEmail: customerEmail,
-        CustomerMobile: customerMobile,
+        CustomerMobile: sanitizeMobileForMyFatoorrah(customerMobile),
         CallBackUrl: callbackUrl,
         ErrorUrl: errorUrl,
         InvoiceItems: invoiceItems,
@@ -404,7 +424,7 @@ export async function createSubscriptionPaymentInvoice({
       CurrencyIso: 'BHD',
       CustomerName: customerName,
       CustomerEmail: customerEmail,
-      CustomerMobile: customerMobile || '', // SendPayment accepts empty string
+      CustomerMobile: sanitizeMobileForMyFatoorrah(customerMobile), // API accepts empty string
       CallBackUrl: callbackUrl,
       ErrorUrl: errorUrl,
       InvoiceItems: invoiceItems,
@@ -584,7 +604,7 @@ export async function initiateSubscriptionPayment({
       CurrencyIso: 'BHD',
       CustomerName: customerName,
       CustomerEmail: customerEmail,
-      CustomerMobile: customerMobile || '',
+      CustomerMobile: sanitizeMobileForMyFatoorrah(customerMobile),
       CallBackUrl: callbackUrl,
       ErrorUrl: errorUrl,
       InvoiceItems: invoiceItems,
@@ -737,7 +757,7 @@ export async function executeSubscriptionPayment({
       CurrencyIso: 'BHD',
       CustomerName: customerName,
       CustomerEmail: customerEmail,
-      CustomerMobile: customerMobile || '',
+      CustomerMobile: sanitizeMobileForMyFatoorrah(customerMobile),
       CallBackUrl: callbackUrl,
       ErrorUrl: errorUrl,
       InvoiceItems: invoiceItems,

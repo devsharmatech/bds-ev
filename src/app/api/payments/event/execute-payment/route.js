@@ -4,6 +4,23 @@ import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { executeEventPayment } from '@/lib/myfatoorah';
 
+// Local sanitizer to conform to MyFatoorah CustomerMobile constraints
+// - digits only
+// - remove leading '973' (Bahrain country code) if present
+// - max 11 digits (keep last 11 if longer)
+// - return '' if too short/invalid
+function sanitizeMobileForMyFatoorrah(mobile) {
+  if (!mobile) return '';
+  let digits = String(mobile).replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('973') && digits.length > 8) {
+    digits = digits.slice(3);
+  }
+  if (digits.length > 11) digits = digits.slice(-11);
+  if (digits.length < 6) return '';
+  return digits;
+}
+
 /**
  * POST /api/payments/event/execute-payment
  * Execute event payment with selected payment method
@@ -151,7 +168,8 @@ export async function POST(request) {
       UnitPrice: amount
     }];
 
-    const customerMobile = (user.mobile || user.phone || '').trim() || null;
+    const rawMobile = (user.mobile || user.phone || '').trim() || '';
+    const customerMobile = sanitizeMobileForMyFatoorrah(rawMobile);
 
     console.log('[EVENT-EXECUTE-PAYMENT] Calling MyFatoorah ExecutePayment:', {
       invoiceAmount: amount,

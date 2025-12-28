@@ -107,7 +107,7 @@ export default function WelcomeSection() {
                     President of the Bahrain Dental Society
                   </p>
                   
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#AE9B66]/5 text-white">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#AE9B66]/75 text-white">
                     <Award className="w-4 h-4" />
                     <span className="text-sm font-medium">Leading Since 2020</span>
                   </div>

@@ -33,6 +33,7 @@ import {
 import toast from "react-hot-toast";
 import { QRCodeCanvas } from "qrcode.react";
 import LoginModal from "@/components/modals/LoginModal";
+import RegistrationLiteModal from "@/components/modals/RegistrationLiteModal";
 import EventModal from "@/components/modals/EventModal";
 
 const formatBHD = (amount) => {
@@ -127,6 +128,7 @@ export default function EventDetailsPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isQuickSignupOpen, setIsQuickSignupOpen] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const qrRef = useRef(null);
 
@@ -175,7 +177,7 @@ export default function EventDetailsPage() {
 
   const handleJoinEvent = () => {
     if (!user) {
-      setIsLoginModalOpen(true);
+      setIsQuickSignupOpen(true);
       return;
     }
 
@@ -813,12 +815,32 @@ export default function EventDetailsPage() {
         <LoginModal
           isOpen={isLoginModalOpen}
           onClose={() => setIsLoginModalOpen(false)}
-          onSuccess={() => {
+          onLoginSuccess={() => {
             setIsLoginModalOpen(false);
             checkAuth();
           }}
+          onRegisterClick={() => {
+            setIsLoginModalOpen(false);
+            setIsQuickSignupOpen(true);
+          }}
         />
       )}
+
+      {/* Quick Signup */}
+      <RegistrationLiteModal
+        isOpen={isQuickSignupOpen}
+        onClose={() => setIsQuickSignupOpen(false)}
+        onSuccess={async () => {
+          setIsQuickSignupOpen(false);
+          await checkAuth();
+          setSelectedEvent(event);
+          setIsJoinModalOpen(true);
+        }}
+        onLoginClick={() => {
+          setIsQuickSignupOpen(false);
+          setIsLoginModalOpen(true);
+        }}
+      />
 
       {isJoinModalOpen && selectedEvent && (
         <EventModal

@@ -139,6 +139,8 @@ export async function POST(request) {
     const member_price = formData.get('member_price') ? parseFloat(formData.get('member_price')) : null;
     const status = formData.get('status') || 'upcoming';
     const bannerImage = formData.get('banner_image');
+    const nera_cme_hours = formData.get('nera_cme_hours') ? parseFloat(formData.get('nera_cme_hours')) : null;
+    const nera_code = formData.get('nera_code') || null;
     
     // Parse agendas data
     const agendasJson = formData.get('agendas');
@@ -242,7 +244,9 @@ export async function POST(request) {
       member_price,
       status,
       banner_url,
-      created_by: created_by || null
+      created_by: created_by || null,
+      nera_cme_hours,
+      nera_code
     };
 
     // Start transaction: Insert event

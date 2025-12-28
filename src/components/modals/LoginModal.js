@@ -148,6 +148,13 @@ export default function LoginModal({
               <button
                 type="button"
                 className="text-sm text-gray-600 hover:text-gray-900"
+                onClick={() => {
+                  try {
+                    onClose && onClose();
+                  } finally {
+                    router.push("/auth/forgot-password");
+                  }
+                }}
               >
                 Forgot password?
               </button>

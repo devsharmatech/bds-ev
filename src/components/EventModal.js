@@ -179,11 +179,14 @@ const MemoizedInput = ({
         } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all ${className}`}
         placeholder={placeholder}
         {...props}
+        aria-invalid={!!error}
       />
       {error && (
-        <p className="text-[#b8352d] text-sm mt-2 flex items-center gap-1">
-          <AlertCircle className="w-4 h-4" />
-          {error}
+        <p className="mt-2">
+          <span className="inline-flex items-center gap-1.5 text-[#b8352d] text-sm bg-[#b8352d]/10 rounded-md px-2 py-1">
+            <AlertCircle className="w-4 h-4 text-[#b8352d]" />
+            {error}
+          </span>
         </p>
       )}
     </div>
@@ -213,11 +216,14 @@ const MemoizedTextarea = ({
         } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all resize-none ${className}`}
         placeholder={placeholder}
         {...props}
+        aria-invalid={!!error}
       />
       {error && (
-        <p className="text-[#b8352d] text-sm mt-2 flex items-center gap-1">
-          <AlertCircle className="w-4 h-4" />
-          {error}
+        <p className="mt-2">
+          <span className="inline-flex items-center gap-1.5 text-[#b8352d] text-sm bg-[#b8352d]/10 rounded-md px-2 py-1">
+            <AlertCircle className="w-4 h-4 text-[#b8352d]" />
+            {error}
+          </span>
         </p>
       )}
     </div>
@@ -251,6 +257,8 @@ export default function EventModal({
     member_price: "",
     status: "upcoming",
     created_by: "",
+    nera_cme_hours: "",
+    nera_code: "",
   });
 
   // Hosts and Agendas state
@@ -327,6 +335,8 @@ export default function EventModal({
         member_price: event.member_price || "",
         status: event.status || "upcoming",
         created_by: event.created_by || "",
+        nera_cme_hours: event.nera_cme_hours ?? "",
+        nera_code: event.nera_code ?? "",
       });
 
       if (event.event_hosts) {
@@ -676,6 +686,10 @@ export default function EventModal({
           data.append(key, "");
         } else if (key === "province") {
           data.append("province", formData[key]);
+        } else if (key === "nera_cme_hours") {
+          data.append("nera_cme_hours", String(formData[key] || "").trim());
+        } else if (key === "nera_code") {
+          data.append("nera_code", String(formData[key] || "").trim());
         } else {
           if (key === "created_by") {
             const userId =
@@ -1256,7 +1270,7 @@ export default function EventModal({
         {agendas.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-xl">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] flex items-center justify-center">
-              <ListChecks className="w-8 h-8 text-[#AE9B66]" />
+              <ListChecks className="w-8 h-8 text-white" />
             </div>
             <p className="text-gray-600 font-medium">
               No agenda items added yet
@@ -1528,6 +1542,35 @@ export default function EventModal({
                     onChange={handleChange}
                     placeholder="Describe your event..."
                   />
+                </div>
+
+                {/* NERA Fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      NERA CME Hrs
+                    </label>
+                    <MemoizedInput
+                      name="nera_cme_hours"
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={formData.nera_cme_hours}
+                      onChange={handleChange}
+                      placeholder="e.g., 2.0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      NERA Code
+                    </label>
+                    <MemoizedInput
+                      name="nera_code"
+                      value={formData.nera_code}
+                      onChange={handleChange}
+                      placeholder="Enter NERA code"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

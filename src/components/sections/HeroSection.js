@@ -1,9 +1,11 @@
 "use client";
 
-import { ArrowRight, Calendar, Shield, Sparkles, QrCode } from "lucide-react";
+import { ArrowRight, Calendar, Shield, Sparkles, QrCode, LogIn, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
+import Modal from "@/components/Modal";
+import LoginModal from "@/components/modals/LoginModal";
 
 // MembershipCard Component
 function MembershipCard({ user, qrRef }) {
@@ -134,6 +136,8 @@ export default function HeroSection() {
   const [mounted, setMounted] = useState(false);
   const qrRef = useRef(null);
   const qrBackRef = useRef(null);
+  const [showJoinChoice, setShowJoinChoice] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Dummy member data for non-logged-in or non-paid members
   const dummyMemberData = {
@@ -277,7 +281,7 @@ export default function HeroSection() {
 
             <div className="flex flex-col sm:flex-row gap-4">
               <button
-                onClick={() => router.push("/auth/register")}
+                onClick={() => setShowJoinChoice(true)}
                 className="group px-8 py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg hover:shadow-xl hover:shadow-[#AE9B66]/30 transition-all duration-300 font-semibold flex items-center justify-center hover:scale-105 transform"
               >
                 Become a Member
@@ -494,6 +498,57 @@ export default function HeroSection() {
           animation: float linear infinite;
         }
       `}</style>
+
+      {/* Join choice modal */}
+      <Modal
+        open={showJoinChoice}
+        onClose={() => setShowJoinChoice(false)}
+        title="Become a Member"
+        size="md"
+      >
+        <div className="space-y-6">
+          <p className="text-gray-700">
+            Do you already have an account, or would you like to register as a new member?
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setShowJoinChoice(false);
+                setShowLoginModal(true);
+              }}
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg font-semibold hover:opacity-90 transition"
+            >
+              <LogIn className="w-5 h-5" />
+              Login
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowJoinChoice(false);
+                router.push("/auth/register");
+              }}
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-[#AE9B66] text-[#AE9B66] rounded-lg font-semibold hover:bg-[#AE9B66]/10 transition"
+            >
+              <UserPlus className="w-5 h-5" />
+              New Member
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Login modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={() => {
+          // Optionally navigate after login; the modal triggers a reload already.
+        }}
+        onRegisterClick={() => {
+          setShowLoginModal(false);
+          router.push("/auth/register");
+        }}
+      />
     </section>
   );
 }

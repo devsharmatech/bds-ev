@@ -507,211 +507,156 @@ export default function EventsPage() {
             </div>
           ) : (
             <>
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">
-                        Event Details
-                      </th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">
-                        Date & Time
-                      </th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">
-                        Location
-                      </th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">
-                        Status
-                      </th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {events.map((event) => {
-                      const stats = getEventStats(event);
-
-                      return (
-                        <motion.tr
-                          key={event.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
-                        >
-                          <td className="py-4 px-6">
-                            <div className="flex items-start gap-4">
-                              {event.banner_url ? (
-                                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                                  <img
-                                    src={event.banner_url}
-                                    alt={event.title}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border border-[#9cc2ed]/50 flex items-center justify-center flex-shrink-0">
-                                  <Calendar className="w-8 h-8 text-[#9cc2ed]" />
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-gray-900 mb-1 truncate capitalize">
-                                  {event.title}
-                                </h3>
-                                <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                                  {event.description ||
-                                    "No description provided"}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-3">
-                                  {event.is_paid ? (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-[#AE9B66]">
-                                      <DollarSign className="w-3 h-3" />
-                                      Regular: {formatBHD(event.regular_price)}
-                                      {event.member_price && (
-                                        <span className="text-gray-500 ml-1">
-                                          | Member:{" "}
-                                          {formatBHD(event.member_price)}
-                                        </span>
-                                      )}
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
-                                      <Shield className="w-3 h-3" />
-                                      Free
-                                    </span>
-                                  )}
-                                  {event.capacity && (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
-                                      <Users className="w-3 h-3" />
-                                      {event.capacity} capacity
-                                    </span>
-                                  )}
-                                  {stats.hosts > 0 && (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
-                                      <User className="w-3 h-3" />
-                                      {stats.hosts} host
-                                      {stats.hosts !== 1 ? "s" : ""}
-                                    </span>
-                                  )}
-                                  {stats.agendas > 0 && (
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
-                                      <ListChecks className="w-3 h-3" />
-                                      {stats.agendas} agenda
-                                      {stats.agendas !== 1 ? "s" : ""}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
+              {/* Cards */}
+              <div className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {events.map((event) => {
+                    const stats = getEventStats(event);
+                    return (
+                      <motion.div
+                        key={event.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200/50 shadow-sm hover:shadow-md transition flex flex-col overflow-hidden"
+                      >
+                        <div className="relative h-40 w-full overflow-hidden">
+                          {event.banner_url ? (
+                            <img
+                              src={event.banner_url}
+                              alt={event.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-t border-[#9cc2ed]/50 flex items-center justify-center">
+                              <Calendar className="w-10 h-10 text-white/80" />
                             </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-sm text-gray-700">
-                                <CalendarDays className="w-4 h-4" />
-                                {formatDateBH(event.start_datetime)}
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <Clock className="w-4 h-4" />
-                                {formatTimeBH(event.start_datetime)}
+                          )}
+                          <div className="absolute top-3 right-3">
+                            <StatusBadge status={event.status} />
+                          </div>
+                        </div>
+                        <div className="p-4 flex-1 flex flex-col">
+                          <h3 className="font-semibold text-gray-900 mb-1 truncate capitalize">
+                            {event.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                            {event.description || "No description provided"}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-3 mb-4">
+                            {event.is_paid ? (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-[#AE9B66]">
+                                <DollarSign className="w-3 h-3" />
+                                Regular: {formatBHD(event.regular_price)}
+                                {event.member_price && (
+                                  <span className="text-gray-500 ml-1">
+                                    | Member: {formatBHD(event.member_price)}
+                                  </span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+                                <Shield className="w-3 h-3" />
+                                Free
+                              </span>
+                            )}
+                            {event.capacity && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+                                <Users className="w-3 h-3" />
+                                {event.capacity} capacity
+                              </span>
+                            )}
+                            {stats.hosts > 0 && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+                                <User className="w-3 h-3" />
+                                {stats.hosts} host{stats.hosts !== 1 ? "s" : ""}
+                              </span>
+                            )}
+                            {stats.agendas > 0 && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+                                <ListChecks className="w-3 h-3" />
+                                {stats.agendas} agenda
+                                {stats.agendas !== 1 ? "s" : ""}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="space-y-2 mb-4 text-sm">
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <CalendarDays className="w-4 h-4" />
+                              {formatDateBH(event.start_datetime)}
+                              <span className="text-gray-500">
+                                &nbsp;•&nbsp;{formatTimeBH(event.start_datetime)}
                                 {event.end_datetime &&
                                   ` - ${formatTimeBH(event.end_datetime)}`}
+                              </span>
+                            </div>
+                            {(event.venue_name || event.city || event.state) && (
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <MapPin className="w-4 h-4" />
+                                <span className="truncate">
+                                  {event.venue_name || event.city || ""}
+                                  {event.state && `, ${event.state}`}
+                                </span>
                               </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="space-y-1">
-                              {event.venue_name && (
-                                <div className="flex items-center gap-2 text-sm text-gray-700">
-                                  <Building className="w-4 h-4" />
-                                  <span className="truncate max-w-[150px]">
-                                    {event.venue_name}
-                                  </span>
-                                </div>
-                              )}
-                              {(event.city || event.state) && (
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <MapPin className="w-4 h-4" />
-                                  <span className="truncate max-w-[150px]">
-                                    {event.city}
-                                    {event.state && `, ${event.state}`}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            <StatusBadge status={event.status} />
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center gap-2">
-                              {/* Add Members Button */}
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    `/admin/events/${event.id}/members`
-                                  )
-                                }
-                                className="p-2 rounded-lg bg-gradient-to-r from-[#9cc2ed] to-[#9cc2ed] text-[#03215F] hover:text-[#03215F] transition-colors hover:scale-110 active:scale-95"
-                                title="Manage Members"
-                              >
-                                <Users className="w-4 h-4" />
-                              </button>
+                            )}
+                          </div>
 
-                              {/* Add Attendance Button */}
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    `/admin/events/${event.id}/attendance`
-                                  )
-                                }
-                                className="p-2 rounded-lg bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white hover:opacity-90 transition-colors hover:scale-110 active:scale-95"
-                                title="View Attendance"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                              </button>
-
-                              {/* View Feedback Button */}
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    `/admin/events/${event.id}/feedback`
-                                  )
-                                }
-                                className="p-2 rounded-lg bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] hover:opacity-90 transition-colors hover:scale-110 active:scale-95"
-                                title="View Feedback"
-                              >
-                                <MessageSquare className="w-4 h-4" />
-                              </button>
-
-                              <button
-                                onClick={() => handleView(event)}
-                                className="p-2 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:text-gray-900 transition-colors hover:scale-110 active:scale-95"
-                                title="View Details"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleEdit(event)}
-                                className="p-2 rounded-lg bg-gradient-to-r from-[#9cc2ed] to-[#9cc2ed] text-[#03215F] hover:text-[#03215F] transition-colors hover:scale-110 active:scale-95"
-                                title="Edit Event"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteClick(event)}
-                                className="p-2 rounded-lg bg-gradient-to-r from-[#b8352d] to-[#b8352d] text-white hover:opacity-90 transition-colors hover:scale-110 active:scale-95"
-                                title="Delete Event"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </motion.tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                          <div className="mt-auto flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200/60">
+                            <button
+                              onClick={() =>
+                                router.push(`/admin/events/${event.id}/members`)
+                              }
+                              className="p-2 rounded-lg bg-gradient-to-r from-[#9cc2ed] to-[#9cc2ed] text-[#03215F] hover:text-[#03215F] transition-colors hover:scale-105 active:scale-95"
+                              title="Manage Members"
+                            >
+                              <Users className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                router.push(`/admin/events/${event.id}/attendance`)
+                              }
+                              className="p-2 rounded-lg bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white hover:opacity-90 transition-colors hover:scale-105 active:scale-95"
+                              title="View Attendance"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                router.push(`/admin/events/${event.id}/feedback`)
+                              }
+                              className="p-2 rounded-lg bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] hover:opacity-90 transition-colors hover:scale-105 active:scale-95"
+                              title="View Feedback"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleView(event)}
+                              className="p-2 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:text-gray-900 transition-colors hover:scale-105 active:scale-95"
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(event)}
+                              className="p-2 rounded-lg bg-gradient-to-r from-[#9cc2ed] to-[#9cc2ed] text-[#03215F] hover:text-[#03215F] transition-colors hover:scale-105 active:scale-95"
+                              title="Edit Event"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(event)}
+                              className="p-2 rounded-lg bg-gradient-to-r from-[#b8352d] to-[#b8352d] text-white hover:opacity-90 transition-colors hover:scale-105 active:scale-95"
+                              title="Delete Event"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Pagination */}

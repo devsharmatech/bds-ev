@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import EventModal from "@/components/modals/EventModal";
 import LoginModal from "@/components/modals/LoginModal";
+import RegistrationLiteModal from "@/components/modals/RegistrationLiteModal";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import EventDetailsModal from "@/components/modals/EventDetailsModal";
@@ -183,6 +184,7 @@ export default function EventsSection() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isQuickSignupOpen, setIsQuickSignupOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [user, setUser] = useState(null);
@@ -244,7 +246,8 @@ export default function EventsSection() {
     // If not logged in, open login modal
     if (!user) {
       setSelectedEvent(event);
-      setIsLoginModalOpen(true);
+      // Offer quick signup flow instead of strict login
+      setIsQuickSignupOpen(true);
       return;
     }
 
@@ -265,6 +268,14 @@ export default function EventsSection() {
     setIsLoginModalOpen(false);
 
     // If there's a selected event waiting, open event modal
+    if (selectedEvent) {
+      setIsEventModalOpen(true);
+    }
+  };
+
+  const handleQuickSignupSuccess = async (createdUser) => {
+    await checkAuth();
+    setIsQuickSignupOpen(false);
     if (selectedEvent) {
       setIsEventModalOpen(true);
     }
@@ -785,7 +796,21 @@ export default function EventsSection() {
           setSelectedEvent(null);
         }}
         onLoginSuccess={handleLoginSuccess}
-        onRegisterClick={handleRegisterRedirect}
+        onRegisterClick={() => {
+          setIsLoginModalOpen(false);
+          setIsQuickSignupOpen(true);
+        }}
+      />
+
+      {/* Quick Signup Modal */}
+      <RegistrationLiteModal
+        isOpen={isQuickSignupOpen}
+        onClose={() => setIsQuickSignupOpen(false)}
+        onSuccess={handleQuickSignupSuccess}
+        onLoginClick={() => {
+          setIsQuickSignupOpen(false);
+          setIsLoginModalOpen(true);
+        }}
       />
 
       {selectedDetailsEvent && (

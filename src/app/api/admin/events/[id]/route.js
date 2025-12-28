@@ -146,6 +146,8 @@ export async function PUT(request, { params }) {
     const status = formData.get('status');
     const bannerImage = formData.get('banner_image');
     const removeBanner = formData.get('remove_banner') === 'true';
+    const nera_cme_hours = formData.get('nera_cme_hours');
+    const nera_code = formData.get('nera_code');
     
     // Parse agendas and hosts data
     const agendasJson = formData.get('agendas');
@@ -183,6 +185,11 @@ export async function PUT(request, { params }) {
     if (created_by !== undefined) updateData.created_by = created_by;
     if (status) updateData.status = status;
     updateData.updated_at = new Date().toISOString();
+    if (nera_cme_hours !== null && nera_cme_hours !== undefined) {
+      const parsed = nera_cme_hours === "" ? null : parseFloat(nera_cme_hours);
+      updateData.nera_cme_hours = isNaN(parsed) ? null : parsed;
+    }
+    if (nera_code !== undefined) updateData.nera_code = nera_code || null;
 
     // Handle event banner image
     if (removeBanner && existingEvent.banner_url) {

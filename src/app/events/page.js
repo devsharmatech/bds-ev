@@ -45,6 +45,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { jwtDecode } from "jwt-decode";
 import LoginModal from "@/components/modals/LoginModal";
+import RegistrationLiteModal from "@/components/modals/RegistrationLiteModal";
 import EventDetailsModal from "@/components/modals/EventDetailsModal";
 import EventModal from "@/components/modals/EventModal"; // Your join modal
 
@@ -228,6 +229,9 @@ function EventsPageContent() {
   const [selectedJoinEvent, setSelectedJoinEvent] = useState(null);
   const [urlMessage, setUrlMessage] = useState(null);
   const [urlMessageType, setUrlMessageType] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalAllCount, setTotalAllCount] = useState(0);
+  const [isQuickSignupOpen, setIsQuickSignupOpen] = useState(false);
 
   const categories = [
     "All",
@@ -317,10 +321,18 @@ function EventsPageContent() {
   };
 
   // Fetch events from API
-  const fetchEvents = async (page = 1) => {
-    setLoading(true);
+  const fetchEvents = async (page = 1, append = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     try {
-      const response = await fetch(`/api/event/public?page=${page}&limit=9`);
+      // For 'all' and 'running' tabs, include all events (past, ongoing, upcoming)
+      // For 'upcoming' tab, only future events
+      const includeAll = activeTab === "all" || activeTab === "running";
+      const sortOrder = activeTab === "upcoming" ? "asc" : "desc";
+      const response = await fetch(`/api/event/public?page=${page}&limit=9&isUpcoming=${includeAll ? "false" : "true"}&sortBy=start_datetime&sortOrder=${sortOrder}`);
       const data = await response.json();
 
       if (data.success) {
@@ -352,21 +364,39 @@ function EventsPageContent() {
           };
         });
 
-        setEvents(processedEvents);
+        setEvents((prev) => (append ? [...prev, ...processedEvents] : processedEvents));
         setTotalPages(data.pagination?.totalPages || 1);
         setCurrentPage(data.pagination?.page || 1);
+
+        // Keep a stable "All Events" total from server regardless of active tab
+        if (includeAll && typeof data.pagination?.total === "number") {
+          setTotalAllCount(data.pagination.total);
+        } else if (!includeAll && totalAllCount === 0 && typeof data.pagination?.total === "number") {
+          // Initialize once on first load in case tab starts elsewhere
+          setTotalAllCount(data.pagination.total);
+        }
       }
     } catch (error) {
       console.error("Error fetching events:", error);
       toast.error("Failed to load events");
     } finally {
-      setLoading(false);
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchEvents();
+    fetchEvents(1, false);
   }, []);
+
+  // Refetch when tab changes
+  useEffect(() => {
+    fetchEvents(1, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   // Filter events based on active tab and filters
   const filteredEvents = events.filter((event) => {
@@ -418,7 +448,7 @@ function EventsPageContent() {
     // If not logged in, open login modal
     if (!user) {
       setSelectedEventForLogin(event);
-      setIsLoginModalOpen(true);
+      setIsQuickSignupOpen(true);
       return;
     }
 
@@ -517,6 +547,16 @@ function EventsPageContent() {
     }
   };
 
+  const handleQuickSignupSuccess = async () => {
+    await checkAuth();
+    setIsQuickSignupOpen(false);
+    if (selectedEventForLogin) {
+      setSelectedJoinEvent(selectedEventForLogin);
+      setIsJoinModalOpen(true);
+      setSelectedEventForLogin(null);
+    }
+  };
+
   // Get user price
   const getUserPrice = (event) => {
     if (!event.is_paid) return null;
@@ -527,18 +567,16 @@ function EventsPageContent() {
   };
 
   // Get running and upcoming counts
-  const runningEventsCount = events.filter(
-    (e) => e.status === "ongoing"
-  ).length;
-  const upcomingEventsCount = events.filter(
-    (e) => e.status === "upcoming"
-  ).length;
+  const runningEventsCount =
+    activeTab === "running"
+      ? filteredEvents.length
+      : events.filter((e) => e.status === "ongoing").length;
+  const upcomingEventsCount =
+    activeTab === "upcoming"
+      ? filteredEvents.length
+      : events.filter((e) => e.status === "upcoming").length;
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      fetchEvents(newPage);
-    }
-  };
+  // Pagination handlers removed in favor of "Load More"
 
   return (
     <MainLayout>
@@ -653,7 +691,7 @@ function EventsPageContent() {
               <Globe className="w-4 h-4" />
               All Events
               <span className="text-xs px-1.5 py-0.5 bg-white/20 rounded-full">
-                {events.length}
+                {totalAllCount}
               </span>
             </button>
             <button
@@ -1089,55 +1127,25 @@ function EventsPageContent() {
                   })}
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8 md:mt-12">
+                {/* Load More */}
+                {currentPage < totalPages && (
+                  <div className="flex items-center justify-center mt-8 md:mt-12">
                     <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="p-2 rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
+                      onClick={() => fetchEvents(currentPage + 1, true)}
+                      disabled={loadingMore}
+                      className="px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-
-                    <div className="flex items-center gap-1">
-                      {Array.from(
-                        { length: Math.min(5, totalPages) },
-                        (_, i) => {
-                          let pageNum;
-                          if (totalPages <= 5) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 2) {
-                            pageNum = totalPages - 4 + i;
-                          } else {
-                            pageNum = currentPage - 2 + i;
-                          }
-
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => handlePageChange(pageNum)}
-                              className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${
-                                currentPage === pageNum
-                                  ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white shadow-lg"
-                                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        }
+                      {loadingMore ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          Load More
+                          <ChevronRightIcon className="w-5 h-5" />
+                        </>
                       )}
-                    </div>
-
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="p-2 rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
-                    >
-                      <ChevronRightIcon className="w-5 h-5" />
                     </button>
                   </div>
                 )}
@@ -1246,7 +1254,7 @@ function EventsPageContent() {
           user={user}
           onLoginRequired={() => {
             setSelectedEventForLogin(selectedJoinEvent);
-            setIsLoginModalOpen(true);
+            setIsQuickSignupOpen(true);
           }}
           onJoinSuccess={handleJoinSuccess}
         />
@@ -1262,7 +1270,18 @@ function EventsPageContent() {
         onLoginSuccess={handleLoginSuccess}
         onRegisterClick={() => {
           setIsLoginModalOpen(false);
-          window.location.href = "/auth/register";
+          setIsQuickSignupOpen(true);
+        }}
+      />
+
+      {/* Quick Signup Modal */}
+      <RegistrationLiteModal
+        isOpen={isQuickSignupOpen}
+        onClose={() => setIsQuickSignupOpen(false)}
+        onSuccess={handleQuickSignupSuccess}
+        onLoginClick={() => {
+          setIsQuickSignupOpen(false);
+          setIsLoginModalOpen(true);
         }}
       />
     </MainLayout>
