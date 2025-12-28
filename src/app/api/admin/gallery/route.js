@@ -30,14 +30,48 @@ export async function GET(req) {
   try {
     ensureAdmin(req);
     const { searchParams } = new URL(req.url);
-    const q = searchParams.get("q") || "";
-    const { data, error } = await supabase
+    const q = searchParams.get("q") || searchParams.get("search") || "";
+    const status = searchParams.get("status") || "all";
+    const sortBy = searchParams.get("sortBy") || "created_at";
+    const sortOrder = (searchParams.get("sortOrder") || "desc").toLowerCase() === "asc" ? true : false;
+
+    let query = supabase
       .from("galleries")
-      .select("*")
-      .ilike("title", q ? `%${q}%` : "%")
-      .order("created_at", { ascending: false });
+      .select(
+        "id,title,slug,featured_image_url,tag1,tag2,is_active,created_at,updated_at,gallery_images(count)"
+      )
+      .ilike("title", q ? `%${q}%` : "%");
+
+    if (status === "active") {
+      query = query.eq("is_active", true);
+    } else if (status === "inactive") {
+      query = query.eq("is_active", false);
+    }
+
+    // Map allowed sort fields
+    const allowedSort = new Set(["created_at", "updated_at", "title"]);
+    const sortField = allowedSort.has(sortBy) ? sortBy : "created_at";
+
+    const { data, error } = await query.order(sortField, { ascending: sortOrder });
     if (error) throw new Error(error.message);
-    return NextResponse.json({ success: true, galleries: data || [] });
+
+    // Flatten image counts
+    const galleries = (data || []).map((g) => ({
+      id: g.id,
+      title: g.title,
+      slug: g.slug,
+      featured_image_url: g.featured_image_url,
+      tag1: g.tag1,
+      tag2: g.tag2,
+      is_active: g.is_active,
+      created_at: g.created_at,
+      updated_at: g.updated_at,
+      image_count: Array.isArray(g.gallery_images) && g.gallery_images.length
+        ? (g.gallery_images[0]?.count ?? 0)
+        : 0,
+    }));
+
+    return NextResponse.json({ success: true, galleries });
   } catch (err) {
     return NextResponse.json({ success: false, message: err.message }, { status: 500 });
   }
@@ -93,7 +127,10 @@ export async function POST(req) {
     // collect family images (multiple)
     const familyUploads = [];
     for (const [key, val] of form.entries()) {
-      if (key === "family_images" && val && typeof val === "object" && val.name) {
+      // accept family_images and family_images_0, family_images_1, ...
+      const isFamilyKey =
+        key === "family_images" || key.startsWith("family_images");
+      if (isFamilyKey && val && typeof val === "object" && val.name) {
         familyUploads.push(val);
       }
     }

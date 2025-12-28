@@ -1,3 +1,5 @@
+ "use client";
+ 
 import {
   Award,
   Users,
@@ -16,9 +18,12 @@ import {
   Linkedin,
   Mail,
   Phone,
+  Facebook,
+  Twitter,
 } from "lucide-react";
 import Link from "next/link";
 import MainLayout from "@/components/MainLayout";
+import { useEffect, useState } from "react";
 
 const values = [
   {
@@ -76,7 +81,7 @@ const achievements = [
   },
 ];
 
-const boardMembers = [
+const staticBoardMembers = [
   {
     name: "Dr. Abbas Alfardan",
     position: "President",
@@ -143,6 +148,24 @@ const boardMembers = [
 ];
 
 export default function AboutPage() {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/site-members?group=team");
+        const data = await res.json();
+        if (data.success) setMembers(data.members || []);
+      } catch (_e) {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
   return (
     <MainLayout>
       <div className="min-h-screen">
@@ -194,7 +217,7 @@ export default function AboutPage() {
 
         {/* Mission & Aim */}
         <div className="container mx-auto px-4 py-16">
-          <div className="grid lg:grid-cols-2 gap-12 items-start">
+          <div className="grid lg:grid-cols-1 gap-12 items-start">
             <div className="space-y-8">
               <div className="bg-white rounded-xl p-8 shadow-lg">
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">
@@ -383,7 +406,7 @@ export default function AboutPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {boardMembers.map((member, index) => (
+            {(members.length ? members : staticBoardMembers).map((member, index) => (
               <div
                 key={index}
                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 flex gap-6 items-center border border-gray-100 hover:border-[#03215F]/20 group"
@@ -391,7 +414,7 @@ export default function AboutPage() {
                 {/* Profile Image */}
                 <div className="relative flex-shrink-0">
                   <img
-                    src={member.image}
+                    src={member.photo_url || member.image}
                     alt={member.name}
                     className="w-32 h-32 rounded-xl object-cover border-2 border-gray-200 group-hover:border-[#03215F] transition-colors duration-300"
                   />
@@ -401,7 +424,7 @@ export default function AboutPage() {
                 {/* Details */}
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-[#03215F] mb-2 uppercase tracking-wide">
-                    {member.position}
+                    {member.title || member.position}
                   </p>
 
                   <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#03215F] transition-colors">
@@ -409,6 +432,7 @@ export default function AboutPage() {
                   </h3>
 
                   <div className="space-y-2 mb-4">
+                    {member.email && (
                     <a 
                       href={`mailto:${member.email}`}
                       className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#03215F] transition-colors group/email"
@@ -416,7 +440,9 @@ export default function AboutPage() {
                       <Mail className="w-4 h-4 flex-shrink-0" />
                       <span className="truncate">{member.email}</span>
                     </a>
+                    )}
 
+                    {member.phone && (
                     <a 
                       href={`tel:${member.phone}`}
                       className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#03215F] transition-colors"
@@ -424,6 +450,7 @@ export default function AboutPage() {
                       <Phone className="w-4 h-4 flex-shrink-0" />
                       <span>{member.phone}</span>
                     </a>
+                    )}
                   </div>
 
                   {/* Social Icons */}
@@ -447,6 +474,28 @@ export default function AboutPage() {
                         className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-200 hover:border-[#03215F] hover:bg-[#03215F] hover:text-white transition-all duration-300 group/social"
                       >
                         <Linkedin className="w-5 h-5 group-hover/social:scale-110 transition-transform" />
+                      </a>
+                    )}
+
+                    {member.facebook && (
+                      <a
+                        href={member.facebook}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-200 hover:border-[#03215F] hover:bg-[#03215F] hover:text-white transition-all duration-300 group/social"
+                      >
+                        <Facebook className="w-5 h-5 group-hover/social:scale-110 transition-transform" />
+                      </a>
+                    )}
+
+                    {member.twitter && (
+                      <a
+                        href={member.twitter}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-200 hover:border-[#03215F] hover:bg-[#03215F] hover:text-white transition-all duration-300 group/social"
+                      >
+                        <Twitter className="w-5 h-5 group-hover/social:scale-110 transition-transform" />
                       </a>
                     )}
                   </div>

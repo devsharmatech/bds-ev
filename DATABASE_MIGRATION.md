@@ -37,6 +37,33 @@ Notes
 - Storage bucket: `gallery` (public) to store both featured and family images.
 - Tags: two simple text columns (`tag1`, `tag2`) per the requirement.
 - Slug is optional (generated from title in API).
+
+---
+
+Site Members (About/Team)
+
+```sql
+-- Optional: using existing 'media' bucket for uploads (testimonials/banners already use it)
+-- Or create a dedicated bucket if you prefer:
+-- select storage.create_bucket('site_members', jsonb_build_object('public', true));
+
+create table if not exists public.site_members (
+  id uuid primary key default gen_random_uuid(),
+  group_key text not null, -- 'about' or 'team' (or additional groups later)
+  name text not null,
+  title text,          -- position/title
+  role text,           -- optional additional role/label
+  bio text,
+  photo_url text,
+  sort_order int not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_site_members_group on public.site_members(group_key);
+create index if not exists idx_site_members_active on public.site_members(is_active);
+```
 *** End Patch
 # Database Migration for Push Notifications
 

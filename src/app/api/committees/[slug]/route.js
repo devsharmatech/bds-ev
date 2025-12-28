@@ -1,22 +1,30 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseAdmin";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(_req, { params }) {
   try {
-    const { slug } = params;
+    const { slug } = await params;
+    const normalized = String(slug || "").trim().toLowerCase();
     const { data: committee, error } = await supabase
       .from("committees")
       .select("*")
-      .eq("slug", slug)
-      .eq("is_active", true)
-      .single();
+      .ilike("slug", normalized)
+      .limit(1)
+      .maybeSingle();
     if (error) throw error;
+    if (!committee) {
+      return NextResponse.json(
+        { success: false, message: "Committee not found" },
+        { status: 404 }
+      );
+    }
 
     const { data: pages } = await supabase
       .from("committee_pages")
       .select("*")
       .eq("committee_id", committee.id)
-      .eq("is_active", true)
       .order("sort_order", { ascending: true });
 
     const { data: members } = await supabase

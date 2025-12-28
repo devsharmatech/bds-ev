@@ -60,7 +60,10 @@ export async function PUT(req, { params }) {
       }
 
       for (const [key, val] of form.entries()) {
-        if (key === "family_images" && val && typeof val === "object" && val.name) {
+        // accept family_images and family_images_0, family_images_1, ...
+        const isFamilyKey =
+          key === "family_images" || key.startsWith("family_images");
+        if (isFamilyKey && val && typeof val === "object" && val.name) {
           addImages.push(val);
         }
       }

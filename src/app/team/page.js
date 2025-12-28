@@ -8,12 +8,45 @@ import {
   Instagram,
   Linkedin,
   Calendar,
+  Facebook,
+  Twitter,
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function TeamPage() {
-  const boardMembers = [
+  const [boardMembers, setBoardMembers] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/site-members?group=team");
+        const data = await res.json();
+        if (data.success) {
+          // map site members fields to expected shape
+          const mapped = (data.members || []).map((m) => ({
+            name: m.name,
+            position: m.title || m.role || "",
+            email: m.email || "",
+            phone: m.phone || "",
+            image: m.photo_url || "/placeholder.png",
+            instagram: m.instagram || "",
+            linkedin: m.linkedin || "",
+            facebook: m.facebook || "",
+            twitter: m.twitter || "",
+            role: m.role || "",
+          }));
+          setBoardMembers(mapped);
+        }
+      } catch (_e) {
+        // ignore
+      }
+    };
+    load();
+  }, []);
+
+  const staticMembers = [
     {
       name: "Dr. Abbas Alfardan",
       position: "President",
@@ -114,21 +147,31 @@ export default function TeamPage() {
           </h3>
 
           <div className="space-y-2 mb-4">
-            <a 
-              href={`mailto:${member.email}`}
-              className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#03215F] transition-colors group/email"
-            >
-              <Mail className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{member.email}</span>
-            </a>
+            {member.email && (
+              <a 
+                href={`mailto:${member.email}`}
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#03215F] transition-colors group/email"
+              >
+                <Mail className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{member.email}</span>
+              </a>
+            )}
 
-            <a 
-              href={`tel:${member.phone}`}
-              className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#03215F] transition-colors"
-            >
-              <Phone className="w-4 h-4 flex-shrink-0" />
-              <span>{member.phone}</span>
-            </a>
+            {member.phone && (
+              <a 
+                href={`tel:${member.phone}`}
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#03215F] transition-colors"
+              >
+                <Phone className="w-4 h-4 flex-shrink-0" />
+                <span>{member.phone}</span>
+              </a>
+            )}
+
+            {member.role && (
+              <div className="text-sm text-gray-600">
+                {member.role}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2 border-t border-gray-100">
@@ -151,6 +194,28 @@ export default function TeamPage() {
                 className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-200 hover:border-[#03215F] hover:bg-[#03215F] hover:text-white transition-all duration-300 group/social"
               >
                 <Linkedin className="w-5 h-5 group-hover/social:scale-110 transition-transform" />
+              </a>
+            )}
+
+            {member.facebook && (
+              <a
+                href={member.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-200 hover:border-[#03215F] hover:bg-[#03215F] hover:text-white transition-all duration-300 group/social"
+              >
+                <Facebook className="w-5 h-5 group-hover/social:scale-110 transition-transform" />
+              </a>
+            )}
+
+            {member.twitter && (
+              <a
+                href={member.twitter}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-gray-200 hover:border-[#03215F] hover:bg-[#03215F] hover:text-white transition-all duration-300 group/social"
+              >
+                <Twitter className="w-5 h-5 group-hover/social:scale-110 transition-transform" />
               </a>
             )}
           </div>
@@ -191,7 +256,7 @@ export default function TeamPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 mb-16">
-          {boardMembers.map((member, index) => (
+          {(boardMembers.length ? boardMembers : staticMembers).map((member, index) => (
             <MemberCard key={index} member={member} />
           ))}
         </div>

@@ -35,7 +35,7 @@ import toast, { Toaster } from "react-hot-toast";
 // Components
 import Modal from "@/components/Modal";
 import RichTextEditor from "@/components/admin/RichTextEditor";
-import DeleteModal from "@/components/DeleteModal";
+import DeleteModal2 from "@/components/DeleteModal2";
 
 export default function AdminCommitteePagesPage() {
   const [loading, setLoading] = useState(true);
@@ -74,7 +74,7 @@ export default function AdminCommitteePagesPage() {
   // Load committees
   const loadCommittees = async () => {
     try {
-      const res = await fetch("/api/admin/committees");
+      const res = await fetch("/api/admin/committees", { credentials: "include" });
       const data = await res.json();
       if (data.success) setCommittees(data.committees || []);
     } catch (e) {
@@ -94,7 +94,7 @@ export default function AdminCommitteePagesPage() {
         ...filters,
       });
 
-      const res = await fetch(`/api/admin/committee-pages?${params}`);
+      const res = await fetch(`/api/admin/committee-pages?${params}`, { credentials: "include" });
       const data = await res.json();
       if (data.success) {
         setPages(data.pages || []);
@@ -197,6 +197,7 @@ export default function AdminCommitteePagesPage() {
           method: editing ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
+          credentials: "include",
         }
       );
 
@@ -224,6 +225,7 @@ export default function AdminCommitteePagesPage() {
     try {
       const res = await fetch(`/api/admin/committee-pages/${selectedPage.id}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       const data = await res.json();
@@ -248,6 +250,11 @@ export default function AdminCommitteePagesPage() {
     const committee = committees.find(c => c.id === id);
     return committee ? committee.name : "Unknown Committee";
   };
+  // Get committee slug by ID
+  const getCommitteeSlug = (id) => {
+    const committee = committees.find(c => c.id === id);
+    return committee ? committee.slug : "";
+  };
 
   // Status badge
   const StatusBadge = ({ isActive }) => (
@@ -267,9 +274,15 @@ export default function AdminCommitteePagesPage() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteModal && selectedPage && (
-          <DeleteModal
-            item={selectedPage}
-            itemType="page"
+          <DeleteModal2
+            title="Delete Page"
+            description={
+              <>
+                Are you sure you want to delete{" "}
+                <span className="font-semibold">"{selectedPage.title}"</span>? This will permanently remove
+                the committee page.
+              </>
+            }
             onClose={() => setShowDeleteModal(false)}
             onConfirm={handleDeleteConfirm}
             loading={modalLoading}
@@ -666,7 +679,11 @@ export default function AdminCommitteePagesPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => window.open(`/committees/${page.committee_id}/${page.slug}`, '_blank')}
+                              onClick={() => {
+                                const slug = getCommitteeSlug(page.committee_id);
+                                const url = slug ? `/committees/${slug}` : "/committees";
+                                window.open(url, '_blank');
+                              }}
                               className="p-2 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:text-gray-900 transition-colors hover:scale-105 active:scale-95"
                               title="View Live"
                             >

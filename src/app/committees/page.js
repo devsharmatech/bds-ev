@@ -123,6 +123,7 @@ export default function CommitteesPage() {
         if (data.success && Array.isArray(data.committees) && data.committees.length > 0) {
           const mapped = data.committees.map((c) => ({
             id: c.id,
+            slug: c.slug,
             name: c.name,
             icon: /scientific/i.test(c.name) ? <BookOpen className="w-6 h-6" /> :
                   /professional/i.test(c.name) ? <Briefcase className="w-6 h-6" /> :
@@ -336,17 +337,13 @@ export default function CommitteesPage() {
                     {committee.chairperson}
                   </p>
                 </div>
-                <button 
-                  onClick={() => {
-                    const index = committees.findIndex(c => c.id === committee.id);
-                    setActiveCommittee(index);
-                    window.scrollTo({ top: 300, behavior: 'smooth' });
-                  }}
+                <a 
+                  href={committee.slug ? `/committees/${committee.slug}` : "#"}
                   className="text-[#03215F] hover:text-[#03215F] font-semibold flex items-center"
                 >
-                  Details
+                  Visit Page
                   <ArrowRight className="ml-1 w-4 h-4" />
-                </button>
+                </a>
               </div>
             </div>
           ))}

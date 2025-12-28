@@ -12,34 +12,29 @@ import {
   Eye,
   X,
   Camera,
-  Award,
   Briefcase,
   UserCircle,
-  GraduationCap,
-  Calendar,
-  CheckCircle,
-  AlertCircle,
+  Target,
   Loader2,
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
   Save,
-  Shield,
-  Crown,
-  Star,
-  Target,
-  Sparkles,
-  Image as ImageIcon,
-  Building,
   Hash,
+  Sparkles,
+  Mail,
+  Phone,
+  Instagram,
+  Linkedin,
+  Facebook,
+  Twitter,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Modal from "@/components/Modal";
-import DeleteModal from "@/components/DeleteModal";
+import DeleteModal2 from "@/components/DeleteModal2";
 
-export default function AdminCommitteeMembersPage() {
+export default function AdminSiteMembersPage() {
   const [loading, setLoading] = useState(true);
-  const [committees, setCommittees] = useState([]);
   const [members, setMembers] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -51,7 +46,7 @@ export default function AdminCommitteeMembersPage() {
   });
   const [filters, setFilters] = useState({
     search: "",
-    committee: "",
+    status: "active",
     sortBy: "sort_order",
     sortOrder: "asc",
   });
@@ -63,27 +58,22 @@ export default function AdminCommitteeMembersPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
-    committee_id: "",
     name: "",
-    position: "",
-    specialty: "",
+    title: "",
     role: "",
-    photo_url: "",
+    bio: "",
+    email: "",
+    phone: "",
+    instagram: "",
+    linkedin: "",
+    facebook: "",
+    twitter: "",
+    sort_order: 0,
+    is_active: true,
     photo_file: null,
     photo_preview: "",
-    sort_order: 0,
+    photo_url: "",
   });
-
-  // Load committees
-  const loadCommittees = async () => {
-    try {
-      const res = await fetch("/api/admin/committees", { credentials: "include" });
-      const data = await res.json();
-      if (data.success) setCommittees(data.committees || []);
-    } catch (e) {
-      toast.error("Failed to load committees");
-    }
-  };
 
   // Load members with pagination and filters
   const loadMembers = async () => {
@@ -92,12 +82,12 @@ export default function AdminCommitteeMembersPage() {
       const params = new URLSearchParams({
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
-        ...(filters.committee && { committee_id: filters.committee }),
         ...filters,
       });
 
-      const url = `/api/admin/committee-members?${params}`;
-      const res = await fetch(url, { credentials: "include" });
+      const res = await fetch(`/api/admin/site-members?${params}`, { 
+        credentials: "include" 
+      });
       const data = await res.json();
       
       if (data.success) {
@@ -122,10 +112,6 @@ export default function AdminCommitteeMembersPage() {
   };
 
   useEffect(() => {
-    loadCommittees();
-  }, []);
-
-  useEffect(() => {
     loadMembers();
   }, [pagination.page, filters]);
 
@@ -145,15 +131,21 @@ export default function AdminCommitteeMembersPage() {
   // Reset form
   const resetForm = () => {
     setForm({
-      committee_id: "",
       name: "",
-      position: "",
-      specialty: "",
+      title: "",
       role: "",
-      photo_url: "",
+      bio: "",
+      email: "",
+      phone: "",
+      instagram: "",
+      linkedin: "",
+      facebook: "",
+      twitter: "",
+      sort_order: 0,
+      is_active: true,
       photo_file: null,
       photo_preview: "",
-      sort_order: 0,
+      photo_url: "",
     });
   };
 
@@ -168,15 +160,21 @@ export default function AdminCommitteeMembersPage() {
   const openEditModal = (member) => {
     setEditing(member);
     setForm({
-      committee_id: member.committee_id || "",
       name: member.name || "",
-      position: member.position || "",
-      specialty: member.specialty || "",
+      title: member.title || "",
       role: member.role || "",
-      photo_url: member.photo_url || "",
+      bio: member.bio || "",
+      email: member.email || "",
+      phone: member.phone || "",
+      instagram: member.instagram || "",
+      linkedin: member.linkedin || "",
+      facebook: member.facebook || "",
+      twitter: member.twitter || "",
+      sort_order: member.sort_order || 0,
+      is_active: !!member.is_active,
       photo_file: null,
       photo_preview: member.photo_url || "",
-      sort_order: member.sort_order || 0,
+      photo_url: member.photo_url || "",
     });
     setShowCreateModal(true);
   };
@@ -219,35 +217,35 @@ export default function AdminCommitteeMembersPage() {
     setModalLoading(true);
     
     try {
-      if (!form.committee_id) {
-        toast.error("Please select a committee");
-        setModalLoading(false);
-        return;
-      }
-
       if (!form.name.trim()) {
-        toast.error("Member name is required");
+        toast.error("Name is required");
         setModalLoading(false);
         return;
       }
 
       const fd = new FormData();
-      fd.append("committee_id", form.committee_id);
       fd.append("name", form.name.trim());
-      fd.append("position", form.position || "");
-      fd.append("specialty", form.specialty || "");
+      fd.append("title", form.title || "");
       fd.append("role", form.role || "");
+      fd.append("bio", form.bio || "");
+      fd.append("email", form.email || "");
+      fd.append("phone", form.phone || "");
+      fd.append("instagram", form.instagram || "");
+      fd.append("linkedin", form.linkedin || "");
+      fd.append("facebook", form.facebook || "");
+      fd.append("twitter", form.twitter || "");
       fd.append("sort_order", String(Number(form.sort_order) || 0));
+      fd.append("is_active", String(!!form.is_active));
       
       if (form.photo_file) {
         fd.append("photo", form.photo_file);
-      } else if (form.photo_url && !editing) {
+      } else if (!editing && form.photo_url) {
         fd.append("photo_url", form.photo_url);
       }
 
       const url = editing 
-        ? `/api/admin/committee-members/${editing.id}` 
-        : "/api/admin/committee-members";
+        ? `/api/admin/site-members/${editing.id}` 
+        : "/api/admin/site-members";
       
       const method = editing ? "PUT" : "POST";
       
@@ -263,7 +261,7 @@ export default function AdminCommitteeMembersPage() {
         throw new Error(data.message || "Save failed");
       }
       
-      toast.success(editing ? "Member updated successfully" : "Member added successfully");
+      toast.success(editing ? "Team member updated successfully" : "Team member added successfully");
       setShowCreateModal(false);
       resetForm();
       await loadMembers();
@@ -281,7 +279,7 @@ export default function AdminCommitteeMembersPage() {
 
     setModalLoading(true);
     try {
-      const res = await fetch(`/api/admin/committee-members/${selectedMember.id}`, {
+      const res = await fetch(`/api/admin/site-members/${selectedMember.id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -292,7 +290,7 @@ export default function AdminCommitteeMembersPage() {
         throw new Error(data.message || "Delete failed");
       }
       
-      toast.success("Member deleted successfully");
+      toast.success("Team member deleted successfully");
       setShowDeleteModal(false);
       setSelectedMember(null);
       await loadMembers();
@@ -304,44 +302,49 @@ export default function AdminCommitteeMembersPage() {
     }
   };
 
-  // Get committee name by ID
-  const getCommitteeName = (id) => {
-    const committee = committees.find(c => c.id === id);
-    return committee ? committee.name : "Unknown Committee";
-  };
+  // Status badge component
+  const StatusBadge = ({ isActive }) => (
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+      isActive 
+        ? "bg-green-100 text-green-700" 
+        : "bg-gray-100 text-gray-600"
+    }`}>
+      {isActive ? "Active" : "Inactive"}
+    </span>
+  );
 
   // Position badge component
-  const PositionBadge = ({ position }) => {
-    if (!position) return null;
+  const TitleBadge = ({ title }) => {
+    if (!title) return null;
     
-    const getPositionColor = (pos) => {
-      const lowerPos = pos.toLowerCase();
-      if (lowerPos.includes('chair') || lowerPos.includes('president')) {
+    const getTitleColor = (titleText) => {
+      const lowerTitle = titleText.toLowerCase();
+      if (lowerTitle.includes('chair') || lowerTitle.includes('president') || lowerTitle.includes('director')) {
         return "bg-gradient-to-r from-[#AE9B66] to-[#ECCF0F] text-[#03215F]";
-      } else if (lowerPos.includes('vice') || lowerPos.includes('deputy')) {
+      } else if (lowerTitle.includes('vice') || lowerTitle.includes('deputy') || lowerTitle.includes('head')) {
         return "bg-gradient-to-r from-[#9cc2ed] to-[#9cc2ed] text-[#03215F]";
-      } else if (lowerPos.includes('secretary') || lowerPos.includes('treasurer')) {
+      } else if (lowerTitle.includes('secretary') || lowerTitle.includes('treasurer') || lowerTitle.includes('coordinator')) {
         return "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white";
       }
       return "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700";
     };
 
     return (
-      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getPositionColor(position)}`}>
+      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getTitleColor(title)}`}>
         <Briefcase className="w-3 h-3" />
-        {position}
+        {title}
       </span>
     );
   };
 
-  // Specialty badge component
-  const SpecialtyBadge = ({ specialty }) => {
-    if (!specialty) return null;
+  // Role badge component
+  const RoleBadge = ({ role }) => {
+    if (!role) return null;
     
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200">
-        <GraduationCap className="w-3 h-3" />
-        {specialty}
+        <Target className="w-3 h-3" />
+        {role}
       </span>
     );
   };
@@ -353,9 +356,16 @@ export default function AdminCommitteeMembersPage() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteModal && selectedMember && (
-          <DeleteModal
-            item={selectedMember}
-            itemType="committee member"
+          <DeleteModal2
+            title="Delete Team Member"
+            description={
+              <>
+                Are you sure you want to delete <span className="font-semibold">"{selectedMember.name}"</span>?
+                <p className="text-sm text-gray-600 mt-1">
+                  This action cannot be undone.
+                </p>
+              </>
+            }
             onClose={() => setShowDeleteModal(false)}
             onConfirm={handleDeleteConfirm}
             loading={modalLoading}
@@ -369,7 +379,7 @@ export default function AdminCommitteeMembersPage() {
           <Modal
             open={showCreateModal}
             onClose={() => setShowCreateModal(false)}
-            title={editing ? "Edit Committee Member" : "Add New Member"}
+            title={editing ? "Edit Team Member" : "Add New Team Member"}
             size="lg"
           >
             <form onSubmit={handleSave} className="space-y-6">
@@ -377,33 +387,14 @@ export default function AdminCommitteeMembersPage() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200/50 shadow-sm p-6"
+                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl"
               >
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <UserCircle className="w-5 h-5" />
-                  Member Information
+                  Team Member Information
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Committee *
-                    </label>
-                    <select
-                      value={form.committee_id}
-                      onChange={(e) => setForm({ ...form, committee_id: e.target.value })}
-                      required
-                      className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
-                    >
-                      <option value="">Select committee</option>
-                      {committees.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Full Name *
@@ -413,50 +404,38 @@ export default function AdminCommitteeMembersPage() {
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       required
                       className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
-                      placeholder="Enter member's full name"
+                      placeholder="Enter team member's full name"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Position
+                      Title / Position
                     </label>
                     <div className="relative">
                       <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
-                        value={form.position}
-                        onChange={(e) => setForm({ ...form, position: e.target.value })}
+                        value={form.title}
+                        onChange={(e) => setForm({ ...form, title: e.target.value })}
                         className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
-                        placeholder="e.g., Chairperson, Member"
+                        placeholder="e.g., President, Director, Member"
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Specialty
+                      Role / Specialization
                     </label>
                     <div className="relative">
-                      <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Target className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
-                        value={form.specialty}
-                        onChange={(e) => setForm({ ...form, specialty: e.target.value })}
+                        value={form.role}
+                        onChange={(e) => setForm({ ...form, role: e.target.value })}
                         className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
-                        placeholder="e.g., Orthodontics, Endodontics"
+                        placeholder="e.g., Orthodontics, Administration"
                       />
                     </div>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Role / Bio
-                    </label>
-                    <textarea
-                      value={form.role}
-                      onChange={(e) => setForm({ ...form, role: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent h-32 resize-none"
-                      placeholder="Brief role description or bio"
-                    />
                   </div>
 
                   <div>
@@ -474,6 +453,136 @@ export default function AdminCommitteeMembersPage() {
                     </div>
                   </div>
                 </div>
+
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bio / Description
+                  </label>
+                  <textarea
+                    value={form.bio}
+                    onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent h-32 resize-none"
+                    placeholder="Brief bio or description..."
+                    rows={4}
+                  />
+                </div>
+              </motion.div>
+
+              {/* Contact & Social */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Mail className="w-5 h-5" />
+                  Contact & Social
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                        placeholder="name@example.com"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="tel"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                        placeholder="+973 0000 0000"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Instagram */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Instagram
+                    </label>
+                    <div className="relative">
+                      <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={form.instagram}
+                        onChange={(e) => setForm({ ...form, instagram: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                        placeholder="https://instagram.com/username"
+                      />
+                    </div>
+                  </div>
+
+                  {/* LinkedIn */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      LinkedIn
+                    </label>
+                    <div className="relative">
+                      <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={form.linkedin}
+                        onChange={(e) => setForm({ ...form, linkedin: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                        placeholder="https://linkedin.com/in/username"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Facebook */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Facebook
+                    </label>
+                    <div className="relative">
+                      <Facebook className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={form.facebook}
+                        onChange={(e) => setForm({ ...form, facebook: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                        placeholder="https://facebook.com/username"
+                      />
+                    </div>
+                  </div>
+
+                  {/* X (Twitter) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      X (Twitter)
+                    </label>
+                    <div className="relative">
+                      <Twitter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={form.twitter}
+                        onChange={(e) => setForm({ ...form, twitter: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                        placeholder="https://twitter.com/username"
+                      />
+                    </div>
+                  </div>
+                </div>
               </motion.div>
 
               {/* Profile Photo */}
@@ -481,7 +590,7 @@ export default function AdminCommitteeMembersPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200/50 shadow-sm p-6"
+                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl"
               >
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <Camera className="w-5 h-5" />
@@ -549,6 +658,20 @@ export default function AdminCommitteeMembersPage() {
                     )}
                   </div>
                 </div>
+                
+                {/* Active Status */}
+                <div className="mt-4 flex items-center gap-2 p-4 bg-white border border-gray-300 rounded-xl">
+                  <input
+                    id="is_active"
+                    type="checkbox"
+                    checked={form.is_active}
+                    onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                    className="w-4 h-4 text-[#03215F] rounded focus:ring-[#03215F]"
+                  />
+                  <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
+                    Active (visible on team page)
+                  </label>
+                </div>
               </motion.div>
 
               {/* Modal Actions */}
@@ -578,7 +701,7 @@ export default function AdminCommitteeMembersPage() {
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      {editing ? "Update Member" : "Add Member"}
+                      {editing ? "Update Member" : "Add Team Member"}
                     </>
                   )}
                 </button>
@@ -602,10 +725,10 @@ export default function AdminCommitteeMembersPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
-                  Committee Members
+                  Team Members
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Manage committee members, positions, and profiles
+                  Manage team members displayed on the Team page
                 </p>
               </div>
             </div>
@@ -617,7 +740,7 @@ export default function AdminCommitteeMembersPage() {
               className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#03215F] transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
             >
               <Plus className="w-5 h-5" />
-              Add New Member
+              Add Team Member
             </button>
           </div>
         </motion.div>
@@ -635,30 +758,24 @@ export default function AdminCommitteeMembersPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search members..."
+                placeholder="Search team members..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange("search", e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
               />
             </div>
 
-            {/* Committee Filter */}
+            {/* Status Filter */}
             <div>
-              <div className="relative">
-                <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <select
-                  value={filters.committee}
-                  onChange={(e) => handleFilterChange("committee", e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent appearance-none"
-                >
-                  <option value="">All Committees</option>
-                  {committees.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                value={filters.status}
+                onChange={(e) => handleFilterChange("status", e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent appearance-none"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+              </select>
             </div>
 
             {/* Sort By */}
@@ -670,7 +787,7 @@ export default function AdminCommitteeMembersPage() {
               >
                 <option value="sort_order">Sort Order</option>
                 <option value="name">Name</option>
-                <option value="position">Position</option>
+                <option value="title">Title</option>
                 <option value="created_at">Created Date</option>
               </select>
             </div>
@@ -693,6 +810,16 @@ export default function AdminCommitteeMembersPage() {
               </button>
             </div>
           </div>
+          
+          {/* Team Info */}
+          <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 text-sm text-blue-700">
+              <Sparkles className="w-4 h-4" />
+              <span>
+                <strong>Display:</strong> All team members are displayed on the main Team page
+              </span>
+            </div>
+          </div>
         </motion.div>
 
         {/* MEMBERS GRID */}
@@ -705,25 +832,25 @@ export default function AdminCommitteeMembersPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="w-12 h-12 text-[#03215F] animate-spin mb-4" />
-              <p className="text-gray-600">Loading committee members...</p>
+              <p className="text-gray-600">Loading team members...</p>
             </div>
           ) : members.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Users className="w-16 h-16 text-gray-300 mb-4" />
               <p className="text-gray-600 text-lg mb-2">
-                No members found
+                No team members found
               </p>
               <p className="text-gray-500 text-sm mb-6">
-                {filters.search || filters.committee
-                  ? "Try changing your filters"
-                  : "Add your first committee member to get started"}
+                {filters.search
+                  ? "Try changing your search term"
+                  : "Add your first team member to get started"}
               </p>
               <button
                 onClick={openCreateModal}
                 className="px-6 py-2.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#03215F] transition-all duration-200 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Add Member
+                Add Team Member
               </button>
             </div>
           ) : (
@@ -777,25 +904,26 @@ export default function AdminCommitteeMembersPage() {
                             </div>
                             
                             <div className="flex flex-wrap items-center gap-1.5 mt-2 mb-3">
-                              <PositionBadge position={member.position} />
-                              <SpecialtyBadge specialty={member.specialty} />
+                              <TitleBadge title={member.title} />
+                              <RoleBadge role={member.role} />
+                              <StatusBadge isActive={member.is_active} />
                             </div>
 
-                            {/* Committee */}
+                            {/* Sort Order */}
                             <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Building className="w-4 h-4" />
+                              <Hash className="w-4 h-4" />
                               <span className="truncate">
-                                {getCommitteeName(member.committee_id)}
+                                Display Order: {member.sort_order || 0}
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Role/Bio */}
-                        {member.role && (
+                        {/* Bio */}
+                        {member.bio && (
                           <div className="mt-4 pt-4 border-t border-gray-200/60">
                             <p className="text-sm text-gray-600 line-clamp-3">
-                              {member.role}
+                              {member.bio}
                             </p>
                           </div>
                         )}
@@ -805,9 +933,9 @@ export default function AdminCommitteeMembersPage() {
                       <div className="px-5 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200/60">
                         <div className="flex items-center justify-between">
                           <button
-                            onClick={() => window.open(`/committees/${member.committee_id}/members`, '_blank')}
+                            onClick={() => window.open('/team', '_blank')}
                             className="p-2 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:text-gray-900 transition-colors hover:scale-105 active:scale-95"
-                            title="View Live"
+                            title="View on Team Page"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
@@ -843,7 +971,7 @@ export default function AdminCommitteeMembersPage() {
                     <span className="font-semibold text-gray-900">
                       {pagination.total}
                     </span>{" "}
-                    members
+                    team members
                   </div>
                   <div className="flex items-center gap-2">
                     <button
