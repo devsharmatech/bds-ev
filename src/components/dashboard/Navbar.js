@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
+// import { jwtDecode } from "jwt-decode";
 
 export default function Navbar({
   role = "admin",
@@ -37,28 +37,38 @@ export default function Navbar({
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const tokenCookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="));
-
-    if (tokenCookie) {
-      const token = tokenCookie.split("=")[1];
+    const loadUser = async () => {
       try {
-        const decoded = jwtDecode(token);
-        setUserInfo({
-          name: decoded.name || "Admin User",
-          email: decoded.email || "admin@bds.com",
-          role: decoded.role || "Administrator",
-        });
-      } catch (error) {
-        console.error("Failed to decode JWT:", error);
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.user) {
+            setUserInfo({
+              name: data.user.full_name || "Admin User",
+              email: data.user.email || "admin@bds.com",
+              role: data.user.role || "Administrator",
+            });
+            return;
+          }
+        }
+      } catch (e) {
+        // ignore
       }
-    }
+      // fallback
+      setUserInfo((u) => ({
+        name: u.name || "Admin User",
+        email: u.email || "admin@bds.com",
+        role: u.role || "Administrator",
+      }));
+    };
+    loadUser();
   }, []);
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
     localStorage.clear();
-    document.cookie = "token=; Max-Age=0; path=/";
     window.location.href = "/admin/login";
   };
 
@@ -76,10 +86,10 @@ export default function Navbar({
   const userMenuItems = [
     {
       icon: User,
-      label: "My Profile",
-      description: "View & edit your profile",
+      label: "Profile Settings",
+      description: "Update your profile details",
       color: "from-[#03215F] to-[#03215F]",
-      onClick: () => console.log("Profile clicked"),
+      onClick: () => (window.location.href = "/admin/settings/profile"),
     },
     {
       icon: Settings,
@@ -222,8 +232,8 @@ export default function Navbar({
               <p className="text-sm font-semibold text-[#03215F] truncate max-w-[140px]">
                 {userInfo.name || "Admin User"}
               </p>
-              <p className="text-xs text-[#03215F] truncate max-w-[140px]">
-                {userInfo.role || "Administrator"}
+              <p className="text-xs text-[#03215F] truncate max-w-[180px]">
+                {userInfo.email || "admin@bds.com"}
               </p>
             </div>
             <ChevronDown

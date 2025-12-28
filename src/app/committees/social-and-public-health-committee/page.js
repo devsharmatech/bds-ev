@@ -16,8 +16,27 @@ import {
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function SocialPublicHealthCommitteePage() {
+  const [committee, setCommittee] = useState(null);
+  const [pages, setPages] = useState([]);
+  const [membersCms, setMembersCms] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/committees/social-and-public-health-committee");
+        const data = await res.json();
+        if (data.success) {
+          setCommittee(data.committee);
+          setPages(data.pages || []);
+          setMembersCms(data.members || []);
+        }
+      } catch {}
+    };
+    load();
+  }, []);
   const committeeMembers = [
     {
       name: "Dr. Noor Al Hashimi",
@@ -148,12 +167,14 @@ export default function SocialPublicHealthCommitteePage() {
               <Heart className="w-4 h-4 mr-2" />
               <span className="text-sm font-medium">Community & Social Engagement</span>
             </div>
-            <h1 className="text-5xl font-bold mb-6">Social and Public Health Committee</h1>
+            <h1 className="text-5xl font-bold mb-6">
+              {committee?.hero_title || "Social and Public Health Committee"}
+            </h1>
             <p className="text-xl opacity-90 mb-8">
-              Bridging dental professionals with the community through public 
+              {committee?.hero_subtitle || `Bridging dental professionals with the community through public 
               health initiatives and social engagement. We promote oral health 
               awareness, provide community services, and foster social connections 
-              among Bahrain's dental community.
+              among Bahrain's dental community.`}
             </p>
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center">
@@ -173,265 +194,56 @@ export default function SocialPublicHealthCommitteePage() {
         </div>
       </div>
 
-      {/* Committee Overview */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid lg:grid-cols-3 gap-8 mb-16">
-          <div className="lg:col-span-2">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Serving Community & Fostering Connections
-            </h2>
-            <div className="space-y-6">
-              <p className="text-gray-600 text-lg">
-                The Social and Public Health Committee serves dual purposes: 
-                improving oral health in the Bahraini community through public 
-                health initiatives, and strengthening social bonds within the 
-                dental profession through engaging activities and events.
-              </p>
-              <p className="text-gray-600 text-lg">
-                We believe that dental professionals have a responsibility to 
-                serve their communities while also benefiting from a strong, 
-                supportive professional network. Our committee bridges these 
-                two essential aspects of professional life.
-              </p>
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-[#03215F] to-[#03215F] rounded-2xl p-8 text-white">
-            <div className="text-center mb-6">
-              <div className="text-5xl font-bold mb-2">8,000+</div>
-              <div className="text-lg opacity-90">Community Members Served Annually</div>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <Calendar className="w-5 h-5 mr-3" />
-                <span>4 Major Programs</span>
-              </div>
-              <div className="flex items-center">
-                <Users className="w-5 h-5 mr-3" />
-                <span>6 Committee Members</span>
-              </div>
-              <div className="flex items-center">
-                <Target className="w-5 h-5 mr-3" />
-                <span>15+ Annual Events</span>
-              </div>
-              <div className="flex items-center">
-                <Heart className="w-5 h-5 mr-3" />
-                <span>Established 2015</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Community Programs */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            Community Health Programs
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {communityPrograms.map((program, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center mr-4 text-white">
-                    <Heart className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      {program.title}
-                    </h3>
-                    <div className="text-[#03215F] font-semibold">{program.target}</div>
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <div className="text-sm text-gray-500">Reach</div>
-                  <div className="font-medium text-gray-700">{program.reach}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500 mb-2">Activities</div>
-                  <div className="space-y-2">
-                    {program.activities.map((activity, idx) => (
-                      <div key={idx} className="flex items-center text-gray-600">
-                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[#03215F] to-[#03215F] mr-3"></div>
-                        {activity}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <button className="mt-6 w-full py-2 text-sm bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:opacity-90 transition-opacity">
-                  Volunteer for Program
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Committee Members */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            Committee Members
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {committeeMembers.map((member, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-lg">
-                <div className="flex items-center mb-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center text-white text-xl font-bold mr-4">
-                    {member.name.split(" ").map(n => n[0]).join("")}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">
-                      {member.name}
-                    </h3>
-                    <div className="text-[#03215F] font-semibold">{member.position}</div>
-                  </div>
-                </div>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="text-gray-500">Specialty: </span>
-                    <span className="font-medium text-gray-700">{member.specialty}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Role: </span>
-                    <span className="text-gray-600">{member.role}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Upcoming Events */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            Upcoming Community Events
-          </h2>
+      <div className="container mx-auto px-4 py-16 space-y-12">
+        {pages.length > 0 && (
           <div className="space-y-6">
-            {upcomingEvents.map((event, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-lg p-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-start space-x-6">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-[#03215F]">
-                        {new Date(event.date).toLocaleDateString('en-US', { day: 'numeric' })}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}
-                      </div>
+            {pages.map((p) => (
+              <div key={p.id} className="bg-white rounded-xl p-6 shadow">
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">{p.title}</h3>
+                <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: p.content || "" }} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {membersCms.length > 0 && (
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Committee Members</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {membersCms.map((m) => (
+                <div key={m.id} className="bg-white rounded-xl p-6 shadow">
+                  <div className="flex items-center mb-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center text-white text-xl font-bold mr-4 overflow-hidden">
+                      {m.photo_url ? <img src={m.photo_url} alt={m.name} className="w-full h-full object-cover" /> : (m.name || "U").split(" ").map((n) => n[0]).join("")}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {event.title}
-                      </h3>
-                      <div className="text-gray-600 space-y-2">
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          {event.date}
-                        </div>
-                        <div className="flex items-center">
-                          <Home className="w-4 h-4 mr-2" />
-                          {event.location}
-                        </div>
-                        <p>{event.description}</p>
-                      </div>
+                      <h3 className="font-bold text-gray-900">{m.name}</h3>
+                      <div className="text-[#03215F] font-semibold">{[m.position, m.specialty].filter(Boolean).join(" • ")}</div>
                     </div>
                   </div>
-                  <div className="flex space-x-2">
-                    <button className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                      Details
-                    </button>
-                    <button className="px-4 py-2 text-sm bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:opacity-90 transition-opacity">
-                      Register as Volunteer
-                    </button>
-                  </div>
+                  {m.role && <div className="space-y-3 text-sm text-gray-600">{m.role}</div>}
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Social Activities */}
-        <div className="bg-gray-50 rounded-2xl p-8 mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-            Social Activities & Member Engagement
-          </h2>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            {socialActivities.map((activity, index) => (
-              <div key={index} className="bg-white rounded-xl p-6">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center mr-4 text-white">
-                    <Coffee className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      {activity.title}
-                    </h3>
-                    <div className="text-[#03215F] font-semibold">{activity.frequency}</div>
-                  </div>
-                </div>
-                <p className="text-gray-600 text-sm mb-4">
-                  {activity.description}
-                </p>
-                <div className="text-sm">
-                  <span className="text-gray-500">Typical Participation: </span>
-                  <span className="font-medium text-gray-700">{activity.participants}</span>
-                </div>
-                <button className="mt-4 w-full py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                  Express Interest
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Impact Statistics */}
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            Our Impact in Numbers
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { number: "8,000+", label: "Community Members Served" },
-              { number: "50+", label: "Schools & Institutions" },
-              { number: "300+", label: "Volunteer Hours Monthly" },
-              { number: "15+", label: "Annual Social Events" }
-            ].map((stat, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 text-center shadow-lg">
-                <div className="text-3xl font-bold text-[#03215F] mb-2">{stat.number}</div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Get Involved */}
-        <div className="bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-2xl p-8 text-white">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+        {committee?.contact_email && (
+          <div className="bg-white rounded-xl p-6 shadow flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold mb-4">
-                Join Our Community Efforts
-              </h2>
-              <p className="opacity-90">
-                Whether you want to volunteer for community health programs, 
-                participate in social events, or contribute to public health 
-                initiatives, we welcome your involvement. Together, we can make 
-                a difference in Bahrain's oral health and professional community.
-              </p>
+              <div className="text-lg font-semibold text-gray-900">Contact</div>
+              <div className="text-sm text-gray-600">Reach out to the committee</div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <a
-                href="mailto:community@bahraindentalsociety.org"
-                className="px-8 py-3 bg-white text-[#03215F] rounded-lg hover:bg-gray-100 transition-colors font-semibold text-center flex items-center justify-center"
-              >
-                <Mail className="mr-2 w-5 h-5" />
-                Contact Committee
-              </a>
-              <Link 
-                href="/committees"
-                className="px-8 py-3 border-2 border-white text-white rounded-lg hover:bg-white/10 transition-colors font-semibold text-center"
-              >
-                View All Committees
-              </Link>
-            </div>
+            <a href={`mailto:${committee.contact_email}`} className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#03215F] text-white">
+              <Mail className="w-4 h-4" />
+              {committee.contact_email}
+            </a>
           </div>
-        </div>
+        )}
+
+        {!pages.length && !membersCms.length && !committee?.contact_email && (
+          <div className="text-center text-gray-600">Content coming soon.</div>
+        )}
       </div>
     </MainLayout>
   );

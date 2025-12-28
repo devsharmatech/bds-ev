@@ -26,7 +26,7 @@ import {
   Phone,
   MapPin
 } from "lucide-react";
-import { jwtDecode } from "jwt-decode";
+// import { jwtDecode } from "jwt-decode";
 
 export default function Sidebar({
   role = "admin",
@@ -39,23 +39,37 @@ export default function Sidebar({
   const [isExpanded, setIsExpanded] = useState(false);
   
   useEffect(() => {
-    const tokenCookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="));
-
-    if (tokenCookie) {
-      const token = tokenCookie.split("=")[1];
+    // Prefer server session: fetch current user from API (works with HttpOnly cookies)
+    const loadUser = async () => {
       try {
-        const decoded = jwtDecode(token);
-        setUserInfo({
-          name: decoded.name || "Admin User",
-          email: decoded.email || "admin@bds.com",
-          role: decoded.role || "Administrator",
-        });
-      } catch (error) {
-        console.error("Failed to decode JWT:", error);
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.user) {
+            setUserInfo({
+              name: data.user.full_name || "Admin User",
+              email: data.user.email || "admin@bds.com",
+              role: data.user.role || "Administrator",
+            });
+            return;
+          }
+        }
+      } catch (e) {
+        // ignore, fallback below
       }
-    }
+
+      // Fallback to localStorage hints
+      const storedName = localStorage.getItem("admin_full_name");
+      const storedEmail = localStorage.getItem("admin_email");
+      const storedRole = localStorage.getItem("role");
+      setUserInfo({
+        name: storedName || "Admin User",
+        email: storedEmail || "admin@bds.com",
+        role: storedRole || "Administrator",
+      });
+    };
+
+    loadUser();
   }, []);
 
   // Main menu items as requested
@@ -64,6 +78,9 @@ export default function Sidebar({
     { name: "Events", icon: Calendar, href: "/admin/events", badge: null },
     { name: "Members", icon: Users, href: "/admin/members", badge: null },
     { name: "CheckIn", icon: Users, href: "/admin/check-in", badge: null },
+    { name: "Committees", icon: Globe, href: "/admin/committees", badge: null },
+    { name: "Committee Pages", icon: FileText, href: "/admin/committee-pages", badge: null },
+    { name: "Committee Members", icon: Users, href: "/admin/committee-members", badge: null },
     { name: "Subscriptions", icon: CreditCard, href: "/admin/subscriptions", badge: null },
     { name: "Contact Messages", icon: Mail, href: "/admin/contact-messages", badge: null },
     { name: "Notifications", icon: Bell, href: "/admin/notifications", badge: null },

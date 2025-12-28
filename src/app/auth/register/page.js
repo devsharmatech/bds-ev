@@ -29,11 +29,13 @@ import MainLayout from "@/components/MainLayout";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import PhoneInput from "@/components/PhoneInput";
+import Modal from "@/components/Modal";
 
 function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
+  const [showRenewLoginModal, setShowRenewLoginModal] = useState(false);
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -920,9 +922,13 @@ function RegisterPageContent() {
           <select
             required
             value={formData.typeOfApplication}
-            onChange={(e) =>
-              setFormData({ ...formData, typeOfApplication: e.target.value })
-            }
+            onChange={(e) => {
+              const value = e.target.value;
+              setFormData({ ...formData, typeOfApplication: value });
+              if (value === "Renew Old Membership") {
+                setShowRenewLoginModal(true);
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#03215F]"
           >
             <option value="">Select application type</option>
@@ -1263,6 +1269,46 @@ function RegisterPageContent() {
           </div>
         </div>
       </div>
+
+      {/* Renew Membership Prompt */}
+      <Modal
+        open={showRenewLoginModal}
+        onClose={() => {
+          setShowRenewLoginModal(false);
+          // Revert to first option when closing without explicit action
+          setFormData({ ...formData, typeOfApplication: "New Membership" });
+        }}
+        title="Renew Membership"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            To renew your membership, please login to your existing account from the member panel.
+          </p>
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setShowRenewLoginModal(false);
+                setFormData({ ...formData, typeOfApplication: "New Membership" });
+              }}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowRenewLoginModal(false);
+                router.push("/auth/login");
+              }}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:opacity-90"
+            >
+              Login
+            </button>
+          </div>
+        </div>
+      </Modal>
     </MainLayout>
   );
 }

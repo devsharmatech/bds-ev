@@ -186,8 +186,8 @@ function LoginPageContent() {
               <Image
                 src="/long-logo.png"
                 alt="Bahrain Dental Society Logo"
-                width={120}
-                height={50}
+                width={180}
+                height={120}
                 className="object-contain mt-4"
                 priority
               />

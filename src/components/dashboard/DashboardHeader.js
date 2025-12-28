@@ -276,7 +276,7 @@ export default function DashboardHeader({ onMenuToggle }) {
                     {/* Logout Button */}
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-[#b8352d] hover:bg-[#b8352d] transition-colors"
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-[#b8352d] hover:bg-[#b8352d] hover:text-white transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
                       <span className="text-sm font-medium">Logout</span>

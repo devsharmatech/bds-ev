@@ -106,11 +106,7 @@ export default function FocusAreasSection() {
               <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
                 isHovered ? 'opacity-100' : 'opacity-0'
               }`}>
-                <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center">
-                    <Play className="w-8 h-8 text-[#03215F] ml-1" />
-                  </div>
-                </div>
+               
               </div>
               
               {/* Video Label */}

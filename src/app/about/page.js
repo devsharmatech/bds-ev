@@ -174,7 +174,7 @@ export default function AboutPage() {
               </p>
 
               <div className="flex flex-wrap gap-6">
-                <Link href="/membership">
+                <Link href="/committees">
                   <button className="px-8 py-3 bg-white text-[#03215F] rounded-lg hover:bg-gray-100 transition-colors font-semibold flex items-center">
                     Join Our Community
                     <ChevronRight className="ml-2 w-5 h-5" />

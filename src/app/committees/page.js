@@ -12,166 +12,144 @@ import {
   Target,
   FileText,
   Globe,
-  CheckCircle 
+  CheckCircle,
+  Briefcase
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function CommitteesPage() {
   const [activeCommittee, setActiveCommittee] = useState(0);
-
-  const committees = [
+  const [committees, setCommittees] = useState([
     {
       id: 1,
-      name: "Scientific Committee",
-      icon: <BookOpen className="w-6 h-6" />,
-      color: "from-[#9cc2ed] to-[#9cc2ed]",
-      chairperson: "Dr. Omar Rashid",
-      viceChair: "Dr. Sarah Mohammed",
-      focus: "Advancing dental research and scientific programs",
+      name: "Professional Affairs Committee",
+      icon: <Briefcase className="w-6 h-6" />,
+      color: "from-[#03215F] to-[#03215F]",
+      chairperson: "To be announced",
+      viceChair: "To be announced",
+      focus: "Promoting high standards of practice, ethical guidelines, and professional development; fostering international collaboration.",
       objectives: [
-        "Organize scientific conferences and seminars",
-        "Review and approve scientific content for BDS events",
-        "Promote dental research in Bahrain",
-        "Collaborate with international dental organizations",
-        "Develop clinical guidelines and best practices"
+        "Promote high standards of dental practice in Bahrain",
+        "Advocate for and maintain ethical guidelines",
+        "Support professional development initiatives",
+        "Build links with international dental associations"
       ],
       activities: [
-        "Annual BDS Scientific Conference",
-        "Monthly journal club meetings",
-        "Research grant administration",
-        "Speaker selection for events",
-        "Publication of scientific papers"
+        "Guideline reviews and updates",
+        "Professional development initiatives",
+        "Ethics and practice consultations",
+        "International collaboration efforts"
       ],
-      meetingSchedule: "Every 2nd Tuesday of the month, 7:00 PM",
-      contact: "scientific@bahraindentalsociety.org"
+      meetingSchedule: "As announced",
+      contact: "info@bahraindentalsociety.org"
     },
     {
       id: 2,
-      name: "Education Committee",
-      icon: <Award className="w-6 h-6" />,
-      color: "from-[#03215F] to-[#b8352d]",
-      chairperson: "Dr. Sara Mohammed",
-      viceChair: "Dr. Ahmed Al Khalifa",
-      focus: "Professional development and continuous education",
+      name: "Scientific Committee",
+      icon: <BookOpen className="w-6 h-6" />,
+      color: "from-[#9cc2ed] to-[#9cc2ed]",
+      chairperson: "To be announced",
+      viceChair: "To be announced",
+      focus: "Leading scientific programs, education, and research activities for the Society.",
       objectives: [
-        "Design CPD programs for dental professionals",
-        "Coordinate workshops and hands-on training",
-        "Develop educational materials and resources",
-        "Organize student and resident programs",
-        "Accredit educational activities"
+        "Organize scientific conferences and seminars",
+        "Promote and support dental research",
+        "Curate scientific content for events",
+        "Collaborate with global scientific bodies"
       ],
       activities: [
-        "Monthly CPD workshops",
-        "Annual Dental Education Summit",
-        "Mentorship programs",
-        "Student competitions",
-        "Online learning platform management"
+        "Conferences and seminars",
+        "Research support initiatives",
+        "Speaker and content curation",
+        "Scientific publications"
       ],
-      meetingSchedule: "Every 1st Wednesday of the month, 6:30 PM",
-      contact: "education@bahraindentalsociety.org"
+      meetingSchedule: "As announced",
+      contact: "info@bahraindentalsociety.org"
     },
     {
       id: 3,
-      name: "Membership Committee",
-      icon: <Users className="w-6 h-6" />,
-      color: "from-[#AE9B66] to-[#AE9B66]",
-      chairperson: "Dr. Ahmed Al Khalifa",
-      viceChair: "Dr. Layla Al Mansoori",
-      focus: "Member recruitment, retention, and engagement",
+      name: "Social and Public Health Committee",
+      icon: <Heart className="w-6 h-6" />,
+      color: "from-[#b8352d] to-rose-500",
+      chairperson: "To be announced",
+      viceChair: "To be announced",
+      focus: "Driving oral health awareness, community outreach, and public health initiatives.",
       objectives: [
-        "Process membership applications",
-        "Develop member benefits and services",
-        "Organize networking events",
-        "Maintain member database",
-        "Address member concerns and feedback"
+        "Plan and deliver public health programs",
+        "Conduct community outreach and screenings",
+        "Promote oral health education",
+        "Engage schools and community partners"
       ],
       activities: [
-        "New member orientation sessions",
-        "Annual membership drive",
-        "Member satisfaction surveys",
-        "Professional directory maintenance",
-        "Member recognition programs"
+        "Community oral health campaigns",
+        "School-based programs",
+        "Public screenings and outreach days",
+        "Awareness content and events"
       ],
-      meetingSchedule: "Every 3rd Monday of the month, 7:00 PM",
-      contact: "membership@bahraindentalsociety.org"
+      meetingSchedule: "As announced",
+      contact: "info@bahraindentalsociety.org"
     },
     {
       id: 4,
-      name: "Ethics Committee",
-      icon: <Shield className="w-6 h-6" />,
-      color: "from-[#b8352d] to-[#b8352d]",
-      chairperson: "Dr. Mohammed Al Ansari",
-      viceChair: "Dr. Noor Al Hashimi",
-      focus: "Professional ethics and conduct standards",
-      objectives: [
-        "Develop and update code of ethics",
-        "Review ethical complaints and concerns",
-        "Provide ethics consultation services",
-        "Educate members on ethical standards",
-        "Collaborate with regulatory authorities"
-      ],
-      activities: [
-        "Ethics workshops and seminars",
-        "Case review sessions",
-        "Policy development",
-        "Ethical guidelines publication",
-        "Professional conduct monitoring"
-      ],
-      meetingSchedule: "Quarterly meetings (as needed)",
-      contact: "ethics@bahraindentalsociety.org"
-    },
-    {
-      id: 5,
-      name: "Community Service Committee",
-      icon: <Heart className="w-6 h-6" />,
-      color: "from-[#b8352d] to-rose-500",
-      chairperson: "Dr. Noor Al Hashimi",
-      viceChair: "Dr. Fatima Al Jishi",
-      focus: "Public oral health and community outreach",
-      objectives: [
-        "Organize community dental camps",
-        "Develop oral health education programs",
-        "Coordinate with schools and organizations",
-        "Provide dental services to underserved communities",
-        "Promote oral health awareness"
-      ],
-      activities: [
-        "School oral health programs",
-        "Community dental screening camps",
-        "World Oral Health Day activities",
-        "Elderly care home visits",
-        "Public awareness campaigns"
-      ],
-      meetingSchedule: "Every 4th Thursday of the month, 6:00 PM",
-      contact: "community@bahraindentalsociety.org"
-    },
-    {
-      id: 6,
-      name: "Public Relations Committee",
+      name: "Media Committee",
       icon: <Globe className="w-6 h-6" />,
       color: "from-[#03215F] to-[#9cc2ed]",
-      chairperson: "Dr. Layla Al Mansoori",
-      viceChair: "Dr. Khalid Hassan",
-      focus: "Society communication and public image",
+      chairperson: "To be announced",
+      viceChair: "To be announced",
+      focus: "Overseeing communications, media relations, and public engagement for the Society.",
       objectives: [
-        "Manage BDS website and social media",
-        "Produce newsletters and publications",
-        "Handle media relations and press releases",
-        "Promote society events and activities",
-        "Develop marketing materials"
+        "Manage communications and media presence",
+        "Produce content and publications",
+        "Promote Society events and initiatives",
+        "Strengthen public engagement"
       ],
       activities: [
-        "Monthly newsletter publication",
-        "Social media management",
-        "Media relations",
+        "Media relations and releases",
+        "Content and social media",
         "Event promotion",
-        "Annual report production"
+        "Newsletters and updates"
       ],
-      meetingSchedule: "Every 2nd Thursday of the month, 6:30 PM",
-      contact: "pr@bahraindentalsociety.org"
+      meetingSchedule: "As announced",
+      contact: "info@bahraindentalsociety.org"
     }
-  ];
+  ]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/committees");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.committees) && data.committees.length > 0) {
+          const mapped = data.committees.map((c) => ({
+            id: c.id,
+            name: c.name,
+            icon: /scientific/i.test(c.name) ? <BookOpen className="w-6 h-6" /> :
+                  /professional/i.test(c.name) ? <Briefcase className="w-6 h-6" /> :
+                  /media/i.test(c.name) ? <Globe className="w-6 h-6" /> :
+                  /social|public/i.test(c.name) ? <Heart className="w-6 h-6" /> :
+                  <Users className="w-6 h-6" />,
+            color: /scientific/i.test(c.name) ? "from-[#9cc2ed] to-[#9cc2ed]" :
+                   /professional/i.test(c.name) ? "from-[#03215F] to-[#03215F]" :
+                   /media/i.test(c.name) ? "from-[#03215F] to-[#9cc2ed]" :
+                   "from-[#AE9B66] to-[#AE9B66]",
+            chairperson: "",
+            viceChair: "",
+            focus: c.focus || "",
+            objectives: [],
+            activities: [],
+            meetingSchedule: "As announced",
+            contact: c.contact_email || "info@bahraindentalsociety.org",
+          }));
+          setCommittees(mapped);
+          setActiveCommittee(0);
+        }
+      } catch (e) {
+        console.error("Failed to fetch committees", e);
+      }
+    };
+    load();
+  }, []);
 
   return (
     <MainLayout>
@@ -185,9 +163,10 @@ export default function CommitteesPage() {
             </div>
             <h1 className="text-5xl font-bold mb-6">BDS Committees</h1>
             <p className="text-xl opacity-90 mb-8">
-              Specialized committees drive the work of the Bahrain Dental Society. 
-              Each committee focuses on specific areas to advance dentistry, 
-              support members, and serve the community.
+              The Bahrain Dental Society is structured with specialized committees dedicated 
+              to education, research, advocacy, community outreach, and professional development. 
+              By leveraging members’ expertise, the Society advances dentistry across Bahrain and 
+              supports the needs of dental professionals.
             </p>
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center">

@@ -1,10 +1,22 @@
 import jwt from "jsonwebtoken";
+import { cookies as nextCookies } from "next/headers";
 
 export function verifyToken(req) {
+  // Try server cookies (Next.js app router)
+  let token;
+  try {
+    const cookieStore = nextCookies();
+    token = cookieStore.get("bds_token")?.value;
+  } catch (_e) {
+    // noop - not in a server context with next/headers
+  }
 
-  const token =
-    req.cookies.get?.("bds_token")?.value ||
-    req.headers.get("authorization")?.split?.(" ")[1];
+  // Fallback to req cookies/header if provided
+  if (!token) {
+    token =
+      req?.cookies?.get?.("bds_token")?.value ||
+      req?.headers?.get?.("authorization")?.split?.(" ")[1];
+  }
 
   if (!token) throw new Error("Unauthorized: missing token");
 

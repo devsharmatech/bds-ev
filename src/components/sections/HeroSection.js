@@ -110,14 +110,20 @@ function MembershipCard({ user, qrRef }) {
           <div className="mt-3">
             <p className="text-[10px] text-slate-300 uppercase">Type</p>
             <p className="text-xs sm:text-sm text-[#9cc2ed] font-medium">
-              {user.membership_type === "paid" ? "Premium Member" : "Standard Member"}
+              {user.current_subscription_plan_display_name
+                ? user.current_subscription_plan_display_name
+                : user.current_subscription_plan_name
+                ? user.current_subscription_plan_name
+                : user.membership_type === "paid"
+                ? "Paid Plan"
+                : "Free Plan"}
             </p>
           </div>
         </div>
 
         {/* QR Code */}
-        <div ref={qrRef} className="bg-white rounded-lg p-2 shrink-0">
-          <QRCodeCanvas value={qrValue} size={72} level="H" includeMargin />
+        <div ref={qrRef} className="bg-white rounded-lg p-1 shrink-0">
+          <QRCodeCanvas value={qrValue} size={95} level="H" includeMargin />
         </div>
       </div>
     </div>
@@ -418,7 +424,7 @@ export default function HeroSection() {
               </div>
 
               {/* Card Instructions */}
-              <div className="text-center mt-6">
+          <div className="text-center mt-6">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-white/20">
                   <Sparkles className="w-4 h-4 text-[#ECCF0F]" />
                   <span className="text-sm text-gray-700">
@@ -498,6 +504,7 @@ export default function HeroSection() {
           animation: float linear infinite;
         }
       `}</style>
+      
 
       {/* Join choice modal */}
       <Modal

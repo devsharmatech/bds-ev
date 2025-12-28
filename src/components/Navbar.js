@@ -96,6 +96,25 @@ export default function Navbar() {
     fetchUser();
   }, []);
 
+  const [committeesMenu, setCommitteesMenu] = useState([]);
+
+  useEffect(() => {
+    const loadCommittees = async () => {
+      try {
+        const res = await fetch("/api/committees");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.committees)) {
+          const items = data.committees.map((c) => ({
+            name: c.name,
+            href: `/committees/${c.slug}`,
+          }));
+          setCommitteesMenu(items);
+        }
+      } catch {}
+    };
+    loadCommittees();
+  }, []);
+
   const mainNavItems = [
     { name: "Home", href: "/", icon: <Home className="w-4 h-4" /> },
     { name: "About Us", href: "/about", icon: <User className="w-4 h-4" /> },
@@ -118,21 +137,7 @@ export default function Navbar() {
       name: "Committees",
       href: "/committees",
       icon: <Users className="w-4 h-4" />,
-      submenu: [
-        {
-          name: "Professional Affairs Committee",
-          href: "/committees/professional-affairs-committee",
-        },
-        {
-          name: "Scientific Committee",
-          href: "/committees/scientific-committee",
-        },
-        {
-          name: "Social and Public Health Committee",
-          href: "/committees/social-and-public-health-committee",
-        },
-        { name: "Media Committee", href: "/committees/media-committee" },
-      ],
+      submenu: committeesMenu,
     },
     {
       name: "Gallery",

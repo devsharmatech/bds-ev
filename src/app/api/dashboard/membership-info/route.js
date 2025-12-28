@@ -31,6 +31,8 @@ export async function GET(req) {
         membership_type,
         membership_status,
         membership_expiry_date,
+        current_subscription_plan_id,
+        current_subscription_plan_name,
         created_at,
         member_profiles (
           specialty,
@@ -43,6 +45,20 @@ export async function GET(req) {
       .single();
 
     if (error) throw error;
+
+    // Fetch plan display name if plan id exists
+    let planDisplayName = null;
+    if (user.current_subscription_plan_id) {
+      const { data: plan } = await supabase
+        .from("subscription_plans")
+        .select("name, display_name")
+        .eq("id", user.current_subscription_plan_id)
+        .single();
+
+      if (plan) {
+        planDisplayName = plan.display_name || plan.name || null;
+      }
+    }
 
     // Fetch latest membership payment
     const { data: latestPayment } = await supabase
@@ -64,6 +80,9 @@ export async function GET(req) {
       membership_status: user.membership_status,
       membership_expiry_date: user.membership_expiry_date,
       created_at: user.created_at,
+      current_subscription_plan_id: user.current_subscription_plan_id || null,
+      current_subscription_plan_name: user.current_subscription_plan_name || null,
+      current_subscription_plan_display_name: planDisplayName,
       specialty: user.member_profiles?.[0]?.specialty,
       position: user.member_profiles?.[0]?.position,
       employer: user.member_profiles?.[0]?.employer,

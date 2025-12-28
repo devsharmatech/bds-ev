@@ -59,23 +59,21 @@ export default function Page() {
 
     setIsLoading(true);
     try {
-      const res = await axios.post("/api/auth/login", { email, password });
+      const res = await axios.post("/api/auth/login2", { email, password });
       const data = res.data;
 
-      if (!data.success) throw new Error(data.error);
-      if (data.role !== "admin")
+      if (!data.success) throw new Error(data.message || data.error || "Login failed");
+      if (data.user?.role !== "admin" && data.role !== "admin")
         throw new Error("Not authorized for admin login");
 
-      document.cookie = `bds_token=${data.token}; path=/; max-age=${
-        7 * 24 * 60 * 60
-      }; SameSite=Lax`;
-
-      localStorage.setItem("role", data.role);
+      // Cookie is set server-side (HttpOnly). Keep role for UI hints.
+      localStorage.setItem("role", data.user?.role || data.role || "admin");
 
       toast.success("Admin login successful");
       setTimeout(() => (window.location.href = "/admin/dashboard"), 800);
     } catch (err) {
-      toast.error(err.response?.data?.error || err.message || "Login failed");
+      const msg = err.response?.data?.message || err.response?.data?.error || err.message || "Login failed";
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

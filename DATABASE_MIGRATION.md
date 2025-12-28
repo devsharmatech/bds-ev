@@ -1,5 +1,59 @@
 # Database Migration for Push Notifications
 
+## Committees CMS
+
+Create core tables to manage committees and their sub-pages dynamically.
+
+```sql
+-- Committees
+CREATE TABLE IF NOT EXISTS public.committees (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug text UNIQUE NOT NULL,
+  name text NOT NULL,
+  hero_title text,
+  hero_subtitle text,
+  focus text,
+  description text,
+  banner_image text,
+  contact_email text,
+  sort_order integer DEFAULT 0,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Committee sub pages/sections
+CREATE TABLE IF NOT EXISTS public.committee_pages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  committee_id uuid NOT NULL REFERENCES public.committees(id) ON DELETE CASCADE,
+  slug text NOT NULL,
+  title text NOT NULL,
+  content text, -- markdown or html
+  sort_order integer DEFAULT 0,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE (committee_id, slug)
+);
+
+-- Optional: Committee members directory
+CREATE TABLE IF NOT EXISTS public.committee_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  committee_id uuid NOT NULL REFERENCES public.committees(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  position text,
+  specialty text,
+  role text,
+  photo_url text,
+  sort_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now()
+);
+
+-- Storage bucket (run in Supabase SQL or create via dashboard)
+-- Create bucket named 'committee_member_profile' and make it public:
+-- select storage.create_bucket('committee_member_profile', public := true);
+```
+
 ## Add Device Token Fields to Users Table
 
 Run the following SQL in your Supabase SQL Editor:
