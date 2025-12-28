@@ -91,13 +91,7 @@ export default function Navbar({
       color: "from-[#03215F] to-[#03215F]",
       onClick: () => (window.location.href = "/admin/settings/profile"),
     },
-    {
-      icon: Settings,
-      label: "Account Settings",
-      description: "Privacy, security & preferences",
-      color: "from-[#ECCF0F] to-[#ECCF0F]",
-      onClick: () => console.log("Settings clicked"),
-    },
+   
    
   ];
 
@@ -134,7 +128,7 @@ export default function Navbar({
             </div>
             <div>
               <h1 className="font-bold text-lg text-[#03215F]">
-                BDS Admin Portal
+                BDS Admin
               </h1>
               <p className="text-xs text-[#03215F] font-medium">
                 BDS Bahrain
@@ -177,39 +171,7 @@ export default function Navbar({
           )}
         </AnimatePresence>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setIsSearchOpen(!isSearchOpen)}
-          className="p-2.5 rounded-xl bg-[#AE9B66] hover:bg-[#AE9B66] transition-all duration-200"
-        >
-          <Search className="w-5 h-5 text-white" />
-        </motion.button>
-
-      
-
-        {/* Notifications */}
-        <div className="relative">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="p-2.5 rounded-xl bg-[#AE9B66] hover:bg-[#AE9B66] transition-all duration-200 relative"
-            onClick={() => setNotificationCount(0)}
-          >
-            <Bell className="w-5 h-5 text-white" />
-            {notificationCount > 0 && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] rounded-full border border-white flex items-center justify-center"
-              >
-                <span className="text-[10px] font-bold text-gray-900">
-                  {notificationCount}
-                </span>
-              </motion.span>
-            )}
-          </motion.button>
-        </div>
+       
 
         {/* Separator */}
         <div className="h-6 w-px bg-gray-300 mx-1"></div>
@@ -327,7 +289,7 @@ export default function Navbar({
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={logout}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#b8352d] to-[#b8352d] hover:from-[#b8352d] hover:to-[#b8352d] text-[#b8352d] hover:text-[#b8352d] transition-all duration-200 border border-[#b8352d]/50"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#b8352d] to-[#b8352d] hover:from-[#b8352d] hover:to-[#b8352d] text-white hover:text-white transition-all duration-200 border border-[#b8352d]/50"
                     >
                       <LogOut className="w-4 h-4" />
                       <span className="text-sm font-semibold">Logout</span>

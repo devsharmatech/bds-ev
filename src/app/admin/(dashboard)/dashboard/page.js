@@ -36,6 +36,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
+import Link from "next/link";
 
 // ------------------------------
 // Small Components
@@ -43,10 +44,10 @@ import {
 const StatCard = ({ title, value, icon: Icon, color, isLoading, change, trendDirection = "up" }) => {
   const colorClasses = {
     blue: "bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-[#9cc2ed]",
-    green: "bg-gradient-to-br from-[#AE9B66] to-[#AE9B66] border-[#AE9B66]",
-    orange: "bg-gradient-to-br from-[#b8352d] to-[#b8352d] border-[#b8352d]",
-    red: "bg-gradient-to-br from-[#b8352d] to-[#b8352d] border-[#b8352d]",
-    indigo: "bg-gradient-to-br from-[#03215F] to-[#03215F] border-[#03215F]",
+    green: "bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-[#9cc2ed]",
+    orange: "bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-[#9cc2ed]",
+    red: "bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-[#9cc2ed]",
+    indigo: "bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-[#9cc2ed]",
   };
 
   const iconColors = {
@@ -588,10 +589,10 @@ export default function Page() {
               </div>
               
               <div className="mt-6">
-                <button className="w-full py-3 rounded-xl bg-gradient-to-r from-gray-100 to-white text-gray-700 hover:text-gray-900 transition-colors duration-200 flex items-center justify-center gap-2 border border-gray-200/50">
+                <Link href="/admin/events" className="w-full py-3 rounded-xl bg-gradient-to-r from-gray-100 to-white text-gray-700 hover:text-gray-900 transition-colors duration-200 flex items-center justify-center gap-2 border border-gray-200/50">
                   <ArrowUpRight className="w-4 h-4" />
                   <span className="text-sm font-medium">View All Events</span>
-                </button>
+                  </Link>
               </div>
             </div>
           </div>
@@ -701,15 +702,15 @@ export default function Page() {
                     <UserCheck className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">Active</p>
-                    <p className="text-xs text-gray-600">Currently active members</p>
+                    <p className="font-semibold text-gray-50">Active</p>
+                    <p className="text-xs text-gray-50">Currently active members</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-50">
                     {stats?.active_members || 0}
                   </p>
-                  <p className="text-xs text-[#AE9B66] font-medium">
+                  <p className="text-xs text-white font-medium">
                     {stats?.total_members ? Math.round((stats.active_members / stats.total_members) * 100) : 0}% of total
                   </p>
                 </div>
@@ -722,15 +723,15 @@ export default function Page() {
                     <UserX className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">Inactive</p>
-                    <p className="text-xs text-gray-600">Temporarily inactive</p>
+                    <p className="font-semibold text-white">Inactive</p>
+                    <p className="text-xs text-white">Temporarily inactive</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-white">
                     {stats?.inactive_members || 0}
                   </p>
-                  <p className="text-xs text-[#b8352d] font-medium">
+                  <p className="text-xs text-white font-medium">
                     {stats?.total_members ? Math.round((stats.inactive_members / stats.total_members) * 100) : 0}% of total
                   </p>
                 </div>
@@ -751,7 +752,7 @@ export default function Page() {
                   <p className="text-2xl font-bold text-white">
                     {stats?.blocked_members || 0}
                   </p>
-                  <p className="text-xs text-white/80 font-medium">
+                  <p className="text-xs text-white font-medium">
                     {stats?.total_members ? Math.round((stats.blocked_members / stats.total_members) * 100) : 0}% of total
                   </p>
                 </div>
@@ -761,16 +762,16 @@ export default function Page() {
               <div className="mt-6 pt-6 border-t border-gray-200/50">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-3 rounded-xl bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed]">
-                    <p className="text-xl font-bold text-[#03215F]">
+                    <p className="text-xl font-bold text-white">
                       {stats?.event_members || 0}
                     </p>
-                    <p className="text-xs text-[#03215F]/80">Event Registrations</p>
+                    <p className="text-xs text-white">Event Registrations</p>
                   </div>
                   <div className="text-center p-3 rounded-xl bg-gradient-to-br from-[#03215F] to-[#03215F]">
                     <p className="text-xl font-bold text-white">
                       {stats?.checked_in_members || 0}
                     </p>
-                    <p className="text-xs text-white/90">Checked-in Members</p>
+                    <p className="text-xs text-white">Checked-in Members</p>
                   </div>
                 </div>
               </div>
