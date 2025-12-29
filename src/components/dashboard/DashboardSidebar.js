@@ -1,16 +1,16 @@
-'use client' 
+'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  User, 
-  CreditCard, 
-  Settings, 
-  LogOut, 
-  Bell, 
+import {
+  LayoutDashboard,
+  Calendar,
+  User,
+  CreditCard,
+  Settings,
+  LogOut,
+  Bell,
   FileText,
   QrCode,
   Users,
@@ -28,10 +28,12 @@ export default function DashboardSidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [user, setUser] = useState(null)
+  const [planName, setPlanName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const fetchedRef = useRef(false)
   const dropdownRef = useRef(null)
-
+  const DASHBOARD_PATH = "/member/dashboard";
+  const isDashboardActive = pathname === DASHBOARD_PATH;
   const menuItems = [
     { name: 'Dashboard', href: '/member/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { name: 'My Events', href: '/member/dashboard/events', icon: <Calendar className="w-5 h-5" /> },
@@ -57,6 +59,11 @@ export default function DashboardSidebar() {
         if (res.ok) {
           const data = await res.json()
           setUser(data.user)
+          const derived =
+            data?.user?.current_subscription_plan_display_name ||
+            data?.user?.current_subscription_plan_name ||
+            (data?.user?.membership_type === 'paid' ? 'Premium' : 'Standard')
+          setPlanName(derived || '')
         } else {
           // Redirect to login if not authenticated
           router.push('/auth/login')
@@ -71,6 +78,29 @@ export default function DashboardSidebar() {
 
     fetchUser()
   }, [router])
+
+  // Fetch current subscription for accurate plan name
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const res = await fetch('/api/dashboard/subscriptions', {
+          credentials: 'include',
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        const display =
+          data?.currentSubscription?.subscription_plan?.display_name ||
+          data?.currentSubscription?.subscription_plan_name ||
+          planName ||
+          (user?.membership_type === 'paid' ? 'Premium' : 'Standard')
+        if (display) setPlanName(display)
+      } catch {
+        // ignore
+      }
+    }
+    fetchSubscription()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Handle logout
   const handleLogout = async () => {
@@ -175,24 +205,35 @@ export default function DashboardSidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`
-                flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
-                ${pathname === item.href || pathname.startsWith(`${item.href}/`)
-                  ? 'bg-gradient-to-r from-[#03215F] to-[#03215F] text-white'
-                  : 'hover:bg-gray-100 text-gray-700'
-                }
-              `}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              {item.icon}
-              <span className="font-medium">{item.name}</span>
-            </Link>
-          ))}
+          {menuItems.map((item) => {
+            const isDashboard = item.href === DASHBOARD_PATH;
+
+            const isActive = isDashboard
+              ? pathname === DASHBOARD_PATH
+              : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`
+          flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
+          ${isActive
+                    ? isDashboard
+                      ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white"
+                      : "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white"
+                    : "hover:bg-gray-100 text-gray-700"
+                  }
+        `}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {item.icon}
+                <span className="font-medium">{item.name}</span>
+              </Link>
+            );
+          })}
         </nav>
+
 
         {/* User Profile & Logout */}
         <div className="p-4 border-t border-gray-200">
@@ -210,14 +251,13 @@ export default function DashboardSidebar() {
                   {user?.full_name || 'Member'}
                 </p>
                 <p className="text-xs text-gray-500 truncate">
-                  {user?.membership_type === 'paid' ? 'Premium Member' : 'Member'}
+                  {planName || (user?.membership_type === 'paid' ? 'Premium' : 'Member')}
                   {user?.membership_id && ` • ID: ${user.membership_id}`}
                 </p>
               </div>
-              <ChevronDown 
-                className={`w-5 h-5 text-gray-400 transition-transform ${
-                  isUserDropdownOpen ? 'rotate-180' : ''
-                }`}
+              <ChevronDown
+                className={`w-5 h-5 text-gray-400 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''
+                  }`}
               />
             </button>
 
@@ -251,12 +291,12 @@ export default function DashboardSidebar() {
                   <span className="text-sm">My Profile</span>
                 </Link>
 
-               
+
 
                 {/* Logout Button */}
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-[#b8352d] hover:bg-[#b8352d] transition-colors border-t border-gray-200"
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-[#b8352d] hover:bg-[#b8352d] hover:text-white transition-colors border-t border-gray-200"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm font-medium">Logout</span>

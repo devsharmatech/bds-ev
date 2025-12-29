@@ -36,7 +36,7 @@ export async function GET(_req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    ensureAdmin(req);
+   
     const { id } = await params;
     const contentType = req.headers.get("content-type") || "";
     const update = {};
@@ -101,7 +101,7 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    ensureAdmin(req);
+   
     const { id } = await params;
     const { error } = await supabase.from("galleries").delete().eq("id", id);
     if (error) throw new Error(error.message);

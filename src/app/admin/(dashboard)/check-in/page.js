@@ -853,7 +853,7 @@ export default function CheckInPage() {
                               Event Token
                             </p>
                             <p className="text-xs text-gray-600">
-                              6-digit alphanumeric
+                              Alphanumeric Code
                             </p>
                           </div>
                         </div>
@@ -913,7 +913,7 @@ export default function CheckInPage() {
                           }
                           placeholder={
                             manualInput.type === "event_token"
-                              ? "Enter 6-digit token..."
+                              ? "Enter Alphanumeric Code..."
                               : "Enter membership code..."
                           }
                           className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent text-sm md:text-base"
@@ -953,8 +953,8 @@ export default function CheckInPage() {
                   animate={{ opacity: 1, y: 0 }}
                   className={`mt-4 md:mt-6 p-3 md:p-4 rounded-xl border ${
                     validationResult.valid
-                      ? "border-[#AE9B66] bg-[#AE9B66]"
-                      : "border-[#b8352d] bg-[#b8352d]"
+                      ? "border-[#AE9B66] bg-[#AE9B66]/30"
+                      : "border-[#b8352d] bg-[#b8352d]/30"
                   }`}
                 >
                   <div className="flex items-start justify-between">
@@ -962,8 +962,8 @@ export default function CheckInPage() {
                       <div
                         className={`p-1.5 md:p-2 rounded-full ${
                           validationResult.valid
-                            ? "bg-[#AE9B66]"
-                            : "bg-[#b8352d]"
+                            ? "bg-[#AE9B66]/30"
+                            : "bg-[#b8352d]/30"
                         }`}
                       >
                         {validationResult.valid ? (
@@ -1255,9 +1255,9 @@ export default function CheckInPage() {
                                   key={agenda.id}
                                   className={`p-2 md:p-3 rounded-xl border ${
                                     isCheckedIn
-                                      ? "border-[#AE9B66] bg-[#AE9B66]"
+                                      ? "border-[#AE9B66] bg-[#AE9B66]/30"
                                       : isToday
-                                      ? "border-[#9cc2ed] bg-[#9cc2ed]"
+                                      ? "border-[#9cc2ed] bg-[#9cc2ed]/30"
                                       : "border-gray-200"
                                   }`}
                                 >
@@ -1352,7 +1352,7 @@ export default function CheckInPage() {
 
                 {validationResult.qrType === "MEMBERSHIP_VERIFICATION" && (
                   <div className="space-y-3 md:space-y-4">
-                    <div className="p-3 md:p-4 bg-[#9cc2ed] border border-[#9cc2ed] rounded-xl">
+                    <div className="p-3 md:p-4 bg-[#9cc2ed]/30 border border-[#9cc2ed] rounded-xl">
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
                         <span className="font-medium text-[#03215F] text-sm md:text-base">
@@ -1413,7 +1413,7 @@ export default function CheckInPage() {
 
                   <div className="flex items-start gap-2 md:gap-3">
                     <div className="p-1.5 md:p-2 rounded-lg bg-[#AE9B66] flex-shrink-0">
-                      <Hash className="w-3 h-3 md:w-4 md:h-4 text-[#AE9B66]" />
+                      <Hash className="w-3 h-3 md:w-4 md:h-4 text-white" />
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900 text-sm md:text-base">
@@ -1428,7 +1428,7 @@ export default function CheckInPage() {
 
                   <div className="flex items-start gap-2 md:gap-3">
                     <div className="p-1.5 md:p-2 rounded-lg bg-[#03215F] flex-shrink-0">
-                      <Users className="w-3 h-3 md:w-4 md:h-4 text-[#03215F]" />
+                      <Users className="w-3 h-3 md:w-4 md:h-4 text-white" />
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900 text-sm md:text-base">
@@ -1443,7 +1443,7 @@ export default function CheckInPage() {
 
                   <div className="flex items-start gap-2 md:gap-3">
                     <div className="p-1.5 md:p-2 rounded-lg bg-[#b8352d] flex-shrink-0">
-                      <Shield className="w-3 h-3 md:w-4 md:h-4 text-[#b8352d]" />
+                      <Shield className="w-3 h-3 md:w-4 md:h-4 text-white" />
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900 text-sm md:text-base">

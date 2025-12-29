@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { X, Download, Printer } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import html2canvas from 'html2canvas'
@@ -11,177 +11,53 @@ import toast from 'react-hot-toast'
 export default function CertificateModal({ certificate, user, isOpen, onClose }) {
   const certificateRef = useRef(null)
   const [generating, setGenerating] = useState(false)
+  const [resolvedUser, setResolvedUser] = useState(user || null)
+  const [eventMeta, setEventMeta] = useState(null)
 
-  const handlePrint = () => {
-    if (!certificateRef.current) return
+  // Ensure we always have a user name for the certificate, even if the page didn't fetch it yet
+  useEffect(() => {
+    setResolvedUser(user || null)
+  }, [user])
 
-    try {
-      // Clone the certificate element
-      const printContent = certificateRef.current.cloneNode(true)
-      
-      // Remove any modern color functions from inline styles
-      const allElements = printContent.querySelectorAll('*')
-      allElements.forEach(el => {
-        if (el.style) {
-          // Replace any lab() color functions with standard colors
-          if (el.style.color && el.style.color.includes('lab')) {
-            el.style.color = '#03215F'
+  useEffect(() => {
+    if (!isOpen) return
+    // If no user or missing full_name, fetch it
+    if (!resolvedUser || !resolvedUser.full_name) {
+      ;(async () => {
+        try {
+          const res = await fetch('/api/auth/me', { credentials: 'include' })
+          if (res.ok) {
+            const data = await res.json()
+            if (data?.user) setResolvedUser(data.user)
           }
-          if (el.style.backgroundColor && el.style.backgroundColor.includes('lab')) {
-            el.style.backgroundColor = '#ffffff'
-          }
-          if (el.style.borderColor && el.style.borderColor.includes('lab')) {
-            el.style.borderColor = '#03215F'
-          }
+        } catch (_e) {
+          // ignore; template will fallback gracefully
         }
-      })
-
-      // Create a new window for printing
-      const printWindow = window.open('', '_blank')
-      
-      // Get all stylesheets and clean them
-      let stylesheets = ''
-      try {
-        stylesheets = Array.from(document.styleSheets)
-          .map(sheet => {
-            try {
-              return Array.from(sheet.cssRules)
-                .map(rule => rule.cssText)
-                .join('\n')
-            } catch (e) {
-              return ''
-            }
-          })
-          .join('\n')
-          .replace(/lab\([^)]+\)/g, '#03215F') // Replace lab() functions
-      } catch (e) {
-        console.warn('Could not extract stylesheets:', e)
-      }
-
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Certificate - ${certificate?.event_title || 'Certificate'}</title>
-            <meta charset="utf-8">
-            <style>
-              * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-              }
-              
-              body {
-                font-family: serif;
-                margin: 0;
-                padding: 0;
-                background: white;
-                width: 8.5in;
-                height: 11in;
-                overflow: hidden;
-              }
-              
-              .certificate-container {
-                width: 8.5in !important;
-                height: 11in !important;
-                margin: 0 auto;
-                padding: 0;
-                background: white;
-                position: relative;
-                page-break-after: avoid;
-                page-break-inside: avoid;
-              }
-              
-              @media print {
-                @page {
-                  size: letter portrait;
-                  margin: 0;
-                }
-                
-                body {
-                  width: 8.5in;
-                  height: 11in;
-                  margin: 0;
-                  padding: 0;
-                  background: white;
-                }
-                
-                .certificate-container {
-                  width: 8.5in !important;
-                  height: 11in !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  page-break-after: avoid;
-                  page-break-inside: avoid;
-                  overflow: hidden;
-                }
-                
-                * {
-                  -webkit-print-color-adjust: exact !important;
-                  print-color-adjust: exact !important;
-                  color-adjust: exact !important;
-                }
-              }
-              
-              ${stylesheets}
-            </style>
-          </head>
-          <body>
-            ${printContent.outerHTML}
-          </body>
-        </html>
-      `)
-
-      printWindow.document.close()
-      
-      // Wait for content and images to load, then print
-      setTimeout(() => {
-        // Ensure all images are loaded
-        const images = printWindow.document.querySelectorAll('img')
-        let imagesLoaded = 0
-        const totalImages = images.length
-        
-        if (totalImages === 0) {
-          printWindow.focus()
-          printWindow.print()
-          toast.success('Print dialog opened')
-          return
-        }
-        
-        images.forEach(img => {
-          if (img.complete) {
-            imagesLoaded++
-          } else {
-            img.onload = () => {
-              imagesLoaded++
-              if (imagesLoaded === totalImages) {
-                printWindow.focus()
-                printWindow.print()
-                toast.success('Print dialog opened')
-              }
-            }
-            img.onerror = () => {
-              imagesLoaded++
-              if (imagesLoaded === totalImages) {
-                printWindow.focus()
-                printWindow.print()
-                toast.success('Print dialog opened')
-              }
-            }
-          }
-        })
-        
-        if (imagesLoaded === totalImages) {
-          printWindow.focus()
-          printWindow.print()
-          toast.success('Print dialog opened')
-        }
-      }, 500)
-    } catch (error) {
-      console.error('Print error:', error)
-      toast.error('Failed to open print dialog')
+      })()
     }
-  }
+    // Fetch event meta (nera fields) if missing on certificate
+    if (certificate?.event_id && (!certificate?.nera_cme_hours || !certificate?.nera_code)) {
+      ;(async () => {
+        try {
+          const res = await fetch(`/api/event/${certificate.event_id}`)
+          if (res.ok) {
+            const data = await res.json()
+            const ev = data?.event || data?.data || data
+            if (ev) {
+              setEventMeta({
+                nera_cme_hours: ev.nera_cme_hours,
+                nera_code: ev.nera_code,
+              })
+            }
+          }
+        } catch (_e) {
+          // ignore
+        }
+      })()
+    }
+  }, [isOpen, resolvedUser])
+
+  
 
   const handleDownloadPDF = async () => {
     if (!certificateRef.current) return
@@ -289,14 +165,7 @@ export default function CertificateModal({ certificate, user, isOpen, onClose })
             <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-[#03215F] to-[#AE9B66]">
               <h2 className="text-xl font-bold text-white">Certificate of Attendance</h2>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrint}
-                  disabled={generating}
-                  className="p-2 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-colors disabled:opacity-50"
-                  title="Print Certificate"
-                >
-                  <Printer className="w-5 h-5" />
-                </button>
+                
                 <button
                   onClick={handleDownloadPDF}
                   disabled={generating}
@@ -319,8 +188,11 @@ export default function CertificateModal({ certificate, user, isOpen, onClose })
               <div className="bg-white shadow-lg">
                 <div ref={certificateRef}>
                   <CertificateTemplate 
-                    certificate={certificate} 
-                    user={user}
+                    certificate={{ 
+                      ...certificate, 
+                      ...(eventMeta || {}) 
+                    }} 
+                    user={resolvedUser || user}
                   />
                 </div>
               </div>

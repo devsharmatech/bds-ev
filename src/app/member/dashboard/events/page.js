@@ -60,7 +60,7 @@ export default function MyEventsPage() {
   });
   const [stats, setStats] = useState({
     total: 0,
-    upcoming: 0,
+    registered: 0,
     attended: 0,
     cancelled: 0,
   });
@@ -142,8 +142,14 @@ export default function MyEventsPage() {
 
     const stats = {
       total: eventsList.length,
-      upcoming: eventsList.filter(
-        (e) => !e.checked_in && new Date(e.start_datetime) > now
+      // Total registered/joined events count
+      registered: eventsList.filter(
+        (e) =>
+          e?.joined === true ||
+          !!e?.checked_in || // attended implies joined
+          !!e?.event_member_data || // presence of membership data
+          !!e?.event_member_id || // some APIs return id only
+          e?.registration_status === 'joined'
       ).length,
       attended: eventsList.filter((e) => e.checked_in).length,
       cancelled: eventsList.filter((e) => e.event_status === "cancelled")
@@ -362,11 +368,11 @@ export default function MyEventsPage() {
         <div className="bg-white rounded-xl p-4 border border-gray-200">
           <div className="flex items-center justify-between mb-2">
             <div className="p-2 bg-[#AE9B66] rounded-lg">
-              <CheckCircle className="w-6 h-6 text-white" />
+              <Users className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold">{stats.upcoming}</span>
+            <span className="text-2xl font-bold">{stats.registered}</span>
           </div>
-          <p className="text-gray-600 text-sm">Upcoming</p>
+          <p className="text-gray-600 text-sm">Registered</p>
         </div>
 
         <div className="bg-white rounded-xl p-4 border border-gray-200">

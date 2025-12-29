@@ -304,7 +304,7 @@ export default function AdminCommitteePagesPage() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200/50 shadow-sm p-6"
+                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl "
               >
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <BookOpen className="w-5 h-5" />
@@ -400,7 +400,7 @@ export default function AdminCommitteePagesPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border border-gray-200/50 shadow-sm p-6"
+                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl "
               >
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <FileText className="w-5 h-5" />

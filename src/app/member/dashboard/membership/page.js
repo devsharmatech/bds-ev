@@ -45,8 +45,25 @@ import PaymentMethodModal from "@/components/modals/PaymentMethodModal";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 
 // Membership Card Component
-function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick }) {
+function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, planName }) {
   if (!user) return null;
+
+  const containerRef = useRef(null);
+  const [qrSize, setQrSize] = useState(100);
+  const [isNarrow, setIsNarrow] = useState(false);
+  useEffect(() => {
+    const update = () => {
+      const el = containerRef.current;
+      if (!el) return;
+      const w = el.offsetWidth || 420;
+      const size = Math.max(80, Math.min(90, Math.round(w * 0.26)));
+      setQrSize(size);
+      setIsNarrow(w < 420);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   const qrValue = JSON.stringify({
     type: "MEMBERSHIP_VERIFICATION",
@@ -59,106 +76,140 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick }) {
   const formatDate = (date) =>
     date
       ? new Date(date).toLocaleDateString("en-BH", {
-          month: "numeric",
-          year: "numeric",
-        })
+        month: "numeric",
+        year: "numeric",
+      })
       : "N/A";
 
   return (
-    <div className="relative w-full max-w-[420px] min-w-[340px] mx-auto rounded-2xl overflow-hidden shadow-xl bg-gradient-to-br from-[#03215F] to-[#03215F] text-white isolate" style={{ minWidth: '340px' }}>
-      {/* 🔒 Locked Badge for Free Members - Non-blocking */}
-      {isFreeMember && (
-        <div className="absolute top-4 right-4 z-30 flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full text-xs font-semibold">
-          <Lock className="w-3 h-3" />
-          <span>Locked</span>
+    <div
+      ref={containerRef}
+      style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: 460,
+        margin: '0 auto',
+        borderRadius: 20,
+        overflow: 'hidden',
+        boxShadow: '0 18px 48px rgba(3,33,95,0.25)',
+        color: '#ffffff',
+        padding: 20,
+        minHeight: 260,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        background: 'linear-gradient(135deg, #05245A 0%, #0B2F75 100%)',
+        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif',
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale'
+      }}
+    >
+      {/* Glow Backgrounds */}
+      <div style={{
+        position: 'absolute', top: -80, right: -80, width: 220, height: 220,
+        backgroundColor: 'rgba(3,33,95,0.22)', filter: 'blur(56px)', borderRadius: '50%'
+      }} />
+      <div style={{
+        position: 'absolute', bottom: -80, left: -80, width: 220, height: 220,
+        backgroundColor: 'rgba(3,33,95,0.22)', filter: 'blur(56px)', borderRadius: '50%'
+      }} />
+
+      {/* Header */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: 12, padding: 6 }}>
+            <img
+              src="/logo.png"
+              alt="BDS Logo"
+              style={{ width: 48, height: 48, objectFit: 'contain', display: 'block' }}
+              crossOrigin="anonymous"
+            />
+          </div>
+          <div>
+            <h3 style={{
+              fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.1, margin: 0,
+              fontSize: 'clamp(14px, 3.4vw, 16px)', letterSpacing: '0.02em',
+              marginRight: "10px"
+
+            }}>
+              Bahrain Dental Society
+            </h3>
+            <p style={{
+              margin: '4px 0 0 0', fontSize: 'clamp(9px, 2.8vw, 12px)', color: '#9cc2ed',
+              letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600
+            }}>
+              Official Member
+            </p>
+          </div>
         </div>
-      )}
 
-      <div className="absolute -top-20 -right-20 w-72 h-72 bg-[#9cc2ed]/25 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-20 -left-20 w-72 h-72 bg-[#9cc2ed]/25 rounded-full blur-3xl pointer-events-none" />
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '4px 10px',
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            borderRadius: 9999,
+            backgroundColor: user.membership_status === 'active' ? 'rgba(22,163,74,0.18)' : 'rgba(184,53,45,0.18)',
+            border: `1px solid ${user.membership_status === 'active' ? 'rgba(22,163,74,0.3)' : 'rgba(184,53,45,0.3)'}`,
+            color: user.membership_status === 'active' ? '#16a34a' : '#b8352d',
+            marginTop: "10px"
+          }}
+        >
+          <span style={{
+            width: 8, height: 8, borderRadius: '50%',
+            backgroundColor: user.membership_status === 'active' ? '#16a34a' : '#b8352d'
+          }} />
+          {user.membership_status || 'Active'}
+        </span>
+      </div>
 
-      {/* 📇 Card Content */}
-      <div className="relative z-10 p-3 space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex items-center gap-3">
-            <div className="bg-white w-12 h-12 rounded-lg flex items-center justify-center">
-              <img
-                src="/logo.png"
-                alt="BDS Logo"
-                className="w-10 h-10 object-contain"
-                crossOrigin="anonymous"
-              />
-            </div>
+      {/* Body */}
+      <div style={{ position: 'relative', display: isNarrow ? 'block' : 'flex', justifyContent: 'space-between', alignItems: isNarrow ? 'stretch' : 'flex-end', marginTop: 18, gap: 16 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 'clamp(9px, 2.6vw, 11px)', color: '#C7D7F2', textTransform: 'uppercase', margin: 0, letterSpacing: '0.1em' }}>Member Name</p>
+          <h2 style={{ fontWeight: 900, lineHeight: 1.15, margin: '4px 0 0 0', fontSize: 'clamp(18px, 5vw, 20px)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+            {user.full_name || ''}
+          </h2>
 
-            <div>
-              <p className="text-sm font-bold tracking-wide uppercase">BDS</p>
-              <p className="text-[11px] text-[#9cc2ed] uppercase tracking-widest">
-                Official Member
+          <div style={{ display: 'flex', gap: 16, marginTop: 14, flexWrap: isNarrow ? 'wrap' : 'nowrap' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 'clamp(9px, 2.6vw, 11px)', color: '#C7D7F2', textTransform: 'uppercase', margin: 0, letterSpacing: '0.1em' }}>Member ID</p>
+              <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', margin: '3px 0 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {user.membership_code || 'N/A'}
               </p>
             </div>
-          </div>
-
-          <div
-            className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold
-              ${
-                user.membership_status === "active"
-                  ? "bg-[#AE9B66]/20 text-white"
-                  : "bg-[#b8352d]/20 text-white"
-              }`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                user.membership_status === "active"
-                  ? "bg-[#AE9B66] animate-pulse"
-                  : "bg-[#b8352d]"
-              }`}
-            />
-            {user.membership_status}
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="flex justify-between gap-4 items-end min-w-0">
-          <div className="flex-1 space-y-1 min-w-0">
-            <div>
-              <p className="text-[11px] text-gray-100 uppercase">Member Name</p>
-              <h2 className="text-lg font-bold uppercase truncate max-w-full">
-                {user.full_name}
-              </h2>
-            </div>
-
-            <p className="font-mono text-sm tracking-widest">
-              {user.membership_code}
-            </p>
-
-            <div className="text-sm">
-              <p className="text-gray-100 uppercase text-[11px]">Expires</p>
-              <p className="font-mono">
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 'clamp(9px, 2.6vw, 11px)', color: '#C7D7F2', textTransform: 'uppercase', margin: 0, letterSpacing: '0.1em' }}>Expires</p>
+              <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', margin: '3px 0 0 0' }}>
                 {formatDate(user.membership_expiry_date)}
               </p>
             </div>
+          </div>
 
-            <p className="text-sm font-semibold text-[#ECCF0F] uppercase">
-              {user.membership_type === "paid"
-                ? "Premium Member"
-                : "Standard Member"}
+          <div style={{ marginTop: 14 }}>
+            <p style={{ fontSize: 'clamp(9px, 2.6vw, 11px)', color: '#C7D7F2', textTransform: 'uppercase', margin: 0, letterSpacing: '0.1em' }}>Type</p>
+            <p style={{ fontSize: 'clamp(13px, 3.8vw, 14px)', color: 'gold', fontWeight: 700, margin: '4px 0 0 0', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+              {((planName || (user.membership_type === 'paid' ? 'Premium' : 'Standard')) + '').toUpperCase()}
             </p>
           </div>
+        </div>
 
-          {/* QR */}
-          <div
-            ref={qrRef}
-            className="bg-white p-2 rounded-lg shadow-md"
-          >
-            {isFreeMember ? (
-              <div className="w-16 h-16 flex items-center justify-center bg-gray-200 rounded border-2 border-dashed border-gray-400">
-                <Lock className="w-8 h-8 text-gray-500" />
-              </div>
-            ) : (
-              <QRCodeCanvas value={qrValue} size={72} />
-            )}
-          </div>
+        {/* QR Code */}
+        <div ref={qrRef} style={{ backgroundColor: '#ffffff', borderRadius: 14, padding: 6, flexShrink: 0, boxShadow: '0 6px 20px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.06)', alignSelf: isNarrow ? 'flex-start' : 'auto', marginTop: isNarrow ? 10 : 0 }}>
+          {isFreeMember ? (
+            <div style={{
+              width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backgroundColor: '#E5E7EB', borderRadius: 12
+            }}>
+              <Lock style={{ width: 28, height: 28, color: '#6B7280' }} />
+            </div>
+          ) : (
+            <QRCodeCanvas value={qrValue} size={100} level="H" includeMargin />
+          )}
         </div>
       </div>
     </div>
@@ -170,6 +221,7 @@ export default function MembershipCardPage() {
   const [user, setUser] = useState(null);
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [plans, setPlans] = useState([]);
+  const [planName, setPlanName] = useState("");
   const [copied, setCopied] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -182,17 +234,22 @@ export default function MembershipCardPage() {
   const router = useRouter();
 
   const isFreeMember = user?.membership_type === "free";
+  const isExpired = !!(
+    (currentSubscription?.expires_at &&
+      new Date(currentSubscription.expires_at).getTime() < Date.now()) ||
+    (user?.membership_status && user.membership_status !== "active")
+  );
 
   useEffect(() => {
     fetchMembershipData();
     fetchSubscriptions();
-    
+
     // Check for payment success/error messages from URL
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
     const error = urlParams.get('error');
     const message = urlParams.get('message');
-    
+
     if (success === 'payment_completed') {
       toast.success(message ? decodeURIComponent(message) : "Payment completed successfully! Your subscription has been updated.", {
         duration: 5000,
@@ -230,6 +287,11 @@ export default function MembershipCardPage() {
         const data = await res.json();
         if (data.success) {
           setUser(data.user);
+          const derived =
+            data?.user?.current_subscription_plan_display_name ||
+            data?.user?.current_subscription_plan_name ||
+            (data?.user?.membership_type === "paid" ? "Premium" : "Standard");
+          setPlanName(derived || "");
         }
       }
     } catch (error) {
@@ -251,6 +313,13 @@ export default function MembershipCardPage() {
         if (data.success) {
           setCurrentSubscription(data.currentSubscription);
           setPlans(data.plans || []);
+          const display =
+            data?.currentSubscription?.subscription_plan?.display_name ||
+            data?.currentSubscription?.subscription_plan_name ||
+            user?.current_subscription_plan_display_name ||
+            user?.current_subscription_plan_name ||
+            (user?.membership_type === "paid" ? "Premium" : "Standard");
+          if (display) setPlanName(display);
         }
       }
     } catch (error) {
@@ -337,7 +406,7 @@ export default function MembershipCardPage() {
     setProcessing(true);
     setLoadingPaymentMethods(true);
     setShowPlanModal(false); // Close plan selection modal
-    
+
     try {
       const response = await fetch("/api/dashboard/subscriptions/upgrade", {
         method: "POST",
@@ -356,11 +425,11 @@ export default function MembershipCardPage() {
       if (data.success) {
         if (data.payment && data.payment.total_amount > 0) {
           // Payment required - create invoice to get payment methods
-          const paymentId = data.payment.registration_fee > 0 
+          const paymentId = data.payment.registration_fee > 0
             ? (data.payment.registration_payment_id || data.subscription.id)
             : (data.payment.annual_payment_id || data.subscription.id);
-          const paymentType = data.payment.registration_fee > 0 
-            ? 'subscription_registration' 
+          const paymentType = data.payment.registration_fee > 0
+            ? 'subscription_registration'
             : 'subscription_annual';
 
           const invoiceResponse = await fetch("/api/payments/subscription/create-invoice", {
@@ -437,18 +506,18 @@ export default function MembershipCardPage() {
   // Helper function to replace lab() color functions
   const replaceLabColors = (element, clonedWindow = null) => {
     if (!element) return;
-    
+
     const win = clonedWindow || window;
-    
+
     // Replace in inline styles
     if (element.style) {
       const style = element.style;
-      
+
       // Check all style properties
       for (let i = 0; i < style.length; i++) {
         const prop = style[i];
         const value = style.getPropertyValue(prop);
-        
+
         if (value && (value.includes('lab(') || value.includes('lab '))) {
           // Determine replacement based on property
           if (prop.includes('color') && !prop.includes('background') && !prop.includes('border')) {
@@ -462,7 +531,7 @@ export default function MembershipCardPage() {
           }
         }
       }
-      
+
       // Also check direct style properties and replace lab() in values
       const styleProps = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'fill', 'stroke'];
       styleProps.forEach(prop => {
@@ -480,7 +549,7 @@ export default function MembershipCardPage() {
         }
       });
     }
-    
+
     // Replace in computed styles if window is available
     try {
       const computedStyle = win.getComputedStyle(element);
@@ -497,7 +566,7 @@ export default function MembershipCardPage() {
     } catch (e) {
       // Ignore if getComputedStyle is not available
     }
-    
+
     // Recursively process children
     Array.from(element.children || []).forEach(child => {
       replaceLabColors(child, clonedWindow);
@@ -547,16 +616,16 @@ export default function MembershipCardPage() {
   // Pre-process element to remove lab() colors before html2canvas
   const preprocessElementForCapture = (element) => {
     if (!element) return;
-    
+
     // Process all elements recursively - including the element itself
     const allElements = [element, ...Array.from(element.querySelectorAll('*'))];
-    
+
     allElements.forEach(el => {
       // Get computed style and force replace lab() colors
       try {
         const computedStyle = window.getComputedStyle(el);
         const colorProps = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'fill', 'stroke', 'outlineColor', 'boxShadow', 'textShadow'];
-        
+
         colorProps.forEach(prop => {
           try {
             const value = computedStyle.getPropertyValue(prop);
@@ -584,7 +653,7 @@ export default function MembershipCardPage() {
       } catch (e) {
         // Ignore getComputedStyle errors
       }
-      
+
       // Also check inline styles
       if (el.style) {
         for (let i = 0; i < el.style.length; i++) {
@@ -600,7 +669,7 @@ export default function MembershipCardPage() {
         }
       }
     });
-    
+
     // Also use the replaceLabColors function as a fallback
     replaceLabColors(element);
   };
@@ -611,10 +680,10 @@ export default function MembershipCardPage() {
 
     try {
       toast.loading("Generating membership card image...");
-      
+
       // Process all stylesheets first to replace lab() colors
       processStylesheets();
-      
+
       // Inject a global style to override all lab() colors
       const globalStyle = document.createElement('style');
       globalStyle.id = 'lab-color-override';
@@ -629,14 +698,14 @@ export default function MembershipCardPage() {
         }
       `;
       document.head.appendChild(globalStyle);
-      
+
       // Pre-process the element to remove lab() colors BEFORE html2canvas
       preprocessElementForCapture(cardRef.current);
-      
+
       // Wait for images and canvas to load
       const images = cardRef.current.querySelectorAll('img');
       const canvases = cardRef.current.querySelectorAll('canvas');
-      
+
       // Wait for images
       await Promise.all(
         Array.from(images).map(img => {
@@ -648,15 +717,16 @@ export default function MembershipCardPage() {
           });
         })
       );
-      
+
       // Small delay to ensure QR code canvas is fully rendered
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Use html2canvas to capture the card
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 3,
+        letterRendering: true,
         logging: false,
         useCORS: true,
         allowTaint: false,
@@ -667,7 +737,7 @@ export default function MembershipCardPage() {
         onclone: (clonedDoc) => {
           // Replace lab() color functions in the cloned document
           const clonedWindow = clonedDoc.defaultView || clonedDoc.parentWindow || window;
-          
+
           // Inject a comprehensive style to override any lab() colors
           const style = clonedDoc.createElement('style');
           style.textContent = `
@@ -677,7 +747,7 @@ export default function MembershipCardPage() {
             /* Replace any lab() in computed styles */
           `;
           clonedDoc.head.appendChild(style);
-          
+
           // Process all elements and force replace lab() colors
           const allElements = clonedDoc.querySelectorAll('*');
           allElements.forEach(el => {
@@ -685,7 +755,7 @@ export default function MembershipCardPage() {
             try {
               const computedStyle = clonedWindow.getComputedStyle(el);
               const colorProps = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'fill', 'stroke', 'outlineColor'];
-              
+
               colorProps.forEach(prop => {
                 try {
                   const value = computedStyle.getPropertyValue(prop);
@@ -706,11 +776,11 @@ export default function MembershipCardPage() {
             } catch (e) {
               // Ignore
             }
-            
+
             // Also use the replaceLabColors function
             replaceLabColors(el, clonedWindow);
           });
-          
+
           // Also replace in stylesheets - more aggressive approach
           try {
             const styleSheets = clonedDoc.styleSheets || [];
@@ -754,9 +824,8 @@ export default function MembershipCardPage() {
       const pngUrl = canvas.toDataURL("image/png");
       const downloadLink = document.createElement("a");
       downloadLink.href = pngUrl;
-      downloadLink.download = `BDS-Membership-Card-${
-        user?.membership_code || "card"
-      }.png`;
+      downloadLink.download = `BDS-Membership-Card-${user?.membership_code || "card"
+        }.png`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
@@ -773,7 +842,7 @@ export default function MembershipCardPage() {
       console.error("Error downloading card:", error);
       toast.dismiss();
       toast.error("Failed to download membership card");
-      
+
       // Remove the global style override on error too
       const styleOverride = document.getElementById('lab-color-override');
       if (styleOverride) {
@@ -788,10 +857,10 @@ export default function MembershipCardPage() {
 
     try {
       toast.loading("Generating membership card PDF...");
-      
+
       // Process all stylesheets first to replace lab() colors
       processStylesheets();
-      
+
       // Inject a global style to override all lab() colors
       const globalStyle = document.createElement('style');
       globalStyle.id = 'lab-color-override';
@@ -806,14 +875,14 @@ export default function MembershipCardPage() {
         }
       `;
       document.head.appendChild(globalStyle);
-      
+
       // Pre-process the element to remove lab() colors BEFORE html2canvas
       preprocessElementForCapture(cardRef.current);
-      
+
       // Wait for images and canvas to load
       const images = cardRef.current.querySelectorAll('img');
       const canvases = cardRef.current.querySelectorAll('canvas');
-      
+
       // Wait for images
       await Promise.all(
         Array.from(images).map(img => {
@@ -825,17 +894,18 @@ export default function MembershipCardPage() {
           });
         })
       );
-      
+
       // Small delay to ensure QR code canvas is fully rendered
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Use html2canvas and jspdf to create PDF
       const html2canvas = (await import('html2canvas')).default;
       const { jsPDF } = await import('jspdf');
-      
+
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
+        scale: 3,
+        letterRendering: true,
         logging: false,
         useCORS: true,
         allowTaint: false,
@@ -846,7 +916,7 @@ export default function MembershipCardPage() {
         onclone: (clonedDoc) => {
           // Replace lab() color functions in the cloned document
           const clonedWindow = clonedDoc.defaultView || clonedDoc.parentWindow || window;
-          
+
           // Inject a comprehensive style to override any lab() colors
           const style = clonedDoc.createElement('style');
           style.textContent = `
@@ -856,7 +926,7 @@ export default function MembershipCardPage() {
             /* Replace any lab() in computed styles */
           `;
           clonedDoc.head.appendChild(style);
-          
+
           // Process all elements and force replace lab() colors
           const allElements = clonedDoc.querySelectorAll('*');
           allElements.forEach(el => {
@@ -864,7 +934,7 @@ export default function MembershipCardPage() {
             try {
               const computedStyle = clonedWindow.getComputedStyle(el);
               const colorProps = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'fill', 'stroke', 'outlineColor'];
-              
+
               colorProps.forEach(prop => {
                 try {
                   const value = computedStyle.getPropertyValue(prop);
@@ -885,11 +955,11 @@ export default function MembershipCardPage() {
             } catch (e) {
               // Ignore
             }
-            
+
             // Also use the replaceLabColors function
             replaceLabColors(el, clonedWindow);
           });
-          
+
           // Also replace in stylesheets - more aggressive approach
           try {
             const styleSheets = clonedDoc.styleSheets || [];
@@ -931,13 +1001,31 @@ export default function MembershipCardPage() {
       });
 
       const imgData = canvas.toDataURL("image/png");
+      // Create A4 portrait PDF and center the card within margins
       const pdf = new jsPDF({
-        orientation: 'landscape',
+        orientation: 'portrait',
         unit: 'mm',
-        format: [canvas.width * 0.264583, canvas.height * 0.264583]
+        format: 'a4'
       });
 
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width * 0.264583, canvas.height * 0.264583);
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15; // mm
+      const usableWidth = pageWidth - margin * 2;
+      const usableHeight = pageHeight - margin * 2;
+
+      // Convert canvas px to mm
+      const pxToMm = (px) => px * 0.264583;
+      const imgWidthMm = pxToMm(canvas.width);
+      const imgHeightMm = pxToMm(canvas.height);
+
+      const scale = Math.min(usableWidth / imgWidthMm, usableHeight / imgHeightMm);
+      const renderWidth = imgWidthMm * scale;
+      const renderHeight = imgHeightMm * scale;
+      const x = (pageWidth - renderWidth) / 2;
+      const y = (pageHeight - renderHeight) / 2;
+
+      pdf.addImage(imgData, 'PNG', x, y, renderWidth, renderHeight);
       pdf.save(`BDS-Membership-Card-${user?.membership_code || "card"}.pdf`);
 
       // Remove the global style override
@@ -951,36 +1039,19 @@ export default function MembershipCardPage() {
     } catch (error) {
       console.error("Error downloading PDF:", error);
       toast.dismiss();
-      
+
       // Remove the global style override on error too
       const styleOverride = document.getElementById('lab-color-override');
       if (styleOverride) {
         styleOverride.remove();
       }
-      
+
       // Fallback to image download
       downloadMembershipCard();
     }
   };
 
-  const handleShareCard = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "My BDS Membership Card",
-          text: `I'm a member of Bahrain Dental Society. My membership ID: ${user?.membership_code}`,
-          url: window.location.href,
-        });
-      } else {
-        await navigator.clipboard.writeText(window.location.href);
-        setCopied(true);
-        toast.success("Link copied to clipboard!");
-        setTimeout(() => setCopied(false), 3000);
-      }
-    } catch (error) {
-      console.error("Error sharing:", error);
-    }
-  };
+
 
   const handleCopyId = () => {
     if (user?.membership_code) {
@@ -993,10 +1064,34 @@ export default function MembershipCardPage() {
 
   const handlePrint = () => {
     if (!cardRef.current) return;
-    
+
     // Clone the card element
     const printContent = cardRef.current.cloneNode(true);
-    
+
+    // Replace canvases (e.g., QRCodeCanvas) with images so they render in the print document
+    try {
+      const sourceCanvases = cardRef.current.querySelectorAll('canvas');
+      const targetCanvases = printContent.querySelectorAll('canvas');
+      const count = Math.min(sourceCanvases.length, targetCanvases.length);
+      for (let i = 0; i < count; i++) {
+        const srcCanvas = sourceCanvases[i];
+        const tgtCanvas = targetCanvases[i];
+        const dataUrl = srcCanvas.toDataURL('image/png');
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        // Preserve size
+        const rect = srcCanvas.getBoundingClientRect();
+        img.style.width = rect.width ? rect.width + 'px' : (srcCanvas.width ? srcCanvas.width + 'px' : '100px');
+        img.style.height = rect.height ? rect.height + 'px' : (srcCanvas.height ? srcCanvas.height + 'px' : '100px');
+        img.style.display = 'block';
+        img.style.imageRendering = 'auto';
+        tgtCanvas.parentNode?.replaceChild(img, tgtCanvas);
+      }
+    } catch (e) {
+      // Ignore canvas replacement errors; continue with regular print content
+    }
+    // Keep natural sizing; will be centered on A4 during print
+
     // Remove any modern color functions from inline styles
     const allElements = printContent.querySelectorAll('*');
     allElements.forEach(el => {
@@ -1059,16 +1154,16 @@ export default function MembershipCardPage() {
             
             @media print {
               @page {
-                size: landscape;
-                margin: 0;
+                size: A4;
+                margin: 10mm;
               }
               body {
-                margin: 0;
-                padding: 20px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                min-height: 100vh !important;
               }
               * {
                 -webkit-print-color-adjust: exact !important;
@@ -1077,12 +1172,12 @@ export default function MembershipCardPage() {
               }
             }
             body {
-              margin: 0;
-              padding: 20px;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
+              margin: 0 !important;
+              padding: 20px !important;
+              display: flex !important;
+              justify-content: center !important;
+              align-items: center !important;
+              min-height: 100vh !important;
               font-family: Arial, sans-serif;
               background: white;
             }
@@ -1097,7 +1192,7 @@ export default function MembershipCardPage() {
     `);
     printWindow.document.close();
     printWindow.focus();
-    
+
     // Wait for content to load, then print
     setTimeout(() => {
       printWindow.print();
@@ -1138,16 +1233,16 @@ export default function MembershipCardPage() {
             </div>
 
             <div className="flex flex-wrap gap-2">
+
+
               <button
-                onClick={handleDownloadPDF}
+                onClick={handlePrint}
                 className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center hover:scale-105 active:scale-95"
               >
-                <Download className="w-5 h-5 mr-2" />
-                Download PDF
+                <Printer className="w-5 h-5 mr-2" />
+                Print
               </button>
 
-             
-              
               {isFreeMember && (
                 <button
                   onClick={handleUpgradeClick}
@@ -1203,6 +1298,7 @@ export default function MembershipCardPage() {
                     qrRef={qrRef}
                     isFreeMember={isFreeMember}
                     onUpgradeClick={handleUpgradeClick}
+                    planName={planName}
                   />
                 </div>
 
@@ -1232,176 +1328,175 @@ export default function MembershipCardPage() {
                 </div>
 
                 {/* Card Actions */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-lg justify-content-center">
-                  <button
-                    onClick={handleDownloadPDF}
-                    className="p-4 rounded-xl hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex flex-col items-center bg-gradient-to-r from-[#03215F] to-[#03215F] text-white"
-                  >
-                    <Download className="w-6 h-6 mb-2" />
-                    <span className="text-sm font-medium">
-                      Download PDF
-                    </span>
-                  </button>
+                <div className="flex justify-center w-full">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-lg">
+                    <button
+                      onClick={handlePrint}
+                      className="p-4 rounded-xl hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex flex-col items-center bg-gradient-to-r from-[#03215F] to-[#03215F] text-white"
+                    >
+                      <Printer className="w-6 h-6 mb-2" />
+                      <span className="text-sm font-medium">Print Card</span>
+                    </button>
 
-                  <button
-                    onClick={handleCopyId}
-                    className="p-4 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex flex-col items-center"
-                  >
-                    {copied ? (
-                      <CheckCircle className="w-6 h-6 mb-2 text-[#AE9B66]" />
-                    ) : (
-                      <Copy className="w-6 h-6 mb-2" />
-                    )}
-                    <span className="text-sm font-medium">
-                      {copied ? "Copied!" : "Copy ID"}
-                    </span>
-                  </button>
+                    <button
+                      onClick={handleCopyId}
+                      className="p-4 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex flex-col items-center"
+                    >
+                      {copied ? (
+                        <CheckCircle className="w-6 h-6 mb-2 text-[#AE9B66]" />
+                      ) : (
+                        <Copy className="w-6 h-6 mb-2" />
+                      )}
+                      <span className="text-sm font-medium">
+                        {copied ? "Copied!" : "Copy ID"}
+                      </span>
+                    </button>
+                  </div>
                 </div>
+
               </div>
             </div>
 
             {/* Membership Comparison */}
             {isFreeMember && (
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <Target className="w-6 h-6 text-[#03215F] mr-3" />
-                Membership Comparison
-              </h3>
+              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                  <Target className="w-6 h-6 text-[#03215F] mr-3" />
+                  Membership Comparison
+                </h3>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Free Plan */}
-                <div
-                  className={`p-6 rounded-xl border-2 ${
-                    isFreeMember
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Free Plan */}
+                  <div
+                    className={`p-6 rounded-xl border-2 ${isFreeMember
                       ? "border-[#9cc2ed] bg-[#9cc2ed]"
                       : "border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-bold text-gray-900">
-                      Standard
-                    </h4>
-                    <div className="px-3 py-1 bg-[#9cc2ed] text-[#03215F] rounded-full text-sm font-medium">
-                      Free
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        Event Registration
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        Basic Certificates
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        Panel Access
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <XCircle className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
-                      <span className="text-gray-500">
-                        Membership Card
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <XCircle className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
-                      <span className="text-gray-500">
-                        Event Discounts
-                      </span>
-                    </div>
-                  </div>
-
-                  {(isFreeMember || (currentSubscription && currentSubscription.subscription_plan_name === 'free')) && (
-                    <div className="text-center px-3 py-2 bg-[#9cc2ed] rounded-lg">
-                      <span className="text-[#03215F] font-medium">
-                        Current Plan
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Premium Plan */}
-                <div
-                  className={`p-6 rounded-xl border-2 ${
-                    !isFreeMember
-                      ? "border-[#ECCF0F] bg-[#ECCF0F]"
-                      : "border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
+                      }`}
+                  >
+                    <div className="flex items-center justify-between mb-4">
                       <h4 className="text-lg font-bold text-gray-900">
-                        Premium
+                        Standard
                       </h4>
-                      <div className="ml-2 px-2 py-1 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] rounded text-xs font-bold text-[#03215F]">
-                        POPULAR
+                      <div className="px-3 py-1 bg-[#9cc2ed] text-[#03215F] rounded-full text-sm font-medium">
+                        Free
                       </div>
                     </div>
-                    <div className="px-3 py-1 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-full text-sm font-medium">
-                      BHD 40/year
-                    </div>
-                  </div>
 
-                  <div className="space-y-3 mb-6">
-                    <div className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        All Free Features
-                      </span>
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center">
+                        <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">
+                          Event Registration
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">
+                          Basic Certificates
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">
+                          Panel Access
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <XCircle className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
+                        <span className="text-gray-500">
+                          Membership Card
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <XCircle className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
+                        <span className="text-gray-500">
+                          Event Discounts
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        Digital Membership Card
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        QR Code Verification
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        Up to 50% Event Discounts
-                      </span>
-                    </div>
-                    <div className="flex items-center">
-                      <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        Priority Event Registration
-                      </span>
-                    </div>
-                  </div>
 
-                  <button
-                    onClick={handleUpgradeClick}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg font-bold hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
-                  >
-                    {(!isFreeMember && currentSubscription && currentSubscription.subscription_plan_name !== 'free') ? (
-                      <>
-                        <Crown className="w-5 h-5 text-[#03215F]" />
-                        Current Plan
-                      </>
-                    ) : (
-                      <>
-                        Upgrade Now
-                        <ArrowRight className="w-5 h-5 text-[#03215F]" />
-                      </>
+                    {(isFreeMember || (currentSubscription && currentSubscription.subscription_plan_name === 'free')) && (
+                      <div className="text-center px-3 py-2 bg-[#9cc2ed] rounded-lg">
+                        <span className="text-[#03215F] font-medium">
+                          Current Plan
+                        </span>
+                      </div>
                     )}
-                  </button>
+                  </div>
+
+                  {/* Premium Plan */}
+                  <div
+                    className={`p-6 rounded-xl border-2 ${!isFreeMember
+                      ? "border-[#ECCF0F] bg-[#ECCF0F]"
+                      : "border-gray-200"
+                      }`}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center">
+                        <h4 className="text-lg font-bold text-gray-900">
+                          Premium
+                        </h4>
+                        <div className="ml-2 px-2 py-1 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] rounded text-xs font-bold text-[#03215F]">
+                          POPULAR
+                        </div>
+                      </div>
+                      <div className="px-3 py-1 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-full text-sm font-medium">
+                        BHD 40/year
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center">
+                        <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">
+                          All Free Features
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">
+                          Digital Membership Card
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">
+                          QR Code Verification
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">
+                          Up to 50% Event Discounts
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <CheckCircle className="w-5 h-5 text-[#AE9B66] mr-3 flex-shrink-0" />
+                        <span className="text-gray-700">
+                          Priority Event Registration
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleUpgradeClick}
+                      className="w-full px-4 py-3 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg font-bold hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      {(!isFreeMember && currentSubscription && currentSubscription.subscription_plan_name !== 'free') ? (
+                        <>
+                          <Crown className="w-5 h-5 text-[#03215F]" />
+                          Current Plan
+                        </>
+                      ) : (
+                        <>
+                          Upgrade Now
+                          <ArrowRight className="w-5 h-5 text-[#03215F]" />
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
             )}
           </div>
 
@@ -1429,20 +1524,16 @@ export default function MembershipCardPage() {
                   <div className="flex items-center">
                     <Crown className="w-4 h-4 text-gray-500 mr-3" />
                     <span className="text-gray-600">
-                      Plan
+                      Type
                     </span>
                   </div>
                   <span
-                    className={`font-semibold ${
-                      !isFreeMember
-                        ? "text-[#03215F]"
-                        : "text-[#03215F]"
-                    }`}
+                    className={`font-semibold ${!isFreeMember
+                      ? "text-[#03215F]"
+                      : "text-[#03215F]"
+                      }`}
                   >
-                    {currentSubscription?.subscription_plan?.display_name || 
-                     currentSubscription?.subscription_plan_name || 
-                     user?.current_subscription_plan_name ||
-                     (!isFreeMember ? "Premium" : "Standard")}
+                    {planName || (!isFreeMember ? "Premium" : "Standard")}
                   </span>
                 </div>
 
@@ -1454,11 +1545,10 @@ export default function MembershipCardPage() {
                     </span>
                   </div>
                   <span
-                    className={`font-semibold ${
-                      user?.membership_status === "active"
-                        ? "text-[#AE9B66]"
-                        : "text-[#b8352d]"
-                    }`}
+                    className={`font-semibold ${user?.membership_status === "active"
+                      ? "text-[#AE9B66]"
+                      : "text-[#b8352d]"
+                      }`}
                   >
                     {user?.membership_status === "active"
                       ? "Active"
@@ -1476,21 +1566,21 @@ export default function MembershipCardPage() {
                   <span className="font-semibold text-gray-900">
                     {currentSubscription?.started_at
                       ? new Date(currentSubscription.started_at).toLocaleDateString(
-                          "en-BH",
-                          {
-                            year: "numeric",
-                            month: "short",
-                          }
-                        )
+                        "en-BH",
+                        {
+                          year: "numeric",
+                          month: "short",
+                        }
+                      )
                       : user?.membership_date
-                      ? new Date(user.membership_date).toLocaleDateString(
+                        ? new Date(user.membership_date).toLocaleDateString(
                           "en-BH",
                           {
                             year: "numeric",
                             month: "short",
                           }
                         )
-                      : "N/A"}
+                        : "N/A"}
                   </span>
                 </div>
 
@@ -1516,8 +1606,8 @@ export default function MembershipCardPage() {
                 )}
               </div>
 
-              {/* Renew/Upgrade/Downgrade Buttons */}
-              {currentSubscription && !isFreeMember && (
+              {/* Renew/Upgrade/Downgrade Buttons - only when expired */}
+              {currentSubscription && !isFreeMember && isExpired && (
                 <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
                   <button
                     onClick={handleRenew}
@@ -1536,7 +1626,7 @@ export default function MembershipCardPage() {
                       </>
                     )}
                   </button>
-                  
+
                   <button
                     onClick={handleUpgradeDowngradeClick}
                     disabled={processing}
@@ -1639,8 +1729,8 @@ export default function MembershipCardPage() {
         currentPlanId={
           currentSubscription?.subscription_plan?.id ||
           currentSubscription?.subscription_plan_id ||
-          (currentSubscription?.subscription_plan_name && plans.find(p => 
-            p.display_name === currentSubscription.subscription_plan_name || 
+          (currentSubscription?.subscription_plan_name && plans.find(p =>
+            p.display_name === currentSubscription.subscription_plan_name ||
             p.name === currentSubscription.subscription_plan_name.toLowerCase().replace(/\s+/g, '_')
           )?.id) ||
           null

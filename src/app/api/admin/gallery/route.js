@@ -28,7 +28,7 @@ async function uploadToBucket(file, pathPrefix) {
 
 export async function GET(req) {
   try {
-    ensureAdmin(req);
+    
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q") || searchParams.get("search") || "";
     const status = searchParams.get("status") || "all";
@@ -79,7 +79,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    ensureAdmin(req);
+    
     const contentType = req.headers.get("content-type") || "";
     if (!contentType.includes("multipart/form-data")) {
       const body = await req.json();

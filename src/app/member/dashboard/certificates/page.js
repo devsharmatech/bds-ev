@@ -29,6 +29,13 @@ const formatDate = (dateString) => {
   });
 }
 
+// Safely pick real fields from API payloads that may differ by source
+const getHours = (c) =>
+  c?.hours ?? c?.cme_hours ?? c?.credit_hours ?? c?.credits ?? null;
+
+const getCode = (c) =>
+  c?.nhra_code ?? c?.accreditation_code ?? c?.certificate_code ?? null;
+
 export default function CertificatesPage() {
   const [loading, setLoading] = useState(true)
   const [certificates, setCertificates] = useState([])
@@ -63,9 +70,8 @@ export default function CertificatesPage() {
       
       if (res.ok) {
         const data = await res.json()
-        if (data.success) {
-          setUser(data.user)
-        }
+        if (data?.user) setUser(data.user)
+        else if (data?.success) setUser(data.user || null)
       }
     } catch (error) {
       console.error('Error fetching user:', error)
@@ -85,7 +91,11 @@ export default function CertificatesPage() {
         if (data.success) {
           setCertificates(data.certificates || [])
           calculateStats(data.certificates || [])
+        } else {
+          toast.error(data.message || 'Failed to load certificates')
         }
+      } else {
+        toast.error('Failed to load certificates')
       }
     } catch (error) {
       console.error('Error fetching certificates:', error)
@@ -258,7 +268,7 @@ export default function CertificatesPage() {
 
       {/* Certificates Grid */}
       {filteredCertificates.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredCertificates.map((cert) => (
             <div
               key={cert.id}
@@ -269,7 +279,9 @@ export default function CertificatesPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <Award className="w-6 h-6" style={{ color: '#03215F' }} />
-                    <h3 className="font-bold" style={{ color: '#03215F' }}>Certificate</h3>
+                    <h3 className="font-bold" style={{ color: '#03215F' }}>
+                      {cert.event_title || 'Certificate'}
+                    </h3>
                   </div>
                   <span className="text-xs font-mono bg-white/50 px-2 py-1 rounded">
                     #{cert.id.slice(0, 8).toUpperCase()}
@@ -279,9 +291,14 @@ export default function CertificatesPage() {
 
               {/* Certificate Content */}
               <div className="p-4">
-                <h4 className="font-bold text-lg mb-3 line-clamp-2" style={{ color: '#03215F' }}>
-                  {cert.event_title}
-                </h4>
+                <div className="mb-3">
+                  <h4 className="font-bold text-lg line-clamp-2" style={{ color: '#03215F' }}>
+                    {cert.event_title}
+                  </h4>
+                  {cert.organizer && (
+                    <p className="text-xs text-gray-500 mt-1">Organizer: {cert.organizer}</p>
+                  )}
+                </div>
                 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center text-sm text-gray-600">
@@ -296,9 +313,16 @@ export default function CertificatesPage() {
                     </div>
                   )}
                   
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Clock className="w-4 h-4 mr-2" />
-                    Attended
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <Clock className="w-4 h-4 mr-2" />
+                      <span>{getHours(cert) ? `${getHours(cert)} CME Hours` : 'Attended'}</span>
+                    </div>
+                    {getCode(cert) && (
+                      <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                        {getCode(cert)}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -321,7 +345,7 @@ export default function CertificatesPage() {
                     className="flex-1 px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center justify-center"
                   >
                     <Eye className="w-5 h-5 mr-2" />
-                    View Certificate
+                    View / Download
                   </button>
                 </div>
               </div>

@@ -65,7 +65,8 @@ export async function GET(req) {
       full_name: user.full_name,
       phone: user.phone,
       mobile: user.mobile,
-      profile_image: user.profile_image,
+      // prefer 'profile_image', fallback to 'profile_picture'
+      profile_image: user.profile_image || user.profile_picture || null,
       membership_code: user.membership_code,
       membership_status: user.membership_status,
       membership_type: user.membership_type,

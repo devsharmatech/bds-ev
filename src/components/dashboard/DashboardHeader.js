@@ -16,8 +16,8 @@ import {
   CreditCard,
   Shield,
   LayoutDashboard,
-  Badge ,FileText
-  
+  Badge, FileText
+
 } from "lucide-react";
 import Link from "next/link";
 import NotificationsDropdown from "@/components/notifications/NotificationsDropdown";
@@ -26,6 +26,7 @@ export default function DashboardHeader({ onMenuToggle }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [planName, setPlanName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const fetchedRef = useRef(false);
@@ -46,6 +47,12 @@ export default function DashboardHeader({ onMenuToggle }) {
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
+          // Try to derive initial plan name from user
+          const derived =
+            data?.user?.current_subscription_plan_display_name ||
+            data?.user?.current_subscription_plan_name ||
+            (data?.user?.membership_type === "paid" ? "Premium" : "Standard");
+          setPlanName(derived || "");
         } else {
           // Redirect to login if not authenticated
           router.push("/auth/login");
@@ -60,6 +67,29 @@ export default function DashboardHeader({ onMenuToggle }) {
 
     fetchUserData();
   }, [router]);
+
+  // Fetch current subscription to display accurate plan name
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const res = await fetch("/api/dashboard/subscriptions", {
+          credentials: "include",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const display =
+          data?.currentSubscription?.subscription_plan?.display_name ||
+          data?.currentSubscription?.subscription_plan_name ||
+          planName ||
+          (user?.membership_type === "paid" ? "Premium" : "Standard");
+        if (display) setPlanName(display);
+      } catch {
+        // ignore - fall back to derived name
+      }
+    };
+    fetchSubscription();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -190,17 +220,7 @@ export default function DashboardHeader({ onMenuToggle }) {
                 )}
               </button>
 
-              {/* Search Bar */}
-              <form onSubmit={handleSearch} className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search dashboard..."
-                  className="pl-10 pr-4 py-2 w-48 md:w-64 border border-gray-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
-                />
-              </form>
+
             </div>
 
             {/* Right: User Menu & Notifications */}
@@ -224,15 +244,12 @@ export default function DashboardHeader({ onMenuToggle }) {
                       {getUserDisplayName()}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {user?.membership_type === "paid"
-                        ? "Premium Member"
-                        : "Member"}
+                      {planName || "Standard"}
                     </p>
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-gray-400 transition-transform ${
-                      isUserMenuOpen ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-gray-400 transition-transform ${isUserMenuOpen ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
 
@@ -253,6 +270,9 @@ export default function DashboardHeader({ onMenuToggle }) {
                           </p>
                           <p className="text-xs text-gray-500 truncate">
                             {user?.email}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {planName || "Standard"}
                           </p>
                         </div>
                       </div>
@@ -325,9 +345,7 @@ export default function DashboardHeader({ onMenuToggle }) {
                   {user?.full_name}
                 </p>
                 <p className="text-sm text-gray-500 truncate">
-                  {user?.membership_type === "paid"
-                    ? "Premium Member"
-                    : "Member"}
+                  {planName || (user?.membership_type === "paid" ? "Premium" : "Member")}
                 </p>
               </div>
             </div>

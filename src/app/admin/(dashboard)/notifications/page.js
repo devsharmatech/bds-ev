@@ -196,7 +196,7 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
       <Toaster position="top-right" />
 
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="w-full mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
           <div className="flex items-center gap-4">

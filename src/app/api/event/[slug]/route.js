@@ -235,6 +235,10 @@ export async function GET(request, { params }) {
       slug: event.slug,
       google_map_url: event.google_map_url,
 
+      // NHRA meta (for certificates)
+      nera_cme_hours: event.nera_cme_hours ?? null,
+      nera_code: event.nera_code ?? null,
+
       registered_count: registeredCount || 0,
       joined,
       event_member_data: userEventMemberData,

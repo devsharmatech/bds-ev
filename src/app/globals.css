@@ -3,7 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  
+
   /* New Color Theme */
   --color-primary: #03215F;
   --color-secondary: #AE9B66;
@@ -23,7 +23,7 @@ body {
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  
+
   /* Primary Color - 40% */
   --color-primary: #03215F;
   --color-primary-50: #e6eaf5;
@@ -36,7 +36,7 @@ body {
   --color-primary-700: #02133b;
   --color-primary-800: #010c29;
   --color-primary-900: #000517;
-  
+
   /* Secondary Color - 30% */
   --color-secondary: #AE9B66;
   --color-secondary-50: #f5f3ed;
@@ -49,7 +49,7 @@ body {
   --color-secondary-700: #585233;
   --color-secondary-800: #363722;
   --color-secondary-900: #141b11;
-  
+
   /* Accent Colors - 10% each */
   --color-accent-red: #b8352d;
   --color-accent-blue: #9cc2ed;
@@ -63,16 +63,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
 * {
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
-button , a {
+
+button,
+a {
   cursor: pointer !important;
-} 
-input:focus, textarea:focus, select:focus {
+}
+
+input:focus,
+textarea:focus,
+select:focus {
   outline: none !important;
   box-shadow: 0 0 0 2px var(--foreground) !important;
-}   
+}
 
 /* For Webkit browsers (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
@@ -81,7 +87,8 @@ input:focus, textarea:focus, select:focus {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9; /* slate-100 */
+  background: #f1f5f9;
+  /* slate-100 */
   border-radius: 10px;
 }
 
@@ -110,7 +117,8 @@ input:focus, textarea:focus, select:focus {
 }
 
 .custom-scrollbar-thin::-webkit-scrollbar-track {
-  background: #f3f4f6; /* gray-100 */
+  background: #f3f4f6;
+  /* gray-100 */
   border-radius: 6px;
 }
 
@@ -175,7 +183,8 @@ html {
 }
 
 .modal-scrollbar::-webkit-scrollbar-track {
-  background: rgba(243, 244, 246, 0.5); /* gray-100 with opacity */
+  background: rgba(243, 244, 246, 0.5);
+  /* gray-100 with opacity */
   border-radius: 10px;
   margin: 4px;
 }
@@ -186,3 +195,18 @@ html {
 }
 
 /* Dark mode modal scrollbar styles removed */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .certificate-container {
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+}
