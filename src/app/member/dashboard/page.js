@@ -280,7 +280,7 @@ export default function DashboardPage() {
       change: `${stats.attendanceRate || 0}% attendance rate`
     },
     { 
-      label: 'CE Credits', 
+      label: 'CME Hrs', 
       value: stats.creditsEarned || 0, 
       icon: Award, 
       color: 'purple',
