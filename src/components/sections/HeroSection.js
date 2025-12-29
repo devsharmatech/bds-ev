@@ -430,7 +430,7 @@ export default function HeroSection() {
                   <span className="text-sm text-gray-700">
                     {!loading && user && user.membership_type === "paid" 
                       ? "Click card to view back side" 
-                      : "Join as a premium member to unlock your digital membership card"}
+                      : "Click card to view back side"}
                   </span>
                 </div>
               </div>
