@@ -468,10 +468,15 @@ function RegisterPageContent() {
       return;
     }
 
-    // CPR validation (optional, but if provided, should be valid format)
-    if (formData.cpr && formData.cpr.length > 0) {
+    // CPR validation: required for Bahrain nationals, optional otherwise
+    if (formData.nationality === "Bahrain") {
+      if (!formData.cpr || formData.cpr.length !== 9 || !/^\d+$/.test(formData.cpr)) {
+        setError("CPR is required for Bahrain nationals and must be 9 digits");
+        return;
+      }
+    } else if (formData.cpr && formData.cpr.length > 0) {
       if (formData.cpr.length !== 9 || !/^\d+$/.test(formData.cpr)) {
-        setError("CPR must be 9 digits if provided");
+        setError("If provided, CPR must be 9 digits");
         return;
       }
     }
@@ -577,18 +582,21 @@ function RegisterPageContent() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <FileText className="inline w-4 h-4 mr-2" />
-            CPR Number
+            CPR Number {formData.nationality === "Bahrain" && "*"}
           </label>
           <input
             type="text"
             value={formData.cpr}
             onChange={(e) => setFormData({ ...formData, cpr: e.target.value })}
+            required={formData.nationality === "Bahrain"}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#03215F]"
             placeholder="930910630"
             maxLength={9}
           />
           <p className="text-xs text-gray-500 mt-1">
-            9-digit Bahraini CPR
+            {formData.nationality === "Bahrain"
+              ? "Required for Bahraini nationals (9 digits)"
+              : "Optional (required only for Bahrain nationals)"}
           </p>
         </div>
 

@@ -170,8 +170,8 @@ export default function RegistrationLiteModal({
           full_name: fullName.trim(),
           email: email.trim(),
           phone: combinedPhone,
-          // Some backends require cpr_id - pass N/A for non-Bahrain to satisfy schema
-          cpr_id: nationalityCode === "BH" ? cpr.trim() : "N/A",
+          // Ensure cpr_id always present; use 9 zeros for non-Bahrain to satisfy numeric schemas
+          cpr_id: nationalityCode === "BH" ? cpr.trim() : "000000000",
           gender: gender || null,
           dob: dob || null,
           nationality: nationality || null,

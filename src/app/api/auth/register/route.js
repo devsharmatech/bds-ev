@@ -30,11 +30,30 @@ export async function POST(req) {
     // --------------------------------------------------
     // BASIC VALIDATION
     // --------------------------------------------------
-    if (!fullNameEng || !email || !password || !mobile || !cpr) {
+    const nationalityNorm = (nationality || '').toString().trim().toLowerCase();
+    const isBahraini = nationalityNorm === 'bahrain';
+    if (!fullNameEng || !email || !password || !mobile || (isBahraini && !cpr)) {
       return NextResponse.json(
         { success: false, message: "Required fields are missing" },
         { status: 400 }
       );
+    }
+
+    // CPR format validation: required for Bahrain, optional otherwise; if provided must be 9 digits
+    if (isBahraini) {
+      if (!/^\d{9}$/.test((cpr || '').toString().trim())) {
+        return NextResponse.json(
+          { success: false, message: "CPR is required for Bahrain nationals and must be 9 digits" },
+          { status: 400 }
+        );
+      }
+    } else if (cpr) {
+      if (!/^\d{9}$/.test((cpr || '').toString().trim())) {
+        return NextResponse.json(
+          { success: false, message: "If provided, CPR must be 9 digits" },
+          { status: 400 }
+        );
+      }
     }
 
     // --------------------------------------------------
@@ -56,17 +75,19 @@ export async function POST(req) {
     // --------------------------------------------------
     // DUPLICATE CPR CHECK
     // --------------------------------------------------
-    const { data: cprExists } = await supabase
-      .from("member_profiles")
-      .select("id")
-      .eq("cpr_id", cpr)
-      .maybeSingle();
+    if (cpr) {
+      const { data: cprExists } = await supabase
+        .from("member_profiles")
+        .select("id")
+        .eq("cpr_id", cpr)
+        .maybeSingle();
 
-    if (cprExists) {
-      return NextResponse.json(
-        { success: false, message: "CPR already registered" },
-        { status: 409 }
-      );
+      if (cprExists) {
+        return NextResponse.json(
+          { success: false, message: "CPR already registered" },
+          { status: 409 }
+        );
+      }
     }
 
     // --------------------------------------------------
@@ -157,7 +178,7 @@ export async function POST(req) {
         position,
         specialty,
         address,
-        cpr_id: cpr,
+        cpr_id: cpr || null,
         type_of_application: typeOfApplication,
         membership_date: membershipDate || new Date(),
       });
