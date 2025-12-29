@@ -84,6 +84,7 @@ export default function DashboardPage() {
   const [membershipDetails, setMembershipDetails] = useState(null)
   const [notifications, setNotifications] = useState([])
   const [isMobile, setIsMobile] = useState(false)
+  const [planName, setPlanName] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -98,6 +99,29 @@ export default function DashboardPage() {
     fetchNotifications()
     
     return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Fetch current subscription to display accurate plan name (same approach as DashboardHeader)
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const res = await fetch('/api/dashboard/subscriptions', {
+          credentials: 'include'
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        const display =
+          data?.currentSubscription?.subscription_plan?.display_name ||
+          data?.currentSubscription?.subscription_plan_name ||
+          planName ||
+          (user?.membership_type === 'paid' ? 'Paid' : 'Free')
+        if (display) setPlanName(display)
+      } catch {
+        // ignore
+      }
+    }
+    fetchSubscription()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchDashboardData = async () => {
@@ -116,6 +140,12 @@ export default function DashboardPage() {
       
       const userData = await userRes.json()
       setUser(userData.user)
+      // Derive initial plan name from user
+      const derivedPlan =
+        userData?.user?.current_subscription_plan_display_name ||
+        userData?.user?.current_subscription_plan_name ||
+        (userData?.user?.membership_type === 'paid' ? 'Paid' : 'Free')
+      setPlanName(derivedPlan || '')
       
       const dashboardRes = await fetch('/api/dashboard/stats', {
         credentials: 'include'
@@ -143,6 +173,14 @@ export default function DashboardPage() {
             ...prev,
             ...dashboardData.user
           }))
+
+          // Fallback/augment plan name from membership payload if present
+          const membershipPlan =
+            dashboardData?.membership?.plan_display_name ||
+            dashboardData?.membership?.subscription_plan?.display_name ||
+            dashboardData?.membership?.subscription_plan_name ||
+            null
+          if (membershipPlan) setPlanName(membershipPlan)
         }
       }
       
@@ -224,6 +262,7 @@ export default function DashboardPage() {
 
   const isPremiumMember = user?.membership_type === 'paid'
   const membershipExpired = user?.membership_expiry_date && new Date(user.membership_expiry_date) < new Date()
+  // planName is managed via state (derived from user/membership and refreshed via API)
 
   const dashboardStats = [
     { 
@@ -249,7 +288,7 @@ export default function DashboardPage() {
     },
     { 
       label: 'Membership Status', 
-      value: isPremiumMember ? 'Premium' : 'Standard', 
+      value: planName || (isPremiumMember ? 'Paid' : 'Free'), 
       icon: isPremiumMember ? Crown : Shield, 
       color: isPremiumMember ? 'amber' : 'gray',
       change: user?.membership_status === 'active' ? 'Active' : 'Inactive'
@@ -309,7 +348,7 @@ export default function DashboardPage() {
     { label: 'Position', value: user?.position, icon: GraduationCap },
     { label: 'Member Since', value: user?.membership_date ? formatDate(user.membership_date) : 'N/A', icon: CalendarDays },
     { label: 'Membership ID', value: user?.membership_code, icon: BadgeCheck },
-    { label: 'Membership Type', value: isPremiumMember ? 'Premium Member' : 'Standard Member', icon: Crown }
+    { label: 'Membership Type', value: planName || (isPremiumMember ? 'Paid' : 'Free'), icon: Crown }
   ]
 
   return (
@@ -582,7 +621,7 @@ export default function DashboardPage() {
               <div className="min-w-0">
                 <h3 className="text-base md:text-lg font-bold text-gray-900">Membership Status</h3>
                 <p className="text-[#03215F] text-xs">
-                  {isPremiumMember ? 'Premium Member Benefits' : 'Standard Membership'}
+                  {planName ? `${planName}` : (isPremiumMember ? 'Paid Membership' : 'Free Membership')}
                 </p>
               </div>
             </div>
