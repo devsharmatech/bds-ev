@@ -697,19 +697,19 @@ export default function EventDetailsModal({
                       </span>
                     </div>
                     <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] rounded-lg">
-                      <Briefcase className="w-4 h-4 md:w-5 md:h-5 text-[#AE9B66] flex-shrink-0" />
+                      <Briefcase className="w-4 h-4 md:w-5 md:h-5 text-gray-700 flex-shrink-0" />
                       <span className="text-xs md:text-sm text-gray-700 truncate">
                         Networking Opportunities
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-lg">
+                    <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gradient-to-r from-[#03215F]/30 to-[#03215F]/30 rounded-lg">
                       <Globe className="w-4 h-4 md:w-5 md:h-5 text-[#03215F] flex-shrink-0" />
                       <span className="text-xs md:text-sm text-gray-700 truncate">
                         Industry Insights
                       </span>
                     </div>
                     <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] rounded-lg">
-                      <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-[#ECCF0F] flex-shrink-0" />
+                      <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-gray-700 flex-shrink-0" />
                       <span className="text-xs md:text-sm text-gray-700 truncate">
                         Skill Development
                       </span>

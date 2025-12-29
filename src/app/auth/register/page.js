@@ -152,7 +152,21 @@ function RegisterPageContent() {
   ];
 
   // Positions from Excel column S
-  const positions = ["General Dentist", "Specialist", "Consultant"];
+  const positions = [
+    "General Dentist", 
+    "Specialist",
+    "Consultant",
+    "General Practitioner",
+    "Resident",
+    "Intern",
+    "HOD / Lead",
+    "Faculty / Lecturer",
+    "Dental Hygienist",
+    "Dental Assistant",
+    "Dental Technologist",
+    "Student",
+    "Administrator",
+    "Other",];
 
   // Nationalities - All Countries
   const nationalities = [

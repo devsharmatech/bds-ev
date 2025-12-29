@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, User, Mail, Phone, IdCard, CheckCircle, AlertCircle, Globe } from "lucide-react";
 import { toast } from "sonner";
@@ -44,6 +44,21 @@ export default function RegistrationLiteModal({
     "Student - Postgraduate",
     "Others (Non Dental)",
   ];
+  const POSITION_OPTIONS = [
+    "General Dentist", 
+    "Specialist",
+    "Consultant",
+    "General Practitioner",
+    "Resident",
+    "Intern",
+    "HOD / Lead",
+    "Faculty / Lecturer",
+    "Dental Hygienist",
+    "Dental Assistant",
+    "Dental Technologist",
+    "Student",
+    "Administrator",
+    "Other",];
 
   const WORK_SECTOR_OPTIONS = [
     "Public",
@@ -57,6 +72,7 @@ export default function RegistrationLiteModal({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [countryDial, setCountryDial] = useState("+973");
+  const [nationalityCode, setNationalityCode] = useState("BH");
   const [cpr, setCpr] = useState("");
   const [gender, setGender] = useState("");
   const [dob, setDob] = useState("");
@@ -64,7 +80,6 @@ export default function RegistrationLiteModal({
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
-  const [pinCode, setPinCode] = useState("");
   const [workSector, setWorkSector] = useState("");
   const [employer, setEmployer] = useState("");
   const [position, setPosition] = useState("");
@@ -72,6 +87,37 @@ export default function RegistrationLiteModal({
   const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Build full country list with phone codes (client-side)
+  const [countryOptions, setCountryOptions] = useState(COUNTRY_OPTIONS);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,idd");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+        const mapped = data
+          .map((c) => {
+            const code = c.cca2;
+            const label = c.name?.common || code;
+            const root = c.idd?.root || "";
+            const suffixes = c.idd?.suffixes || [];
+            const dial = root ? root + (suffixes[0] || "") : "";
+            return { label, code, dial };
+          })
+          .filter((c) => c.label)
+          .sort((a, b) => a.label.localeCompare(b.label));
+        if (!cancelled) setCountryOptions(mapped);
+      } catch {
+        // ignore; fallback list already present
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const reset = () => {
     setFullName("");
@@ -81,10 +127,10 @@ export default function RegistrationLiteModal({
     setGender("");
     setDob("");
     setNationality("");
+    setNationalityCode("");
     setAddress("");
     setCity("");
     setState("");
-    setPinCode("");
     setWorkSector("");
     setEmployer("");
     setPosition("");
@@ -98,6 +144,20 @@ export default function RegistrationLiteModal({
     setLoading(true);
     setError(null);
     try {
+      // Frontend validation to match API requirements
+      if (!fullName.trim() || !email.trim() || !phone.trim()) {
+        setError("Full name, email, and phone are required");
+        toast.error("Full name, email, and phone are required");
+        setLoading(false);
+        return;
+      }
+      if (nationalityCode === "BH" && !cpr.trim()) {
+        setError("CPR number is required for Bahrain nationals");
+        toast.error("CPR number is required for Bahrain nationals");
+        setLoading(false);
+        return;
+      }
+
       const combinedPhone =
         phone.trim().startsWith("+") || countryDial === "+"
           ? phone.trim()
@@ -110,14 +170,14 @@ export default function RegistrationLiteModal({
           full_name: fullName.trim(),
           email: email.trim(),
           phone: combinedPhone,
-          cpr_id: cpr.trim(),
+          // Some backends require cpr_id - pass N/A for non-Bahrain to satisfy schema
+          cpr_id: nationalityCode === "BH" ? cpr.trim() : "N/A",
           gender: gender || null,
           dob: dob || null,
           nationality: nationality || null,
           address: address || null,
           city: city || null,
           state: state || null,
-          pin_code: pinCode || null,
           work_sector: workSector || null,
           employer: employer || null,
           position: position || null,
@@ -229,11 +289,11 @@ export default function RegistrationLiteModal({
                   <select
                     value={countryDial}
                     onChange={(e) => setCountryDial(e.target.value)}
-                    className="pl-9 pr-8 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
+                    className="pl-9 pr-8 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none w-32 sm:w-40 md:w-44 shrink-0"
                   >
-                    {COUNTRY_OPTIONS.map((c) => (
-                      <option key={c.code} value={c.dial}>
-                        {c.label} ({c.dial})
+                    {countryOptions.map((c) => (
+                      <option key={c.code} value={c.dial || ""}>
+                        {c.label} {c.dial ? `(${c.dial})` : ""}
                       </option>
                     ))}
                   </select>
@@ -251,22 +311,24 @@ export default function RegistrationLiteModal({
                 </div>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                CPR Number
-              </label>
-              <div className="relative">
-                <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={cpr}
-                  onChange={(e) => setCpr(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
-                  placeholder="CPR ID"
-                />
+            {nationalityCode === "BH" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CPR Number
+                </label>
+                <div className="relative">
+                  <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={cpr}
+                    onChange={(e) => setCpr(e.target.value)}
+                    required={nationalityCode === "BH"}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
+                    placeholder="CPR ID"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Additional profile details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -304,12 +366,19 @@ export default function RegistrationLiteModal({
                   Nationality
                 </label>
                 <select
-                  value={nationality}
-                  onChange={(e) => setNationality(e.target.value)}
+                  value={nationalityCode}
+                  onChange={(e) => {
+                    const code = e.target.value;
+                    setNationalityCode(code);
+                    const found = countryOptions.find((c) => c.code === code);
+                    setNationality(found?.label || "");
+                    // If the user selects a country with a dial code, prefill phone code too
+                    if (found?.dial) setCountryDial(found.dial);
+                  }}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
                 >
-                  {COUNTRY_OPTIONS.map((c) => (
-                    <option key={c.code} value={c.label}>
+                  {countryOptions.map((c) => (
+                    <option key={c.code} value={c.code}>
                       {c.label}
                     </option>
                   ))}
@@ -347,7 +416,7 @@ export default function RegistrationLiteModal({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   City
@@ -372,18 +441,6 @@ export default function RegistrationLiteModal({
                   placeholder="State"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  PIN Code
-                </label>
-                <input
-                  type="text"
-                  value={pinCode}
-                  onChange={(e) => setPinCode(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
-                  placeholder="PIN"
-                />
-              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -403,13 +460,18 @@ export default function RegistrationLiteModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Position
                 </label>
-                <input
-                  type="text"
+                <select
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
-                  placeholder="Position"
-                />
+                >
+                  <option value="">Select</option>
+                  {POSITION_OPTIONS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

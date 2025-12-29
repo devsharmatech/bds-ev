@@ -247,7 +247,7 @@ export default function ProfilePage() {
   // Get status color
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active': return 'bg-[#AE9B66] text-white border-[#AE9B66]'
+      case 'active': return 'bg-green-500/30 text-green-500 border-green-500'
       case 'inactive': return 'bg-[#b8352d] text-white border-[#b8352d]'
       case 'expired': return 'bg-[#ECCF0F] text-[#03215F] border-[#ECCF0F]'
       default: return 'bg-gray-100 text-gray-800 border-gray-200'
@@ -292,9 +292,7 @@ export default function ProfilePage() {
               <h3 className="font-bold text-lg md:text-xl">{user?.full_name || 'Member'}</h3>
               <p className="text-white/80 text-sm">{user?.membership_code || 'No Membership ID'}</p>
               <div className="flex items-center gap-2 mt-1">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(user?.membership_type)}`}>
-                  {user?.membership_type === 'paid' ? 'Premium Member' : 'Standard Member'}
-                </span>
+                
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user?.membership_status)}`}>
                   {user?.membership_status === 'active' ? 'Active' : 'Inactive'}
                 </span>
@@ -304,48 +302,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-[#9cc2ed] rounded-lg">
-              <Clock className="w-5 h-5 md:w-6 md:h-6 text-[#03215F]" />
-            </div>
-            <span className="text-xl md:text-2xl font-bold">{getMembershipDays()}</span>
-          </div>
-          <p className="text-gray-600 text-xs md:text-sm">Days as Member</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-[#AE9B66] rounded-lg">
-              <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </div>
-            <span className="text-xl md:text-2xl font-bold">{user?.events_attended || 0}</span>
-          </div>
-          <p className="text-gray-600 text-xs md:text-sm">Events Attended</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-[#03215F] rounded-lg">
-              <Award className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </div>
-            <span className="text-xl md:text-2xl font-bold">{user?.certificates || 0}</span>
-          </div>
-          <p className="text-gray-600 text-xs md:text-sm">Certificates</p>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-[#ECCF0F] rounded-lg">
-              <Star className="w-5 h-5 md:w-6 md:h-6 text-[#03215F]" />
-            </div>
-            <span className="text-xl md:text-2xl font-bold">{user?.points || 0}</span>
-          </div>
-          <p className="text-gray-600 text-xs md:text-sm">Reward Points</p>
-        </div>
-      </div>
+      
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Personal Information */}
@@ -754,103 +711,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Membership Information */}
-        <div className="bg-gradient-to-r from-[#03215F]/10 to-[#03215F]/10 rounded-xl p-5 md:p-6 border border-[#03215F]/20 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg md:text-xl font-bold text-gray-900 flex items-center">
-              <div className="p-2 bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-lg mr-3">
-                <Shield className="w-5 h-5 md:w-6 md:h-6 text-white" />
-              </div>
-              Membership Information
-            </h2>
-            <div className="text-xs text-[#03215F] px-3 py-1 bg-white/50 rounded-full border border-[#03215F]/30">
-              Read-only information
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <div className="bg-white/50 rounded-lg p-4 border border-gray-200/50">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-[#9cc2ed] rounded-lg">
-                  <ShieldIcon className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">Membership ID</div>
-                  <div className="font-bold text-gray-900 font-mono text-sm md:text-base">
-                    {formData.membership_code || 'N/A'}
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/50 rounded-lg p-4 border border-gray-200/50">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-[#03215F] rounded-lg">
-                  <Crown className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">Membership Type</div>
-                  <div className={`font-bold text-sm md:text-base ${getTypeColor(formData.membership_type)} px-2 py-1 rounded-full inline-block`}>
-                    {formData.membership_type === 'paid' ? 'Premium Member' : 'Standard Member'}
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/50 rounded-lg p-4 border border-gray-200/50">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-[#AE9B66] rounded-lg">
-                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">Status</div>
-                  <div className={`font-bold text-sm md:text-base ${getStatusColor(formData.membership_status)} px-2 py-1 rounded-full inline-block`}>
-                    {formData.membership_status === 'active' ? 'Active' : 
-                     formData.membership_status === 'inactive' ? 'Inactive' : 'Expired'}
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white/50 rounded-lg p-4 border border-gray-200/50">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-[#ECCF0F] rounded-lg">
-                  <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">Member Since</div>
-                  <div className="font-bold text-gray-900 text-sm md:text-base">
-                    {formatDate(formData.membership_date)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {formData.membership_expiry_date && (
-            <div className="mt-4 bg-white/70 rounded-lg p-4 border border-[#ECCF0F]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#ECCF0F] rounded-lg">
-                    <Clock className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500">Membership Expires</div>
-                    <div className="font-bold text-[#ECCF0F] text-sm md:text-base">
-                      {formatDate(formData.membership_expiry_date)}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-                >
-                  Renew Now
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+      
 
         {/* Submit Button */}
         <div className="sticky bottom-0 md:static bg-white md:bg-transparent p-4 md:p-0 border-t md:border-0 border-gray-200 md:flex md:justify-end">
