@@ -263,11 +263,27 @@ export default function EventsSection() {
   }, []);
 
   const handleJoinNow = async (event) => {
-    // If not logged in, open login modal
-    if (!user) {
+    // Ensure fresh auth check to avoid false negatives
+    let authedUser = user;
+    if (!authedUser) {
+      try {
+        const resp = await fetch("/api/auth/me", { credentials: "include" });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data?.user) {
+            setUser(data.user);
+            authedUser = data.user;
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // If after re-check still not logged in, open join modal and let it request signup
+    if (!authedUser) {
       setSelectedEvent(event);
-      // Offer quick signup flow instead of strict login
-      setIsQuickSignupOpen(true);
+      setIsEventModalOpen(true);
       return;
     }
 
@@ -723,7 +739,7 @@ export default function EventsSection() {
                                 onClick={() => handleJoinNow(event)}
                                 disabled={isFull || derivedStatus === "past" || derivedStatus === "cancelled"}
                                 className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${!isFull && derivedStatus !== "past" && derivedStatus !== "cancelled"
-                                    ? "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white hover:shadow-lg"
+                                    ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
                                     : "bg-gray-200 text-gray-500 cursor-not-allowed"
                                   }`}
                               >
@@ -731,13 +747,7 @@ export default function EventsSection() {
                                 Join
                               </button>
                             ) : event.is_paid && !hasPaid ? (
-                              // <button
-                              //   onClick={() => handleJoinNow(event)}
-                              //   className="flex-1 py-2.5 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
-                              // >
-                              //   <Shield className="w-4 h-4" />
-                              //   Complete Payment
-                              // </button>
+                             
                               <button
                                 onClick={() => handleViewDetails(event)}
                                 className="flex-1 py-2.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
@@ -833,7 +843,10 @@ export default function EventsSection() {
           isOpen={isEventModalOpen}
           onClose={() => setIsEventModalOpen(false)}
           user={user}
-          onLoginRequired={() => setIsLoginModalOpen(true)}
+          onLoginRequired={() => {
+            setIsEventModalOpen(false);
+            setIsQuickSignupOpen(true);
+          }}
           onJoinSuccess={handleEventJoinSuccess}
         />
       )}

@@ -18,6 +18,7 @@ export async function POST(request) {
       full_name,
       email,
       phone,
+      password,
       cpr_id,
       gender = null,
       dob = null,
@@ -33,9 +34,9 @@ export async function POST(request) {
       category = null,
     } = body;
 
-    if (!full_name || !email || !phone) {
+    if (!full_name || !email || !phone || !password) {
       return NextResponse.json(
-        { success: false, message: "full_name, email, phone are required" },
+        { success: false, message: "full_name, email, phone, password are required" },
         { status: 400 }
       );
     }
@@ -43,6 +44,12 @@ export async function POST(request) {
     if (!isValidEmail(email)) {
       return NextResponse.json(
         { success: false, message: "Invalid email format" },
+        { status: 400 }
+      );
+    }
+    if (typeof password !== "string" || password.trim().length < 6) {
+      return NextResponse.json(
+        { success: false, message: "Password must be at least 6 characters" },
         { status: 400 }
       );
     }
@@ -92,9 +99,8 @@ export async function POST(request) {
       }
     }
 
-    // Create user with random password (user can reset later)
-    const randomPassword = `Tmp!${Math.random().toString(36).slice(2, 10)}@${Date.now().toString().slice(-4)}`;
-    const password_hash = await bcrypt.hash(randomPassword, 10);
+    // Create user with provided password
+    const password_hash = await bcrypt.hash(password.trim(), 10);
 
     const { data: newUser, error: userInsertError } = await supabase
       .from("users")

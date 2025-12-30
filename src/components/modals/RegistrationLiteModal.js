@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Mail, Phone, CheckCircle, AlertCircle, Globe } from "lucide-react";
+import { X, User, Mail, Phone, CheckCircle, AlertCircle, Globe, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 export default function RegistrationLiteModal({
@@ -69,6 +69,7 @@ export default function RegistrationLiteModal({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [countryDial, setCountryDial] = useState("+973");
   const [nationalityCode, setNationalityCode] = useState("BH");
   const [gender, setGender] = useState("");
@@ -120,6 +121,7 @@ export default function RegistrationLiteModal({
     setFullName("");
     setEmail("");
     setPhone("");
+    setPassword("");
     setGender("");
     setDob("");
     setNationality("");
@@ -141,9 +143,15 @@ export default function RegistrationLiteModal({
     setError(null);
     try {
       // Frontend validation to match API requirements
-      if (!fullName.trim() || !email.trim() || !phone.trim()) {
-        setError("Full name, email, and phone are required");
-        toast.error("Full name, email, and phone are required");
+      if (!fullName.trim() || !email.trim() || !phone.trim() || !password.trim()) {
+        setError("Full name, email, phone, and password are required");
+        toast.error("Full name, email, phone, and password are required");
+        setLoading(false);
+        return;
+      }
+      if (password.trim().length < 6) {
+        setError("Password must be at least 6 characters");
+        toast.error("Password must be at least 6 characters");
         setLoading(false);
         return;
       }
@@ -160,6 +168,7 @@ export default function RegistrationLiteModal({
           full_name: fullName.trim(),
           email: email.trim(),
           phone: combinedPhone,
+          password: password.trim(),
           // cpr removed for all registrations
           cpr_id: null,
           gender: gender || null,
@@ -266,6 +275,23 @@ export default function RegistrationLiteModal({
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
                   placeholder="you@example.com"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
+                  placeholder="Create a password"
                 />
               </div>
             </div>
