@@ -51,7 +51,7 @@ import EventModal from "@/components/modals/EventModal"; // Your join modal
 
 // Bahrain Flag Component
 const BahrainFlag = () => (
-   <svg
+  <svg
     className="w-4 h-4"
     viewBox="0 0 640 480"
     xmlns="http://www.w3.org/2000/svg"
@@ -258,10 +258,10 @@ function EventsPageContent() {
     if (success || errorParam) {
       const messageType = success ? 'success' : 'error';
       let displayMessage = message;
-      
+
       if (!displayMessage) {
         if (success === 'payment_completed') {
-          displayMessage = eventName 
+          displayMessage = eventName
             ? `Payment completed successfully! You are now registered for "${eventName}".`
             : 'Payment completed successfully! You are now registered for the event.';
         } else if (errorParam === 'payment_failed') {
@@ -490,28 +490,28 @@ function EventsPageContent() {
           prevEvents.map((ev) =>
             ev.id === event.id
               ? {
-                  ...ev,
-                  joined: true,
-                  registered_count: (ev.registered_count || 0) + 1,
-                  progress: calculateProgress(
+                ...ev,
+                joined: true,
+                registered_count: (ev.registered_count || 0) + 1,
+                progress: calculateProgress(
+                  (ev.registered_count || 0) + 1,
+                  ev.capacity
+                ),
+                isAlmostFull:
+                  calculateProgress(
                     (ev.registered_count || 0) + 1,
                     ev.capacity
-                  ),
-                  isAlmostFull:
-                    calculateProgress(
-                      (ev.registered_count || 0) + 1,
-                      ev.capacity
-                    ) >= 80 &&
-                    calculateProgress(
-                      (ev.registered_count || 0) + 1,
-                      ev.capacity
-                    ) < 100,
-                  isFull:
-                    calculateProgress(
-                      (ev.registered_count || 0) + 1,
-                      ev.capacity
-                    ) >= 100,
-                }
+                  ) >= 80 &&
+                  calculateProgress(
+                    (ev.registered_count || 0) + 1,
+                    ev.capacity
+                  ) < 100,
+                isFull:
+                  calculateProgress(
+                    (ev.registered_count || 0) + 1,
+                    ev.capacity
+                  ) >= 100,
+              }
               : ev
           )
         );
@@ -582,11 +582,10 @@ function EventsPageContent() {
     <MainLayout>
       {/* URL Success/Error Message Banner */}
       {urlMessage && (
-        <div className={`sticky top-0 z-40 p-4 border-b ${
-          urlMessageType === 'success' 
-            ? 'bg-green-50 border-green-200' 
+        <div className={`sticky top-0 z-40 p-4 border-b ${urlMessageType === 'success'
+            ? 'bg-green-50 border-green-200'
             : 'bg-[#b8352d] border-[#b8352d]'
-        }`}>
+          }`}>
           <div className="container mx-auto">
             <div className="flex items-start gap-3 max-w-7xl mx-auto">
               {urlMessageType === 'success' ? (
@@ -594,9 +593,8 @@ function EventsPageContent() {
               ) : (
                 <AlertCircle className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
               )}
-              <p className={`text-sm font-medium flex-1 ${
-                urlMessageType === 'success' ? 'text-green-800' : 'text-white'
-              }`}>
+              <p className={`text-sm font-medium flex-1 ${urlMessageType === 'success' ? 'text-green-800' : 'text-white'
+                }`}>
                 {urlMessage}
               </p>
               <button
@@ -604,9 +602,8 @@ function EventsPageContent() {
                   setUrlMessage(null);
                   setUrlMessageType(null);
                 }}
-                className={`flex-shrink-0 ${
-                  urlMessageType === 'success' ? 'text-green-600 hover:text-green-700' : 'text-white hover:text-gray-200'
-                }`}
+                className={`flex-shrink-0 ${urlMessageType === 'success' ? 'text-green-600 hover:text-green-700' : 'text-white hover:text-gray-200'
+                  }`}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -682,11 +679,10 @@ function EventsPageContent() {
           <div className="flex flex-wrap gap-2 mb-6">
             <button
               onClick={() => setActiveTab("all")}
-              className={`px-4 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                activeTab === "all"
+              className={`px-4 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${activeTab === "all"
                   ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white shadow-lg"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+                }`}
             >
               <Globe className="w-4 h-4" />
               All Events
@@ -696,11 +692,10 @@ function EventsPageContent() {
             </button>
             <button
               onClick={() => setActiveTab("upcoming")}
-              className={`px-4 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                activeTab === "upcoming"
+              className={`px-4 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${activeTab === "upcoming"
                   ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white shadow-lg"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+                }`}
             >
               <Calendar className="w-4 h-4" />
               Upcoming
@@ -710,11 +705,10 @@ function EventsPageContent() {
             </button>
             <button
               onClick={() => setActiveTab("running")}
-              className={`px-4 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${
-                activeTab === "running"
+              className={`px-4 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${activeTab === "running"
                   ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white shadow-lg"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+                }`}
             >
               <PlayCircle className="w-4 h-4" />
               Running Now
@@ -803,9 +797,8 @@ function EventsPageContent() {
                       >
                         {/* Glow effect on hover */}
                         <div
-                          className={`absolute -inset-0.5 bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-1000 ${
-                            hoveredCard === event.id ? "opacity-20" : ""
-                          }`}
+                          className={`absolute -inset-0.5 bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-1000 ${hoveredCard === event.id ? "opacity-20" : ""
+                            }`}
                         ></div>
 
                         <div className="relative bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 group-hover:border-[#03215F]/30 h-full flex flex-col">
@@ -840,13 +833,12 @@ function EventsPageContent() {
 
                                 {/* Status Badge */}
                                 <span
-                                  className={`px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
-                                    event.status === "upcoming"
+                                  className={`px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${event.status === "upcoming"
                                       ? "bg-[#9cc2ed]/80 text-white"
                                       : event.status === "ongoing"
-                                      ? "bg-[#AE9B66]/80 text-white"
-                                      : "bg-gray-500/80 text-white"
-                                  }`}
+                                        ? "bg-[#AE9B66]/80 text-white"
+                                        : "bg-gray-500/80 text-white"
+                                    }`}
                                 >
                                   {event.status?.charAt(0).toUpperCase() +
                                     event.status?.slice(1)}
@@ -993,8 +985,7 @@ function EventsPageContent() {
                                       <div className="text-xs text-gray-500 truncate">
                                         {event.event_hosts[0]?.name}
                                         {event.event_hosts.length > 1 &&
-                                          ` +${
-                                            event.event_hosts.length - 1
+                                          ` +${event.event_hosts.length - 1
                                           } more`}
                                       </div>
                                     </div>
@@ -1033,13 +1024,12 @@ function EventsPageContent() {
                               {event.capacity && (
                                 <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
                                   <div
-                                    className={`h-1.5 md:h-2 rounded-full transition-all duration-500 ${
-                                      event.isFull
+                                    className={`h-1.5 md:h-2 rounded-full transition-all duration-500 ${event.isFull
                                         ? "bg-[#b8352d]"
                                         : event.isAlmostFull
-                                        ? "bg-[#ECCF0F]"
-                                        : "bg-gradient-to-r from-[#03215F] to-[#03215F]"
-                                    }`}
+                                          ? "bg-[#ECCF0F]"
+                                          : "bg-gradient-to-r from-[#03215F] to-[#03215F]"
+                                      }`}
                                     style={{ width: `${event.progress}%` }}
                                   ></div>
                                 </div>
@@ -1088,15 +1078,17 @@ function EventsPageContent() {
                                 <button
                                   onClick={() => handleJoinClick(event)}
                                   disabled={
-                                    event.status !== "upcoming" ||
                                     event.isFull ||
+                                    event.status === "completed" ||
+                                    event.status === "cancelled" ||
                                     joiningEvent === event.id
                                   }
-                                  className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${
-                                    event.status === "upcoming" && !event.isFull
+                                  className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${!event.isFull &&
+                                      event.status !== "completed" &&
+                                      event.status !== "cancelled"
                                       ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                                       : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                  }`}
+                                    }`}
                                 >
                                   {joiningEvent === event.id ? (
                                     <>
@@ -1161,25 +1153,25 @@ function EventsPageContent() {
                 </h3>
                 <p className="text-gray-600 max-w-md mx-auto mb-8">
                   {searchQuery ||
-                  selectedCategory !== "All" ||
-                  activeTab !== "all"
+                    selectedCategory !== "All" ||
+                    activeTab !== "all"
                     ? "Try adjusting your filters or search term. New events are added regularly!"
                     : "There are no events scheduled at the moment. Check back soon!"}
                 </p>
                 {(searchQuery ||
                   selectedCategory !== "All" ||
                   activeTab !== "all") && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSelectedCategory("All");
-                      setActiveTab("all");
-                    }}
-                    className="px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
-                  >
-                    Clear All Filters
-                  </button>
-                )}
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSelectedCategory("All");
+                        setActiveTab("all");
+                      }}
+                      className="px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
+                    >
+                      Clear All Filters
+                    </button>
+                  )}
               </div>
             )}
           </>
@@ -1224,10 +1216,10 @@ function EventsPageContent() {
             </div>
             <div className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-                95%
+                30+
               </div>
               <div className="text-white/90 text-sm md:text-base">
-                Satisfaction Rate
+                Years
               </div>
             </div>
           </div>

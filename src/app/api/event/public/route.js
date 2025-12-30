@@ -134,7 +134,9 @@ export async function GET(request) {
       .neq("status", "cancelled");
 
     if (isUpcoming) {
-      query = query.gte("start_datetime", new Date().toISOString());
+      const nowIso = new Date().toISOString();
+      // Include both upcoming (start >= now) and ongoing (end >= now)
+      query = query.or(`start_datetime.gte.${nowIso},end_datetime.gte.${nowIso}`);
     }
 
     if (search) {

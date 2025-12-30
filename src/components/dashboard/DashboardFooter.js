@@ -23,6 +23,15 @@ export default function DashboardFooter() {
             <span className="text-gray-400">•</span>
             <Heart className="w-4 h-4 text-[#b8352d]" />
             <span>Made for BDS</span>
+            <span className="text-gray-400">•</span>
+            <a
+              href="https://365neo.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#03215F] hover:underline underline-offset-2"
+            >
+              Developed by 365Neo Digital Services
+            </a>
           </div>
         </div>
       </div>

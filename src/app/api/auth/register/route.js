@@ -31,23 +31,15 @@ export async function POST(req) {
     // BASIC VALIDATION
     // --------------------------------------------------
     const nationalityNorm = (nationality || '').toString().trim().toLowerCase();
-    const isBahraini = nationalityNorm === 'bahrain';
-    if (!fullNameEng || !email || !password || !mobile || (isBahraini && !cpr)) {
+    if (!fullNameEng || !email || !password || !mobile) {
       return NextResponse.json(
         { success: false, message: "Required fields are missing" },
         { status: 400 }
       );
     }
 
-    // CPR format validation: required for Bahrain, optional otherwise; if provided must be 9 digits
-    if (isBahraini) {
-      if (!/^\d{9}$/.test((cpr || '').toString().trim())) {
-        return NextResponse.json(
-          { success: false, message: "CPR is required for Bahrain nationals and must be 9 digits" },
-          { status: 400 }
-        );
-      }
-    } else if (cpr) {
+    // CPR optional for all; if provided must be 9 digits
+    if (cpr) {
       if (!/^\d{9}$/.test((cpr || '').toString().trim())) {
         return NextResponse.json(
           { success: false, message: "If provided, CPR must be 9 digits" },

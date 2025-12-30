@@ -177,6 +177,26 @@ const calculateProgress = (registered, capacity) => {
   return Math.min(100, (registered / capacity) * 100);
 };
 
+// Derive status from start/end datetimes (overrides inconsistent server status)
+const deriveEventStatus = (event) => {
+  const rawStatus = (event.status || "").toLowerCase();
+  if (rawStatus === "cancelled") return "cancelled";
+  const now = new Date();
+  const start = event.start_datetime ? new Date(event.start_datetime) : null;
+  const end = event.end_datetime ? new Date(event.end_datetime) : null;
+  if (start && now < start) return "upcoming";
+  if (start && now >= start) {
+    if (!end || now <= end) return "ongoing";
+    if (end && now > end) return "past";
+  }
+  // Fallbacks if dates are missing
+  if (!start && end && now <= end) return "ongoing";
+  if (!start && end && now > end) return "past";
+  // If we can't determine from dates, use server status or default to upcoming
+  if (rawStatus === "ongoing" || rawStatus === "upcoming") return rawStatus;
+  return "upcoming";
+};
+
 export default function EventsSection() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -251,8 +271,17 @@ export default function EventsSection() {
       return;
     }
 
-    // If already joined, show message
+    // If already joined:
+    // - For paid events with unpaid status, allow completing payment
+    // - For paid+paid or free, show already joined
     if (event.joined) {
+      const isPaidEvent = !!event.is_paid;
+      const hasPaid = !!(event.payment_paid || (event.event_member_data && Number(event.event_member_data.price_paid) > 0));
+      if (isPaidEvent && !hasPaid) {
+        setSelectedEvent(event);
+        setIsEventModalOpen(true);
+        return;
+      }
       toast.success("You have already joined this event!");
       return;
     }
@@ -393,6 +422,11 @@ export default function EventsSection() {
                   const memberSavings = event.member_price
                     ? event.regular_price - event.member_price
                     : 0;
+                  const hasPaid =
+                    !!(event.payment_paid ||
+                      (event.event_member_data &&
+                        Number(event.event_member_data.price_paid) > 0));
+                  const derivedStatus = deriveEventStatus(event);
 
                   return (
                     <motion.div
@@ -443,15 +477,15 @@ export default function EventsSection() {
                               {/* Status Badge */}
                               <span
                                 className={`px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm ${
-                                  event.status === "upcoming"
+                                  derivedStatus === "upcoming"
                                     ? "bg-[#9cc2ed]/80 text-white"
-                                    : event.status === "ongoing"
+                                    : derivedStatus === "ongoing"
                                     ? "bg-[#AE9B66]/80 text-white"
                                     : "bg-gray-500/80 text-white"
                                 }`}
                               >
-                                {event.status.charAt(0).toUpperCase() +
-                                  event.status.slice(1)}
+                                {derivedStatus.charAt(0).toUpperCase() +
+                                  derivedStatus.slice(1)}
                               </span>
                             </div>
 
@@ -492,12 +526,19 @@ export default function EventsSection() {
                                 </div>
                               )}
 
-                              {/* Joined */}
+                              {/* Joined / Payment Pending */}
                               {event.joined && (
-                                <div className="px-3 py-1.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
-                                  <CheckCircle className="w-3 h-3" />
-                                  Joined
-                                </div>
+                                event.is_paid && !hasPaid ? (
+                                  <div className="px-3 py-1.5 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] backdrop-blur-sm rounded-full text-[#03215F] text-xs font-medium flex items-center gap-1.5">
+                                    <Shield className="w-3 h-3" />
+                                    Payment Pending
+                                  </div>
+                                ) : (
+                                  <div className="px-3 py-1.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Joined
+                                  </div>
+                                )
                               )}
                             </div>
                           </div>
@@ -684,15 +725,23 @@ export default function EventsSection() {
                             {!event.joined ? (
                               <button
                                 onClick={() => handleJoinNow(event)}
-                                disabled={event.status !== "upcoming" || isFull}
+                                disabled={isFull || derivedStatus === "past" || derivedStatus === "cancelled"}
                                 className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${
-                                  event.status === "upcoming" && !isFull
+                                  !isFull && derivedStatus !== "past" && derivedStatus !== "cancelled"
                                     ? "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white hover:shadow-lg"
                                     : "bg-gray-200 text-gray-500 cursor-not-allowed"
                                 }`}
                               >
                                 <ArrowRight className="w-4 h-4" />
                                 Join
+                              </button>
+                            ) : event.is_paid && !hasPaid ? (
+                              <button
+                                onClick={() => handleJoinNow(event)}
+                                className="flex-1 py-2.5 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                              >
+                                <Shield className="w-4 h-4" />
+                                Complete Payment
                               </button>
                             ) : (
                               <button

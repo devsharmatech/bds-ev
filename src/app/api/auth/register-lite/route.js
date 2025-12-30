@@ -33,9 +33,9 @@ export async function POST(request) {
       category = null,
     } = body;
 
-    if (!full_name || !email || !phone || !cpr_id) {
+    if (!full_name || !email || !phone) {
       return NextResponse.json(
-        { success: false, message: "full_name, email, phone, cpr_id are required" },
+        { success: false, message: "full_name, email, phone are required" },
         { status: 400 }
       );
     }
@@ -78,16 +78,18 @@ export async function POST(request) {
       );
     }
 
-    const { data: profileByCPR } = await supabase
-      .from("member_profiles")
-      .select("id")
-      .eq("cpr_id", cpr_id)
-      .maybeSingle();
-    if (profileByCPR) {
-      return NextResponse.json(
-        { success: false, code: "DUP_CPR", message: "CPR already registered. Please login." },
-        { status: 409 }
-      );
+    if (cpr_id) {
+      const { data: profileByCPR } = await supabase
+        .from("member_profiles")
+        .select("id")
+        .eq("cpr_id", cpr_id)
+        .maybeSingle();
+      if (profileByCPR) {
+        return NextResponse.json(
+          { success: false, code: "DUP_CPR", message: "CPR already registered. Please login." },
+          { status: 409 }
+        );
+      }
     }
 
     // Create user with random password (user can reset later)
@@ -121,7 +123,7 @@ export async function POST(request) {
       .from("member_profiles")
       .insert({
         user_id: newUser.id,
-        cpr_id,
+        cpr_id: cpr_id || null,
         gender,
         dob,
         address,

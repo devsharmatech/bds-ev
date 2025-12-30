@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Mail, Phone, IdCard, CheckCircle, AlertCircle, Globe } from "lucide-react";
+import { X, User, Mail, Phone, CheckCircle, AlertCircle, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 export default function RegistrationLiteModal({
@@ -26,7 +26,6 @@ export default function RegistrationLiteModal({
     "General Dentistry",
     "Orthodontics",
     "Endodontics",
-    "Periodontics",
     "Prosthodontics",
     "Oral & Maxillofacial Surgery",
     "Pediatric Dentistry",
@@ -45,10 +44,9 @@ export default function RegistrationLiteModal({
     "Others (Non Dental)",
   ];
   const POSITION_OPTIONS = [
-    "General Dentist", 
+    "General Dentist",
     "Specialist",
     "Consultant",
-    "General Practitioner",
     "Resident",
     "Intern",
     "HOD / Lead",
@@ -73,7 +71,6 @@ export default function RegistrationLiteModal({
   const [phone, setPhone] = useState("");
   const [countryDial, setCountryDial] = useState("+973");
   const [nationalityCode, setNationalityCode] = useState("BH");
-  const [cpr, setCpr] = useState("");
   const [gender, setGender] = useState("");
   const [dob, setDob] = useState("");
   const [nationality, setNationality] = useState("Bahrain");
@@ -123,7 +120,6 @@ export default function RegistrationLiteModal({
     setFullName("");
     setEmail("");
     setPhone("");
-    setCpr("");
     setGender("");
     setDob("");
     setNationality("");
@@ -151,12 +147,6 @@ export default function RegistrationLiteModal({
         setLoading(false);
         return;
       }
-      if (nationalityCode === "BH" && !cpr.trim()) {
-        setError("CPR number is required for Bahrain nationals");
-        toast.error("CPR number is required for Bahrain nationals");
-        setLoading(false);
-        return;
-      }
 
       const combinedPhone =
         phone.trim().startsWith("+") || countryDial === "+"
@@ -170,8 +160,8 @@ export default function RegistrationLiteModal({
           full_name: fullName.trim(),
           email: email.trim(),
           phone: combinedPhone,
-          // Ensure cpr_id always present; use 9 zeros for non-Bahrain to satisfy numeric schemas
-          cpr_id: nationalityCode === "BH" ? cpr.trim() : "000000000",
+          // cpr removed for all registrations
+          cpr_id: null,
           gender: gender || null,
           dob: dob || null,
           nationality: nationality || null,
@@ -311,24 +301,7 @@ export default function RegistrationLiteModal({
                 </div>
               </div>
             </div>
-            {nationalityCode === "BH" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CPR Number
-                </label>
-                <div className="relative">
-                  <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={cpr}
-                    onChange={(e) => setCpr(e.target.value)}
-                    required={nationalityCode === "BH"}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
-                    placeholder="CPR ID"
-                  />
-                </div>
-              </div>
-            )}
+            
 
             {/* Additional profile details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

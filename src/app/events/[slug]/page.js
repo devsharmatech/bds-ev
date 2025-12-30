@@ -186,6 +186,15 @@ export default function EventDetailsPage() {
       return;
     }
 
+    // Block joining for past or cancelled events based on dates
+    const now = new Date();
+    const startDate = event.start_datetime ? new Date(event.start_datetime) : null;
+    const endDate = event.end_datetime ? new Date(event.end_datetime) : null;
+    if ((event.status && event.status.toLowerCase() === "cancelled") || (endDate && now > endDate)) {
+      toast.error("Registration is not available for this event.");
+      return;
+    }
+
     setSelectedEvent(event);
     setIsJoinModalOpen(true);
   };

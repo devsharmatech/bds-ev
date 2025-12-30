@@ -18,10 +18,10 @@ export default function MobileNavigation() {
   const pathname = usePathname()
   
   const navItems = [
-    { name: 'Home', href: '/dashboard', icon: Home },
-    { name: 'Events', href: '/dashboard/events', icon: Calendar },
-    { name: 'Certificates', href: '/dashboard/certificates', icon: Award },
-    { name: 'Profile', href: '/dashboard/profile', icon: User },
+    { name: 'Home', href: '/member/dashboard', icon: Home },
+    { name: 'Events', href: '/member/dashboard/events', icon: Calendar },
+    { name: 'Certificates', href: '/member/dashboard/certificates', icon: Award },
+    { name: 'Profile', href: '/member/dashboard/profile', icon: User },
   ]
   
   return (

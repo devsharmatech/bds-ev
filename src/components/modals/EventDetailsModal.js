@@ -168,6 +168,24 @@ const Info = ({ className }) => (
   </svg>
 );
 
+// Derive status from start/end datetimes
+const deriveEventStatus = (event) => {
+  const raw = (event?.status || "").toLowerCase();
+  if (raw === "cancelled") return "cancelled";
+  const now = new Date();
+  const start = event?.start_datetime ? new Date(event.start_datetime) : null;
+  const end = event?.end_datetime ? new Date(event.end_datetime) : null;
+  if (start && now < start) return "upcoming";
+  if (start && now >= start) {
+    if (!end || now <= end) return "ongoing";
+    if (end && now > end) return "past";
+  }
+  if (!start && end && now <= end) return "ongoing";
+  if (!start && end && now > end) return "past";
+  if (raw === "ongoing" || raw === "upcoming") return raw;
+  return "upcoming";
+};
+
 // Mobile tabs navigation component
 const MobileTabsMenu = ({ activeTab, setActiveTab, event }) => (
   <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
@@ -321,6 +339,7 @@ export default function EventDetailsModal({
     event?.start_datetime,
     event?.end_datetime
   );
+  const derivedStatus = deriveEventStatus(event);
   const qrValue = JSON.stringify({
     type: "EVENT_CHECKIN",
     token: event?.event_member_data?.token,
@@ -410,15 +429,15 @@ export default function EventDetailsModal({
                   <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                     <span
                       className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-xs md:text-sm font-medium backdrop-blur-sm ${
-                        event?.status === "upcoming"
+                        derivedStatus === "upcoming"
                           ? "bg-[#9cc2ed]/80 text-white"
-                          : event?.status === "ongoing"
+                          : derivedStatus === "ongoing"
                           ? "bg-[#AE9B66]/80 text-white"
                           : "bg-gray-500/80 text-white"
                       }`}
                     >
-                      {event?.status?.charAt(0).toUpperCase() +
-                        event?.status?.slice(1)}
+                      {derivedStatus.charAt(0).toUpperCase() +
+                        derivedStatus.slice(1)}
                     </span>
                     <span className="px-2 py-1 md:px-3 md:py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-xs md:text-sm">
                       {eventType}
