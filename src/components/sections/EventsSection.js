@@ -440,9 +440,8 @@ export default function EventsSection() {
                     >
                       {/* Glow effect on hover */}
                       <div
-                        className={`absolute -inset-0.5 bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-1000 ${
-                          hoveredCard === event.id ? "opacity-20" : ""
-                        }`}
+                        className={`absolute -inset-0.5 bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-1000 ${hoveredCard === event.id ? "opacity-20" : ""
+                          }`}
                       ></div>
 
                       <div className="relative bg-white  rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 group-hover:border-[#03215F]/30 h-full flex flex-col">
@@ -476,13 +475,12 @@ export default function EventsSection() {
 
                               {/* Status Badge */}
                               <span
-                                className={`px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm ${
-                                  derivedStatus === "upcoming"
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm ${derivedStatus === "upcoming"
                                     ? "bg-[#9cc2ed]/80 text-white"
                                     : derivedStatus === "ongoing"
-                                    ? "bg-[#AE9B66]/80 text-white"
-                                    : "bg-gray-500/80 text-white"
-                                }`}
+                                      ? "bg-[#AE9B66]/80 text-white"
+                                      : "bg-gray-500/80 text-white"
+                                  }`}
                               >
                                 {derivedStatus.charAt(0).toUpperCase() +
                                   derivedStatus.slice(1)}
@@ -633,8 +631,7 @@ export default function EventsSection() {
                                     <div className="text-xs text-gray-500 truncate">
                                       {event.event_hosts[0]?.name}
                                       {event.event_hosts.length > 1 &&
-                                        ` +${
-                                          event.event_hosts.length - 1
+                                        ` +${event.event_hosts.length - 1
                                         } more`}
                                     </div>
                                   </div>
@@ -673,13 +670,12 @@ export default function EventsSection() {
                             {event.capacity && (
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
-                                  className={`h-2 rounded-full transition-all duration-500 ${
-                                    isFull
+                                  className={`h-2 rounded-full transition-all duration-500 ${isFull
                                       ? "bg-[#b8352d]"
                                       : isAlmostFull
-                                      ? "bg-[#ECCF0F]"
-                                      : "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66]"
-                                  }`}
+                                        ? "bg-[#ECCF0F]"
+                                        : "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66]"
+                                    }`}
                                   style={{ width: `${progress}%` }}
                                 ></div>
                               </div>
@@ -726,22 +722,28 @@ export default function EventsSection() {
                               <button
                                 onClick={() => handleJoinNow(event)}
                                 disabled={isFull || derivedStatus === "past" || derivedStatus === "cancelled"}
-                                className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${
-                                  !isFull && derivedStatus !== "past" && derivedStatus !== "cancelled"
+                                className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${!isFull && derivedStatus !== "past" && derivedStatus !== "cancelled"
                                     ? "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white hover:shadow-lg"
                                     : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                }`}
+                                  }`}
                               >
                                 <ArrowRight className="w-4 h-4" />
                                 Join
                               </button>
                             ) : event.is_paid && !hasPaid ? (
+                              // <button
+                              //   onClick={() => handleJoinNow(event)}
+                              //   className="flex-1 py-2.5 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                              // >
+                              //   <Shield className="w-4 h-4" />
+                              //   Complete Payment
+                              // </button>
                               <button
-                                onClick={() => handleJoinNow(event)}
-                                className="flex-1 py-2.5 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                onClick={() => handleViewDetails(event)}
+                                className="flex-1 py-2.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
                               >
-                                <Shield className="w-4 h-4" />
-                                Complete Payment
+                                <CheckCircle className="w-4 h-4" />
+                                Joined
                               </button>
                             ) : (
                               <button
@@ -799,11 +801,10 @@ export default function EventsSection() {
                         <button
                           key={pageNum}
                           onClick={() => handlePageChange(pageNum)}
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${
-                            currentPage === pageNum
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${currentPage === pageNum
                               ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white shadow-lg"
                               : "bg-gray-100  text-gray-700 hover:bg-gray-200"
-                          }`}
+                            }`}
                         >
                           {pageNum}
                         </button>
