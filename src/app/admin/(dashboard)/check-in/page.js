@@ -392,15 +392,29 @@ export default function CheckInPage() {
       console.log("Check-in response:", data);
       console.log("Response status:", response.status);
 
-      if (!response.ok) {
-        console.error("Check-in API error:", {
-          status: response.status,
-          statusText: response.statusText,
-          data: data,
-        });
+      // Robust response handling: derive message even if body is empty or non-JSON
+      let message = data?.message;
+      if (!message) {
+        try {
+          const text = await response.clone().text();
+          message = text || `HTTP ${response.status} ${response.statusText}`;
+        } catch {
+          message = `HTTP ${response.status} ${response.statusText}`;
+        }
       }
 
-      if (data.success) {
+      if (!response.ok) {
+        toast.error(message || "Check-in failed");
+        console.warn("Check-in API error:", {
+          status: response.status,
+          statusText: response.statusText,
+          data,
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (data?.success) {
         toast.success(data.message || "Check-in successful");
 
         // Update validation result
@@ -444,8 +458,8 @@ export default function CheckInPage() {
           }
         }
       } else {
-        toast.error(data.message || "Check-in failed");
-        console.error("Check-in failed:", data);
+        toast.error(data?.message || message || "Check-in failed");
+        console.warn("Check-in failed:", { data, status: response.status });
       }
     } catch (error) {
       console.error("Check-in error:", error);
@@ -607,6 +621,7 @@ export default function CheckInPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3 md:p-4 lg:p-6">
+      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
       
 
       <div className="mx-auto space-y-4 md:space-y-6">
@@ -1022,10 +1037,16 @@ export default function CheckInPage() {
                           <div className="flex items-center gap-2">
                             <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-[#AE9B66]" />
                             <span className="text-xs md:text-sm text-[#AE9B66]">
-                              Checked in at{" "}
-                              {new Date(
-                                validationResult.checkinTime
-                              ).toLocaleTimeString("en-BH")}
+                              {validationResult.checkinTime || validationResult.checked_in_at ? (
+                                <>
+                                  Checked in at{" "}
+                                  {new Date(
+                                    validationResult.checkinTime || validationResult.checked_in_at
+                                  ).toLocaleTimeString("en-BH")}
+                                </>
+                              ) : (
+                                "Checked in"
+                              )}
                             </span>
                           </div>
                         )}
@@ -1199,23 +1220,25 @@ export default function CheckInPage() {
                       <button
                         onClick={() => handleCheckIn()}
                         disabled={loading}
-                        className="w-full py-2.5 md:py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-xl font-medium hover:from-[#AE9B66] hover:to-[#AE9B66] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-sm md:text-base"
+                        className="w-full py-2.5 md:py-3 bg-gradient-to-r  from-[#AE9B66] to-[#AE9B66] text-white rounded-xl font-medium hover:from-[#AE9B66] hover:to-[#AE9B66] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-sm md:text-base"
                       >
                         <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
                         Check-in to Event
                       </button>
                     ) : (
-                      <div className="p-3 md:p-4 bg-[#AE9B66] border border-[#AE9B66] rounded-xl">
+                      <div className="p-3 md:p-4 bg-green-500/30 border border-green-500 rounded-xl">
                         <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-[#AE9B66]" />
-                          <span className="text-[#AE9B66] font-medium text-sm md:text-base">
+                          <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
+                          <span className="text-green-500 font-medium text-sm md:text-base">
                             Already Checked In
                           </span>
                         </div>
-                        <p className="text-xs md:text-sm text-gray-600 mt-1">
-                          {formatDateBH(validationResult.checkinTime)} at{" "}
-                          {formatTimeBH(validationResult.checkinTime)}
-                        </p>
+                        {(validationResult.checkinTime || validationResult.checked_in_at) && (
+                          <p className="text-xs md:text-sm text-gray-800 mt-1">
+                            {formatDateBH(validationResult.checkinTime || validationResult.checked_in_at)} at{" "}
+                            {formatTimeBH(validationResult.checkinTime || validationResult.checked_in_at)}
+                          </p>
+                        )}
                       </div>
                     )}
 
@@ -1240,10 +1263,8 @@ export default function CheckInPage() {
                           </div>
                           <div className="space-y-2 md:space-y-3 max-h-[300px] md:max-h-[400px] overflow-y-auto pr-1">
                             {selectedEvent.event_agendas.map((agenda) => {
-                              const isCheckedIn =
-                                validationResult.agendaCheckedIn?.includes(
-                                  agenda.id
-                                );
+                              const checkedIds = validationResult.agendaCheckedIn || validationResult.agenda_checked_in || [];
+                              const isCheckedIn = checkedIds.includes(agenda.id);
                               const isToday =
                                 new Date(agenda.agenda_date).toDateString() ===
                                 new Date().toDateString();

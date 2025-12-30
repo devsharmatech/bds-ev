@@ -492,7 +492,7 @@ export default function EventsSection() {
                                 </div>
                               )}
 
-                              {/* Already Joined */}
+                              {/* Joined */}
                               {event.joined && (
                                 <div className="px-3 py-1.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
                                   <CheckCircle className="w-3 h-3" />

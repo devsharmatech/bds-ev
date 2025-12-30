@@ -205,6 +205,13 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
     }
 
     if (event.joined) {
+      // For paid events, allow completing payment if joined record exists but payment isn't completed
+      if (event.is_paid) {
+        setPaymentStep(2)
+        handleInitiatePayment()
+        return
+      }
+      // Free events: already joined
       toast.success('You have already joined this event!')
       onClose()
       return
@@ -706,7 +713,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                   </div>
                   
                   {event.joined ? (
-                    <div className="mt-3 p-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] rounded-lg">
+                    <div className="mt-3 p-3 bg-gradient-to-r from-[#AE9B66]/20 to-[#AE9B66]/20 rounded-lg">
                       <div className="flex items-center gap-2 text-[#AE9B66]">
                         <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
                         <span className="font-semibold text-sm md:text-base">You're already joined for this event!</span>
@@ -985,11 +992,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{method.name}</div>
-                        {method.serviceCharge > 0 && (
-                          <div className="text-xs text-gray-500">
-                            Service Charge: {method.serviceCharge.toFixed(3)} {method.currency}
-                          </div>
-                        )}
+                        
                       </div>
                       {selectedMethod?.id === method.id && (
                         <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#03215F] flex-shrink-0" />

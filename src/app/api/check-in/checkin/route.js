@@ -89,9 +89,57 @@ export async function POST(req) {
       const eventStart = new Date(eventMember.events.start_datetime);
       const eventEnd = eventMember.events.end_datetime ? new Date(eventMember.events.end_datetime) : null;
       const isMultiDay = eventEnd && (eventEnd - eventStart) > 24 * 60 * 60 * 1000; // More than 24 hours
+
+      // Resolve agenda automatically when not explicitly provided:
+      // - If there are agendas today, pick the earliest today's agenda
+      // - Else pick the nearest upcoming agenda
+      // - Else fall back to first agenda (if any)
+      let resolvedAgendaId = agenda_id || null;
+      try {
+        if (!resolvedAgendaId) {
+          const agendas = eventMember?.events?.event_agendas || [];
+
+          if (agendas.length > 0) {
+            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+
+            const todaysAgendas = agendas.filter(a => a.agenda_date === today);
+            const toDateTime = (a) => {
+              const hhmm = (a.start_time || '00:00').slice(0, 5);
+              // Construct local datetime; exact TZ alignment is not critical for ordering
+              return new Date(`${a.agenda_date}T${hhmm}:00`);
+            };
+
+            if (todaysAgendas.length > 0) {
+              // Prefer earliest today's agenda
+              todaysAgendas.sort((a, b) => {
+                const ta = toDateTime(a).getTime();
+                const tb = toDateTime(b).getTime();
+                return ta - tb;
+              });
+              resolvedAgendaId = todaysAgendas[0].id;
+            } else {
+              // Find nearest upcoming agenda
+              const withDt = agendas
+                .map(a => ({ a, dt: toDateTime(a) }))
+                .sort((x, y) => x.dt.getTime() - y.dt.getTime());
+
+              const upcoming = withDt.find(x => x.dt >= now);
+              if (upcoming) {
+                resolvedAgendaId = upcoming.a.id;
+              } else {
+                // Fallback to first agenda if all are in the past
+                resolvedAgendaId = agendas[0].id;
+              }
+            }
+          }
+        }
+      } catch {
+        // If resolution fails, keep resolvedAgendaId as null and proceed with main event check-in
+      }
       
       // For main event check-in (not agenda-specific)
-      if (!agenda_id) {
+      if (!resolvedAgendaId) {
         // If already checked in, check if it's a multi-day event and allow daily check-ins
         if (eventMember.checked_in) {
           if (isMultiDay) {
@@ -101,7 +149,7 @@ export async function POST(req) {
               .from("attendance_logs")
               .select("*")
               .eq("event_member_id", eventMember.id)
-              .is("agenda_id", null)
+              .is("agenda_id", null) // only count main event check-ins for daily duplication
               .gte("scan_time", `${today}T00:00:00`)
               .lt("scan_time", `${today}T23:59:59`)
               .maybeSingle();
@@ -123,39 +171,54 @@ export async function POST(req) {
         }
       }
 
-      // For agenda check-in, check if already checked in to this agenda
-      if (agenda_id) {
-        const { data: existingAgendaCheckin } = await supabase
-          .from("attendance_logs")
-          .select("*")
-          .eq("event_member_id", eventMember.id)
-          .eq("agenda_id", agenda_id)
-          .maybeSingle();
-
-        if (existingAgendaCheckin) {
-          return NextResponse.json({
-            success: false,
-            message: "Already checked in to this agenda"
-          });
-        }
-
-        // Verify agenda belongs to this event
-        const agendaExists = eventMember.events.event_agendas?.some(
-          agenda => agenda.id === agenda_id
+      // For agenda check-in, check if already checked in to this agenda for today (allow multiple days before the agenda date)
+      if (resolvedAgendaId) {
+        // Verify agenda belongs to this event and capture its date
+        const agendaObj = eventMember.events.event_agendas?.find(
+          agenda => agenda.id === resolvedAgendaId
         );
 
-        if (!agendaExists) {
+        if (!agendaObj) {
           return NextResponse.json(
             { success: false, message: "Invalid agenda for this event" },
             { status: 400 }
           );
         }
+
+        const today = new Date().toISOString().split('T')[0];
+        const agendaDateStr = agendaObj.agenda_date;
+
+        // Only block duplicate agenda check-ins within the same day
+        const { data: existingAgendaCheckin } = await supabase
+          .from("attendance_logs")
+          .select("*")
+          .eq("event_member_id", eventMember.id)
+          .eq("agenda_id", resolvedAgendaId)
+          .gte("scan_time", `${today}T00:00:00`)
+          .lt("scan_time", `${today}T23:59:59`)
+          .maybeSingle();
+
+        if (existingAgendaCheckin) {
+          // Customize message based on agenda timing
+          let duplicateMsg = "Already checked in to this agenda";
+          if (agendaDateStr > today) {
+            duplicateMsg = "You have already checked in for this upcoming agenda";
+          } else if (agendaDateStr === today) {
+            duplicateMsg = "You have already checked in to this agenda today";
+          }
+          return NextResponse.json({
+            success: false,
+            message: duplicateMsg
+          });
+        }
+
+        // If agenda is in the future, still allow today's check-in (will be logged against that agenda)
       }
 
       const now = new Date().toISOString();
 
       // Update event_members table for main check-in
-      if (!agenda_id) {
+      if (!resolvedAgendaId) {
         const { error: updateError } = await supabase
           .from("event_members")
           .update({
@@ -165,29 +228,43 @@ export async function POST(req) {
           .eq("id", eventMember.id);
 
         if (updateError) throw updateError;
+      } else {
+        // For first agenda check-in, ensure member status reflects checked-in
+        if (!eventMember.checked_in || !eventMember.checked_in_at) {
+          const { error: agendaUpdateError } = await supabase
+            .from("event_members")
+            .update({
+              checked_in: true,
+              checked_in_at: eventMember.checked_in_at || now
+            })
+            .eq("id", eventMember.id);
+          if (agendaUpdateError) throw agendaUpdateError;
+        }
       }
 
       // Create attendance log
+      const logPayload = {
+        event_member_id: eventMember.id,
+        scanned_by: adminId,
+        agenda_id: resolvedAgendaId || null,
+        location: "Bahrain", // You can get this from GPS or user input
+        device_info: resolvedAgendaId ? "Web Check-in (Agenda)" : "Web Check-in",
+        scan_time: now
+      };
+
       const { error: logError } = await supabase
         .from("attendance_logs")
-        .insert({
-          event_member_id: eventMember.id,
-          scanned_by: adminId,
-          agenda_id: agenda_id || null,
-          location: "Bahrain", // You can get this from GPS or user input
-          device_info: "Web Check-in",
-          scan_time: now
-        });
+        .insert(logPayload);
 
       if (logError) throw logError;
 
       return NextResponse.json({
         success: true,
-        message: agenda_id ? "Agenda check-in successful" : "Event check-in successful",
+        message: resolvedAgendaId ? "Agenda check-in successful" : "Event check-in successful",
         data: {
           event_member_id: eventMember.id,
           checked_in_at: now,
-          agenda_id: agenda_id || null
+          agenda_id: resolvedAgendaId || null
         }
       });
     }

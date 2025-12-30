@@ -43,11 +43,11 @@ import Link from "next/link";
 // ------------------------------
 const StatCard = ({ title, value, icon: Icon, color, isLoading, change, trendDirection = "up" }) => {
   const colorClasses = {
-    blue: "bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-[#9cc2ed]",
-    green: "bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-[#9cc2ed]",
-    orange: "bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-[#9cc2ed]",
-    red: "bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-[#9cc2ed]",
-    indigo: "bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border-[#9cc2ed]",
+    blue: "bg-white border-gray-200",
+    green: "bg-white border-gray-200",
+    orange: "bg-white border-gray-200",
+    red: "bg-white border-gray-200",
+    indigo: "bg-white border-gray-200",
   };
 
   const iconColors = {
@@ -75,28 +75,20 @@ const StatCard = ({ title, value, icon: Icon, color, isLoading, change, trendDir
       className="relative group"
     >
       <div className={`relative rounded-2xl p-6 shadow-lg border ${colorClasses[color]} overflow-hidden`}>
-        <div className="absolute top-0 right-0 w-24 h-24 opacity-10">
-          <div className={`absolute inset-0 bg-gradient-to-br ${gradientColors[color]} rounded-full`} />
-        </div>
+        {/* Subtle, professional white card - decorative gradient removed for cleaner look */}
         
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className={`text-sm font-medium mb-2 ${
-                color === 'indigo' || color === 'red' || color === 'orange' 
-                  ? 'text-white/90' 
-                  : 'text-gray-600'
+                'text-gray-600'
               }`}>
                 {title}
               </p>
               {isLoading ? (
                 <div className="h-8 w-20 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg animate-pulse" />
               ) : (
-                <p className={`text-2xl font-bold ${
-                  color === 'indigo' || color === 'red' || color === 'orange' 
-                    ? 'text-white' 
-                    : 'text-gray-900'
-                }`}>
+                <p className={`text-2xl font-bold text-gray-900`}>
                   {typeof value === 'number' ? value.toLocaleString() : value ?? 0}
                 </p>
               )}
@@ -121,11 +113,7 @@ const StatCard = ({ title, value, icon: Icon, color, isLoading, change, trendDir
                 )}
                 <span className="font-semibold">{change}</span>
               </div>
-              <span className={`text-xs ${
-                color === 'indigo' || color === 'red' || color === 'orange' 
-                  ? 'text-white/80' 
-                  : 'text-gray-500'
-              }`}>
+              <span className={`text-xs text-gray-500`}>
                 from last month
               </span>
             </div>
@@ -373,6 +361,20 @@ export default function Page() {
     );
   }
 
+  // Derive today's pending check-ins (better context next to "Today's Events")
+  let pendingCheckins = 0;
+  if (stats) {
+    const todayTotal = typeof stats.today_event_members === 'number' ? stats.today_event_members : null;
+    const todayChecked = typeof stats.today_checked_in_members === 'number'
+      ? stats.today_checked_in_members
+      : (typeof stats.today_attendance === 'number' ? stats.today_attendance : null);
+    if (todayTotal !== null && typeof todayTotal === 'number' && todayChecked !== null && typeof todayChecked === 'number') {
+      pendingCheckins = Math.max(todayTotal - todayChecked, 0);
+    } else {
+      pendingCheckins = 0;
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-[#9cc2ed]/30 p-4 md:p-6">
       <div className="mx-auto space-y-6">
@@ -458,8 +460,6 @@ export default function Page() {
               icon={Calendar}
               color="blue"
               isLoading={loading}
-              change="+3"
-              trendDirection="up"
             />
             <StatCard
               title="Ongoing Events"
@@ -467,8 +467,6 @@ export default function Page() {
               icon={Clock}
               color="orange"
               isLoading={loading}
-              change="+1"
-              trendDirection="up"
             />
             <StatCard
               title="Completed Events"
@@ -476,8 +474,6 @@ export default function Page() {
               icon={CheckCircle}
               color="green"
               isLoading={loading}
-              change="+8"
-              trendDirection="up"
             />
             <StatCard
               title="Cancelled Events"
@@ -485,8 +481,6 @@ export default function Page() {
               icon={AlertCircle}
               color="red"
               isLoading={loading}
-              change="-1"
-              trendDirection="down"
             />
           </div>
         </div>
@@ -544,9 +538,9 @@ export default function Page() {
                   </div>
                   <div className="text-center p-4 rounded-xl bg-gradient-to-br from-[#AE9B66] to-[#AE9B66]">
                     <p className="text-2xl font-bold text-white">
-                      {stats?.conversion_rate || 0}%
+                      {pendingCheckins}
                     </p>
-                    <p className="text-sm text-white/90">Check-in Rate</p>
+                    <p className="text-sm text-white/90">Pending Check-ins</p>
                   </div>
                 </div>
               </div>

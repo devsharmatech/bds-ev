@@ -87,6 +87,8 @@ export async function POST(req) {
           });
         }
 
+        const eventStatus = (eventMember.events.status || "").toLowerCase();
+
         if (eventEnd && now > eventEnd) {
           return NextResponse.json({
             success: false,
@@ -94,7 +96,8 @@ export async function POST(req) {
           });
         }
 
-        if (now < eventStart) {
+        // If status is "ongoing", treat the event as started even if time hasn't reached start time yet
+        if (now < eventStart && eventStatus !== "ongoing") {
           return NextResponse.json({
             success: false,
             message: "Event has not started yet"
@@ -117,6 +120,28 @@ export async function POST(req) {
           ?.map(log => log.agenda_id)
           .filter(id => id) || [];
 
+        // Derive a friendly validation message based on check-in history and agendas
+        const agendas = eventMember.events.event_agendas || [];
+        const checkedSet = new Set(checkedInAgendas);
+        const hasCheckedTodayAgenda = agendas.some(
+          a => a.agenda_date === today && checkedSet.has(a.id)
+        );
+        const hasCheckedFutureAgenda = agendas.some(
+          a => a.agenda_date > today && checkedSet.has(a.id)
+        );
+        const hasMainEventCheckinToday = (attendanceLogs || []).some(
+          log => !log.agenda_id && (log.scan_time || '').slice(0, 10) === today
+        );
+
+        let validationMessage = "Event validation successful";
+        if (hasMainEventCheckinToday || hasCheckedTodayAgenda) {
+          validationMessage = "You already checked in for today's event";
+        } else if (hasCheckedFutureAgenda) {
+          validationMessage = "You have already checked in for this upcoming agenda";
+        } else if (eventMember.checked_in) {
+          validationMessage = "You are already checked in to this event";
+        }
+
         validationData = {
           type: "event",
           token: eventMember.token,
@@ -132,7 +157,8 @@ export async function POST(req) {
           event: eventMember.events,
           today_agendas: todayAgendas,
           agenda_checked_in: checkedInAgendas,
-          can_check_in: !eventMember.checked_in || todayAgendas.length > 0
+          can_check_in: !eventMember.checked_in || todayAgendas.length > 0,
+          validation_message: validationMessage
         };
       }
       // If event_id is provided without token (for membership verification)
@@ -166,7 +192,7 @@ export async function POST(req) {
 
       return NextResponse.json({
         success: true,
-        message: "Event validation successful",
+        message: validationData?.validation_message || "Event validation successful",
         data: validationData
       });
     }

@@ -191,11 +191,7 @@ export default function PaymentMethodModal({
                           <div className="font-semibold text-gray-900 text-sm truncate">
                             {method.name}
                           </div>
-                          {method.serviceCharge > 0 && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              Service Charge: {formatBHD(method.serviceCharge)}
-                            </div>
-                          )}
+                          
                         </div>
                         {selectedMethod?.id === method.id && (
                           <CheckCircle className="w-5 h-5 text-[#03215F] flex-shrink-0" />
