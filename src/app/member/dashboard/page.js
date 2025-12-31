@@ -287,10 +287,10 @@ export default function DashboardPage() {
       change: `${stats.certificatesEarned || 0} certificates`
     },
     { 
-      label: 'Membership Status', 
+      label: 'Membership Plan', 
       value: planName || (isPremiumMember ? 'Paid' : 'Free'), 
       icon: isPremiumMember ? Crown : Shield, 
-      color: isPremiumMember ? 'amber' : 'gray',
+      color: isPremiumMember ? 'green' : 'gray',
       change: user?.membership_status === 'active' ? 'Active' : 'Inactive'
     }
   ]
@@ -413,7 +413,7 @@ export default function DashboardPage() {
       <div className="bg-white rounded-xl shadow-lg p-4 md:p-5 lg:p-6 border border-gray-200">
         <h2 className="text-base md:text-lg font-bold text-gray-900 mb-3 md:mb-4">Member Information</h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {profileDetails.slice(4).map((detail, index) => (
             detail.value && (
               <div key={index} className="flex items-start p-3 bg-gray-50/50 rounded-lg">
@@ -464,7 +464,7 @@ export default function DashboardPage() {
               </div>
               <div className={`text-xs font-semibold truncate ml-1 ${
                 stat.color === 'blue' ? 'text-[#03215F]' :
-                stat.color === 'green' ? 'text-[#AE9B66]' :
+                stat.color === 'green' ? 'text-green-500' :
                 stat.color === 'purple' ? 'text-[#03215F]' :
                 stat.color === 'amber' ? 'text-[#ECCF0F]' :
                 'text-gray-600'
@@ -472,7 +472,7 @@ export default function DashboardPage() {
                 {stat.change}
               </div>
             </div>
-            <h3 className="text-base md:text-lg lg:text-xl font-bold text-gray-900 mb-1 truncate">
+            <h3 className="text-base md:text-md lg:text-lg font-bold text-gray-900 mb-1 truncate">
               {stat.value}
             </h3>
             <p className="text-xs text-gray-600 truncate">
@@ -678,13 +678,7 @@ export default function DashboardPage() {
                 <Link
                   key={index}
                   href={action.href || '#'}
-                  className={`relative bg-gradient-to-br ${action.color}/10 rounded-lg p-3 md:p-4 hover:scale-[1.02] transition-all cursor-pointer group border block ${
-                    action.color.includes('[#b8352d]') 
-                      ? 'border-[#b8352d]/20' 
-                      : action.color.includes('[#ECCF0F]')
-                      ? 'border-[#ECCF0F]/20'
-                      : 'border-gray-200'
-                  }`}
+                  className={`relative bg-white rounded-lg p-3 md:p-4 transition-all cursor-pointer group border block border-gray-200 hover:shadow-md hover:-translate-y-0.5`}
                   onClick={(e) => {
                     if (action.action) {
                       e.preventDefault()
@@ -692,7 +686,14 @@ export default function DashboardPage() {
                     }
                   }}
                 >
-                  <div className={`mb-2 md:mb-3 p-2 md:p-2.5 rounded-lg bg-gradient-to-br ${action.color} inline-flex`}>
+                  <div className={`mb-2 md:mb-3 p-2 md:p-2.5 rounded-lg inline-flex ${
+                    action.color.includes('[#03215F]') ? 'bg-[#03215F]/80 text-[#03215F]' :
+                    action.color.includes('[#AE9B66]') ? 'bg-[#AE9B66]/80 text-[#AE9B66]' :
+                    action.color.includes('[#b8352d]') ? 'bg-[#b8352d]/80 text-[#b8352d]' :
+                    action.color.includes('[#9cc2ed]') ? 'bg-[#9cc2ed]/80 text-[#03215F]' :
+                    action.color.includes('[#ECCF0F]') ? 'bg-[#ECCF0F]/80 text-[#03215F]' :
+                    'bg-gray-100 text-gray-700'
+                  }`}>
                     {action.icon}
                   </div>
                   

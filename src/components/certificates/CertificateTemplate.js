@@ -100,35 +100,37 @@ export default function CertificateTemplate({ certificate, user }) {
         </div>
 
 
-        {/* Header Section */}
-        <div className="flex items-center justify-between px-12 pt-6 pb-3 flex-shrink-0">
-          {/* BDS Logo - Left */}
-          <div className="flex items-center gap-3">
+        <div className="grid grid-cols-3 items-center px-12 pt-6 pb-3 flex-shrink-0">
+
+          {/* Left: BDS Logo */}
+          <div className="flex items-center justify-start">
             <img
-              src="/logo.png"
+              src="/long-logo2.png"
               alt="Bahrain Dental Society Logo"
-              className="w-16 h-16 object-contain"
-              style={{ maxWidth: '64px', maxHeight: '64px' }}
+              className="h-14 object-contain"
             />
-            <div>
-              <div className="text-xs mb-1 font-semibold" style={{ color: '#6b7280' }}>تأسست 1994</div>
-              <div className="text-sm font-bold" style={{ color: '#03215F' }}>Bahrain Dental Society</div>
-              <div className="text-xs" style={{ color: '#6b7280' }}>جمعية أطباء الفم والأسنان البحرينية</div>
-            </div>
           </div>
 
-          {/* Bahrain Emblem - Center */}
+          {/* Center: Bahrain Emblem (TRUE CENTER) */}
           <div className="flex items-center justify-center">
-            <div className="w-20 h-20 flex items-center justify-center">
-              <img src="/kbh.png" alt="Bahrain Emblem" className="w-full h-full object-contain" />
-            </div>
+            <img
+              src="/kbh.png"
+              alt="Bahrain Emblem"
+              className="h-22 object-contain"
+            />
           </div>
 
-          {/* NHRA Logo - Right */}
-          <div className="flex flex-col items-end">
-            <img src="/nera-logo.png" alt="NHRA Logo" className="w-32  object-contain" />
+          {/* Right: NHRA Logo */}
+          <div className="flex items-center justify-end">
+            <img
+              src="/nera-logo.png"
+              alt="NHRA Logo"
+              className="h-20 object-contain"
+            />
           </div>
+
         </div>
+
 
         {/* Main Certificate Content */}
         <div className="px-12 py-6 flex-1 flex flex-col justify-between" style={{ minHeight: 0 }}>
@@ -241,7 +243,7 @@ export default function CertificateTemplate({ certificate, user }) {
             className="absolute bottom-0 w-full h-full"
             viewBox="0 0 1200 120"
             preserveAspectRatio="none"
-           
+
           >
             <defs>
               <linearGradient id="waveGradient" x1="0" y1="0" x2="0" y2="1">

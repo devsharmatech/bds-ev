@@ -50,13 +50,18 @@ export async function GET(req) {
           employer,
           position,
           specialty,
-          category
+          category,
+          license_number,
+          years_of_experience
         )
       `)
       .eq("id", userId)
       .single();
 
     if (error) throw error;
+
+    // Normalize relation (member_profiles may be an array)
+    const profile = Array.isArray(user?.member_profiles) ? user.member_profiles[0] : user?.member_profiles;
 
     // Format user data
     const formattedUser = {
@@ -73,21 +78,23 @@ export async function GET(req) {
       membership_expiry_date: user.membership_expiry_date,
       created_at: user.created_at,
       // Flatten member_profiles
-      gender: user.member_profiles?.gender,
-      dob: user.member_profiles?.dob,
-      address: user.member_profiles?.address,
-      city: user.member_profiles?.city,
-      state: user.member_profiles?.state,
-      pin_code: user.member_profiles?.pin_code,
-      cpr_id: user.member_profiles?.cpr_id,
-      nationality: user.member_profiles?.nationality,
-      type_of_application: user.member_profiles?.type_of_application,
-      membership_date: user.member_profiles?.membership_date,
-      work_sector: user.member_profiles?.work_sector,
-      employer: user.member_profiles?.employer,
-      position: user.member_profiles?.position,
-      specialty: user.member_profiles?.specialty,
-      category: user.member_profiles?.category
+      gender: profile?.gender,
+      dob: profile?.dob,
+      address: profile?.address,
+      city: profile?.city,
+      state: profile?.state,
+      pin_code: profile?.pin_code,
+      cpr_id: profile?.cpr_id,
+      nationality: profile?.nationality,
+      type_of_application: profile?.type_of_application,
+      membership_date: profile?.membership_date,
+      work_sector: profile?.work_sector,
+      employer: profile?.employer,
+      position: profile?.position,
+      specialty: profile?.specialty,
+      category: profile?.category,
+      license_number: profile?.license_number,
+      years_of_experience: profile?.years_of_experience
     };
 
     return NextResponse.json({
@@ -151,49 +158,57 @@ export async function PUT(req) {
 
     if (existingProfile) {
       // Update existing profile
+      const profileUpdate = {
+        gender: data.gender,
+        dob: data.dob,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        pin_code: data.pin_code,
+        cpr_id: data.cpr_id,
+        nationality: data.nationality,
+        type_of_application: data.type_of_application,
+        work_sector: data.work_sector,
+        employer: data.employer,
+        position: data.position,
+        specialty: data.specialty,
+        category: data.category,
+        license_number: data.license_number,
+        years_of_experience: data.years_of_experience
+      };
+
       const { error: profileError } = await supabase
         .from("member_profiles")
-        .update({
-          gender: data.gender,
-          dob: data.dob,
-          address: data.address,
-          city: data.city,
-          state: data.state,
-          pin_code: data.pin_code,
-          cpr_id: data.cpr_id,
-          nationality: data.nationality,
-          type_of_application: data.type_of_application,
-          work_sector: data.work_sector,
-          employer: data.employer,
-          position: data.position,
-          specialty: data.specialty,
-          category: data.category
-        })
+        .update(profileUpdate)
         .eq("user_id", userId);
 
       if (profileError) throw profileError;
     } else {
       // Create new profile
+      const profileInsert = {
+        user_id: userId,
+        gender: data.gender,
+        dob: data.dob,
+        address: data.address,
+        city: data.city,
+        state: data.state,
+        pin_code: data.pin_code,
+        cpr_id: data.cpr_id,
+        nationality: data.nationality,
+        type_of_application: data.type_of_application,
+        membership_date: data.membership_date,
+        work_sector: data.work_sector,
+        employer: data.employer,
+        position: data.position,
+        specialty: data.specialty,
+        category: data.category,
+        license_number: data.license_number,
+        years_of_experience: data.years_of_experience
+      };
+
       const { error: profileError } = await supabase
         .from("member_profiles")
-        .insert({
-          user_id: userId,
-          gender: data.gender,
-          dob: data.dob,
-          address: data.address,
-          city: data.city,
-          state: data.state,
-          pin_code: data.pin_code,
-          cpr_id: data.cpr_id,
-          nationality: data.nationality,
-          type_of_application: data.type_of_application,
-          membership_date: data.membership_date,
-          work_sector: data.work_sector,
-          employer: data.employer,
-          position: data.position,
-          specialty: data.specialty,
-          category: data.category
-        });
+        .insert(profileInsert);
 
       if (profileError) throw profileError;
     }

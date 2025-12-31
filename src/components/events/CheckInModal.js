@@ -72,17 +72,17 @@ export default function CheckInModal({ member, onClose, onConfirm, loading }) {
             {/* Current Status */}
             <div className={`p-4 rounded-xl ${
               isCheckedIn
-                ? 'bg-gradient-to-br from-[#b8352d] to-[#b8352d] border border-[#b8352d]/50'
-                : 'bg-gradient-to-br from-[#AE9B66] to-[#AE9B66] border border-[#AE9B66]/50'
+                ? 'bg-gradient-to-br from-[#b8352d]/20 to-[#b8352d]/30 border border-[#b8352d]/50'
+                : 'bg-gradient-to-br from-[#AE9B66]/20 to-[#AE9B66]/30 border border-[#AE9B66]/50'
             }`}>
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-lg ${
                   isCheckedIn ? 'bg-[#b8352d]' : 'bg-[#AE9B66]'
                 }`}>
                   {isCheckedIn ? (
-                    <UserX className="w-5 h-5 text-[#b8352d]" />
+                    <UserX className="w-5 h-5 text-white bg-[#b8352d]" />
                   ) : (
-                    <UserCheck className="w-5 h-5 text-[#AE9B66]" />
+                    <UserCheck className="w-5 h-5 text-white bg-[#AE9B66]" />
                   )}
                 </div>
                 <div>
@@ -134,7 +134,7 @@ export default function CheckInModal({ member, onClose, onConfirm, loading }) {
             {/* Warning */}
             <div className="p-4 rounded-xl bg-gradient-to-br from-[#ECCF0F] to-[#ECCF0F] border border-[#ECCF0F]/50">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[#ECCF0F] mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-black bg-[#ECCF0F] mt-0.5" />
                 <div>
                   <p className="font-medium text-gray-900 mb-1">
                     {isCheckedIn ? "Check Out Note" : "Check In Note"}

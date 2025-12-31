@@ -361,19 +361,8 @@ export default function Page() {
     );
   }
 
-  // Derive today's pending check-ins (better context next to "Today's Events")
-  let pendingCheckins = 0;
-  if (stats) {
-    const todayTotal = typeof stats.today_event_members === 'number' ? stats.today_event_members : null;
-    const todayChecked = typeof stats.today_checked_in_members === 'number'
-      ? stats.today_checked_in_members
-      : (typeof stats.today_attendance === 'number' ? stats.today_attendance : null);
-    if (todayTotal !== null && typeof todayTotal === 'number' && todayChecked !== null && typeof todayChecked === 'number') {
-      pendingCheckins = Math.max(todayTotal - todayChecked, 0);
-    } else {
-      pendingCheckins = 0;
-    }
-  }
+  // Today's paid joins (from API)
+  const todayPaidJoins = stats?.today_paid_joins || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-[#9cc2ed]/30 p-4 md:p-6">
@@ -527,20 +516,20 @@ export default function Page() {
                 )}
               </div>
               
-              {/* Today's Attendance Stats */}
+              {/* Today's Highlights */}
               <div className="mt-6 pt-6 border-t border-gray-200/50">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-4 rounded-xl bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed]">
                     <p className="text-2xl font-bold text-[#03215F]">
-                      {stats?.today_attendance || 0}
+                      {stats?.today_unique_checkins ?? 0}
                     </p>
-                    <p className="text-sm text-[#03215F]/80">Today's Attendance</p>
+                    <p className="text-sm text-[#03215F]/80">Unique Check-ins Today</p>
                   </div>
                   <div className="text-center p-4 rounded-xl bg-gradient-to-br from-[#AE9B66] to-[#AE9B66]">
                     <p className="text-2xl font-bold text-white">
-                      {pendingCheckins}
+                      {todayPaidJoins}
                     </p>
-                    <p className="text-sm text-white/90">Pending Check-ins</p>
+                    <p className="text-sm text-white/90">New Paid Registrations</p>
                   </div>
                 </div>
               </div>
@@ -564,9 +553,7 @@ export default function Page() {
                     </p>
                   </div>
                 </div>
-                <div className="text-sm font-medium text-[#03215F]">
-                  {stats?.upcoming_events || 0} total
-                </div>
+                
               </div>
               
               <div className="space-y-4">
@@ -731,26 +718,7 @@ export default function Page() {
                 </div>
               </div>
               
-              {/* Blocked Members */}
-              <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-[#b8352d] to-[#b8352d] border border-[#b8352d]/50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-r from-[#b8352d] to-[#b8352d]">
-                    <AlertCircle className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-white">Blocked</p>
-                    <p className="text-xs text-white/90">Suspended accounts</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-white">
-                    {stats?.blocked_members || 0}
-                  </p>
-                  <p className="text-xs text-white font-medium">
-                    {stats?.total_members ? Math.round((stats.blocked_members / stats.total_members) * 100) : 0}% of total
-                  </p>
-                </div>
-              </div>
+              
               
               {/* Event Members */}
               <div className="mt-6 pt-6 border-t border-gray-200/50">

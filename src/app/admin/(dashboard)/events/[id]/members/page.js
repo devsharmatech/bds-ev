@@ -876,22 +876,22 @@ export default function EventMembersPage() {
                         <td className="py-4 px-6">
                           <div className="flex flex-col gap-2">
                             <div
-                              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium w-fit ${
                                 member.checked_in
                                   ? "bg-[#AE9B66] text-white"
                                   : "bg-[#b8352d] text-white"
                               }`}
                             >
                               {member.checked_in ? (
-                                <>
-                                  <CheckCircle className="w-4 h-4" />
-                                  Checked In
-                                </>
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle className="w-4 h-4" title="Checked In"/>
+                                  
+                                </div>
                               ) : (
-                                <>
-                                  <XCircle className="w-4 h-4" />
-                                  Not Checked In
-                                </>
+                                <div className="flex items-center gap-2">
+                                  <XCircle className="w-4 h-4" title="Not Checked In"/>
+                                  
+                                </div>
                               )}
                             </div>
                             {member.checked_in_at && (

@@ -412,7 +412,7 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                   </h2>
                   <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                     <span
-                      className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-xs md:text-sm font-medium backdrop-blur-sm ${
+                      className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-xs md:text-sm font-medium backdrop-blur-sm flex items-center gap-1 ${
                         status.color === "red"
                           ? "bg-[#b8352d]/80 text-white"
                           : status.color === "green"
@@ -511,10 +511,10 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                   {/* Ticket ID */}
                   <div className="hidden md:block text-right">
                     <div className="text-xs md:text-sm text-gray-600">
-                      Ticket ID
+                      Token ID
                     </div>
                     <div className="font-mono font-bold text-sm md:text-base text-gray-900 truncate">
-                      {event?.token?.slice(0, 8) || "N/A"}
+                      {event?.token || event?.id?.toUpperCase()}
                     </div>
                   </div>
                 </div>
@@ -614,7 +614,7 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                   <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 md:p-4">
                     <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
                       <div className="p-1.5 md:p-2 bg-[#AE9B66] rounded-lg">
-                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-[#AE9B66]" />
+                        <MapPin className="w-4 h-4 md:w-5 md:h-5 text-white" />
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs md:text-sm text-gray-600">
@@ -634,7 +634,7 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                   <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 md:p-4">
                     <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
                       <div className="p-1.5 md:p-2 bg-[#03215F] rounded-lg">
-                        <Users className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
+                        <Users className="w-4 h-4 md:w-5 md:h-5 text-white" />
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs md:text-sm text-gray-600">
@@ -685,19 +685,19 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] rounded-lg">
-                      <Briefcase className="w-4 h-4 md:w-5 md:h-5 text-[#AE9B66] flex-shrink-0" />
+                      <Briefcase className="w-4 h-4 md:w-5 md:h-5 text-gray-700 flex-shrink-0" />
                       <span className="text-xs md:text-sm text-gray-700 truncate">
                         Networking Opportunities
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-lg">
+                    <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gradient-to-r from-[#03215F]/30 to-[#03215F]/30 rounded-lg">
                       <Globe className="w-4 h-4 md:w-5 md:h-5 text-[#03215F] flex-shrink-0" />
                       <span className="text-xs md:text-sm text-gray-700 truncate">
                         Industry Insights
                       </span>
                     </div>
                     <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] rounded-lg">
-                      <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-[#ECCF0F] flex-shrink-0" />
+                      <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-gray-700 flex-shrink-0" />
                       <span className="text-xs md:text-sm text-gray-700 truncate">
                         Skill Development
                       </span>
@@ -965,7 +965,7 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                             Support Hours
                           </div>
                           <div className="font-medium text-sm md:text-base text-gray-900 truncate">
-                            9:00 AM - 5:00 PM (AST)
+                            9:00 AM - 5:00 PM
                           </div>
                         </div>
                       </div>
@@ -999,18 +999,18 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 gap-2">
                       <div>
                         <div className="text-xs md:text-sm opacity-90">
-                          BDS Events
+                          BDS
                         </div>
                         <div className="text-lg md:text-xl font-bold">
-                          VIP PASS
+                          EVENT TICKET
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-xs md:text-sm opacity-90">
-                          Ticket ID
+                          Token ID
                         </div>
                         <div className="font-mono font-bold text-sm md:text-base">
-                          {event?.token || event?.id?.slice(0, 8).toUpperCase()}
+                          {event?.token || event?.id?.toUpperCase()}
                         </div>
                       </div>
                     </div>

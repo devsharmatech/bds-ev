@@ -428,13 +428,9 @@ function EventsPageContent() {
 
   // Handle view details
   const handleViewDetails = (event) => {
-    if (event.slug) {
-      router.push(`/events/${event.slug}`);
-    } else {
-      // Fallback to modal if no slug
-      setSelectedDetailsEvent(event);
-      setIsDetailsModalOpen(true);
-    }
+    // Always open details modal for a consistent UX
+    setSelectedDetailsEvent(event);
+    setIsDetailsModalOpen(true);
   };
 
   // Handle join event click - opens your EventModal
@@ -1073,21 +1069,14 @@ function EventsPageContent() {
                                 Details
                               </button>
 
-                              {/* Join Button - Opens EventModal */}
-                              {!event.joined ? (
+                              {/* Join allowed only for upcoming and not full; otherwise show details or joined */}
+                              {!event.joined && event.status === "upcoming" && !event.isFull ? (
                                 <button
                                   onClick={() => handleJoinClick(event)}
-                                  disabled={
-                                    event.isFull ||
-                                    event.status === "completed" ||
-                                    event.status === "cancelled" ||
-                                    joiningEvent === event.id
-                                  }
-                                  className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${!event.isFull &&
-                                      event.status !== "completed" &&
-                                      event.status !== "cancelled"
-                                      ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                  disabled={joiningEvent === event.id}
+                                  className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${joiningEvent === event.id
+                                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                      : "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
                                     }`}
                                 >
                                   {joiningEvent === event.id ? (
@@ -1102,7 +1091,7 @@ function EventsPageContent() {
                                     </>
                                   )}
                                 </button>
-                              ) : (
+                              ) : event.joined ? (
                                 <button
                                   onClick={() => handleViewDetails(event)}
                                   className="flex-1 py-2 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
@@ -1110,7 +1099,7 @@ function EventsPageContent() {
                                   <CheckCircle className="w-4 h-4" />
                                   Joined
                                 </button>
-                              )}
+                              ) : null}
                             </div>
                           </div>
                         </div>
@@ -1178,53 +1167,7 @@ function EventsPageContent() {
         )}
       </div>
 
-      {/* Stats Banner */}
-      <div className="bg-gradient-to-r from-[#03215F] to-[#03215F] py-12 md:py-16 mt-8 md:mt-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-                {events.length}+
-              </div>
-              <div className="text-white/90 text-sm md:text-base">
-                Total Events
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-                {events.reduce(
-                  (sum, event) => sum + (event.registered_count || 0),
-                  0
-                )}
-                +
-              </div>
-              <div className="text-white/90 text-sm md:text-base">
-                Total Registrations
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-                {events.reduce(
-                  (sum, event) => sum + (event.event_hosts?.length || 0),
-                  0
-                )}
-                +
-              </div>
-              <div className="text-white/90 text-sm md:text-base">
-                Expert Speakers
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-                30+
-              </div>
-              <div className="text-white/90 text-sm md:text-base">
-                Years
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
       {/* Event Details Modal - for viewing event details */}
       {selectedDetailsEvent && (

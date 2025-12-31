@@ -184,7 +184,7 @@ export default function ViewModal({ event, onClose, onEdit }) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto flex flex-col"
+        className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col"
         style={{
           WebkitOverflowScrolling: "touch",
         }}
@@ -280,7 +280,7 @@ export default function ViewModal({ event, onClose, onEdit }) {
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1  p-3 sm:p-6 space-y-4 sm:space-y-6 min-h-0">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 min-h-0">
           {/* Quick Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border border-[#9cc2ed]/50">
@@ -631,7 +631,7 @@ export default function ViewModal({ event, onClose, onEdit }) {
               </div>
             </div>
 
-            <div>
+            <div >
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                 <ClipboardCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#03215F]" />
                 Registration Details
@@ -654,7 +654,7 @@ export default function ViewModal({ event, onClose, onEdit }) {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 text-xs sm:text-sm">CE Credits</span>
+                    <span className="text-gray-600 text-xs sm:text-sm">CME Credits</span>
                     <span className="font-medium text-[#AE9B66] text-xs sm:text-sm flex items-center gap-1">
                       <Award className="w-3 h-3 sm:w-4 sm:h-4" />
                       Available
@@ -666,7 +666,7 @@ export default function ViewModal({ event, onClose, onEdit }) {
           </div>
 
           {/* Event Created Info */}
-          <div>
+          <div className="pb-6">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
               <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#03215F]" />
               Event Information

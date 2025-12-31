@@ -60,7 +60,7 @@ const DeleteConfirmationModal = ({
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 rounded-full bg-[#b8352d]">
-                <AlertCircle className="w-6 h-6 text-[#b8352d]" />
+                <AlertCircle className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900">

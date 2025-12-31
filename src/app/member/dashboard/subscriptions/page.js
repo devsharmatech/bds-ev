@@ -168,6 +168,14 @@ export default function SubscriptionsPage() {
   };
 
   const handleUpgrade = async (plan) => {
+    // Only allow upgrade if current plan is Student
+    const isStudentCurrent =
+      currentSubscription?.subscription_plan?.display_name?.toLowerCase().includes("student") ||
+      currentSubscription?.subscription_plan_name?.toLowerCase().includes("student");
+    if (!isStudentCurrent) {
+      toast.error("Only Student Memberships can be upgraded.");
+      return;
+    }
     if (processing) return;
 
     setProcessing(true);
@@ -283,6 +291,14 @@ export default function SubscriptionsPage() {
 
   const handleRenew = async () => {
     if (processing || !currentSubscription) return;
+    // Disallow renew if not expired
+    const expired =
+      currentSubscription?.expires_at &&
+      new Date(currentSubscription.expires_at) < new Date();
+    if (!expired) {
+      toast.error("Your membership is not expired yet.");
+      return;
+    }
 
     setProcessing(true);
     try {
@@ -389,7 +405,13 @@ export default function SubscriptionsPage() {
               </div>
             </div>
             
-            {currentSubscription && (
+            {(() => {
+              if (!currentSubscription) return null;
+              const expired =
+                currentSubscription?.expires_at &&
+                new Date(currentSubscription.expires_at) < new Date();
+              if (!expired) return null;
+              return (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -404,7 +426,8 @@ export default function SubscriptionsPage() {
                 )}
                 <span className="text-lg">Renew Subscription</span>
               </motion.button>
-            )}
+              );
+            })()}
           </div>
         </motion.div>
 
@@ -417,12 +440,12 @@ export default function SubscriptionsPage() {
             className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border-2 border-[#03215F]/10 p-6 md:p-8"
           >
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-              <div className="space-y-2">
+              <div className="space-y-2" style={{width: '100%'}}>
                 <div className="flex items-center gap-3">
                   <BadgeCheck className="w-8 h-8 text-[#03215F]" />
                   <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Current Membership</h2>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center  justify-between w-full gap-4" >
                   <span className="text-xl font-bold text-[#03215F]">
                     {currentSubscription.subscription_plan?.display_name || currentSubscription.subscription_plan_name || "No Plan"}
                   </span>
@@ -534,6 +557,9 @@ export default function SubscriptionsPage() {
               const isCurrentPlan = currentPlan?.id === plan.id;
               const isUpgrade = currentPlan && plan.sort_order > currentPlan.sort_order;
               const isDowngrade = currentPlan && plan.sort_order < currentPlan.sort_order;
+              const isStudentCurrent =
+                currentSubscription?.subscription_plan?.display_name?.toLowerCase().includes("student") ||
+                currentSubscription?.subscription_plan_name?.toLowerCase().includes("student");
 
               return (
                 <motion.div
@@ -632,11 +658,17 @@ export default function SubscriptionsPage() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handleUpgrade(plan)}
-                        disabled={processing || isCurrentPlan || plan.name === 'free'}
+                        disabled={
+                          processing ||
+                          isCurrentPlan ||
+                          plan.name === 'free' ||
+                          // Only allow upgrade path if current is student; disallow all changes otherwise
+                          (!isStudentCurrent)
+                        }
                         className={`w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 ${
                           isCurrentPlan
                             ? "bg-gradient-to-r from-gray-200 to-gray-300 text-gray-600 cursor-not-allowed"
-                            : plan.name === 'free'
+                            : plan.name === 'free' || !isStudentCurrent
                             ? "bg-gradient-to-r from-gray-200 to-gray-300 text-gray-600 cursor-not-allowed"
                             : `bg-gradient-to-r ${colors.gradient} text-white hover:shadow-xl hover:opacity-95`
                         } disabled:opacity-50 disabled:cursor-not-allowed shadow-lg`}
@@ -729,11 +761,11 @@ export default function SubscriptionsPage() {
                         </td>
                         <td className="py-5 px-6">
                           <div className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold ${
-                            sub.registration_paid && sub.annual_paid
+                            (sub.status === 'active' || (sub.registration_paid && sub.annual_paid))
                               ? 'bg-green-100 text-green-700'
                               : 'bg-amber-100 text-amber-700'
                           }`}>
-                            {sub.registration_paid && sub.annual_paid ? (
+                            {(sub.status === 'active' || (sub.registration_paid && sub.annual_paid)) ? (
                               <>
                                 <CheckCircle className="w-3 h-3" />
                                 Paid

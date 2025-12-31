@@ -51,12 +51,16 @@ export default function ProfilePage() {
     email: '',
     phone: '',
     mobile: '',
+    cpr: '',
     
     // Professional Information
     specialty: '',
     position: '',
     employer: '',
     work_sector: '',
+    category: '',
+    license_number: '',
+    years_of_experience: '',
     
     // Additional Information
     address: '',
@@ -103,6 +107,18 @@ export default function ProfilePage() {
     { value: 'public_sector', label: 'Public Sector' }
   ]
 
+  // Category options (matches registration)
+  const categories = [
+    { value: '', label: 'Select Category' },
+    { value: 'Dentist', label: 'Dentist' },
+    { value: 'Dental Hygienist', label: 'Dental Hygienist' },
+    { value: 'Dental Technologist', label: 'Dental Technologist' },
+    { value: 'Dental Assistant', label: 'Dental Assistant' },
+    { value: 'Student - Undergraduate', label: 'Student - Undergraduate' },
+    { value: 'Student - Postgraduate', label: 'Student - Postgraduate' },
+    { value: 'Others (Non Dental)', label: 'Others (Non Dental)' },
+  ]
+
   // Gender options
   const genders = [
     { value: '', label: 'Select Gender' },
@@ -111,19 +127,36 @@ export default function ProfilePage() {
     { value: 'other', label: 'Other' }
   ]
 
-  // Nationality options (GCC countries)
-  const nationalities = [
-    { value: '', label: 'Select Nationality' },
-    { value: 'bahraini', label: 'Bahraini' },
-    { value: 'saudi', label: 'Saudi Arabian' },
-    { value: 'emirati', label: 'Emirati' },
-    { value: 'kuwaiti', label: 'Kuwaiti' },
-    { value: 'omani', label: 'Omani' },
-    { value: 'qatari', label: 'Qatari' },
-    { value: 'other_gcc', label: 'Other GCC' },
-    { value: 'other_arab', label: 'Other Arab' },
-    { value: 'other', label: 'Other' }
-  ]
+  // Nationality options (All countries - fetched)
+  const [nationalityOptions, setNationalityOptions] = useState([
+    { value: '', label: 'Select Nationality' }
+  ])
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('https://restcountries.com/v3.1/all?fields=name')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!Array.isArray(data)) return
+        const opts = data
+          .map((c) => {
+            const name = c?.name?.common
+            return name ? { value: name, label: name } : null
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.label.localeCompare(b.label))
+        if (!cancelled) {
+          setNationalityOptions([{ value: '', label: 'Select Nationality' }, ...opts])
+        }
+      } catch {
+        // ignore; keep default minimal option
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     fetchProfile()
@@ -144,23 +177,27 @@ export default function ProfilePage() {
           setFormData({
             full_name: data.user.full_name || '',
             email: data.user.email || '',
-            phone: data.user.phone || '',
+            phone: data.user.phone || data.user.mobile || '',
             mobile: data.user.mobile || '',
-            specialty: data.user.specialty || '',
-            position: data.user.position || '',
-            employer: data.user.employer || '',
-            work_sector: data.user.work_sector || '',
-            address: data.user.address || '',
-            city: data.user.city || '',
-            state: data.user.state || '',
-            pin_code: data.user.pin_code || '',
-            nationality: data.user.nationality || '',
-            gender: data.user.gender || '',
-            dob: data.user.dob || '',
+            cpr: data.user.cpr || data.user.cpr_id || data.user.member_profiles?.[0]?.cpr_id || '',
+            specialty: data.user.specialty || data.user.member_profiles?.[0]?.specialty || '',
+            position: data.user.position || data.user.member_profiles?.[0]?.position || '',
+            employer: data.user.employer || data.user.member_profiles?.[0]?.employer || '',
+            work_sector: data.user.work_sector || data.user.member_profiles?.[0]?.work_sector || '',
+            category: data.user.category || data.user.member_profiles?.[0]?.category || '',
+            license_number: data.user.license_number || data.user.member_profiles?.[0]?.license_number || '',
+            years_of_experience: data.user.years_of_experience || data.user.member_profiles?.[0]?.years_of_experience || '',
+            address: data.user.address || data.user.member_profiles?.[0]?.address || '',
+            city: data.user.city || data.user.member_profiles?.[0]?.city || '',
+            state: data.user.state || data.user.member_profiles?.[0]?.state || '',
+            pin_code: data.user.pin_code || data.user.member_profiles?.[0]?.pin_code || '',
+            nationality: data.user.nationality || data.user.member_profiles?.[0]?.nationality || '',
+            gender: data.user.gender || data.user.member_profiles?.[0]?.gender || '',
+            dob: data.user.dob || data.user.member_profiles?.[0]?.dob || '',
             membership_code: data.user.membership_code || '',
             membership_type: data.user.membership_type || '',
             membership_status: data.user.membership_status || '',
-            membership_date: data.user.membership_date || '',
+            membership_date: data.user.membership_date || data.user.member_profiles?.[0]?.membership_date || '',
             membership_expiry_date: data.user.membership_expiry_date || ''
           })
         }
@@ -178,14 +215,21 @@ export default function ProfilePage() {
     
     try {
       setSaving(true)
-      
+
+      // Normalize payload to support both snake/camel keys used across APIs
+      const payload = {
+        ...formData,
+        // also send cpr_id alongside cpr for compatibility
+        cpr_id: formData.cpr || null,
+      }
+
       const res = await fetch('/api/dashboard/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
       
       const data = await res.json()
@@ -365,6 +409,31 @@ export default function ProfilePage() {
               </p>
             </div>
             
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              CPR Number
+            </label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <FileText className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                name="cpr"
+                value={formData.cpr}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-transparent focus:border-[#03215F] focus:ring-2 focus:ring-[#03215F]/20 transition-colors"
+                placeholder="930910630"
+                maxLength={9}
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              {formData.nationality?.toLowerCase() === 'bahraini' || formData.nationality === 'Bahrain'
+                ? 'Required for Bahraini nationals (9 digits)'
+                : 'Optional (required only for Bahrain nationals)'}
+            </p>
+          </div>
+          
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Phone Number
@@ -508,6 +577,41 @@ export default function ProfilePage() {
               </div>
             </div>
             
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Category
+            </label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <Users className="w-4 h-4" />
+              </div>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-transparent focus:border-[#03215F] focus:ring-2 focus:ring-[#03215F]/20 transition-colors appearance-none"
+                style={{
+                  color: formData.category ? 'inherit' : '#9CA3AF'
+                }}
+              >
+                {categories.map((option) => (
+                  <option 
+                    key={option.value} 
+                    value={option.value}
+                    className="bg-white text-gray-900"
+                  >
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Position / Title
@@ -580,6 +684,57 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              License Number
+            </label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <Shield className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                name="license_number"
+                value={formData.license_number}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-transparent focus:border-[#03215F] focus:ring-2 focus:ring-[#03215F]/20 transition-colors"
+                placeholder="BH-DENT-XXXX"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Years of Experience
+            </label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <select
+                name="years_of_experience"
+                value={formData.years_of_experience}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-transparent focus:border-[#03215F] focus:ring-2 focus:ring-[#03215F]/20 transition-colors appearance-none"
+                style={{
+                  color: formData.years_of_experience ? 'inherit' : '#9CA3AF'
+                }}
+              >
+                <option value="">Select experience</option>
+                <option value="0-1">0-1 years</option>
+                <option value="1-3">1-3 years</option>
+                <option value="3-5">3-5 years</option>
+                <option value="5-10">5-10 years</option>
+                <option value="10+">10+ years</option>
+              </select>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -691,7 +846,7 @@ export default function ProfilePage() {
                     color: formData.nationality ? 'inherit' : '#9CA3AF'
                   }}
                 >
-                  {nationalities.map((option) => (
+                  {nationalityOptions.map((option) => (
                     <option 
                       key={option.value} 
                       value={option.value}

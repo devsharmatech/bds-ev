@@ -88,7 +88,7 @@ function MembershipCard({ user, qrRef }) {
       <div className="relative flex justify-between items-end mt-4 gap-3">
         <div className="flex-1">
           <p className="text-[10px] text-slate-300 uppercase">Member Name</p>
-          <h2 className="font-bold leading-tight text-[clamp(14px,4vw,18px)] truncate">
+          <h2 className="font-bold leading-tight text-[clamp(14px,4vw,18px)] truncate uppercase">
             {user.full_name}
           </h2>
 
@@ -109,7 +109,7 @@ function MembershipCard({ user, qrRef }) {
 
           <div className="mt-3">
             <p className="text-[10px] text-slate-300 uppercase">Type</p>
-            <p className="text-xs sm:text-sm text-[#9cc2ed] font-medium">
+            <p className="text-xs sm:text-sm text-[gold] font-medium uppercase">
               {user.current_subscription_plan_display_name
                 ? user.current_subscription_plan_display_name
                 : user.current_subscription_plan_name
@@ -152,6 +152,7 @@ export default function HeroSection() {
     membership_expiry_date: "2029-12-31",
     membership_type: "paid",
     membership_status: "active",
+    current_subscription_plan_name:"Active Membership"
   };
 
   // Prevent hydration mismatch by only rendering client-side content after mount

@@ -68,22 +68,59 @@ export async function GET(req) {
     /* ---------- DASHBOARD STATISTICS ---------- */
     const currentDate = new Date().toISOString();
 
-    // Get total events attended
-    const { count: eventsAttended } = await supabase
+    // Compute events attended as: events where the member attended ALL agendas
+    // 1) Load all event_members for this user with event agendas and attendance logs (agenda-specific)
+    const { data: memberEventRows, error: memberEventError } = await supabase
       .from("event_members")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("checked_in", true);
+      .select(`
+        id,
+        event_id,
+        checked_in,
+        events (
+          id,
+          event_agendas ( id )
+        ),
+        attendance_logs (
+          agenda_id
+        )
+      `)
+      .eq("user_id", userId);
+
+    if (memberEventError) {
+      console.warn("dashboard/stats: failed to load member events for attendance calc", memberEventError);
+    }
+
+    let eventsAttended = 0;
+    if (Array.isArray(memberEventRows)) {
+      for (const row of memberEventRows) {
+        const agendaList = row?.events?.event_agendas || [];
+        const totalAgendas = Array.isArray(agendaList) ? agendaList.length : 0;
+
+        // Only count as attended if the event has at least one agenda and all are attended
+        if (totalAgendas > 0) {
+          const attendedAgendaIds = new Set(
+            (row?.attendance_logs || [])
+              .map((al) => al?.agenda_id)
+              .filter((id) => !!id)
+          );
+          if (attendedAgendaIds.size >= totalAgendas) {
+            eventsAttended += 1;
+          }
+        }
+      }
+    }
 
     // Get upcoming events count
-    const { count: upcomingEventsCount,error } = await supabase
+    const { count: upcomingEventsCount, error } = await supabase
       .from("event_members")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("checked_in", false)
       .not("event_id", "is", null);
 
-    console.log('upcomingEventsCount error:', error);
+    if (error) {
+      console.warn("dashboard/stats: upcomingEventsCount error:", error);
+    }
     // Get total events (all time)
     const { count: totalEvents } = await supabase
       .from("event_members")
@@ -100,7 +137,7 @@ export async function GET(req) {
 
     const totalPaid = paymentsData?.reduce((sum, item) => sum + (item.price_paid || 0), 0) || 0;
 
-    // Get CE credits (assuming each event attended gives 1 credit)
+    // Get CE credits (assuming each fully attended event gives 1 credit)
     const creditsEarned = eventsAttended || 0;
 
     /* ---------- UPCOMING EVENTS ---------- */
@@ -248,7 +285,7 @@ export async function GET(req) {
         eventsAttended: eventsAttended || 0,
         creditsEarned,
         totalPaid,
-        certificatesEarned: eventsAttended || 0, // Assuming 1 certificate per event
+        certificatesEarned: eventsAttended || 0, // Assuming 1 certificate per fully attended event
         attendanceRate: totalEvents > 0 ? Math.round((eventsAttended / totalEvents) * 100) : 0
       },
       upcomingEvents: formattedUpcomingEvents,

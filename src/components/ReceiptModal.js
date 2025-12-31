@@ -1,513 +1,522 @@
-'use client'
+'use client';
 
 import { useEffect, useRef } from 'react';
-import { X, Printer } from 'lucide-react';
+import { X, Printer, CheckCircle, Download, Copy, Calendar, User, CreditCard, FileText } from 'lucide-react';
 
 export default function ReceiptModal({ receipt, onClose }) {
-  const modalRef = useRef();
+  const modalRef = useRef(null);
+  const contentRef = useRef(null);
 
   if (!receipt) return null;
 
-  // Close modal on escape key
+  /* ================= UTIL ================= */
+  const formatDate = (date) =>
+    new Date(date).toLocaleDateString('en-BH', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+  /* ================= CLOSE ================= */
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+    const esc = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
   }, [onClose]);
 
-  // Click outside to close
   const handleBackdropClick = (e) => {
-    if (modalRef.current && !modalRef.current.contains(e.target)) {
-      onClose();
-    }
+    if (modalRef.current && !modalRef.current.contains(e.target)) onClose();
   };
 
+  /* ================= PRINT ================= */
   const printReceipt = () => {
-    const printContent = document.getElementById('printable-receipt');
-    const printWindow = window.open('', '_blank');
-    
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Receipt - ${receipt.reference}</title>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-          
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
-          body {
-            font-family: 'Inter', sans-serif;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            color: #000;
-            background: white;
-            padding: 20px;
-            width: 100%;
-          }
-          
-          .receipt-container {
-            max-width: 600px;
-            margin: 0 auto;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 24px;
-            background: white;
-          }
-          
-          .header {
-            text-align: center;
-            border-bottom: 2px solid #03215F;
-            padding-bottom: 20px;
-            margin-bottom: 24px;
-          }
-          
-          .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 8px;
-          }
-          
-          .logo-badge {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(to right, #03215F, #AE9B66);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-          }
-          
-          h1 {
-            font-size: 24px;
-            font-weight: bold;
-            background: linear-gradient(to right, #111827, #374151);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-          }
-          
-          .subtitle {
-            font-size: 14px;
-            color: #6b7280;
-            font-weight: 500;
-            letter-spacing: 1px;
-          }
-          
-          .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background: #d1fae5;
-            border-radius: 9999px;
-            margin-top: 12px;
-          }
-          
-          .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #AE9B66;
-          }
-          
-          .status-text {
-            font-size: 12px;
-            font-weight: 500;
-            color: #065f46;
-          }
-          
-          .receipt-header {
-            background: linear-gradient(to right, rgba(34, 166, 172, 0.1), rgba(16, 185, 129, 0.05));
-            border: 1px solid rgba(34, 166, 172, 0.2);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 24px;
-          }
-          
-          .receipt-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-          
-          .info-item p:first-child {
-            font-size: 12px;
-            color: #6b7280;
-            margin-bottom: 4px;
-          }
-          
-          .info-item p:last-child {
-            font-size: 16px;
-            font-weight: bold;
-            color: #111827;
-          }
-          
-          .section-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 16px;
-          }
-          
-          .member-info {
-            margin-bottom: 24px;
-          }
-          
-          .member-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-          }
-          
-          .member-item p:first-child {
-            font-size: 12px;
-            color: #6b7280;
-            margin-bottom: 4px;
-          }
-          
-          .member-item p:last-child {
-            font-size: 14px;
-            font-weight: 500;
-            color: #111827;
-          }
-          
-          .payment-details {
-            margin-bottom: 24px;
-          }
-          
-          .payment-card {
-            background: #f9fafb;
-            border-radius: 12px;
-            padding: 20px;
-          }
-          
-          .payment-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e5e7eb;
-          }
-          
-          .payment-row:last-child {
-            border-bottom: none;
-            padding-top: 16px;
-            padding-bottom: 0;
-          }
-          
-          .total-row {
-            border-top: 2px solid #e5e7eb;
-            padding-top: 16px;
-            margin-top: 8px;
-          }
-          
-          .total-label {
-            font-size: 16px;
-            font-weight: 600;
-            color: #111827;
-          }
-          
-          .total-amount {
-            font-size: 24px;
-            font-weight: bold;
-            color: #03215F;
-          }
-          
-          .footer-note {
-            text-align: center;
-            background: #f9fafb;
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 24px;
-          }
-          
-          .footer-note p {
-            font-size: 11px;
-            color: #6b7280;
-            line-height: 1.4;
-          }
-          
-          .footer-note p:last-child {
-            font-size: 10px;
-            color: #9ca3af;
-            margin-top: 4px;
-          }
-          
-          @page {
-            size: A4;
-            margin: 20mm;
-          }
-          
-          @media print {
-            body {
-              padding: 0;
-            }
-            
-            .receipt-container {
-              border: none;
-              padding: 0;
-              max-width: 100%;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        ${printContent.innerHTML}
-      </body>
-      </html>
+    const win = window.open('', '_blank');
+
+    win.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+<title>Receipt - ${receipt.reference}</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  background:#fff;
+  color:#111;
+}
+@page{
+  size:A4;
+  margin:14mm;
+}
+.receipt{
+  border:3px solid #03215F;
+  padding:26px;
+  position:relative;
+}
+.receipt:before{
+  content:"OFFICIAL RECEIPT";
+  position:absolute;
+  top:45%;
+  left:50%;
+  transform:translate(-50%,-50%) rotate(-35deg);
+  font-size:60px;
+  font-weight:900;
+  color:rgba(3,33,95,.05);
+}
+h1{
+  text-align:center;
+  font-size:26px;
+  color:#03215F;
+}
+h2{
+  text-align:center;
+  font-size:13px;
+  letter-spacing:3px;
+  margin-bottom:18px;
+  color:#555;
+  text-transform:uppercase;
+}
+.box{
+  border:1px solid #ddd;
+  padding:14px;
+  margin-bottom:16px;
+}
+.section-title{
+  font-size:13px;
+  font-weight:bold;
+  color:#03215F;
+  border-bottom:2px solid #AE9B66;
+  padding-bottom:4px;
+  margin-bottom:10px;
+}
+.row{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:8px;
+  font-size:13px;
+}
+.label{
+  font-size:11px;
+  color:#666;
+  text-transform:uppercase;
+}
+.value{
+  font-weight:bold;
+}
+.total{
+  display:flex;
+  justify-content:space-between;
+  border-top:3px solid #03215F;
+  padding-top:12px;
+  margin-top:12px;
+  font-size:22px;
+  font-weight:900;
+  color:#03215F;
+}
+.footer{
+  text-align:center;
+  font-size:10px;
+  color:#666;
+  margin-top:18px;
+  line-height:1.5;
+}
+.receipt *{page-break-inside:avoid;}
+</style>
+</head>
+
+<body>
+<div class="receipt">
+
+<h1>Bahrain Dental Society</h1>
+<h2>Official Payment Receipt</h2>
+
+<div class="box">
+  <div class="row">
+    <div>
+      <div class="label">Receipt Number</div>
+      <div class="value">${receipt.reference}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="label">Payment Date & Time</div>
+      <div class="value">${formatDate(receipt.paid_at)}</div>
+    </div>
+  </div>
+</div>
+
+<div class="box">
+  <div class="section-title">Member Information</div>
+  <div class="row">
+    <span>Full Name</span>
+    <strong>${receipt.user?.full_name || 'N/A'}</strong>
+  </div>
+  <div class="row">
+    <span>Membership ID</span>
+    <strong>${receipt.user?.membership_code || 'N/A'}</strong>
+  </div>
+  <div class="row">
+    <span>Email Address</span>
+    <strong>${receipt.user?.email || 'N/A'}</strong>
+  </div>
+  <div class="row">
+    <span>Payment Method</span>
+    <strong>Credit / Debit Card</strong>
+  </div>
+</div>
+
+<div class="box">
+  <div class="section-title">Payment Details</div>
+  <div class="row">
+    <span>Description</span>
+    <strong>${receipt.description}</strong>
+  </div>
+  <div class="row">
+    <span>Payment Status</span>
+    <strong style="color:#059669">COMPLETED</strong>
+  </div>
+  <div class="row">
+    <span>Transaction Type</span>
+    <strong>Membership Payment</strong>
+  </div>
+
+  <div class="total">
+    <span>Total Amount Paid</span>
+    <span>BHD ${receipt.amount?.toFixed(3)}</span>
+  </div>
+</div>
+
+<div class="footer">
+  This is an official receipt issued by Bahrain Dental Society.<br/>
+  This document is computer-generated and does not require a signature.<br/>
+  Bahrain.ds94@gmail.com | Tel: +973 3799 0963<br/>
+  Receipt ID: ${receipt.reference}
+</div>
+
+</div>
+
+<script>
+window.onload=()=>{window.print();setTimeout(()=>window.close(),500);}
+</script>
+</body>
+</html>
     `);
-    
-    printWindow.document.close();
-    printWindow.focus();
-    
-    // Wait for content to load then print
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.onafterprint = () => {
-        printWindow.close();
-      };
-    }, 500);
+
+    win.document.close();
   };
 
-  // Get formatted date
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-BH', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
-  // Get formatted period
-  const formatPeriod = () => {
-    if (!receipt.period) return null;
-    return `
-      ${formatDate(receipt.period.start)} – ${formatDate(receipt.period.end)}
-    `;
-  };
-
+  /* ================= MODAL UI ================= */
   return (
-    <div 
-      className="fixed inset-0 z-50 bg-[#03215F]/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-fadeIn"
+    <div
+      className="fixed inset-0 z-50 bg-gradient-to-br from-[#03215F]/90 via-[#03215F]/80 to-[#AE9B66]/60 backdrop-blur-lg flex items-center justify-center p-4 animate-fadeIn overflow-y-auto"
       onClick={handleBackdropClick}
     >
-      <div 
+      <div
         ref={modalRef}
-        className="bg-gradient-to-br from-white to-gray-50 w-full max-w-[95vw] sm:max-w-lg rounded-xl sm:rounded-2xl shadow-2xl animate-slideUp flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden"
+        className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl shadow-black/25 border border-white/20 overflow-hidden animate-slideUp flex flex-col max-h-[90vh]"
       >
-        {/* Header with decorative elements - Fixed */}
-        <div className="relative p-4 sm:p-6 pb-0 flex-shrink-0">
-          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-[#03215F] to-[#03215F] h-1.5 w-24 rounded-full"></div>
-          
-          <div className="flex justify-between items-start mb-4 sm:mb-6">
-            <div className="flex-1 min-w-0 pr-2">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-[#03215F] to-[#03215F] flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold text-xs sm:text-sm">BD</span>
-                </div>
-                <h2 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent truncate">
-                  Bahrain Dental Society
-                </h2>
+        {/* FIXED HEADER */}
+        <div className="flex-shrink-0 relative bg-gradient-to-r from-[#03215F] via-[#03215F]/95 to-[#03215F]/90 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <CheckCircle className="w-8 h-8 text-white" />
               </div>
-              <p className="text-xs sm:text-sm text-gray-500 font-medium">OFFICIAL PAYMENT RECEIPT</p>
+              <div>
+                <h2 className="font-bold text-2xl text-white mb-1">Payment Confirmed</h2>
+                <div className="flex items-center gap-3">
+                  <span className="text-white/90 text-sm">Transaction #{receipt.reference}</span>
+                  <span className="px-3 py-1 bg-emerald-400/30 backdrop-blur-sm rounded-full text-xs font-medium text-white border border-emerald-400/50">
+                    Success
+                  </span>
+                </div>
+              </div>
             </div>
-            
-            <button
+            <button 
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+              className="p-2 hover:bg-white/10 rounded-xl transition-all duration-200 group"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
             </button>
-          </div>
-
-          {/* Status Badge */}
-          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#AE9B66] rounded-full mb-4 sm:mb-6">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-            <span className="text-xs sm:text-sm font-medium text-white">Payment Successful</span>
           </div>
         </div>
 
-        {/* Printable Receipt Content - Scrollable */}
-        <div id="printable-receipt" className="print:p-0 p-4 sm:p-6 flex-1 overflow-y-auto min-h-0">
-          {/* Receipt Header Card */}
-          <div className="bg-gradient-to-r from-[#03215F]/10 to-[#AE9B66] rounded-xl p-4 sm:p-5 mb-4 sm:mb-6 border border-[#03215F]/20 print:shadow-none">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600 mb-1">Receipt Number</p>
-                <p className="text-base sm:text-lg font-bold text-[#03215F] break-words">{receipt.reference}</p>
+        {/* SCROLLABLE CONTENT AREA */}
+        <div 
+          ref={contentRef}
+          className="flex-1 overflow-y-auto p-8 space-y-8"
+          style={{ maxHeight: 'calc(90vh - 140px)' }} // Adjust based on header/footer height
+        >
+          {/* Company Header */}
+          <div className="text-center">
+            <div className="inline-flex flex-col items-center bg-gradient-to-r from-[#03215F]/5 to-[#AE9B66]/5 rounded-2xl px-8 py-6 border border-[#03215F]/10 ">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
+                Bahrain Dental Society
+              </h1>
+              <p className="text-sm text-[#AE9B66] font-semibold tracking-[0.2em] uppercase mt-2">
+                Official Payment Receipt
+              </p>
+            </div>
+          </div>
+
+          {/* Receipt Info Cards */}
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-[#03215F]/10 rounded-lg">
+                  <FileText className="w-5 h-5 text-[#03215F]" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt Number</p>
+                  <p className="font-mono font-bold text-lg text-[#03215F]">{receipt.reference}</p>
+                </div>
               </div>
-              <div className="text-left sm:text-right">
-                <p className="text-xs sm:text-sm text-gray-600 mb-1">Date</p>
-                <p className="text-base sm:text-lg font-bold text-[#03215F]">
-                  {formatDate(receipt.paid_at)}
-                </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-[#AE9B66]/10 rounded-lg">
+                  <Calendar className="w-5 h-5 text-[#AE9B66]" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</p>
+                  <p className="font-semibold text-gray-900">{formatDate(receipt.paid_at)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-emerald-500/10 rounded-lg">
+                  <CreditCard className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Method</p>
+                  <p className="font-semibold text-gray-900">Credit/Debit Card/Bank Transfer</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* User Information */}
-          <div className="mb-4 sm:mb-6">
-            <h3 className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 sm:mb-4">Member Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div className="space-y-1">
-                <p className="text-xs text-gray-500">Full Name</p>
-                <p className="text-sm sm:text-base font-medium text-[#03215F] break-words">{receipt.user?.full_name}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-gray-500">Membership ID</p>
-                <p className="text-sm sm:text-base font-medium text-[#03215F] break-words">{receipt.user?.membership_code}</p>
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <p className="text-xs text-gray-500">Email Address</p>
-                <p className="text-sm sm:text-base font-medium text-[#03215F] break-words">{receipt.user?.email}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Details */}
-          <div className="mb-4 sm:mb-6">
-            <h3 className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 sm:mb-4">Payment Details</h3>
-            <div className="bg-gray-50 rounded-xl p-3 sm:p-4 space-y-2 sm:space-y-3 print:shadow-none">
-              <div className="flex flex-col sm:flex-row justify-between gap-1 sm:gap-0">
-                <span className="text-xs sm:text-sm text-gray-600">Description</span>
-                <span className="text-sm sm:text-base font-medium text-[#03215F] break-words text-right sm:text-left">{receipt.description}</span>
+          {/* Member & Payment Grid */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Member Information Card */}
+            <div className="bg-gradient-to-b from-white via-white to-gray-50 rounded-2xl p-6 border border-gray-200 shadow-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-gradient-to-br from-[#03215F] to-[#03215F] rounded-lg">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Member Information</h3>
               </div>
               
-              {receipt.type === "membership" && receipt.period && (
-                <div className="flex flex-col sm:flex-row justify-between gap-1 sm:gap-0">
-                  <span className="text-xs sm:text-sm text-gray-600">Membership Period</span>
-                  <span className="text-sm sm:text-base font-medium text-[#03215F] text-right break-words">
-                    {formatPeriod()}
-                  </span>
+              <div className="space-y-5">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Full Name</p>
+                  <p className="font-bold text-lg text-gray-900 bg-gray-50 p-3 rounded-lg">{receipt.user?.full_name}</p>
                 </div>
-              )}
+                
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Membership ID</p>
+                    <p className="font-semibold text-[#03215F] bg-gray-50 p-3 rounded-lg">{receipt.user?.membership_code}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Email</p>
+                    <p className="font-semibold text-gray-900 bg-gray-50 p-3 rounded-lg truncate">{receipt.user?.email}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-              <div className="pt-2 sm:pt-3 border-t border-gray-200">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-                  <span className="text-base sm:text-lg font-semibold text-[#03215F]">Total Amount</span>
-                  <div className="text-left sm:text-right">
-                    <p className="text-xl sm:text-2xl font-bold text-[#03215F] print:text-[#03215F]">
-                      BHD {receipt.amount?.toFixed(3)}
-                    </p>
+            {/* Payment Summary Card */}
+            <div className="bg-gradient-to-b from-white via-white to-gray-50 rounded-2xl p-6 border-2 border-[#03215F] shadow-lg">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Payment Summary</h3>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Description</p>
+                  <p className="text-gray-900 bg-gradient-to-r from-gray-50 to-white p-4 rounded-xl border border-gray-200">
+                    {receipt.description}
+                  </p>
+                </div>
+                
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Payment Status</p>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-full">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <span className="font-semibold text-emerald-700">PAYMENT SUCCESSFUL</span>
+                  </div>
+                </div>
+                
+                <div className="pt-6 border-t border-gray-200">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Total Amount</p>
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <p className="text-xl font-black text-[#03215F]">BHD {receipt.amount?.toFixed(3)}</p>
+                      
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-600">Transaction Type</p>
+                      <p className="font-semibold text-gray-900">Membership Payment</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Footer Note */}
-          <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-xl print:shadow-none">
-            <p className="text-xs text-gray-500 leading-relaxed">
-              This receipt is computer generated and does not require a physical signature.
-            </p>
-            <p className="text-xs text-gray-400 mt-1 break-words">
-              For any queries, contact: support@bahraindentalsociety.org
+         
+
+          {/* Support Information */}
+          <div className="bg-gradient-to-r from-[#03215F]/5 to-[#AE9B66]/5 rounded-2xl p-6 border border-[#03215F]/10">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-bold text-gray-900 mb-2">Customer Support</h4>
+                <p className="text-sm text-gray-600 mb-3">
+                  For any queries regarding this payment, our support team is available to assist you.
+                </p>
+                <div className="space-y-1">
+                  <p className="text-sm">
+                    <span className="font-medium text-gray-700">Email: </span>
+                    <span className="text-[#03215F] font-semibold">Bahrain.ds94@gmail.com</span>
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium text-gray-700">Phone: </span>
+                    <span className="text-[#03215F] font-semibold">+973 3799 0963</span>
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium text-gray-700">Hours: </span>
+                    <span>Sun-Thu, 8:00 AM - 4:00 PM</span>
+                  </p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-bold text-gray-900 mb-2">Receipt Validity</h4>
+                <p className="text-sm text-gray-600 mb-3">
+                  This document serves as an official receipt from Bahrain Dental Society and is valid for:
+                </p>
+                <ul className="space-y-1 text-sm text-gray-600">
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-[#AE9B66] rounded-full"></div>
+                    <span>Tax reporting purposes</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-[#AE9B66] rounded-full"></div>
+                    <span>Membership verification</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-[#AE9B66] rounded-full"></div>
+                    <span>Expense reimbursement</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Legal Note */}
+          <div className="text-center">
+            <p className="text-xs text-gray-500">
+              This receipt has been generated electronically and does not require a physical signature.<br />
+              All amounts are in Bahraini Dinar (BHD) and include any applicable taxes.
             </p>
           </div>
         </div>
 
-        {/* Actions - Fixed Footer - Hidden during print */}
-        <div className="p-4 sm:p-6 pt-0 flex gap-2 sm:gap-3 justify-end print:hidden flex-shrink-0 border-t border-gray-200">
-          <button
-            onClick={printReceipt}
-            className="px-4 sm:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg sm:rounded-xl hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-[#03215F]/20 text-sm sm:text-base"
-          >
-            <Printer className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="hidden sm:inline">Print Receipt</span>
-            <span className="sm:hidden">Print</span>
-          </button>
+        {/* FIXED FOOTER */}
+        <div className="flex-shrink-0 border-t border-gray-200 px-8 py-6 bg-white">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                <span>Payment verified • Secure transaction</span>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigator.clipboard.writeText(receipt.reference)}
+                className="px-4 py-3 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                <span className="hidden sm:inline">Copy ID</span>
+              </button>
+              
+              <button
+                onClick={printReceipt}
+                className="group relative px-8 py-3 rounded-xl bg-gradient-to-r from-[#03215F] via-[#03215F] to-[#03215F] text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden flex items-center gap-3"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Printer className="w-5 h-5 relative z-10 group-hover:scale-110 transition-transform" />
+                <span className="relative z-10">Print Receipt</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Print Styles */}
       <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          
-          #printable-receipt,
-          #printable-receipt * {
-            visibility: visible !important;
-          }
-          
-          #printable-receipt {
-            position: fixed !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            height: 100% !important;
-            padding: 20px !important;
-            background: white !important;
-            border: none !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
-          }
-          
-          .print\\:p-0 {
-            padding: 0 !important;
-          }
-          
-          .print\\:shadow-none {
-            box-shadow: none !important;
-          }
-          
-          button, .print\\:hidden {
-            display: none !important;
-          }
-          
-          .bg-gradient-to-br,
-          .bg-gradient-to-r {
-            background-image: none !important;
-            background-color: transparent !important;
-          }
-          
-          .bg-clip-text {
-            background-clip: border-box !important;
-            color: #000 !important;
-            -webkit-text-fill-color: #000 !important;
-          }
-        }
-        
         @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+          from { 
+            opacity: 0; 
+            backdrop-filter: blur(0px);
+          }
+          to { 
+            opacity: 1; 
+            backdrop-filter: blur(8px);
+          }
         }
         
         @keyframes slideUp {
           from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(30px) scale(0.96);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
           }
         }
         
         .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
+          animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         
         .animate-slideUp {
-          animation: slideUp 0.3s ease-out;
+          animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Custom scrollbar for the content area */
+        .overflow-y-auto::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 3px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 3px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background: #a1a1a1;
         }
       `}</style>
     </div>

@@ -198,7 +198,7 @@ export default function MemberDetailsModal({ member, eventId, onClose, onRefresh
             </div>
 
             {/* Event Registration Info */}
-            <div className="bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] rounded-xl p-5">
+            <div className="bg-gradient-to-br from-[#9cc2ed]/40 to-[#9cc2ed]/50 rounded-xl p-5">
               <h4 className="font-semibold text-gray-900 mb-3">Event Registration</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -215,11 +215,10 @@ export default function MemberDetailsModal({ member, eventId, onClose, onRefresh
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Payment</p>
-                  <p className={`text-lg font-bold ${
-                    memberDetails?.price_paid 
-                      ? 'text-[#AE9B66]' 
-                      : 'text-gray-600'
-                  }`}>
+                  <p className={`text-lg font-bold ${memberDetails?.price_paid
+                    ? 'text-[#AE9B66]'
+                    : 'text-gray-600'
+                    }`}>
                     {formatBHD(memberDetails?.price_paid)}
                   </p>
                 </div>
@@ -228,25 +227,23 @@ export default function MemberDetailsModal({ member, eventId, onClose, onRefresh
 
             {/* Check-in Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className={`p-4 rounded-xl ${
-                memberDetails?.checked_in
-                  ? 'bg-gradient-to-br from-[#AE9B66] to-[#AE9B66] border border-[#AE9B66]/50'
-                  : 'bg-gradient-to-br from-[#b8352d] to-[#b8352d] border border-[#b8352d]/50'
-              }`}>
+              <div className={`p-4 rounded-xl ${memberDetails?.checked_in
+                ? 'bg-gradient-to-br from-green-500/20 to-green-500/50 border border-green-500/50'
+                : 'bg-gradient-to-br from-red-500/20 to-red-500/50 border border-red-500/50'
+                }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Check-in Status</p>
                     <div className="flex items-center gap-2 mt-2">
                       {memberDetails?.checked_in ? (
-                        <CheckCircle className="w-5 h-5 text-[#AE9B66]" />
+                        <CheckCircle className="w-5 h-5 text-green-700" />
                       ) : (
-                        <XCircle className="w-5 h-5 text-[#b8352d]" />
+                        <XCircle className="w-5 h-5 text-red-500" />
                       )}
-                      <span className={`font-semibold ${
-                        memberDetails?.checked_in
-                          ? 'text-[#AE9B66]'
-                          : 'text-[#b8352d]'
-                      }`}>
+                      <span className={`font-semibold ${memberDetails?.checked_in
+                        ? 'text-green-700'
+                        : 'text-red-700'
+                        }`}>
                         {memberDetails?.checked_in ? "Checked In" : "Not Checked In"}
                       </span>
                     </div>
@@ -256,27 +253,29 @@ export default function MemberDetailsModal({ member, eventId, onClose, onRefresh
                       </p>
                     )}
                   </div>
-                  <button
-                    onClick={handleCheckInOut}
-                    disabled={loading}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      memberDetails?.checked_in
+                  {memberDetails?.checked_in ? ('') : (
+                    <button
+                      onClick={handleCheckInOut}
+                      disabled={loading}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${memberDetails?.checked_in
                         ? 'bg-[#b8352d] text-white hover:bg-[#b8352d]'
                         : 'bg-[#AE9B66] text-white hover:bg-[#AE9B66]'
-                    }`}
-                  >
-                    {loading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : memberDetails?.checked_in ? (
-                      "Check Out"
-                    ) : (
-                      "Check In"
-                    )}
-                  </button>
+                        }`}
+                    >
+                      {loading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : memberDetails?.checked_in ? (
+                        "Check Out"
+                      ) : (
+                        "Check In"
+                      )}
+                    </button>
+                  )}
+
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-gradient-to-br from-[#03215F] to-[#03215F] border border-[#03215F]/50">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-[#03215F]/20 to-[#03215F]/30 border border-[#03215F]/50">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Member Type</p>
@@ -375,7 +374,7 @@ export default function MemberDetailsModal({ member, eventId, onClose, onRefresh
             )}
           </div>
         </div>
-      </motion.div>
-    </div>
+      </motion.div >
+    </div >
   );
 }

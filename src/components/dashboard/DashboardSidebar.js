@@ -189,16 +189,10 @@ export default function DashboardSidebar() {
         {/* Logo */}
         <div className="p-6 py-4 border-b border-gray-200">
           <Link href="/member/dashboard" className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center">
-              <span className="text-white font-bold">BDS</span>
-            </div>
+
             <div>
-              <h2 className="font-bold text-lg text-gray-900">M-Panel</h2>
-              {user && (
-                <p className="text-xs text-gray-500">
-                  Welcome back, {getUserDisplayName()}!
-                </p>
-              )}
+              <img src="/long-logo2.png" alt="BDS Logo" className="h-10 object-contain" />
+              
             </div>
           </Link>
         </div>

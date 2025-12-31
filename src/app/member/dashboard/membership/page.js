@@ -1234,7 +1234,19 @@ export default function MembershipCardPage() {
 
             <div className="flex flex-wrap gap-2">
 
-
+              <button
+                onClick={handleCopyId}
+                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center hover:scale-105 active:scale-95"
+              >
+                {copied ? (
+                  <CheckCircle className="w-5 h-5 mr-2 text-[#AE9B66]" />
+                ) : (
+                  <Copy className="w-5 h-5 mr-2" />
+                )}
+                <span className="text-sm font-medium">
+                  {copied ? "Copied!" : "Copy ID"}
+                </span>
+              </button>
               <button
                 onClick={handlePrint}
                 className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center hover:scale-105 active:scale-95"
@@ -1274,6 +1286,8 @@ export default function MembershipCardPage() {
                   </p>
                 </div>
               </div>
+
+
               <button
                 onClick={handleUpgradeClick}
                 className="px-6 py-3 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg font-bold hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
@@ -1281,6 +1295,7 @@ export default function MembershipCardPage() {
                 <ArrowRight className="w-5 h-5" />
                 View Plans
               </button>
+
             </div>
           </div>
         )}
@@ -1314,7 +1329,7 @@ export default function MembershipCardPage() {
                   </div>
                 )}
 
-                <div className="text-center mb-8 mt-6">
+                <div className="text-center mb-0 mt-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-2">
                     {isFreeMember
                       ? "Standard Membership"
@@ -1327,32 +1342,6 @@ export default function MembershipCardPage() {
                   </p>
                 </div>
 
-                {/* Card Actions */}
-                <div className="flex justify-center w-full">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-lg">
-                    <button
-                      onClick={handlePrint}
-                      className="p-4 rounded-xl hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex flex-col items-center bg-gradient-to-r from-[#03215F] to-[#03215F] text-white"
-                    >
-                      <Printer className="w-6 h-6 mb-2" />
-                      <span className="text-sm font-medium">Print Card</span>
-                    </button>
-
-                    <button
-                      onClick={handleCopyId}
-                      className="p-4 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex flex-col items-center"
-                    >
-                      {copied ? (
-                        <CheckCircle className="w-6 h-6 mb-2 text-[#AE9B66]" />
-                      ) : (
-                        <Copy className="w-6 h-6 mb-2" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {copied ? "Copied!" : "Copy ID"}
-                      </span>
-                    </button>
-                  </div>
-                </div>
 
               </div>
             </div>

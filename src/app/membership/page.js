@@ -190,6 +190,15 @@ export default function MembershipPage() {
       return;
     }
 
+    // Only allow upgrade if current plan is Student Membership
+    const isStudentCurrent =
+      currentSubscription?.subscription_plan?.display_name?.toLowerCase().includes("student") ||
+      currentSubscription?.subscription_plan_name?.toLowerCase().includes("student");
+    if (!isStudentCurrent) {
+      toast.error("Only Student Memberships can be upgraded.");
+      return;
+    }
+
     if (processing) return;
 
     setProcessing(true);
@@ -246,6 +255,15 @@ export default function MembershipPage() {
     }
 
     if (processing || !currentSubscription) return;
+
+    // Disallow renew if not expired
+    const expired =
+      currentSubscription?.expires_at &&
+      new Date(currentSubscription.expires_at) < new Date();
+    if (!expired) {
+      toast.error("Your membership is not expired yet.");
+      return;
+    }
 
     setProcessing(true);
     try {
@@ -363,7 +381,12 @@ export default function MembershipPage() {
                   )}
                 </p>
               </div>
-              {!isFreeMember() && (
+              {!isFreeMember() && (() => {
+                const expired =
+                  currentSubscription?.expires_at &&
+                  new Date(currentSubscription.expires_at) < new Date();
+                if (!expired) return null;
+                return (
                 <button
                   onClick={handleRenew}
                   disabled={processing}
@@ -376,7 +399,8 @@ export default function MembershipPage() {
                   )}
                   Renew Subscription
                 </button>
-              )}
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -546,23 +570,37 @@ export default function MembershipPage() {
                     </button>
                   ) : !isFree ? (
                     // Paid member - can upgrade to different plan
-                    <button
-                      onClick={() => handleUpgrade(plan)}
-                      disabled={processing}
-                      className="w-full py-2.5 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all font-medium text-sm disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {processing ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          Switch to {plan.display_name}
-                          <ArrowRight className="w-4 h-4" />
-                        </>
-                      )}
-                    </button>
+                    (() => {
+                      const isStudentCurrent =
+                        currentSubscription?.subscription_plan?.display_name?.toLowerCase().includes("student") ||
+                        currentSubscription?.subscription_plan_name?.toLowerCase().includes("student");
+                      if (!isStudentCurrent) {
+                        return (
+                          <div className="w-full py-2.5 bg-gray-200 text-gray-600 rounded-lg text-center font-medium text-sm cursor-not-allowed">
+                            Plan change disabled
+                          </div>
+                        );
+                      }
+                      return (
+                        <button
+                          onClick={() => handleUpgrade(plan)}
+                          disabled={processing}
+                          className="w-full py-2.5 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all font-medium text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {processing ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              Switch to {plan.display_name}
+                              <ArrowRight className="w-4 h-4" />
+                            </>
+                          )}
+                        </button>
+                      );
+                    })()
                   ) : (
                     // Free plan for logged-in user
                     <div className="w-full py-2.5 bg-gray-200 text-gray-600 rounded-lg text-center font-medium text-sm cursor-not-allowed">

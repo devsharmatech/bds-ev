@@ -112,6 +112,24 @@ const formatAgendaTime = (timeString) => {
   return timeString.slice(0, 5); // Get HH:MM format
 }
 
+// Derive event status from start/end datetimes (join allowed only if 'upcoming')
+const deriveEventStatus = (event) => {
+  const raw = (event?.status || '').toLowerCase();
+  if (raw === 'cancelled') return 'cancelled';
+  const now = new Date();
+  const start = event?.start_datetime ? new Date(event.start_datetime) : null;
+  const end = event?.end_datetime ? new Date(event.end_datetime) : null;
+  if (start && now < start) return 'upcoming';
+  if (start && now >= start) {
+    if (!end || now <= end) return 'ongoing';
+    if (end && now > end) return 'past';
+  }
+  if (!start && end && now <= end) return 'ongoing';
+  if (!start && end && now > end) return 'past';
+  if (raw === 'ongoing' || raw === 'upcoming') return raw;
+  return 'upcoming';
+}
+
 // Custom Confetti component
 const Confetti = () => {
   return (
@@ -198,6 +216,11 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
   }, [activeTab])
 
   const handleJoinEvent = async () => {
+    const status = deriveEventStatus(event);
+    if (status !== 'upcoming') {
+      toast.error('Registration is not available for this event.');
+      return;
+    }
     if (!user) {
       onClose()
       onLoginRequired(event)
@@ -358,6 +381,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
   }
 
   const priceToPay = getPriceToPay()
+  const derivedStatus = deriveEventStatus(event)
 
   // Calculate member savings
   const memberSavings = event.is_paid && event.member_price 
@@ -1092,9 +1116,9 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
               {/* Join Button */}
               <button
                 onClick={handleJoinEvent}
-                disabled={loading || event.joined || loadingMethods}
+                disabled={loading || event.joined || loadingMethods || derivedStatus !== 'upcoming'}
                 className={`w-full py-2.5 sm:py-3 md:py-4 rounded-xl font-bold text-sm sm:text-base md:text-lg transition-all relative overflow-hidden group ${
-                  event.joined
+                  event.joined || derivedStatus !== 'upcoming'
                     ? "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white cursor-not-allowed"
                     : loading || loadingMethods
                     ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed"
@@ -1108,10 +1132,12 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                     <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span className="text-xs sm:text-sm md:text-base">Processing...</span>
                   </div>
-                ) : event.joined ? (
+                ) : event.joined || derivedStatus !== 'upcoming' ? (
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                    <span className="text-xs sm:text-sm md:text-base">Already Joined</span>
+                    <span className="text-xs sm:text-sm md:text-base">
+                      {event.joined ? 'Already Joined' : 'Registration Closed'}
+                    </span>
                   </div>
                 ) : user ? (
                   <>

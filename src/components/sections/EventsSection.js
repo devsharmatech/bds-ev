@@ -242,9 +242,15 @@ export default function EventsSection() {
       const data = await response.json();
 
       if (data.success) {
-        setEvents(data.events);
-        setTotalPages(data.pagination.totalPages);
-        setCurrentPage(data.pagination.page);
+        // Show only upcoming events in this section
+        const upcoming = Array.isArray(data.events)
+          ? data.events.filter((e) => deriveEventStatus(e) === "upcoming")
+          : [];
+        setEvents(upcoming);
+        // Adjust pagination locally for the filtered list
+        const pageSize = 6;
+        setTotalPages(Math.max(1, Math.ceil(upcoming.length / pageSize)));
+        setCurrentPage(1);
       } else {
         setError(data.error || "Failed to fetch events");
         toast.error(data.error || "Failed to load events");
@@ -263,6 +269,12 @@ export default function EventsSection() {
   }, []);
 
   const handleJoinNow = async (event) => {
+    // Only allow joining upcoming events; otherwise open details
+    const status = deriveEventStatus(event);
+    if (status !== "upcoming") {
+      handleViewDetails(event);
+      return;
+    }
     // Ensure fresh auth check to avoid false negatives
     let authedUser = user;
     if (!authedUser) {
@@ -543,10 +555,8 @@ export default function EventsSection() {
                               {/* Joined / Payment Pending */}
                               {event.joined && (
                                 event.is_paid && !hasPaid ? (
-                                  <div className="px-3 py-1.5 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] backdrop-blur-sm rounded-full text-[#03215F] text-xs font-medium flex items-center gap-1.5">
-                                    <Shield className="w-3 h-3" />
-                                    Payment Pending
-                                  </div>
+                                 
+                                  ''
                                 ) : (
                                   <div className="px-3 py-1.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
                                     <CheckCircle className="w-3 h-3" />
@@ -734,19 +744,15 @@ export default function EventsSection() {
                               Details
                             </button>
 
-                            {!event.joined ? (
+                            {!event.joined && derivedStatus === "upcoming" && !isFull ? (
                               <button
                                 onClick={() => handleJoinNow(event)}
-                                disabled={isFull || derivedStatus === "past" || derivedStatus === "cancelled"}
-                                className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${!isFull && derivedStatus !== "past" && derivedStatus !== "cancelled"
-                                    ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
-                                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                  }`}
+                                className="flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
                               >
                                 <ArrowRight className="w-4 h-4" />
                                 Join
                               </button>
-                            ) : event.is_paid && !hasPaid ? (
+                            ) : event.joined && event.is_paid && !hasPaid ? (
                              
                               <button
                                 onClick={() => handleViewDetails(event)}
@@ -755,7 +761,7 @@ export default function EventsSection() {
                                 <CheckCircle className="w-4 h-4" />
                                 Joined
                               </button>
-                            ) : (
+                            ) : event.joined ? (
                               <button
                                 onClick={() => handleViewDetails(event)}
                                 className="flex-1 py-2.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
@@ -763,7 +769,7 @@ export default function EventsSection() {
                                 <CheckCircle className="w-4 h-4" />
                                 Joined
                               </button>
-                            )}
+                            ) : null}
                           </div>
                         </div>
                       </div>
