@@ -620,7 +620,7 @@ function EventsPageContent() {
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
-              Upcoming <span className="text-[#ECCF0F]">Events</span>
+              Upcoming <span className="text-[#AE9B66]">Events</span>
             </h1>
             <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
               Join our professional development events, workshops, and

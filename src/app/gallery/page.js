@@ -8,7 +8,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Download,
   Maximize2,
   Minimize2,
   ZoomIn,
@@ -25,6 +24,10 @@ import {
   ExternalLink,
   Sparkles,
   Layers,
+  Eye,
+  MoreVertical,
+  Star,
+  Image as ImageLucide,
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import toast, { Toaster } from "react-hot-toast";
@@ -42,6 +45,7 @@ export default function GalleryPage() {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showThumbnails, setShowThumbnails] = useState(true);
   const [favoriteImages, setFavoriteImages] = useState(new Set());
+  const [favoriteGalleries, setFavoriteGalleries] = useState(new Set());
 
   // Derived totals for hero/stats
   const totalPhotos = galleries.reduce((sum, g) => sum + (g.image_count || 0), 0);
@@ -109,44 +113,6 @@ export default function GalleryPage() {
     }
   };
 
-  // Download functions
-  const downloadImage = async (imageUrl, imageName) => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = imageName || `gallery-image-${Date.now()}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      toast.success("Image downloaded successfully!");
-    } catch (error) {
-      console.error("Download failed:", error);
-      toast.error("Failed to download image");
-    }
-  };
-
-  const downloadAllImages = async () => {
-    if (activeImages.length === 0) return;
-    
-    toast.loading(`Downloading ${activeImages.length} images...`);
-    
-    for (let i = 0; i < activeImages.length; i++) {
-      const image = activeImages[i];
-      try {
-        await downloadImage(image.url, `${activeGallery.title}-${i + 1}.jpg`);
-      } catch (error) {
-        console.error(`Failed to download image ${i + 1}:`, error);
-      }
-    }
-    
-    toast.dismiss();
-    toast.success("All images downloaded!");
-  };
-
   // Share function
   const shareGallery = async () => {
     if (navigator.share) {
@@ -165,7 +131,7 @@ export default function GalleryPage() {
     }
   };
 
-  // Toggle favorite
+  // Toggle favorite image
   const toggleFavorite = (imageId) => {
     const newFavorites = new Set(favoriteImages);
     if (newFavorites.has(imageId)) {
@@ -176,6 +142,20 @@ export default function GalleryPage() {
       toast.success("Added to favorites");
     }
     setFavoriteImages(newFavorites);
+  };
+
+  // Toggle favorite gallery
+  const toggleFavoriteGallery = (galleryId, e) => {
+    e.stopPropagation();
+    const newFavorites = new Set(favoriteGalleries);
+    if (newFavorites.has(galleryId)) {
+      newFavorites.delete(galleryId);
+      toast.success("Removed from favorites");
+    } else {
+      newFavorites.add(galleryId);
+      toast.success("Added to favorites");
+    }
+    setFavoriteGalleries(newFavorites);
   };
 
   // Auto-play slideshow
@@ -219,12 +199,6 @@ export default function GalleryPage() {
         case '-':
           setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
           break;
-        case 'd':
-        case 'D':
-          if (activeImages[currentImageIndex]) {
-            downloadImage(activeImages[currentImageIndex].url, `${activeGallery.title}-${currentImageIndex + 1}.jpg`);
-          }
-          break;
       }
     };
 
@@ -232,66 +206,100 @@ export default function GalleryPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [viewerOpen, currentImageIndex, activeImages, activeGallery, isPlaying, isFullscreen]);
 
-  // Gallery Card Component
+  // Format a gallery date into a readable string (Asia/Bahrain)
+  const formatGalleryDate = (dateString) => {
+    if (!dateString) return "Recently";
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "Recently";
+    return d.toLocaleDateString("en-BH", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      timeZone: "Asia/Bahrain",
+    });
+  };
+
+  // Modern Gallery Card Component
   const GalleryCard = ({ gallery }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 cursor-pointer"
     >
-      {/* Image Container with Fixed Height */}
-      <div className="relative h-64 w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
-        {gallery.featured_image_url ? (
-          <img
-            src={gallery.featured_image_url}
-            alt={gallery.title}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-6">
-            <ImageIcon className="w-12 h-12 text-gray-400 mb-2" />
-            <p className="text-sm text-gray-500">No image</p>
-          </div>
-        )}
+      {/* Image Container with Gradient Overlay */}
+      <div className="relative h-72 w-full overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
+          {gallery.featured_image_url ? (
+            <img
+              src={gallery.featured_image_url}
+              alt={gallery.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center p-6">
+              <ImageLucide className="w-16 h-16 text-gray-300 mb-3" />
+              <p className="text-sm text-gray-400">No preview available</p>
+            </div>
+          )}
+        </div>
         
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="absolute bottom-4 left-4 right-4 text-white">
-            <h3 className="font-bold text-lg mb-1">{gallery.title}</h3>
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4" />
-              <span className="text-sm opacity-90">
-                {gallery.image_count || 0} images
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-60" />
+        
+        {/* Top Badges */}
+        <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
+          <div className="flex gap-2">
+            <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-xs font-medium border border-white/30">
+              {gallery.image_count || 0} photos
+            </span>
+            {gallery.tag1 && (
+              <span className="px-3 py-1.5 bg-[#03215F]/20 backdrop-blur-sm text-white rounded-full text-xs font-medium border border-[#03215F]/30">
+                {gallery.tag1}
               </span>
+            )}
+          </div>
+          
+          <button
+            onClick={(e) => toggleFavoriteGallery(gallery.id, e)}
+            className="p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors border border-white/30"
+          >
+            <Heart 
+              className={`w-4 h-4 ${favoriteGalleries.has(gallery.id) ? 'fill-white text-white' : 'text-white'}`}
+            />
+          </button>
+        </div>
+        
+        {/* Content Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-white transform transition-transform duration-300 group-hover:-translate-y-2">
+          <div className="mb-3">
+            <h3 className="font-bold text-xl mb-2 line-clamp-1">{gallery.title}</h3>
+            <p className="text-sm opacity-90 line-clamp-2">
+              {gallery.description || 'Explore the collection'}
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-between pt-3 border-t border-white/20">
+            <div className="flex items-center gap-4 text-sm">
+              <span className="flex items-center gap-1.5 opacity-90">
+                <Calendar className="w-4 h-4" />
+                {formatGalleryDate(gallery.created_at)}
+              </span>
+              <span className="flex items-center gap-1.5 opacity-90">
+                <Layers className="w-4 h-4" />
+                Album
+              </span>
+            </div>
+            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              
+              <Eye className="w-4 h-4" />
             </div>
           </div>
         </div>
-        
-        {/* View Button */}
-        <div className="absolute top-4 right-4">
-          <span className="px-3 py-1.5 bg-white/90 backdrop-blur-sm text-gray-900 rounded-full text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white select-none">
-            View Gallery
-          </span>
-        </div>
       </div>
 
-      {/* Tags */}
-      <div className="p-4">
-        <div className="flex flex-wrap gap-2">
-          {gallery.tag1 && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200">
-              <Tag className="w-3 h-3" />
-              {gallery.tag1}
-            </span>
-          )}
-          {gallery.tag2 && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-[#9cc2ed] to-[#9cc2ed] text-[#03215F] border border-[#9cc2ed]">
-              <Tag className="w-3 h-3" />
-              {gallery.tag2}
-            </span>
-          )}
-        </div>
-      </div>
+      
     </motion.div>
   );
 
@@ -300,27 +308,66 @@ export default function GalleryPage() {
       <Toaster position="top-right" />
 
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-[#03215F] to-[#03215F] text-white py-16 md:py-20">
-        <div className="container mx-auto px-4">
+      <div className="relative bg-gradient-to-br from-[#03215F] via-[#03215F] to-[#0a2f8a] text-white py-16 md:py-20 overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.06)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.06)_50%,rgba(255,255,255,0.06)_75%,transparent_75%,transparent)] [background-size:20px_20px]"></div>
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl">
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm mb-6">
-              <ImageIcon className="w-4 h-4 mr-2" />
-              <span className="text-sm font-medium">Gallery</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Photo Gallery</h1>
-            <p className="text-lg md:text-xl opacity-90">
-              Explore moments from our events, conferences, and community activities.
-            </p>
-            <div className="flex flex-wrap items-center gap-6 mt-6 opacity-90">
-              <div className="flex items-center">
-                <Layers className="w-5 h-5 mr-2" />
-                <span>{galleries.length} Galleries</span>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm mb-6 border border-white/20"
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              <span className="text-sm font-medium">Visual Collection</span>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight"
+            >
+              Events <span className="text-[#AE9B66]">Gallery</span>
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg md:text-xl opacity-90 max-w-2xl"
+            >
+              Curated moments from our events, conferences, and community activities. Explore our visual story.
+            </motion.p>
+            
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-wrap items-center gap-8 mt-8 opacity-90"
+            >
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-4 py-2.5 rounded-lg">
+                <div className="p-2 rounded-lg bg-white/20">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{galleries.length}</div>
+                  <div className="text-sm opacity-80">Collections</div>
+                </div>
               </div>
-              <div className="flex items-center">
-                <ImageIcon className="w-5 h-5 mr-2" />
-                <span>{totalPhotos} Photos</span>
+              
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm px-4 py-2.5 rounded-lg">
+                <div className="p-2 rounded-lg bg-white/20">
+                  <ImageIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{totalPhotos}</div>
+                  <div className="text-sm opacity-80">Photos</div>
+                </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
@@ -332,27 +379,34 @@ export default function GalleryPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={`fixed inset-0 z-50 bg-black ${
-              isFullscreen ? '' : 'p-4 md:p-8'
-            }`}
+            className={`fixed inset-0 z-50 bg-black ${isFullscreen ? '' : 'p-4 md:p-8'}`}
           >
             {/* Top Controls */}
-            <div className="absolute top-0 left-0 right-0 z-10 p-4 md:p-6 bg-gradient-to-b from-black/80 to-transparent">
+            <motion.div
+              initial={{ y: -50 }}
+              animate={{ y: 0 }}
+              className="absolute top-0 left-0 right-0 z-10 p-4 md:p-6 bg-gradient-to-b from-black/90 via-black/80 to-transparent backdrop-blur-sm"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setViewerOpen(false)}
-                    className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+                    className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   
                   <div className="text-white">
-                    <h2 className="font-bold text-lg truncate">{activeGallery?.title}</h2>
+                    <h2 className="font-bold text-lg md:text-xl truncate max-w-md">
+                      {activeGallery?.title}
+                    </h2>
                     <div className="flex items-center gap-3 text-sm opacity-80">
-                      <span>{currentImageIndex + 1} of {activeImages.length}</span>
+                      <span className="flex items-center gap-1.5">
+                        <ImageIcon className="w-4 h-4" />
+                        {currentImageIndex + 1} of {activeImages.length}
+                      </span>
                       {activeGallery?.tag1 && (
-                        <span className="px-2 py-1 rounded-full bg-white/10 text-xs">
+                        <span className="px-3 py-1 rounded-full bg-white/10 text-xs border border-white/20">
                           {activeGallery.tag1}
                         </span>
                       )}
@@ -361,21 +415,10 @@ export default function GalleryPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* Download All */}
-                  {activeImages.length > 0 && (
-                    <button
-                      onClick={downloadAllImages}
-                      className="px-4 py-2 rounded-full bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:opacity-90 transition-opacity flex items-center gap-2"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span className="hidden md:inline">Download All</span>
-                    </button>
-                  )}
-                  
                   {/* Fullscreen Toggle */}
                   <button
                     onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+                    className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
                   >
                     {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
                   </button>
@@ -383,20 +426,23 @@ export default function GalleryPage() {
                   {/* Close */}
                   <button
                     onClick={() => setViewerOpen(false)}
-                    className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+                    className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Main Image Display */}
             <div className="relative w-full h-full flex items-center justify-center">
               {loadingImages ? (
                 <div className="flex flex-col items-center justify-center gap-4 text-white">
-                  <Clock className="w-12 h-12 animate-pulse" />
-                  <p>Loading images...</p>
+                  <div className="relative">
+                    <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                    <Sparkles className="w-8 h-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white animate-pulse" />
+                  </div>
+                  <p className="text-lg">Loading images...</p>
                 </div>
               ) : activeImages.length === 0 ? (
                 <div className="text-white text-center">
@@ -408,42 +454,47 @@ export default function GalleryPage() {
                   {/* Main Image */}
                   <motion.div
                     key={currentImageIndex}
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.1 }}
+                    exit={{ opacity: 0, scale: 1.05 }}
+                    transition={{ duration: 0.3 }}
                     className="relative max-w-[90vw] max-h-[80vh]"
                     style={{ transform: `scale(${zoomLevel})` }}
                   >
                     <img
                       src={activeImages[currentImageIndex]?.url}
                       alt={activeImages[currentImageIndex]?.alt}
-                      className="rounded-lg shadow-2xl max-w-full max-h-[80vh] object-contain"
+                      className="rounded-xl shadow-2xl max-w-full max-h-[80vh] object-contain"
                     />
                   </motion.div>
 
                   {/* Navigation Arrows */}
                   <button
                     onClick={prevImage}
-                    className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+                    className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110"
                   >
                     <ChevronLeft className="w-6 h-6" />
                   </button>
                   
                   <button
                     onClick={nextImage}
-                    className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+                    className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110"
                   >
                     <ChevronRight className="w-6 h-6" />
                   </button>
 
                   {/* Bottom Controls */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-black/80 to-transparent">
+                  <motion.div
+                    initial={{ y: 50 }}
+                    animate={{ y: 0 }}
+                    className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-black/90 via-black/80 to-transparent backdrop-blur-sm"
+                  >
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                       {/* Image Controls */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap justify-center">
                         <button
                           onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.5))}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
                           disabled={zoomLevel <= 0.5}
                         >
                           <ZoomOut className="w-5 h-5" />
@@ -451,14 +502,14 @@ export default function GalleryPage() {
                         
                         <button
                           onClick={() => setZoomLevel(1)}
-                          className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors text-sm"
+                          className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 text-sm font-medium"
                         >
                           {Math.round(zoomLevel * 100)}%
                         </button>
                         
                         <button
                           onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 3))}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
                           disabled={zoomLevel >= 3}
                         >
                           <ZoomIn className="w-5 h-5" />
@@ -467,7 +518,7 @@ export default function GalleryPage() {
                         {/* Slideshow Toggle */}
                         <button
                           onClick={() => setIsPlaying(!isPlaying)}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
                         >
                           {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                         </button>
@@ -475,9 +526,9 @@ export default function GalleryPage() {
                         {/* Favorite */}
                         <button
                           onClick={() => toggleFavorite(activeImages[currentImageIndex]?.id)}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
                         >
-                          <Heart className={`w-5 h-5 ${
+                          <Heart className={`w-5 h-5 transition-colors ${
                             favoriteImages.has(activeImages[currentImageIndex]?.id) 
                               ? 'fill-red-500 text-red-500' 
                               : ''
@@ -489,26 +540,20 @@ export default function GalleryPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={shareGallery}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
+                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
                         >
                           <Share2 className="w-5 h-5" />
-                        </button>
-                        
-                        <button
-                          onClick={() => downloadImage(
-                            activeImages[currentImageIndex]?.url,
-                            `${activeGallery.title}-${currentImageIndex + 1}.jpg`
-                          )}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
-                        >
-                          <Download className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
 
                     {/* Thumbnails */}
                     {showThumbnails && activeImages.length > 1 && (
-                      <div className="mt-4 overflow-x-auto">
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="mt-4 overflow-x-auto"
+                      >
                         <div className="flex gap-2 pb-2">
                           {activeImages.map((img, idx) => (
                             <button
@@ -517,10 +562,10 @@ export default function GalleryPage() {
                                 setCurrentImageIndex(idx);
                                 setZoomLevel(1);
                               }}
-                              className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                              className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden transition-all duration-200 ${
                                 idx === currentImageIndex
-                                  ? 'border-white shadow-lg scale-105'
-                                  : 'border-transparent hover:border-white/50'
+                                  ? 'ring-2 ring-white scale-105 shadow-lg'
+                                  : 'opacity-60 hover:opacity-100 hover:scale-105'
                               }`}
                             >
                               <img
@@ -531,9 +576,9 @@ export default function GalleryPage() {
                             </button>
                           ))}
                         </div>
-                      </div>
+                      </motion.div>
                     )}
-                  </div>
+                  </motion.div>
                 </>
               )}
             </div>
@@ -542,12 +587,28 @@ export default function GalleryPage() {
       </AnimatePresence>
 
       {/* Main Gallery Content */}
-      <div className="min-h-[calc(80vh-100px)] py-8 md:py-12 bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-[calc(80vh-100px)] py-12 md:py-16 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 md:mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                Featured Collections
+              </h2>
+              <p className="text-gray-600">
+                Browse through our curated visual stories
+              </p>
+            </div>
+            
+          </div>
+
           {/* Gallery Grid */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <Clock className="w-12 h-12 text-[#03215F] animate-pulse mb-4" />
+              <div className="relative mb-4">
+                <div className="w-12 h-12 border-3 border-[#03215F]/20 border-t-[#03215F] rounded-full animate-spin"></div>
+                <Sparkles className="w-6 h-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#03215F] animate-pulse" />
+              </div>
               <p className="text-gray-600">Loading galleries...</p>
             </div>
           ) : galleries.length === 0 ? (
@@ -556,24 +617,27 @@ export default function GalleryPage() {
               animate={{ opacity: 1 }}
               className="text-center py-20"
             >
-              <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                <ImageIcon className="w-16 h-16 text-gray-400" />
+              <div className="w-40 h-40 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-lg">
+                <ImageIcon className="w-20 h-20 text-gray-400" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-700 mb-2">No Galleries Yet</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
-                Check back soon for photos from our upcoming events and activities.
+              <h3 className="text-2xl font-semibold text-gray-800 mb-3">No Galleries Yet</h3>
+              <p className="text-gray-500 max-w-md mx-auto mb-6">
+                We're preparing amazing visual content for you. Check back soon!
               </p>
+              <Link href="/" className="px-6 py-3 bg-[#03215F] text-white rounded-lg hover:bg-[#031a4a] transition-colors font-medium">
+                Subscribe for Updates
+              </Link>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 md:gap-8">
               {galleries.map((gallery) => (
-                <button
+                <div
                   key={gallery.id}
                   onClick={() => openViewer(gallery)}
-                  className="focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:ring-offset-2 rounded-2xl"
+                  className="focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:ring-offset-2 rounded-2xl transition-transform duration-200 hover:-translate-y-1"
                 >
                   <GalleryCard gallery={gallery} />
-                </button>
+                </div>
               ))}
             </div>
           )}
@@ -584,30 +648,28 @@ export default function GalleryPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-16 pt-8 border-t border-gray-200"
+              className="mt-20 pt-12 border-t border-gray-200"
             >
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="text-center p-4 bg-white rounded-2xl shadow-sm">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <div className="text-3xl font-bold text-[#03215F]">{galleries.length}</div>
-                  <div className="text-gray-600">Galleries</div>
+                  <div className="text-gray-600 text-sm uppercase tracking-wider font-medium mt-1">Collections</div>
                 </div>
-                <div className="text-center p-4 bg-white rounded-2xl shadow-sm">
-                  <div className="text-3xl font-bold text-[#AE9B66]">
-                    {galleries.reduce((sum, g) => sum + (g.image_count || 0), 0)}
-                  </div>
-                  <div className="text-gray-600">Total Photos</div>
+                <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="text-3xl font-bold text-[#AE9B66]">{totalPhotos}</div>
+                  <div className="text-gray-600 text-sm uppercase tracking-wider font-medium mt-1">Total Photos</div>
                 </div>
-                <div className="text-center p-4 bg-white rounded-2xl shadow-sm">
+                <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <div className="text-3xl font-bold text-[#9cc2ed]">
                     {Math.max(...galleries.map(g => g.image_count || 0))}
                   </div>
-                  <div className="text-gray-600">Largest Gallery</div>
+                  <div className="text-gray-600 text-sm uppercase tracking-wider font-medium mt-1">Largest Collection</div>
                 </div>
-                <div className="text-center p-4 bg-white rounded-2xl shadow-sm">
+                <div className="text-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                   <div className="text-3xl font-bold text-[#ECCF0F]">
                     {Math.round(galleries.reduce((sum, g) => sum + (g.image_count || 0), 0) / galleries.length)}
                   </div>
-                  <div className="text-gray-600">Avg. per Gallery</div>
+                  <div className="text-gray-600 text-sm uppercase tracking-wider font-medium mt-1">Avg. Photos</div>
                 </div>
               </div>
             </motion.div>

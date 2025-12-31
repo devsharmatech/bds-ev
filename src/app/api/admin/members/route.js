@@ -24,6 +24,7 @@ export async function GET(request) {
         mobile,
         profile_image,
         membership_code,
+        membership_type,
         membership_status,
         role,
         created_at,

@@ -157,6 +157,13 @@ export default function MembersPage() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("created_at.desc");
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [summaryCounts, setSummaryCounts] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    paid: 0,
+    free: 0,
+  });
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
@@ -219,12 +226,67 @@ export default function MembersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, query, sort]);
 
+  useEffect(() => {
+    fetchSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function fetchSummary() {
+    try {
+      // Aggregate across all pages to ensure accurate counts (excluding admins)
+      const per = 200;
+      const firstUrl = new URL("/api/admin/members", window.location.origin);
+      firstUrl.searchParams.set("page", "1");
+      firstUrl.searchParams.set("per_page", String(per));
+      const firstRes = await fetch(firstUrl.toString());
+      const firstData = await firstRes.json();
+      if (!firstData?.success) return;
+      let all = Array.isArray(firstData.data) ? firstData.data : [];
+      const totalAll = (firstData.meta && firstData.meta.total) || all.length;
+      const totalPages = Math.max(1, Math.ceil(totalAll / per));
+
+      const promises = [];
+      for (let p = 2; p <= totalPages; p++) {
+        const url = new URL("/api/admin/members", window.location.origin);
+        url.searchParams.set("page", String(p));
+        url.searchParams.set("per_page", String(per));
+        promises.push(fetch(url.toString()).then((r) => r.json()).catch(() => null));
+      }
+      if (promises.length) {
+        const results = await Promise.all(promises);
+        results.forEach((d) => {
+          if (d?.success && Array.isArray(d.data)) {
+            all = all.concat(d.data);
+          }
+        });
+      }
+
+      const nonAdmins = all.filter((m) => m.role !== "admin");
+      const totalCount = nonAdmins.length;
+      const activeCount = nonAdmins.filter((m) => m.membership_status === "active").length;
+      const inactiveCount = nonAdmins.filter((m) => m.membership_status === "pending").length;
+      const paidCount = nonAdmins.filter((m) => m.membership_type === "paid").length;
+      const freeCount = Math.max(0, totalCount - paidCount);
+
+      setSummaryCounts({
+        total: totalCount,
+        active: activeCount,
+        inactive: inactiveCount,
+        paid: paidCount,
+        free: freeCount,
+      });
+    } catch {
+      // ignore
+    }
+  }
+
   async function fetchMembers() {
     setLoading(true);
     try {
       const url = new URL("/api/admin/members", window.location.origin);
       url.searchParams.set("page", String(page));
       url.searchParams.set("per_page", String(perPage));
+      url.searchParams.set("role", "member");
       if (query) url.searchParams.set("q", query);
       if (sort) url.searchParams.set("sort", sort);
 
@@ -233,6 +295,8 @@ export default function MembersPage() {
       if (data.success) {
         setMembers(data.data || []);
         setTotal((data.meta && data.meta.total) || 0);
+        // keep cards in sync after table loads
+        fetchSummary();
       } else {
         toast.error("Failed to load members: " + (data.error || "Unknown"));
       }
@@ -731,34 +795,37 @@ export default function MembersPage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
             {[
               {
                 label: "Total Members",
-                value: total,
+                value: summaryCounts.total,
                 icon: Users,
                 color: "from-[#9cc2ed] to-[#03215F]",
               },
               {
                 label: "Active Members",
-                value: members.filter((m) => m.membership_status === "active")
-                  .length,
+                value: summaryCounts.active,
                 icon: UserCheck,
                 color: "from-[#AE9B66] to-[#AE9B66]",
               },
               {
                 label: "Inactive Members",
-                value: members.filter((m) => m.membership_status === "inactive")
-                  .length,
+                value: summaryCounts.inactive,
                 icon: UserX,
                 color: "from-[#ECCF0F] to-[#ECCF0F]",
               },
               {
-                label: "Blocked Members",
-                value: members.filter((m) => m.membership_status === "blocked")
-                  .length,
+                label: "Paid Members",
+                value: summaryCounts.paid,
                 icon: Shield,
-                color: "from-[#b8352d] to-[#b8352d]",
+                color: "from-[#AE9B66] to-[#AE9B66]",
+              },
+              {
+                label: "Free Members",
+                value: summaryCounts.free,
+                icon: Users,
+                color: "from-gray-400 to-gray-500",
               },
             ].map((stat, index) => (
               <motion.div
