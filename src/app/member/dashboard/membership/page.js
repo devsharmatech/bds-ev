@@ -197,7 +197,7 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, pla
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 'clamp(9px, 2.6vw, 11px)', color: '#C7D7F2', textTransform: 'uppercase', margin: 0, letterSpacing: '0.1em' }}>Member Name</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-            <h2 style={{ fontWeight: 900, lineHeight: 1.15, margin: 0, fontSize: 'clamp(18px, 5vw, 20px)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+            <h2 style={{ fontWeight: 700, lineHeight: 1.15, margin: 0, fontSize: 'clamp(18px, 5vw, 20px)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
               {user.full_name || ''}
             </h2>
 
