@@ -204,7 +204,20 @@ export default function MyEventsPage() {
     setFilteredEvents(filtered);
   };
 
+  const isEventCompleted = (event) => {
+    const now = new Date();
+    // Event is completed if status is "completed" or end_datetime has passed
+    return event.event_status === 'completed' || 
+      (event.end_datetime && new Date(event.end_datetime) < now);
+  }
+
   const handleViewCertificate = async (event) => {
+    // Check if event is completed
+    if (!isEventCompleted(event)) {
+      toast.error("Certificate will be available after the event is completed.");
+      return;
+    }
+
     // Ensure user data is available
     if (userLoading) {
       toast.loading("Loading user data...");
@@ -539,13 +552,23 @@ export default function MyEventsPage() {
 
                   {/* Actions */}
                   <div className="flex flex-col sm:flex-row items-center gap-2">
-                    {event.checked_in && (
+                    {event.checked_in && isEventCompleted(event) && (
                       <button
                         onClick={() => handleViewCertificate(event)}
                         className="px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#b8352d] text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center w-full sm:w-auto justify-center"
                       >
                         <Award className="w-4 h-4 mr-2" />
                         Certificate
+                      </button>
+                    )}
+                    {event.checked_in && !isEventCompleted(event) && (
+                      <button
+                        disabled
+                        className="px-4 py-2 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed flex items-center w-full sm:w-auto justify-center"
+                        title="Certificate will be available after the event is completed"
+                      >
+                        <Award className="w-4 h-4 mr-2" />
+                        Certificate (Pending)
                       </button>
                     )}
 

@@ -30,7 +30,8 @@ export async function GET(req) {
           title,
           start_datetime,
           end_datetime,
-          venue_name
+          venue_name,
+          status
         )
       `)
       .eq("user_id", userId)
@@ -39,16 +40,32 @@ export async function GET(req) {
 
     if (error) throw error;
 
-    // Format certificates data
-    const certificates = (events || []).map(item => ({
-      id: item.id,
-      event_id: item.events?.id,
-      event_title: item.events?.title,
-      event_date: item.events?.start_datetime,
-      venue_name: item.events?.venue_name,
-      checked_in_at: item.checked_in_at,
-      certificate_id: `CERT-${item.id.slice(0, 8).toUpperCase()}`
-    })).filter(cert => cert.event_id);
+    const now = new Date();
+
+    // Format certificates data and filter only completed events
+    const certificates = (events || [])
+      .map(item => ({
+        id: item.id,
+        event_id: item.events?.id,
+        event_title: item.events?.title,
+        event_date: item.events?.start_datetime,
+        end_datetime: item.events?.end_datetime,
+        venue_name: item.events?.venue_name,
+        checked_in_at: item.checked_in_at,
+        certificate_id: `CERT-${item.id.slice(0, 8).toUpperCase()}`,
+        event_status: item.events?.status
+      }))
+      .filter(cert => {
+        if (!cert.event_id) return false;
+        
+        // Event is completed if:
+        // 1. Status is explicitly "completed", OR
+        // 2. end_datetime exists and is in the past
+        const isCompleted = cert.event_status === 'completed' || 
+          (cert.end_datetime && new Date(cert.end_datetime) < now);
+        
+        return isCompleted;
+      });
 
     return NextResponse.json({
       success: true,

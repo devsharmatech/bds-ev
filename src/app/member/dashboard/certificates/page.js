@@ -105,17 +105,27 @@ export default function CertificatesPage() {
     }
   }
 
+  const isEventCompleted = (cert) => {
+    const now = new Date();
+    // Event is completed if status is "completed" or end_datetime has passed
+    return cert.event_status === 'completed' || 
+      (cert.end_datetime && new Date(cert.end_datetime) < now);
+  }
+
   const calculateStats = (certs) => {
     const currentYear = new Date().getFullYear()
     const lastYear = currentYear - 1
     
+    // Only count completed events
+    const completedCerts = certs.filter(isEventCompleted);
+    
     const stats = {
-      total: certs.length,
-      thisYear: certs.filter(c => {
+      total: completedCerts.length,
+      thisYear: completedCerts.filter(c => {
         const certDate = new Date(c.checked_in_at || c.event_date)
         return certDate.getFullYear() === currentYear
       }).length,
-      lastYear: certs.filter(c => {
+      lastYear: completedCerts.filter(c => {
         const certDate = new Date(c.checked_in_at || c.event_date)
         return certDate.getFullYear() === lastYear
       }).length
@@ -125,7 +135,8 @@ export default function CertificatesPage() {
   }
 
   const filterCertificates = () => {
-    let filtered = [...certificates]
+    // Only show certificates for completed events
+    let filtered = certificates.filter(isEventCompleted)
 
     // Filter by year
     if (filters.year !== 'all') {
