@@ -1,6 +1,49 @@
-import { supabase } from '@/lib/supabaseAdmin';
-import { NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
+import { supabase } from "@/lib/supabaseAdmin";
+import { NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
+
+// GET single event with hosts and agendas
+export async function GET(request, { params }) {
+  try {
+    const { id } = await params;
+
+    const { data: event, error } = await supabase
+      .from('events')
+      .select(`
+        *,
+        created_by_user:users!events_created_by_fkey(
+          id,
+          full_name,
+          email
+        ),
+        event_agendas(*),
+        event_hosts(*)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({
+          success: false,
+          error: 'Event not found'
+        }, { status: 404 });
+      }
+      throw error;
+    }
+
+    return NextResponse.json({
+      success: true,
+      event
+    });
+  } catch (err) {
+    console.error('Event GET Error:', err);
+    return NextResponse.json({
+      success: false,
+      error: err.message
+    }, { status: 500 });
+  }
+}
 
 // Helper function to create slug
 function createSlug(text) {
@@ -57,49 +100,6 @@ async function deleteImage(imageUrl, folder) {
     await supabase.storage
       .from('events')
       .remove([`${folder}/${fileName}`]);
-  }
-}
-
-// GET single event with hosts and agendas
-export async function GET(request, { params }) {
-  try {
-    const { id } = await params;
-
-    const { data: event, error } = await supabase
-      .from('events')
-      .select(`
-        *,
-        created_by_user:users!events_created_by_fkey(
-          id,
-          full_name,
-          email
-        ),
-        event_agendas(*),
-        event_hosts(*)
-      `)
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json({
-          success: false,
-          error: 'Event not found'
-        }, { status: 404 });
-      }
-      throw error;
-    }
-
-    return NextResponse.json({
-      success: true,
-      event
-    });
-  } catch (err) {
-    console.error('Event GET Error:', err);
-    return NextResponse.json({
-      success: false,
-      error: err.message
-    }, { status: 500 });
   }
 }
 

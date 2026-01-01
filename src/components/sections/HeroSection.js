@@ -14,9 +14,9 @@ function MembershipCard({ user, qrRef }) {
   const formatDate = (date) =>
     date
       ? new Date(date).toLocaleDateString("en-BH", {
-          month: "numeric",
-          year: "numeric",
-        })
+        month: "numeric",
+        year: "numeric",
+      })
       : "N/A";
 
   const qrValue = JSON.stringify({
@@ -59,26 +59,30 @@ function MembershipCard({ user, qrRef }) {
             <h3 className="text-xs sm:text-sm font-bold uppercase leading-tight">
               Bahrain Dental Society
             </h3>
-            <p className="text-[10px] text-[#9cc2ed] tracking-widest uppercase">
-              Official Member
+            <p className="text-[10px] text-[#9cc2ed] tracking-widest uppercase mt-2">
+              Official Member  
+              {user.is_member_verified && (
+                <span className="inline-flex ml-2 items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-semibold bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30">
+                  <Shield className="w-2.5 h-2.5" />
+                  Verified
+                </span>
+              )}
             </p>
           </div>
         </div>
 
         <span
           className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase
-          rounded-full ${
-            user.membership_status === "active"
+          rounded-full ${user.membership_status === "active"
               ? "bg-green-600/20 border border-green-600/30 text-green-600"
               : "bg-[#b8352d]/20 border border-[#b8352d]/30 text-[#b8352d]"
-          }`}
+            }`}
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              user.membership_status === "active"
+            className={`w-1.5 h-1.5 rounded-full ${user.membership_status === "active"
                 ? "bg-green-600 animate-pulse"
                 : "bg-[#b8352d]"
-            }`}
+              }`}
           />
           {user.membership_status || "Active"}
         </span>
@@ -88,9 +92,12 @@ function MembershipCard({ user, qrRef }) {
       <div className="relative flex justify-between items-end mt-4 gap-3">
         <div className="flex-1">
           <p className="text-[10px] text-slate-300 uppercase">Member Name</p>
-          <h2 className="font-bold leading-tight text-[clamp(14px,4vw,18px)] truncate uppercase">
-            {user.full_name}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-bold leading-tight text-[clamp(14px,4vw,18px)] truncate uppercase">
+              {user.full_name}
+            </h2>
+
+          </div>
 
           <div className="grid grid-cols-2 gap-3 mt-3">
             <div>
@@ -113,10 +120,10 @@ function MembershipCard({ user, qrRef }) {
               {user.current_subscription_plan_display_name
                 ? user.current_subscription_plan_display_name
                 : user.current_subscription_plan_name
-                ? user.current_subscription_plan_name
-                : user.membership_type === "paid"
-                ? "Paid Plan"
-                : "Free Plan"}
+                  ? user.current_subscription_plan_name
+                  : user.membership_type === "paid"
+                    ? "Paid Plan"
+                    : "Free Plan"}
             </p>
           </div>
         </div>
@@ -152,7 +159,7 @@ export default function HeroSection() {
     membership_expiry_date: "2029-12-31",
     membership_type: "paid",
     membership_status: "active",
-    current_subscription_plan_name:"Active Membership"
+    current_subscription_plan_name: "Active Membership"
   };
 
   // Prevent hydration mismatch by only rendering client-side content after mount
@@ -248,17 +255,17 @@ export default function HeroSection() {
             <div className="absolute inset-0">
               {particles.length > 0
                 ? particles.map((particle) => (
-                    <div
-                      key={particle.id}
-                      className="absolute w-1 h-1 bg-[#AE9B66]/20 rounded-full animate-float"
-                      style={{
-                        left: `${particle.left}%`,
-                        top: `${particle.top}%`,
-                        animationDelay: `${particle.animationDelay}s`,
-                        animationDuration: `${particle.animationDuration}s`,
-                      }}
-                    />
-                  ))
+                  <div
+                    key={particle.id}
+                    className="absolute w-1 h-1 bg-[#AE9B66]/20 rounded-full animate-float"
+                    style={{
+                      left: `${particle.left}%`,
+                      top: `${particle.top}%`,
+                      animationDelay: `${particle.animationDelay}s`,
+                      animationDuration: `${particle.animationDuration}s`,
+                    }}
+                  />
+                ))
                 : null}
             </div>
           )}
@@ -338,9 +345,8 @@ export default function HeroSection() {
               {/* Flippable Card Container */}
               <div className="relative w-full max-w-md sm:max-w-md perspective-1000">
                 <div
-                  className={`relative w-full transition-transform duration-700  ${CARD_HEIGHT} ${
-                    isFlipped ? "rotate-y-180" : ""
-                  }`}
+                  className={`relative w-full transition-transform duration-700  ${CARD_HEIGHT} ${isFlipped ? "rotate-y-180" : ""
+                    }`}
                   onClick={() => setIsFlipped(!isFlipped)}
                   style={{ transformStyle: "preserve-3d" }}
                 >
@@ -349,9 +355,9 @@ export default function HeroSection() {
                     className={`absolute inset-0 ${CARD_HEIGHT}`}
                     style={{ backfaceVisibility: "hidden" }}
                   >
-                    <MembershipCard 
-                      user={!loading && user && user.membership_type === "paid" ? user : dummyMemberData} 
-                      qrRef={qrRef} 
+                    <MembershipCard
+                      user={!loading && user && user.membership_type === "paid" ? user : dummyMemberData}
+                      qrRef={qrRef}
                     />
                   </div>
 
@@ -374,17 +380,17 @@ export default function HeroSection() {
                               <QRCodeCanvas
                                 value={JSON.stringify({
                                   type: "MEMBERSHIP_VERIFICATION",
-                                  membership_id: (!loading && user && user.membership_type === "paid") 
-                                    ? user.membership_code 
+                                  membership_id: (!loading && user && user.membership_type === "paid")
+                                    ? user.membership_code
                                     : dummyMemberData.membership_code,
-                                  member_name: (!loading && user && user.membership_type === "paid") 
-                                    ? user.full_name 
+                                  member_name: (!loading && user && user.membership_type === "paid")
+                                    ? user.full_name
                                     : dummyMemberData.full_name,
-                                  member_type: (!loading && user && user.membership_type === "paid") 
-                                    ? user.membership_type 
+                                  member_type: (!loading && user && user.membership_type === "paid")
+                                    ? user.membership_type
                                     : dummyMemberData.membership_type,
-                                  expiry_date: (!loading && user && user.membership_type === "paid") 
-                                    ? user.membership_expiry_date 
+                                  expiry_date: (!loading && user && user.membership_type === "paid")
+                                    ? user.membership_expiry_date
                                     : dummyMemberData.membership_expiry_date,
                                 })}
                                 size={80}
@@ -425,12 +431,12 @@ export default function HeroSection() {
               </div>
 
               {/* Card Instructions */}
-          <div className="text-center mt-6">
+              <div className="text-center mt-6">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-white/20">
                   <Sparkles className="w-4 h-4 text-[#ECCF0F]" />
                   <span className="text-sm text-gray-700">
-                    {!loading && user && user.membership_type === "paid" 
-                      ? "Click card to view back side" 
+                    {!loading && user && user.membership_type === "paid"
+                      ? "Click card to view back side"
                       : "Click card to view back side"}
                   </span>
                 </div>
@@ -505,7 +511,7 @@ export default function HeroSection() {
           animation: float linear infinite;
         }
       `}</style>
-      
+
 
       {/* Join choice modal */}
       <Modal

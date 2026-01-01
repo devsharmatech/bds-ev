@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabaseAdmin';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 
 
 export async function GET(request) {
@@ -26,6 +27,7 @@ export async function GET(request) {
         membership_code,
         membership_type,
         membership_status,
+        is_member_verified,
         role,
         created_at,
         updated_at,
@@ -46,6 +48,10 @@ export async function GET(request) {
           position,
           specialty,
           category,
+          license_number,
+          years_of_experience,
+          id_card_url,
+          personal_photo_url,
           created_at
         )
       `).eq("role", "member");;
@@ -95,7 +101,7 @@ export async function POST(request) {
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
       body.email = formData.get('email');
-      body.password_hash = formData.get('password_hash'); 
+      body.password = formData.get('password'); 
       body.full_name = formData.get('full_name');
       body.phone = formData.get('phone') || null;
       body.mobile = formData.get('mobile') || null;
@@ -118,7 +124,9 @@ export async function POST(request) {
         employer: formData.get('employer') || null,
         position: formData.get('position') || null,
         specialty: formData.get('specialty') || null,
-        category: formData.get('category') || null
+        category: formData.get('category') || null,
+        license_number: formData.get('license_number') || null,
+        years_of_experience: formData.get('years_of_experience') || null
       };
 
       profileImage = formData.get('profile_image');
@@ -131,16 +139,24 @@ export async function POST(request) {
     }
 
     // validate required fields
-    if (!body.email || !body.password_hash || !body.full_name) {
-      return NextResponse.json({ success: false, error: 'email, password_hash and full_name are required' }, { status: 400 });
+    if (!body.email || !body.password || !body.full_name) {
+      return NextResponse.json({ success: false, error: 'email, password and full_name are required' }, { status: 400 });
     }
+
+    // Validate password length
+    if (typeof body.password !== 'string' || body.password.trim().length < 6) {
+      return NextResponse.json({ success: false, error: 'Password must be at least 6 characters' }, { status: 400 });
+    }
+
+    // Hash password using bcrypt (same as register-lite)
+    const password_hash = await bcrypt.hash(body.password.trim(), 10);
 
     // create user
     const { data: user, error: insertError } = await supabase
       .from('users')
       .insert({
         email: body.email,
-        password_hash: body.password_hash,
+        password_hash: password_hash,
         full_name: body.full_name,
         phone: body.phone || null,
         mobile: body.mobile || null,
@@ -200,7 +216,9 @@ export async function POST(request) {
         employer: profile.employer || null,
         position: profile.position || null,
         specialty: profile.specialty || null,
-        category: profile.category || null
+        category: profile.category || null,
+        license_number: profile.license_number || null,
+        years_of_experience: profile.years_of_experience || null
       });
 
     if (profileErr) throw profileErr;

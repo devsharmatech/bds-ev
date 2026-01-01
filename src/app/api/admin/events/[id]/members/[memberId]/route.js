@@ -1,10 +1,9 @@
-
 import { supabase } from "@/lib/supabaseAdmin";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
-// GET single member details
+// GET - Single event member details (with user and attendance logs)
 export async function GET(req, { params }) {
   try {
     const cookieStore = await cookies();
@@ -17,16 +16,24 @@ export async function GET(req, { params }) {
       );
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    jwt.verify(token, process.env.JWT_SECRET);
     const { id, memberId } = await params;
     const eventId = id;
 
-    // Get member details with user info and attendance logs
+    // Fetch member with related user and attendance logs
     const { data: member, error } = await supabase
       .from("event_members")
       .select(
         `
-        *,
+        id,
+        event_id,
+        user_id,
+        token,
+        checked_in,
+        checked_in_at,
+        joined_at,
+        is_member,
+        price_paid,
         users (
           id,
           full_name,
@@ -36,27 +43,16 @@ export async function GET(req, { params }) {
           profile_image,
           membership_code,
           membership_status,
-          membership_type,
-          member_profiles (
-            gender,
-            dob,
-            city,
-            state,
-            employer,
-            position
-          )
+          membership_type
         ),
         attendance_logs (
           id,
-          scanned_by,
+          event_member_id,
+          agenda_id,
+          scan_time,
           location,
           device_info,
-          scan_time,
-          scanner:users!attendance_logs_scanned_by_fkey (
-            id,
-            full_name,
-            email
-          )
+          scanned_by
         )
       `
       )
@@ -65,29 +61,20 @@ export async function GET(req, { params }) {
       .single();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return NextResponse.json(
-          { success: false, message: "Member not found" },
-          { status: 404 }
-        );
-      }
-      throw error;
+      return NextResponse.json(
+        { success: false, message: "Member not found" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      member,
-    });
+    return NextResponse.json({ success: true, member });
   } catch (error) {
-    console.error("EVENT MEMBER GET ERROR:", error);
-
     if (error.name === "JsonWebTokenError") {
       return NextResponse.json(
         { success: false, message: "Invalid token" },
         { status: 401 }
       );
     }
-
     return NextResponse.json(
       { success: false, message: "Failed to fetch member details" },
       { status: 500 }
@@ -95,7 +82,7 @@ export async function GET(req, { params }) {
   }
 }
 
-// UPDATE member (check-in, update details) - Updated to create attendance logs
+// PUT - Update single event member (e.g., toggle checked_in)
 export async function PUT(req, { params }) {
   try {
     const cookieStore = await cookies();
@@ -108,150 +95,69 @@ export async function PUT(req, { params }) {
       );
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { id, memberId } = await params; 
+    jwt.verify(token, process.env.JWT_SECRET);
+    const { id, memberId } = await params;
     const eventId = id;
-    const data = await req.json();
+    const body = await req.json();
 
-    console.log("PUT Member Update:", {
-      eventId,
-      memberId,
-      updates: data,
-      user: decoded.user_id
-    });
+    const updateData = {};
+    if (typeof body.checked_in === "boolean") {
+      updateData.checked_in = body.checked_in;
+      updateData.checked_in_at = body.checked_in ? new Date().toISOString() : null;
+    }
 
-    // Get current member data to check previous state
-    const { data: currentMember, error: fetchError } = await supabase
-      .from("event_members")
-      .select("checked_in, checked_in_at, token, user_id")
-      .eq("id", memberId)
-      .eq("event_id", eventId)
-      .single();
-
-    if (fetchError) {
+    // No fields to update
+    if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { success: false, message: "Member not found" },
-        { status: 404 }
+        { success: false, message: "No valid fields to update" },
+        { status: 400 }
       );
     }
 
-    const updates = {};
-    let shouldCreateAttendanceLog = false;
-    let attendanceAction = ""; // 'check-in' or 'check-out'
-
-    // Handle check-in/out
-    if (typeof data.checked_in === "boolean") {
-      // Only create attendance log if status is changing
-      if (currentMember.checked_in !== data.checked_in) {
-        shouldCreateAttendanceLog = true;
-        attendanceAction = data.checked_in ? "check-in" : "check-out";
-        
-        updates.checked_in = data.checked_in;
-        updates.checked_in_at = data.checked_in ? new Date().toISOString() : null;
-      }
-    }
-    
-    if (data.price_paid !== undefined) updates.price_paid = data.price_paid;
-    if (data.is_member !== undefined) updates.is_member = data.is_member;
-
-    // Start a transaction (Supabase doesn't have transactions, so we'll do sequential operations)
-    try {
-      // Update member
-      const { data: updatedMember, error: updateError } = await supabase
-        .from("event_members")
-        .update(updates)
-        .eq("id", memberId)
-        .eq("event_id", eventId)
-        .select(
-          `
-          *,
-          users (
-            id,
-            full_name,
-            email,
-            phone,
-            mobile,
-            profile_image,
-            membership_code,
-            membership_status
-          )
+    const { data: updated, error } = await supabase
+      .from("event_members")
+      .update(updateData)
+      .eq("id", memberId)
+      .eq("event_id", eventId)
+      .select(
         `
-        )
-        .single();
+        id,
+        event_id,
+        user_id,
+        token,
+        checked_in,
+        checked_in_at,
+        joined_at,
+        is_member,
+        price_paid
+      `
+      )
+      .single();
 
-      if (updateError) throw updateError;
-
-      // Create attendance log if needed
-      if (shouldCreateAttendanceLog) {
-        const attendanceData = {
-          event_member_id: memberId,
-          scanned_by: decoded.user_id, 
-          scan_time: new Date().toISOString(),
-          location: "Manual Check-in", 
-          device_info: navigator?.userAgent || "Web Admin",
-          notes: attendanceAction === "check-in" 
-            ? "Manually checked in by admin" 
-            : "Manually checked out by admin"
-        };
-
-        console.log("Creating attendance log:", attendanceData);
-
-        const { data: attendanceLog, error: logError } = await supabase
-          .from("attendance_logs")
-          .insert(attendanceData)
-          .select(`
-            *,
-            scanner:users!attendance_logs_scanned_by_fkey (
-              id,
-              full_name,
-              email
-            )
-          `)
-          .single();
-
-        if (logError) {
-          console.error("Error creating attendance log:", logError);
-          // Don't fail the whole request if log creation fails
-          // Just log it and continue
-        }
-
-        return NextResponse.json({
-          success: true,
-          member: updatedMember,
-          attendance_log: attendanceLog || null,
-          message: attendanceAction === "check-in" 
-            ? "Member checked in successfully" 
-            : "Member checked out successfully",
-        });
-      }
-
-      return NextResponse.json({
-        success: true,
-        member: updatedMember,
-        message: "Member updated successfully",
-      });
-
-    } catch (error) {
-      console.error("Error in member update transaction:", error);
-      throw error;
+    if (error) {
+      return NextResponse.json(
+        { success: false, message: "Failed to update member" },
+        { status: 500 }
+      );
     }
 
+    return NextResponse.json({ success: true, member: updated });
   } catch (error) {
-    console.error("EVENT MEMBER UPDATE ERROR:", error);
-
     if (error.name === "JsonWebTokenError") {
       return NextResponse.json(
         { success: false, message: "Invalid token" },
         { status: 401 }
       );
     }
-
     return NextResponse.json(
-      { success: false, message: "Failed to update member: " + error.message },
+      { success: false, message: "Failed to update member" },
       { status: 500 }
     );
   }
 }
+
+
+
 // DELETE member from event
 export async function DELETE(req, { params }) {
   try {

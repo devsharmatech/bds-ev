@@ -126,6 +126,21 @@ CREATE TABLE IF NOT EXISTS public.committee_members (
 Run the following SQL in your Supabase SQL Editor:
 
 ```sql
+-- Member Verification
+-- 1) Add verification flag to users
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS is_member_verified boolean NOT NULL DEFAULT false;
+
+-- 2) Store verification document URLs in member_profiles
+ALTER TABLE public.member_profiles
+  ADD COLUMN IF NOT EXISTS id_card_url text,
+  ADD COLUMN IF NOT EXISTS personal_photo_url text;
+
+-- 3) (Optional) Create a public storage bucket to store verification documents
+-- If you want a dedicated bucket, run:
+-- select storage.create_bucket('profile_pictures', jsonb_build_object('public', true));
+-- This project already uses 'profile_pictures'; verification files will be saved under verification/{user_id}/...
+
 -- Add device token fields to users table
 ALTER TABLE users 
 ADD COLUMN IF NOT EXISTS device_token TEXT,

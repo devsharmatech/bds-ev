@@ -33,12 +33,15 @@ export async function GET(req) {
         membership_expiry_date,
         current_subscription_plan_id,
         current_subscription_plan_name,
+        is_member_verified,
         created_at,
         member_profiles (
           specialty,
           position,
           employer,
-          membership_date
+          membership_date,
+          id_card_url,
+          personal_photo_url
         )
       `)
       .eq("id", userId)
@@ -83,10 +86,13 @@ export async function GET(req) {
       current_subscription_plan_id: user.current_subscription_plan_id || null,
       current_subscription_plan_name: user.current_subscription_plan_name || null,
       current_subscription_plan_display_name: planDisplayName,
+      is_member_verified: user.is_member_verified || false,
       specialty: user.member_profiles?.[0]?.specialty,
       position: user.member_profiles?.[0]?.position,
       employer: user.member_profiles?.[0]?.employer,
       membership_date: user.member_profiles?.[0]?.membership_date,
+      id_card_url: user.member_profiles?.[0]?.id_card_url || null,
+      personal_photo_url: user.member_profiles?.[0]?.personal_photo_url || null,
       latest_payment: latestPayment || null
     };
 

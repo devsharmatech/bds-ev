@@ -8,6 +8,7 @@ import {
   Plus,
   UserPlus,
   User,
+  ShieldCheck,
   Mail,
   Phone,
   Trash2,
@@ -30,7 +31,17 @@ import {
   UserX,
   Users,
   Upload,
-  FileText
+  FileText,
+  CheckCircle,
+  AlertTriangle,
+  FileImage,
+  Camera,
+  IdCard,
+  Image as ImageIcon,
+  FileUp,
+  Clock,
+  Verified,
+  Globe
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -136,7 +147,7 @@ const BaseModal = ({ isOpen, onClose, children, size = "md" }) => {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className={`${sizes[size]} w-full max-w-[95vw] sm:max-w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden`}
+            className={`${sizes[size]} w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden`}
             onClick={(e) => e.stopPropagation()}
           >
             {children}
@@ -147,8 +158,191 @@ const BaseModal = ({ isOpen, onClose, children, size = "md" }) => {
   );
 };
 
+// Custom File Upload Component for Verification
+const VerificationFileUpload = ({
+  label,
+  icon: Icon,
+  file,
+  onFileChange,
+  accept = "image/*,application/pdf",
+  required = true,
+  description = "",
+  existingUrl = null
+}) => {
+  const [preview, setPreview] = useState(null);
+
+  useEffect(() => {
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        const objectUrl = URL.createObjectURL(file);
+        setPreview(objectUrl);
+        return () => URL.revokeObjectURL(objectUrl);
+      } else {
+        setPreview(null);
+      }
+    } else if (existingUrl) {
+      setPreview(existingUrl);
+    } else {
+      setPreview(null);
+    }
+  }, [file, existingUrl]);
+
+  return (
+    <div className="space-y-3">
+      <label className="block text-sm font-semibold text-gray-900">
+        {label} {required && <span className="text-[#b8352d]">*</span>}
+      </label>
+
+      <div className={`relative border-2 ${file ? 'border-[#AE9B66]' : 'border-gray-300'} border-dashed rounded-2xl p-6 transition-all duration-200 hover:border-[#03215F] ${file ? 'bg-[#AE9B66]/5' : 'bg-gray-50'}`}>
+        <input
+          type="file"
+          accept={accept}
+          onChange={(e) => onFileChange(e.target.files?.[0] || null)}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          required={required}
+        />
+
+        <div className="flex flex-col items-center justify-center text-center space-y-4">
+          <div className={`p-4 rounded-full ${file ? 'bg-[#AE9B66]/20' : 'bg-gray-100'}`}>
+            <Icon className={`w-8 h-8 ${file ? 'text-[#AE9B66]' : 'text-gray-400'}`} />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-center gap-2">
+              <div className="px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-medium text-sm">
+                <Upload className="w-4 h-4 inline mr-2" />
+                {file ? 'Change File' : 'Upload File'}
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-500">
+              {file ? (
+                <span className="flex items-center justify-center gap-2 text-[#AE9B66] font-medium">
+                  <CheckCircle className="w-4 h-4" />
+                  {file.name} ({Math.round(file.size / 1024)} KB)
+                </span>
+              ) : existingUrl ? (
+                <span className="flex items-center justify-center gap-2 text-[#10B981] font-medium">
+                  <CheckCircle className="w-4 h-4" />
+                  Document already uploaded
+                </span>
+              ) : (
+                `Click to upload ${accept.includes('pdf') ? 'PDF or image' : 'image'}`
+              )}
+            </p>
+
+            {description && (
+              <p className="text-xs text-gray-400 mt-2">{description}</p>
+            )}
+          </div>
+        </div>
+
+        {preview && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 space-y-2"
+          >
+            <p className="text-sm font-medium text-gray-700">Preview:</p>
+            <div className="relative h-48 rounded-xl overflow-hidden border border-gray-200">
+              {file && file.type && file.type.includes('application/pdf') ? (
+                <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                  <div className="text-center">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">{file.name}</p>
+                  </div>
+                </div>
+              ) : existingUrl && existingUrl.toLowerCase().endsWith('.pdf') ? (
+                <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                  <div className="text-center">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <a
+                      href={existingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-[#03215F] hover:underline"
+                    >
+                      View PDF Document
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-full h-full object-contain bg-gray-50"
+                />
+              )}
+              <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 text-white text-xs rounded-lg">
+                {file && file.type ? (file.type.includes('image') ? 'Image' : 'PDF') : 
+                 existingUrl && existingUrl.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Image'}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default function MembersPage() {
   const router = useRouter();
+  
+  // Option constants (same as RegistrationLiteModal)
+  const COUNTRY_OPTIONS = [
+    { label: "Bahrain", code: "BH", dial: "+973" },
+    { label: "Saudi Arabia", code: "SA", dial: "+966" },
+    { label: "United Arab Emirates", code: "AE", dial: "+971" },
+    { label: "Qatar", code: "QA", dial: "+974" },
+    { label: "Kuwait", code: "KW", dial: "+965" },
+    { label: "Oman", code: "OM", dial: "+968" },
+    { label: "India", code: "IN", dial: "+91" },
+    { label: "Other", code: "OT", dial: "+" },
+  ];
+  const SPECIALIZATION_OPTIONS = [
+    "General Dentistry",
+    "Orthodontics",
+    "Endodontics",
+    "Prosthodontics",
+    "Oral & Maxillofacial Surgery",
+    "Pediatric Dentistry",
+    "Oral Medicine / Radiology",
+    "Dental Hygiene",
+    "Student",
+    "Other",
+  ];
+  const CATEGORY_OPTIONS = [
+    "Dentist",
+    "Dental Hygienist",
+    "Dental Technologist",
+    "Dental Assistant",
+    "Student - Undergraduate",
+    "Student - Postgraduate",
+    "Others (Non Dental)",
+  ];
+  const POSITION_OPTIONS = [
+    "General Dentist",
+    "Specialist",
+    "Consultant",
+    "Resident",
+    "Intern",
+    "HOD / Lead",
+    "Faculty / Lecturer",
+    "Dental Hygienist",
+    "Dental Assistant",
+    "Dental Technologist",
+    "Student",
+    "Administrator",
+    "Other",
+  ];
+  const WORK_SECTOR_OPTIONS = [
+    "Public",
+    "Private",
+    "Academic",
+    "Student",
+    "Other",
+  ];
+
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -163,15 +357,28 @@ export default function MembersPage() {
     inactive: 0,
     paid: 0,
     free: 0,
+    verified: 0,
+    pending: 0,
   });
+  
+  // Country options state (for nationality dropdown)
+  const [countryOptions, setCountryOptions] = useState(COUNTRY_OPTIONS);
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [activeMember, setActiveMember] = useState(null);
+  const [viewFeeSummary, setViewFeeSummary] = useState(null);
+  const [viewAttendanceLogs, setViewAttendanceLogs] = useState([]);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyIdCard, setVerifyIdCard] = useState(null);
+  const [verifyPersonalPhoto, setVerifyPersonalPhoto] = useState(null);
+  const [usePersonalAsProfile, setUsePersonalAsProfile] = useState(true);
+  const [verifying, setVerifying] = useState(false);
   const [deleteConfig, setDeleteConfig] = useState({ type: "single", ids: [] });
 
   // Form state
@@ -181,6 +388,8 @@ export default function MembersPage() {
     full_name: "",
     phone: "",
     mobile: "",
+    countryDial: "+973",
+    nationalityCode: "BH",
     role: "member",
     membership_code: "",
     membership_status: "active",
@@ -199,6 +408,8 @@ export default function MembersPage() {
     position: "",
     specialty: "",
     category: "",
+    license_number: "",
+    years_of_experience: "",
     membership_fee_registration: 30.0,
     membership_fee_annual: 20.0,
     membership_pay_now: false,
@@ -215,10 +426,10 @@ export default function MembersPage() {
     accentRed: "#b8352d",
     accentBlue: "#9cc2ed",
     accentYellow: "#ECCF0F",
-    success: "#AE9B66",
-    warning: "#ECCF0F",
+    success: "#10B981",
+    warning: "#F59E0B",
     danger: "#b8352d",
-    info: "#9cc2ed",
+    info: "#3B82F6",
   };
 
   useEffect(() => {
@@ -231,9 +442,38 @@ export default function MembersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Fetch full country list for nationality dropdown
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("https://restcountries.com/v3.1/all?fields=name,cca2,idd");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+        const mapped = data
+          .map((c) => {
+            const code = c.cca2;
+            const label = c.name?.common || code;
+            const root = c.idd?.root || "";
+            const suffixes = c.idd?.suffixes || [];
+            const dial = root ? root + (suffixes[0] || "") : "";
+            return { label, code, dial };
+          })
+          .filter((c) => c.label)
+          .sort((a, b) => a.label.localeCompare(b.label));
+        if (!cancelled) setCountryOptions(mapped);
+      } catch {
+        // ignore; fallback list already present
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function fetchSummary() {
     try {
-      // Aggregate across all pages to ensure accurate counts (excluding admins)
       const per = 200;
       const firstUrl = new URL("/api/admin/members", window.location.origin);
       firstUrl.searchParams.set("page", "1");
@@ -241,6 +481,7 @@ export default function MembersPage() {
       const firstRes = await fetch(firstUrl.toString());
       const firstData = await firstRes.json();
       if (!firstData?.success) return;
+
       let all = Array.isArray(firstData.data) ? firstData.data : [];
       const totalAll = (firstData.meta && firstData.meta.total) || all.length;
       const totalPages = Math.max(1, Math.ceil(totalAll / per));
@@ -252,6 +493,7 @@ export default function MembersPage() {
         url.searchParams.set("per_page", String(per));
         promises.push(fetch(url.toString()).then((r) => r.json()).catch(() => null));
       }
+
       if (promises.length) {
         const results = await Promise.all(promises);
         results.forEach((d) => {
@@ -267,6 +509,8 @@ export default function MembersPage() {
       const inactiveCount = nonAdmins.filter((m) => m.membership_status === "pending").length;
       const paidCount = nonAdmins.filter((m) => m.membership_type === "paid").length;
       const freeCount = Math.max(0, totalCount - paidCount);
+      const verifiedCount = nonAdmins.filter((m) => m.is_member_verified === true).length;
+      const pendingCount = totalCount - verifiedCount;
 
       setSummaryCounts({
         total: totalCount,
@@ -274,6 +518,8 @@ export default function MembersPage() {
         inactive: inactiveCount,
         paid: paidCount,
         free: freeCount,
+        verified: verifiedCount,
+        pending: pendingCount,
       });
     } catch {
       // ignore
@@ -295,7 +541,6 @@ export default function MembersPage() {
       if (data.success) {
         setMembers(data.data || []);
         setTotal((data.meta && data.meta.total) || 0);
-        // keep cards in sync after table loads
         fetchSummary();
       } else {
         toast.error("Failed to load members: " + (data.error || "Unknown"));
@@ -334,6 +579,14 @@ export default function MembersPage() {
   function openEditModal(member) {
     setActiveMember(member);
     const p = member.member_profile || {};
+    // Find country code from nationality
+    const nationalityStr = p.nationality || "";
+    const foundCountry = countryOptions.find(
+      (c) => c.label === nationalityStr || c.code === nationalityStr
+    );
+    const natCode = foundCountry?.code || "BH";
+    const natDial = foundCountry?.dial || "+973";
+    
     setForm({
       ...initialForm,
       email: member.email || "",
@@ -341,6 +594,8 @@ export default function MembersPage() {
       full_name: member.full_name || "",
       phone: member.phone || "",
       mobile: member.mobile || "",
+      countryDial: natDial,
+      nationalityCode: natCode,
       role: member.role || "member",
       membership_code: member.membership_code || "",
       membership_status: member.membership_status || "active",
@@ -359,14 +614,141 @@ export default function MembersPage() {
       position: p.position || "",
       specialty: p.specialty || "",
       category: p.category || "",
+      license_number: p.license_number || "",
+      years_of_experience: p.years_of_experience || "",
     });
     setProfileImageFile(null);
     setShowEditModal(true);
   }
 
+  function openVerifyModal(member) {
+    setActiveMember(member);
+    setVerifyIdCard(null);
+    setVerifyPersonalPhoto(null);
+    setShowVerifyModal(true);
+  }
+
+  async function handleVerifySubmit(e) {
+    e.preventDefault();
+    if (!activeMember) return;
+
+    // Check if documents exist or are being uploaded
+    const hasIdCard = verifyIdCard || activeMember?.member_profile?.id_card_url;
+    const hasPersonalPhoto = verifyPersonalPhoto || activeMember?.member_profile?.personal_photo_url;
+
+    if (!hasIdCard || !hasPersonalPhoto) {
+      toast.error("Please upload both ID card and personal photo, or use existing documents.");
+      return;
+    }
+
+    // Validate file types (only if new files are being uploaded)
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+    const allowedPdfTypes = ['application/pdf'];
+
+    if (verifyIdCard) {
+      if (![...allowedImageTypes, ...allowedPdfTypes].includes(verifyIdCard.type)) {
+        toast.error("ID card must be an image (JPG, PNG, GIF, WEBP) or PDF file.");
+        return;
+      }
+      // Validate file size (10MB max for verification documents)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (verifyIdCard.size > maxSize) {
+        toast.error("ID card file size must be less than 10MB.");
+        return;
+      }
+    }
+
+    if (verifyPersonalPhoto) {
+      if (!allowedImageTypes.includes(verifyPersonalPhoto.type)) {
+        toast.error("Personal photo must be an image file (JPG, PNG, GIF, WEBP).");
+        return;
+      }
+      // Validate file size (10MB max)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (verifyPersonalPhoto.size > maxSize) {
+        toast.error("Personal photo file size must be less than 10MB.");
+        return;
+      }
+    }
+
+    try {
+      setVerifying(true);
+
+      // Create form data
+      const fd = new FormData();
+      fd.append("is_member_verified", "true");
+      // Only append files if they are being uploaded (not null)
+      if (verifyIdCard) {
+        fd.append("verification_id_card", verifyIdCard);
+      }
+      if (verifyPersonalPhoto) {
+        fd.append("verification_personal_photo", verifyPersonalPhoto);
+      }
+      fd.append("set_personal_as_profile", usePersonalAsProfile ? "true" : "false");
+
+      // Add verification timestamp
+      fd.append("verification_date", new Date().toISOString());
+      fd.append("verified_by_admin", "true");
+
+      const res = await fetch(`/api/admin/members/${activeMember.id}`, {
+        method: "PUT",
+        body: fd,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Member verified successfully! ✅");
+        setShowVerifyModal(false);
+        setActiveMember(null);
+        fetchMembers();
+
+        // Show success message
+        setTimeout(() => {
+          toast.success("Verification completed. Member status updated.");
+        }, 500);
+      } else {
+        toast.error(data.error || "Verification failed. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error during verification. Please check your connection.");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
   function openViewModal(member) {
     setActiveMember(member);
     setShowViewModal(true);
+    setViewFeeSummary(null);
+    setViewAttendanceLogs([]);
+    (async () => {
+      try {
+        setViewLoading(true);
+        const res = await fetch(`/api/admin/members/${member.id}`);
+        const data = await res.json();
+        if (data?.success) {
+          // API returns both 'user' and 'member' for backward compatibility
+          const memberData = data.user || data.member;
+          if (memberData) {
+            setActiveMember(memberData);
+          }
+          if (data.fee_summary) {
+            setViewFeeSummary(data.fee_summary);
+          }
+          if (Array.isArray(data.attendance_logs)) {
+            setViewAttendanceLogs(data.attendance_logs);
+          }
+        } else {
+          toast.error(data.error || "Failed to load member details");
+        }
+      } catch (e) {
+        console.error("Error fetching member details:", e);
+        toast.error("Failed to load member details. Please try again.");
+      } finally {
+        setViewLoading(false);
+      }
+    })();
   }
 
   function openDeleteModal(type = "single", id = null) {
@@ -391,7 +773,7 @@ export default function MembersPage() {
     try {
       const fd = new FormData();
       fd.append("email", form.email);
-      fd.append("password_hash", form.password);
+      fd.append("password", form.password);
       fd.append("full_name", form.full_name);
       if (form.phone) fd.append("phone", form.phone);
       if (form.mobile) fd.append("mobile", form.mobile);
@@ -406,19 +788,20 @@ export default function MembersPage() {
         "address",
         "city",
         "state",
-        "pin_code",
         "cpr_id",
         "nationality",
-        "type_of_application",
-        "membership_date",
         "work_sector",
         "employer",
         "position",
         "specialty",
         "category",
+        "license_number",
+        "years_of_experience",
       ];
       profileKeys.forEach((k) => {
-        if (form[k]) fd.append(k, String(form[k]));
+        if (form[k] !== undefined && form[k] !== "") {
+          fd.append(k, String(form[k]));
+        }
       });
 
       if (profileImageFile) fd.append("profile_image", profileImageFile);
@@ -463,6 +846,14 @@ export default function MembersPage() {
       const fd = new FormData();
       fd.append("full_name", form.full_name);
       fd.append("email", form.email);
+      // Only send password if provided (to update it)
+      if (form.password && form.password.trim().length > 0) {
+        if (form.password.trim().length < 6) {
+          toast.error("Password must be at least 6 characters");
+          return;
+        }
+        fd.append("password", form.password);
+      }
       if (form.phone) fd.append("phone", form.phone);
       if (form.mobile) fd.append("mobile", form.mobile);
       fd.append("membership_status", form.membership_status);
@@ -476,16 +867,15 @@ export default function MembersPage() {
         "address",
         "city",
         "state",
-        "pin_code",
         "cpr_id",
         "nationality",
-        "type_of_application",
-        "membership_date",
         "work_sector",
         "employer",
         "position",
         "specialty",
         "category",
+        "license_number",
+        "years_of_experience",
       ];
       profileKeys.forEach((k) => {
         if (form[k] !== undefined) fd.append(k, String(form[k] || ""));
@@ -570,11 +960,10 @@ export default function MembersPage() {
 
   function renderMemberRow(member, index) {
     const statusColors = {
-      active:
-        "bg-[#AE9B66] text-white",
-      inactive:
-        "bg-[#ECCF0F] text-[#03215F]",
+      active: "bg-[#10B981] text-white",
+      inactive: "bg-[#ECCF0F] text-[#03215F]",
       blocked: "bg-[#b8352d] text-white",
+      pending: "bg-[#F59E0B] text-white",
     };
 
     return (
@@ -599,23 +988,31 @@ export default function MembersPage() {
           <div className="flex items-center gap-3">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200"
+              className="relative w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200"
             >
               {member.profile_image ? (
                 <img
                   src={member.profile_image}
                   alt={member.full_name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover rounded-full "
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-gray-400" />
+                  <User className="w-6 h-6 text-gray-400 rounded-full " />
+                </div>
+              )}
+              {member.is_member_verified && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#10B981] rounded-full flex items-center justify-center">
+                  <Check className="w-3 h-3 text-white" />
                 </div>
               )}
             </motion.div>
             <div className="min-w-0">
-              <div className="font-semibold text-gray-900 truncate">
+              <div className="font-semibold text-gray-900 truncate flex items-center gap-2">
                 {member.full_name}
+                {member.is_member_verified && (
+                  <Verified className="w-4 h-4 text-[#10B981]" />
+                )}
               </div>
               <div className="text-sm text-gray-500 truncate flex items-center gap-1">
                 <Mail className="w-3 h-3" />
@@ -641,14 +1038,26 @@ export default function MembersPage() {
           </div>
         </td>
         <td className="p-3 sm:p-4">
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              statusColors[member.membership_status] ||
-              "bg-gray-100 text-gray-800"
-            }`}
-          >
-            {member.membership_status}
-          </span>
+          <div className="flex flex-row items-center gap-1">
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[member.membership_status] ||
+                "bg-gray-100 text-gray-800"
+                }`}
+            >
+              {member.membership_status}
+            </span>
+            {member.is_member_verified ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[#10B981]/10 text-[#10B981]">
+                <ShieldCheck className="w-3 h-3" />
+                Verified
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[#F59E0B]/10 text-[#F59E0B]">
+                <Clock className="w-3 h-3" />
+                Pending
+              </span>
+            )}
+          </div>
         </td>
         <td className="p-3 sm:p-4">
           <div className="flex items-center justify-end gap-1 sm:gap-2">
@@ -660,6 +1069,21 @@ export default function MembersPage() {
               title="View"
             >
               <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => openVerifyModal(member)}
+              className={`p-1.5 sm:p-2 rounded-lg transition-colors ${member.is_member_verified
+                ? 'bg-gradient-to-r from-[#10B981]/20 to-[#10B981]/20 text-[#10B981] hover:opacity-80'
+                : 'bg-gradient-to-r from-[#AE9B66]/20 to-[#AE9B66]/20 text-[#AE9B66] hover:opacity-80'}`}
+              title={member.is_member_verified ? "Verified" : "Verify Member"}
+            >
+              {member.is_member_verified ? (
+                <Verified className="w-3 h-3 sm:w-4 sm:h-4" />
+              ) : (
+                <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" />
+              )}
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -687,7 +1111,35 @@ export default function MembersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white p-4 sm:p-6">
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: 'white',
+            color: '#111827',
+            border: '1px solid #E5E7EB',
+            borderRadius: '12px',
+            padding: '16px',
+          },
+          success: {
+            style: {
+              background: '#F0FDF4',
+              color: '#065F46',
+              border: '1px solid #A7F3D0',
+            },
+            icon: '✅',
+          },
+          error: {
+            style: {
+              background: '#FEF2F2',
+              color: '#991B1B',
+              border: '1px solid #FECACA',
+            },
+            icon: '❌',
+          },
+        }}
+      />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal
@@ -795,7 +1247,7 @@ export default function MembersPage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-8">
             {[
               {
                 label: "Total Members",
@@ -807,7 +1259,7 @@ export default function MembersPage() {
                 label: "Active Members",
                 value: summaryCounts.active,
                 icon: UserCheck,
-                color: "from-[#AE9B66] to-[#AE9B66]",
+                color: "from-[#10B981] to-[#10B981]",
               },
               {
                 label: "Inactive Members",
@@ -816,16 +1268,22 @@ export default function MembersPage() {
                 color: "from-[#ECCF0F] to-[#ECCF0F]",
               },
               {
+                label: "Verified",
+                value: summaryCounts.verified,
+                icon: ShieldCheck,
+                color: "from-[#10B981] to-[#10B981]",
+              },
+              {
+                label: "Pending",
+                value: summaryCounts.pending,
+                icon: Clock,
+                color: "from-[#F59E0B] to-[#F59E0B]",
+              },
+              {
                 label: "Paid Members",
                 value: summaryCounts.paid,
                 icon: Shield,
                 color: "from-[#AE9B66] to-[#AE9B66]",
-              },
-              {
-                label: "Free Members",
-                value: summaryCounts.free,
-                icon: Users,
-                color: "from-gray-400 to-gray-500",
               },
             ].map((stat, index) => (
               <motion.div
@@ -970,7 +1428,7 @@ export default function MembersPage() {
         </motion.footer>
       </div>
 
-      {/* Add Modal */}
+      {/* Add Modal (truncated for brevity) */}
       <BaseModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
@@ -997,82 +1455,434 @@ export default function MembersPage() {
             onSubmit={handleAddSubmit}
             className="p-4 sm:p-6 overflow-y-auto max-h-[70vh] modal-scrollbar"
           >
-            {/* Form content - Similar to your original but styled */}
-            <div className="space-y-4 sm:space-y-6">
-              {/* Basic Information Section */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name *
-                  </label>
-                  <input
-                    required
-                    value={form.full_name}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, full_name: e.target.value }))
-                    }
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                    placeholder="Enter full name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    required
-                    type="email"
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, email: e.target.value }))
-                    }
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                    placeholder="Enter email"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Password *
-                  </label>
-                  <input
-                    required
-                    type="password"
-                    value={form.password}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, password: e.target.value }))
-                    }
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                    placeholder="Enter password"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mobile
-                  </label>
-                  <input
-                    value={form.mobile}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, mobile: e.target.value }))
-                    }
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                    placeholder="Enter mobile number"
-                  />
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-[#03215F]/10">
+                    <User className="w-5 h-5 text-[#03215F]" />
+                  </div>
+                  Basic Information
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name *
+                    </label>
+                    <input
+                      required
+                      value={form.full_name}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, full_name: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      placeholder="Enter full name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email *
+                    </label>
+                    <input
+                      required
+                      type="email"
+                      value={form.email}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, email: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      placeholder="Enter email"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Password *
+                    </label>
+                    <input
+                      required
+                      type="password"
+                      value={form.password}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, password: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      placeholder="Enter password"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={form.phone}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, phone: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mobile Number
+                    </label>
+                    <input
+                      value={form.mobile}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, mobile: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      placeholder="Enter mobile number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Membership Status *
+                    </label>
+                    <select
+                      value={form.membership_status}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          membership_status: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="blocked">Blocked</option>
+                      <option value="pending">Pending</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Role *
+                    </label>
+                    <select
+                      value={form.role}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, role: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    >
+                      <option value="member">Member</option>
+                      <option value="admin">Admin</option>
+                      <option value="moderator">Moderator</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              {/* ... Rest of the form similar to above but styled ... */}
+              {/* Personal Information */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-[#03215F]/10">
+                    <User className="w-5 h-5 text-[#03215F]" />
+                  </div>
+                  Personal Information
+                </h3>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-4 pt-4 sm:pt-6 border-t border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Gender
+                    </label>
+                    <select
+                      value={form.gender}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, gender: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    >
+                      <option value="">Select</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date of Birth
+                    </label>
+                    <input
+                      type="date"
+                      value={form.dob}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, dob: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nationality
+                    </label>
+                    <select
+                      value={form.nationalityCode}
+                      onChange={(e) => {
+                        const code = e.target.value;
+                        const found = countryOptions.find((c) => c.code === code);
+                        setForm((f) => ({
+                          ...f,
+                          nationalityCode: code,
+                          nationality: found?.label || "",
+                        }));
+                      }}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    >
+                      {countryOptions.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      CPR ID
+                    </label>
+                    <input
+                      value={form.cpr_id}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, cpr_id: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      placeholder="Enter CPR ID"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Information */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-[#03215F]/10">
+                    <Building className="w-5 h-5 text-[#03215F]" />
+                  </div>
+                  Address Information
+                </h3>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      value={form.address}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, address: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      placeholder="Full address"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={form.city}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, city: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        State / Governorate
+                      </label>
+                      <input
+                        type="text"
+                        value={form.state}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, state: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                        placeholder="State"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Professional Information */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-[#03215F]/10">
+                    <Briefcase className="w-5 h-5 text-[#03215F]" />
+                  </div>
+                  Professional Information
+                </h3>
+
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Work Sector
+                      </label>
+                      <select
+                        value={form.work_sector}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, work_sector: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      >
+                        <option value="">Select</option>
+                        {WORK_SECTOR_OPTIONS.map((w) => (
+                          <option key={w} value={w}>
+                            {w}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Employer
+                      </label>
+                      <input
+                        type="text"
+                        value={form.employer}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, employer: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                        placeholder="Employer"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Position
+                      </label>
+                      <select
+                        value={form.position}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, position: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      >
+                        <option value="">Select</option>
+                        {POSITION_OPTIONS.map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Specialty
+                      </label>
+                      <select
+                        value={form.specialty}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, specialty: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      >
+                        <option value="">Select</option>
+                        {SPECIALIZATION_OPTIONS.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Category
+                      </label>
+                      <select
+                        value={form.category}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, category: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      >
+                        <option value="">Select</option>
+                        {CATEGORY_OPTIONS.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        License Number
+                      </label>
+                      <input
+                        type="text"
+                        value={form.license_number}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, license_number: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                        placeholder="License number"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Years of Experience
+                      </label>
+                      <select
+                        value={form.years_of_experience}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, years_of_experience: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      >
+                        <option value="">Select experience</option>
+                        <option value="0-1">0-1 years</option>
+                        <option value="1-3">1-3 years</option>
+                        <option value="3-5">3-5 years</option>
+                        <option value="5-10">5-10 years</option>
+                        <option value="10+">10+ years</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200"
+                  className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#AE9B66] transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
+                  className="px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#AE9B66] transition-all duration-200 flex items-center gap-2"
                 >
                   <UserPlus className="w-4 h-4" />
                   Create Member
@@ -1083,7 +1893,274 @@ export default function MembersPage() {
         </div>
       </BaseModal>
 
-      {/* View Modal */}
+      {/* Enhanced Verify Member Modal */}
+      <BaseModal
+        isOpen={showVerifyModal}
+        onClose={() => setShowVerifyModal(false)}
+        size="lg"
+      >
+        {/* MAIN MODAL WRAPPER */}
+        <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+
+          {/* ================= HEADER (FIXED) ================= */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-[#10B981] to-[#059669]">
+                <ShieldCheck className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Verify Member</h2>
+                <p className="text-gray-600 text-sm mt-1">
+                  Upload required documents for verification
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowVerifyModal(false)}
+              className="p-2 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:text-gray-900 transition hover:scale-110 active:scale-95"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* ================= SCROLLABLE CONTENT ================= */}
+          <form
+            onSubmit={handleVerifySubmit}
+            className="p-6 space-y-6 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+          >
+
+            {/* ================= MEMBER INFO ================= */}
+            {activeMember && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-gradient-to-r from-[#03215F]/5 to-[#AE9B66]/5 rounded-2xl p-5 border border-gray-200"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-lg">
+                    {activeMember.profile_image ? (
+                      <img
+                        src={activeMember.profile_image}
+                        alt={activeMember.full_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#03215F] to-[#AE9B66]">
+                        <User className="w-8 h-8 text-white" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-gray-900">
+                      {activeMember.full_name}
+                    </h3>
+
+                    <p className="text-sm text-gray-600 flex items-center gap-1">
+                      <Mail className="w-3 h-3" />
+                      {activeMember.email}
+                    </p>
+
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="px-2 py-1 bg-[#03215F]/10 text-[#03215F] text-xs rounded-full">
+                        CPR: {activeMember.member_profile?.cpr_id || "Not provided"}
+                      </span>
+
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${activeMember.membership_status === "active"
+                            ? "bg-[#10B981]/10 text-[#10B981]"
+                            : "bg-[#F59E0B]/10 text-[#F59E0B]"
+                          }`}
+                      >
+                        {activeMember.membership_status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ================= REQUIRED DOCUMENTS ================= */}
+            <div className="space-y-1">
+              <h3 className="font-semibold text-gray-900 text-lg">
+                Required Documents
+              </h3>
+              <p className="text-sm text-gray-600">
+                Please upload clear copies of the following documents:
+              </p>
+            </div>
+
+            {/* ================= FILE UPLOADS ================= */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <VerificationFileUpload
+                label="ID Card (CPR) Copy"
+                icon={IdCard}
+                file={verifyIdCard}
+                onFileChange={setVerifyIdCard}
+                accept="image/*,application/pdf"
+                description="Upload a clear CPR card copy (PDF, JPG, PNG)"
+                existingUrl={activeMember?.member_profile?.id_card_url}
+                required={!activeMember?.member_profile?.id_card_url}
+              />
+
+              <VerificationFileUpload
+                label="Personal Photo"
+                icon={Camera}
+                file={verifyPersonalPhoto}
+                onFileChange={setVerifyPersonalPhoto}
+                accept="image/*"
+                description="Upload a recent passport-sized photo"
+                existingUrl={activeMember?.member_profile?.personal_photo_url}
+                required={!activeMember?.member_profile?.personal_photo_url}
+              />
+            </div>
+
+            {/* Show existing documents links */}
+            {(activeMember?.member_profile?.id_card_url || activeMember?.member_profile?.personal_photo_url) && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm font-medium text-blue-900 mb-2">Existing Documents:</p>
+                <div className="flex flex-wrap gap-2">
+                  {activeMember?.member_profile?.id_card_url && (
+                    <a
+                      href={activeMember.member_profile.id_card_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-blue-300 rounded-lg text-sm text-blue-700 hover:bg-blue-50"
+                    >
+                      <FileText className="w-4 h-4" />
+                      View ID Card
+                    </a>
+                  )}
+                  {activeMember?.member_profile?.personal_photo_url && (
+                    <a
+                      href={activeMember.member_profile.personal_photo_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-blue-300 rounded-lg text-sm text-blue-700 hover:bg-blue-50"
+                    >
+                      <FileText className="w-4 h-4" />
+                      View Personal Photo
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ================= GUIDELINES ================= */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-5 border border-yellow-200"
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-yellow-900">
+                    Verification Guidelines
+                  </h4>
+                  <ul className="text-sm text-yellow-800 space-y-1 list-disc pl-4 mt-2">
+                    <li>Documents must be clear and readable</li>
+                    <li>Photos must be taken within last 6 months</li>
+                    <li>Maximum file size: 5MB</li>
+                    <li>Formats: JPG, PNG, WEBP, PDF</li>
+                    <li>Information must match member details</li>
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* ================= FILE STATUS ================= */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { label: "ID Card", file: verifyIdCard },
+                { label: "Personal Photo", file: verifyPersonalPhoto }
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className={`p-4 rounded-xl border ${item.file
+                      ? "bg-green-50 border-green-200"
+                      : "bg-gray-100 border-gray-200"
+                    }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-gray-900">
+                      {item.label}
+                    </span>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${item.file
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-200 text-gray-800"
+                        }`}
+                    >
+                      {item.file ? "Ready" : "Pending"}
+                    </span>
+                  </div>
+
+                  {item.file && (
+                    <p className="text-sm text-gray-600 mt-2 truncate">
+                      {item.file.name}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* ================= FOOTER ACTIONS ================= */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-500">
+                Uploaded documents are securely stored & encrypted
+              </p>
+
+              <div className="flex gap-3 items-center flex-wrap justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowVerifyModal(false)}
+                  className="px-5 py-2.5 rounded-xl bg-gray-200 text-gray-700 font-medium"
+                >
+                  Cancel
+                </button>
+
+                <label className="flex items-center gap-2 text-sm text-gray-700 mr-2">
+                  <input
+                    type="checkbox"
+                    checked={usePersonalAsProfile}
+                    onChange={(e) => setUsePersonalAsProfile(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-[#03215F] focus:ring-[#03215F]"
+                  />
+                  Use personal photo as profile picture
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={
+                    verifying ||
+                    (!verifyIdCard && !activeMember?.member_profile?.id_card_url) ||
+                    (!verifyPersonalPhoto && !activeMember?.member_profile?.personal_photo_url)
+                  }
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#10B981] to-[#059669] text-white font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                  {verifying ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-4 h-4" />
+                      Complete Verification
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </BaseModal>
+
+
+      {/* View Modal (truncated for brevity) */}
       <BaseModal
         isOpen={showViewModal}
         onClose={() => setShowViewModal(false)}
@@ -1108,7 +2185,12 @@ export default function MembersPage() {
           </div>
 
           <div className="p-6 overflow-y-auto max-h-[70vh]">
-            {activeMember && (
+            {viewLoading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[#03215F] mb-4" />
+                <p className="text-gray-600">Loading member details...</p>
+              </div>
+            ) : activeMember ? (
               <>
                 {/* Profile Header */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl">
@@ -1129,13 +2211,12 @@ export default function MembersPage() {
                     )}
                     <div className="absolute -bottom-2 -right-2">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          activeMember.membership_status === "active"
-                            ? "bg-[#AE9B66] text-white"
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${activeMember.membership_status === "active"
+                            ? "bg-[#10B981] text-white"
                             : activeMember.membership_status === "inactive"
-                            ? "bg-[#ECCF0F] text-[#03215F]"
-                            : "bg-[#b8352d] text-white"
-                        }`}
+                              ? "bg-[#ECCF0F] text-[#03215F]"
+                              : "bg-[#b8352d] text-white"
+                          }`}
                       >
                         {activeMember.membership_status}
                       </span>
@@ -1147,15 +2228,31 @@ export default function MembersPage() {
                       <div>
                         <h3 className="text-2xl font-bold text-gray-900 truncate">
                           {activeMember.full_name}
+                          {activeMember.is_member_verified && (
+                            <Verified className="w-5 h-5 text-[#10B981] inline ml-2" />
+                          )}
                         </h3>
                         <p className="text-gray-600 text-sm mt-1 flex items-center gap-2">
                           <Mail className="w-4 h-4" />
                           {activeMember.email}
                         </p>
                       </div>
-                      <span className="px-3 py-1 bg-gradient-to-r from-[#03215F]/10 to-[#03215F]/10 text-[#03215F] rounded-full text-sm font-medium">
-                        {activeMember.role}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-gradient-to-r from-[#03215F]/10 to-[#03215F]/10 text-[#03215F] rounded-full text-sm font-medium">
+                          {activeMember.role}
+                        </span>
+                        {activeMember.is_member_verified ? (
+                          <span className="px-3 py-1 bg-gradient-to-r from-[#10B981]/10 to-[#10B981]/10 text-[#10B981] rounded-full text-sm font-medium flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3" />
+                            Verified
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 bg-gradient-to-r from-[#F59E0B]/10 to-[#F59E0B]/10 text-[#F59E0B] rounded-full text-sm font-medium flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            Pending Verification
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
@@ -1172,8 +2269,8 @@ export default function MembersPage() {
                         <span>
                           {activeMember.membership_date
                             ? new Date(
-                                activeMember.membership_date
-                              ).toLocaleDateString()
+                              activeMember.membership_date
+                            ).toLocaleDateString()
                             : "Not set"}
                         </span>
                       </div>
@@ -1225,8 +2322,8 @@ export default function MembersPage() {
                           <p className="text-sm text-gray-900 mt-1">
                             {activeMember.member_profile?.dob
                               ? new Date(
-                                  activeMember.member_profile.dob
-                                ).toLocaleDateString()
+                                activeMember.member_profile.dob
+                              ).toLocaleDateString()
                               : "Not set"}
                           </p>
                         </div>
@@ -1306,6 +2403,26 @@ export default function MembersPage() {
                           </p>
                         </div>
                       </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            License Number
+                          </p>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {activeMember.member_profile?.license_number ||
+                              "Not provided"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Years of Experience
+                          </p>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {activeMember.member_profile?.years_of_experience ||
+                              "Not specified"}
+                          </p>
+                        </div>
+                      </div>
                       <div>
                         <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Type of Application
@@ -1374,8 +2491,8 @@ export default function MembersPage() {
                         <p className="text-sm text-gray-900 mt-1">
                           {activeMember.created_at
                             ? new Date(
-                                activeMember.created_at
-                              ).toLocaleDateString()
+                              activeMember.created_at
+                            ).toLocaleDateString()
                             : "Unknown"}
                         </p>
                       </div>
@@ -1400,8 +2517,18 @@ export default function MembersPage() {
                             Last 30 days
                           </p>
                         </div>
-                        <span className="px-3 py-1 bg-[#03215F]/10 text-white rounded-full text-sm font-medium">
-                          0
+                        <span className="px-3 py-1 bg-[#03215F]/10 text-[#03215F] rounded-full text-sm font-medium">
+                          {(() => {
+                            const cutoff = new Date();
+                            cutoff.setDate(cutoff.getDate() - 30);
+                            const unique = new Set(
+                              (viewAttendanceLogs || [])
+                                .filter(l => l?.scan_time && new Date(l.scan_time) >= cutoff)
+                                .map(l => l.event_member_id)
+                                .filter(Boolean)
+                            );
+                            return unique.size;
+                          })()}
                         </span>
                       </div>
                       <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -1414,7 +2541,10 @@ export default function MembersPage() {
                           </p>
                         </div>
                         <span className="px-3 py-1 bg-[#AE9B66] text-white rounded-full text-sm font-medium">
-                          0 BHD
+                          {(() => {
+                            const total = Number(viewFeeSummary?.total_paid || 0);
+                            return `${total.toLocaleString('en-BH', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} BHD`;
+                          })()}
                         </span>
                       </div>
                       <div className="text-sm text-gray-500 text-center py-4">
@@ -1423,6 +2553,48 @@ export default function MembersPage() {
                           Check API for complete logs
                         </p>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Verification Documents */}
+                <div className="bg-white rounded-xl p-5 border border-gray-200">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-[#03215F]/10">
+                      <ShieldCheck className="w-5 h-5 text-[#03215F]" />
+                    </div>
+                    Verification
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">ID Card (CPR) Copy</span>
+                      {activeMember?.member_profile?.id_card_url ? (
+                        <a
+                          href={activeMember.member_profile.id_card_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:bg-gray-200"
+                        >
+                          View
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">Not uploaded</span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Personal Picture</span>
+                      {activeMember?.member_profile?.personal_photo_url ? (
+                        <a
+                          href={activeMember.member_profile.personal_photo_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:bg-gray-200"
+                        >
+                          View
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">Not uploaded</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1454,12 +2626,17 @@ export default function MembersPage() {
                   </button>
                 </div>
               </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <AlertCircle className="w-12 h-12 text-gray-400 mb-4" />
+                <p className="text-gray-600">No member data available</p>
+              </div>
             )}
           </div>
         </div>
       </BaseModal>
 
-      {/* Edit Modal */}
+      {/* Edit Modal (truncated for brevity) */}
       <BaseModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
@@ -1531,6 +2708,40 @@ export default function MembersPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={form.password}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, password: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      placeholder="Leave empty to keep current password"
+                      minLength={6}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Only fill this field if you want to change the password
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={form.phone}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, phone: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Mobile Number
                     </label>
                     <input
@@ -1540,20 +2751,6 @@ export default function MembersPage() {
                       }
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
                       placeholder="Enter mobile number"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      value={form.phone}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, phone: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                      placeholder="Enter phone number"
                     />
                   </div>
 
@@ -1574,6 +2771,7 @@ export default function MembersPage() {
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                       <option value="blocked">Blocked</option>
+                      <option value="pending">Pending</option>
                     </select>
                   </div>
 
@@ -1596,13 +2794,13 @@ export default function MembersPage() {
                 </div>
               </div>
 
-              {/* Profile Information */}
+              {/* Personal Information */}
               <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-[#03215F]/10">
                     <User className="w-5 h-5 text-[#03215F]" />
                   </div>
-                  Profile Information
+                  Personal Information
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1617,13 +2815,10 @@ export default function MembersPage() {
                       }
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
                     >
-                      <option value="">Select Gender</option>
+                      <option value="">Select</option>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
                       <option value="other">Other</option>
-                      <option value="prefer_not_to_say">
-                        Prefer not to say
-                      </option>
                     </select>
                   </div>
 
@@ -1643,6 +2838,32 @@ export default function MembersPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nationality
+                    </label>
+                    <select
+                      value={form.nationalityCode}
+                      onChange={(e) => {
+                        const code = e.target.value;
+                        const found = countryOptions.find((c) => c.code === code);
+                        setForm((f) => ({
+                          ...f,
+                          nationalityCode: code,
+                          nationality: found?.label || "",
+                          countryDial: found?.dial || "+973",
+                        }));
+                      }}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    >
+                      {countryOptions.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       CPR ID
                     </label>
                     <input
@@ -1652,51 +2873,6 @@ export default function MembersPage() {
                       }
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
                       placeholder="Enter CPR ID"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nationality
-                    </label>
-                    <input
-                      value={form.nationality}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, nationality: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                      placeholder="Enter nationality"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category
-                    </label>
-                    <input
-                      value={form.category}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, category: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                      placeholder="Enter category"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Type of Application
-                    </label>
-                    <input
-                      value={form.type_of_application}
-                      onChange={(e) =>
-                        setForm((f) => ({
-                          ...f,
-                          type_of_application: e.target.value,
-                        }))
-                      }
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                      placeholder="Enter application type"
                     />
                   </div>
                 </div>
@@ -1711,62 +2887,49 @@ export default function MembersPage() {
                   Address Information
                 </h3>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Address
                     </label>
-                    <textarea
+                    <input
+                      type="text"
                       value={form.address}
                       onChange={(e) =>
                         setForm((f) => ({ ...f, address: e.target.value }))
                       }
-                      rows={2}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all resize-none"
-                      placeholder="Enter full address"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      placeholder="Full address"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         City
                       </label>
                       <input
+                        type="text"
                         value={form.city}
                         onChange={(e) =>
                           setForm((f) => ({ ...f, city: e.target.value }))
                         }
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                        placeholder="Enter city"
+                        placeholder="City"
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        State/Province
+                        State / Governorate
                       </label>
                       <input
+                        type="text"
                         value={form.state}
                         onChange={(e) =>
                           setForm((f) => ({ ...f, state: e.target.value }))
                         }
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                        placeholder="Enter state"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        PIN Code
-                      </label>
-                      <input
-                        value={form.pin_code}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, pin_code: e.target.value }))
-                        }
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                        placeholder="Enter PIN code"
+                        placeholder="State"
                       />
                     </div>
                   </div>
@@ -1782,111 +2945,140 @@ export default function MembersPage() {
                   Professional Information
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Work Sector
-                    </label>
-                    <input
-                      value={form.work_sector}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, work_sector: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                      placeholder="Enter work sector"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Employer
-                    </label>
-                    <input
-                      value={form.employer}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, employer: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                      placeholder="Enter employer"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Position
-                    </label>
-                    <input
-                      value={form.position}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, position: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                      placeholder="Enter position"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Specialty
-                    </label>
-                    <input
-                      value={form.specialty}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, specialty: e.target.value }))
-                      }
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                      placeholder="Enter specialty"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Profile Image Upload */}
-              <div className="bg-white rounded-xl p-6 border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-[#03215F]/10">
-                    <User className="w-5 h-5 text-[#03215F]" />
-                  </div>
-                  Profile Image
-                </h3>
-
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
-                      {activeMember?.profile_image && !profileImageFile ? (
-                        <img
-                          src={activeMember.profile_image}
-                          alt="Current profile"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : profileImageFile ? (
-                        <img
-                          src={URL.createObjectURL(profileImageFile)}
-                          alt="New profile"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                          <User className="w-8 h-8 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block mb-2">
-                        <span className="px-4 py-2.5 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#AE9B66] transition-all duration-200 inline-flex items-center gap-2 cursor-pointer">
-                          <Upload className="w-4 h-4" />
-                          Upload New Image
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFileChange}
-                            className="hidden"
-                          />
-                        </span>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Work Sector
                       </label>
-                      <p className="text-sm text-gray-500 mt-2">
-                        Recommended: Square image, max 5MB
-                      </p>
+                      <select
+                        value={form.work_sector}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, work_sector: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      >
+                        <option value="">Select</option>
+                        {WORK_SECTOR_OPTIONS.map((w) => (
+                          <option key={w} value={w}>
+                            {w}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Employer
+                      </label>
+                      <input
+                        type="text"
+                        value={form.employer}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, employer: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                        placeholder="Employer"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Position
+                      </label>
+                      <select
+                        value={form.position}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, position: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      >
+                        <option value="">Select</option>
+                        {POSITION_OPTIONS.map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Specialty
+                      </label>
+                      <select
+                        value={form.specialty}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, specialty: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      >
+                        <option value="">Select</option>
+                        {SPECIALIZATION_OPTIONS.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Category
+                      </label>
+                      <select
+                        value={form.category}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, category: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      >
+                        <option value="">Select</option>
+                        {CATEGORY_OPTIONS.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        License Number
+                      </label>
+                      <input
+                        type="text"
+                        value={form.license_number}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, license_number: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                        placeholder="License number"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Years of Experience
+                      </label>
+                      <select
+                        value={form.years_of_experience}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, years_of_experience: e.target.value }))
+                        }
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                      >
+                        <option value="">Select experience</option>
+                        <option value="0-1">0-1 years</option>
+                        <option value="1-3">1-3 years</option>
+                        <option value="3-5">3-5 years</option>
+                        <option value="5-10">5-10 years</option>
+                        <option value="10+">10+ years</option>
+                      </select>
                     </div>
                   </div>
                 </div>

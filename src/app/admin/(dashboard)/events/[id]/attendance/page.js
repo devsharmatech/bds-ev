@@ -39,6 +39,7 @@ import toast, { Toaster } from "react-hot-toast";
 import ScanAttendanceModal from "@/components/events/ScanAttendanceModal";
 import AttendanceStats from "@/components/events/AttendanceStats";
 import EventTabs from "@/components/events/EventTabs";
+import MemberDetailsModal from "@/components/events/MemberDetailsModal";
 
 // Format date for Bahrain
 const formatDateBH = (dateString) => {
@@ -96,6 +97,8 @@ export default function EventAttendancePage() {
   // Modal states
   const [showScanModal, setShowScanModal] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
 
   // Fetch event details and attendance logs
   const fetchData = async () => {
@@ -189,6 +192,11 @@ export default function EventAttendancePage() {
   // Handle scan attendance
   const handleScanAttendance = () => {
     setShowScanModal(true);
+  };
+
+  const handleViewDetails = (member) => {
+    setSelectedMember(member || null);
+    setShowDetailsModal(!!member);
   };
 
   // Handle scan submission
@@ -286,14 +294,7 @@ export default function EventAttendancePage() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Generate QR code for event check-in
-  const generateQRCode = () => {
-    // In a real app, you'd generate a QR code for mobile scanning
-    // For now, we'll just show a modal with check-in link
-    const checkinUrl = `${window.location.origin}/checkin/${eventId}`;
-    toast.success(`Check-in URL: ${checkinUrl}`);
-    // You can implement QR code generation here
-  };
+ 
 
   if (loading && !event) {
     return (
@@ -318,6 +319,19 @@ export default function EventAttendancePage() {
             onClose={() => setShowScanModal(false)}
             onScan={handleScanSubmit}
             scanning={scanning}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showDetailsModal && selectedMember && (
+          <MemberDetailsModal
+            member={selectedMember}
+            eventId={eventId}
+            onClose={() => setShowDetailsModal(false)}
+            onRefresh={() => {
+              fetchAttendanceLogs();
+            }}
           />
         )}
       </AnimatePresence>
@@ -352,13 +366,7 @@ export default function EventAttendancePage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-            <button
-              onClick={generateQRCode}
-              className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#03215F] transition-all duration-200 flex items-center justify-center gap-2"
-            >
-              <QrCode className="w-4 h-4" />
-              Generate QR
-            </button>
+            
             <button
               onClick={handleExport}
               className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:from-gray-200 hover:to-gray-300 transition-all duration-200 flex items-center justify-center gap-2"
@@ -549,7 +557,7 @@ export default function EventAttendancePage() {
                         <td className="py-4 px-6">
                           <div className="flex items-start gap-3">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#AE9B66] to-[#AE9B66] flex items-center justify-center">
-                              <User className="w-4 h-4 text-[#AE9B66]" />
+                              <User className="w-4 h-4 text-white" />
                             </div>
                             <div>
                               <p className="font-medium text-gray-900">
@@ -564,10 +572,7 @@ export default function EventAttendancePage() {
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => {
-                                // View details action
-                                toast.success("Viewing attendance details");
-                              }}
+                              onClick={() => handleViewDetails(log.event_members)}
                               className="p-2 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:text-gray-900 transition-colors hover:scale-110 active:scale-95"
                               title="View Details"
                             >
@@ -677,10 +682,10 @@ export default function EventAttendancePage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] border border-[#9cc2ed]/50">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-[#9cc2ed]/20 to-[#9cc2ed]/20 border border-[#9cc2ed]/50">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-[#9cc2ed]">
-                  <TrendingUp className="w-5 h-5 text-[#03215F]" />
+                  <TrendingUp className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Check-in Rate</p>
@@ -691,10 +696,10 @@ export default function EventAttendancePage() {
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-gradient-to-br from-[#AE9B66] to-[#AE9B66] border border-[#AE9B66]/50">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-[#AE9B66]/20 to-[#AE9B66]/20 border border-[#AE9B66]/50">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-[#AE9B66]">
-                  <Users className="w-5 h-5 text-[#AE9B66]" />
+                  <Users className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Unique Attendees</p>
@@ -705,10 +710,10 @@ export default function EventAttendancePage() {
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-gradient-to-br from-[#03215F] to-[#03215F] border border-[#03215F]/50">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-[#03215F]/20 to-[#03215F]/20 border border-[#03215F]/50">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-[#03215F]">
-                  <BarChart3 className="w-5 h-5 text-[#03215F]" />
+                  <BarChart3 className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Scans</p>

@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Calendar,
   Shield,
+  ShieldCheck,
   Crown,
   BadgeCheck,
   User,
@@ -37,6 +38,10 @@ import {
   Star as StarIcon,
   RefreshCw,
   Loader2,
+  X,
+  Upload,
+  Camera,
+  FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { QRCodeCanvas } from "qrcode.react";
@@ -127,8 +132,8 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, pla
           </div>
           <div>
             <h3 style={{
-              fontWeight: 900, textTransform: 'uppercase', lineHeight: 1.1, margin: 0,
-              fontSize: 'clamp(14px, 3.4vw, 16px)', letterSpacing: '0.02em',
+              fontWeight: 800, textTransform: 'uppercase', lineHeight: 1.1, margin: 0,
+              fontSize: 'clamp(14px, 3.4vw, 17px)', letterSpacing: '0.02em',
               marginRight: "10px"
 
             }}>
@@ -139,6 +144,26 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, pla
               letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600
             }}>
               Official Member
+              {user.is_member_verified && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  padding: '2px 6px',
+                  borderRadius: 9999,
+                  fontSize: 9,
+                  fontWeight: 700,
+                  backgroundColor: 'rgba(16,185,129,0.2)',
+                  color: '#10B981',
+                  border: '1px solid rgba(16,185,129,0.3)',
+                  flexShrink: 0,
+                  marginTop: "4px",
+                  marginLeft: "10px"
+                }}>
+                  <ShieldCheck style={{ width: 10, height: 10 }} />
+                  Verified
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -148,7 +173,7 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, pla
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
-            padding: '4px 10px',
+            padding: '2px 10px',
             fontSize: 11,
             fontWeight: 700,
             textTransform: 'uppercase',
@@ -156,7 +181,7 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, pla
             backgroundColor: user.membership_status === 'active' ? 'rgba(22,163,74,0.18)' : 'rgba(184,53,45,0.18)',
             border: `1px solid ${user.membership_status === 'active' ? 'rgba(22,163,74,0.3)' : 'rgba(184,53,45,0.3)'}`,
             color: user.membership_status === 'active' ? '#16a34a' : '#b8352d',
-            marginTop: "10px"
+            marginTop: "7px"
           }}
         >
           <span style={{
@@ -171,9 +196,12 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, pla
       <div style={{ position: 'relative', display: isNarrow ? 'block' : 'flex', justifyContent: 'space-between', alignItems: isNarrow ? 'stretch' : 'flex-end', marginTop: 18, gap: 16 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 'clamp(9px, 2.6vw, 11px)', color: '#C7D7F2', textTransform: 'uppercase', margin: 0, letterSpacing: '0.1em' }}>Member Name</p>
-          <h2 style={{ fontWeight: 900, lineHeight: 1.15, margin: '4px 0 0 0', fontSize: 'clamp(18px, 5vw, 20px)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-            {user.full_name || ''}
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            <h2 style={{ fontWeight: 900, lineHeight: 1.15, margin: 0, fontSize: 'clamp(18px, 5vw, 20px)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+              {user.full_name || ''}
+            </h2>
+
+          </div>
 
           <div style={{ display: 'flex', gap: 16, marginTop: 14, flexWrap: isNarrow ? 'wrap' : 'nowrap' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -229,6 +257,12 @@ export default function MembershipCardPage() {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [paymentData, setPaymentData] = useState(null);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+  const [verificationData, setVerificationData] = useState(null);
+  const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [idCardFile, setIdCardFile] = useState(null);
+  const [personalPhotoFile, setPersonalPhotoFile] = useState(null);
+  const [idCardPreview, setIdCardPreview] = useState(null);
+  const [personalPhotoPreview, setPersonalPhotoPreview] = useState(null);
   const qrRef = useRef(null);
   const cardRef = useRef(null);
   const router = useRouter();
@@ -243,6 +277,7 @@ export default function MembershipCardPage() {
   useEffect(() => {
     fetchMembershipData();
     fetchSubscriptions();
+    fetchVerificationData();
 
     // Check for payment success/error messages from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -324,6 +359,86 @@ export default function MembershipCardPage() {
       }
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
+    }
+  };
+
+  const fetchVerificationData = async () => {
+    try {
+      const res = await fetch("/api/dashboard/verification", {
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setVerificationData(data);
+          if (data.id_card_url) setIdCardPreview(data.id_card_url);
+          if (data.personal_photo_url) setPersonalPhotoPreview(data.personal_photo_url);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching verification data:", error);
+    }
+  };
+
+  const handleIdCardChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setIdCardFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setIdCardPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePersonalPhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPersonalPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPersonalPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadDocuments = async () => {
+    if (!idCardFile && !personalPhotoFile) {
+      toast.error("Please select at least one document to upload");
+      return;
+    }
+
+    setUploadingDocs(true);
+    try {
+      const formData = new FormData();
+      if (idCardFile) formData.append("id_card", idCardFile);
+      if (personalPhotoFile) formData.append("personal_photo", personalPhotoFile);
+
+      const res = await fetch("/api/dashboard/verification", {
+        method: "PUT",
+        credentials: "include",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success(data.message || "Documents uploaded successfully!");
+        setIdCardFile(null);
+        setPersonalPhotoFile(null);
+        fetchVerificationData();
+        fetchMembershipData();
+      } else {
+        toast.error(data.message || "Failed to upload documents");
+      }
+    } catch (error) {
+      console.error("Error uploading documents:", error);
+      toast.error("Failed to upload documents");
+    } finally {
+      setUploadingDocs(false);
     }
   };
 
@@ -1342,6 +1457,188 @@ export default function MembershipCardPage() {
                   </p>
                 </div>
 
+                {/* Verification Documents Upload Section - Only for Paid Members */}
+                {!isFreeMember && (
+                  <div className="mt-8 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-lg">
+                        <ShieldCheck className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">
+                          Member Verification
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Upload your documents for verification. Admin will review and verify your account.
+                        </p>
+                      </div>
+                    </div>
+
+                    {verificationData?.is_member_verified && (
+                      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <span className="text-sm font-medium text-green-800">
+                            Your account has been verified
+                          </span>
+                        </div>
+                        <p className="text-xs text-green-700 mt-1">
+                          Your documents are locked and cannot be edited or deleted after verification.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* ID Card Upload */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          ID Card (CPR) Copy
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            onChange={handleIdCardChange}
+                            className="hidden"
+                            id="id-card-upload"
+                            disabled={uploadingDocs || verificationData?.is_member_verified}
+                          />
+                          <label
+                            htmlFor="id-card-upload"
+                            className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg transition-colors ${verificationData?.is_member_verified
+                                ? 'cursor-not-allowed opacity-50 bg-gray-100'
+                                : 'cursor-pointer hover:bg-gray-50'
+                              }`}
+                          >
+                            {idCardPreview ? (
+                              <div className="relative w-full h-full">
+                                <img
+                                  src={idCardPreview}
+                                  alt="ID Card preview"
+                                  className="w-full h-full object-cover rounded-lg"
+                                />
+                                {!verificationData?.is_member_verified && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setIdCardFile(null);
+                                      setIdCardPreview(verificationData?.id_card_url || null);
+                                    }}
+                                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                                <p className="text-sm text-gray-600">
+                                  {verificationData?.id_card_url ? "View Uploaded" : "Click to upload"}
+                                </p>
+                              </>
+                            )}
+                          </label>
+                        </div>
+                        {verificationData?.id_card_url && !idCardFile && (
+                          <a
+                            href={verificationData.id_card_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 text-sm text-[#03215F] hover:underline flex items-center gap-1"
+                          >
+                            <FileText className="w-4 h-4" />
+                            View uploaded document
+                          </a>
+                        )}
+                      </div>
+
+                      {/* Personal Photo Upload */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Personal Picture
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePersonalPhotoChange}
+                            className="hidden"
+                            id="personal-photo-upload"
+                            disabled={uploadingDocs || verificationData?.is_member_verified}
+                          />
+                          <label
+                            htmlFor="personal-photo-upload"
+                            className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg transition-colors ${verificationData?.is_member_verified
+                                ? 'cursor-not-allowed opacity-50 bg-gray-100'
+                                : 'cursor-pointer hover:bg-gray-50'
+                              }`}
+                          >
+                            {personalPhotoPreview ? (
+                              <div className="relative w-full h-full">
+                                <img
+                                  src={personalPhotoPreview}
+                                  alt="Personal photo preview"
+                                  className="w-full h-full object-cover rounded-lg"
+                                />
+                                {!verificationData?.is_member_verified && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPersonalPhotoFile(null);
+                                      setPersonalPhotoPreview(verificationData?.personal_photo_url || null);
+                                    }}
+                                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                                <p className="text-sm text-gray-600">
+                                  {verificationData?.personal_photo_url ? "View Uploaded" : "Click to upload"}
+                                </p>
+                              </>
+                            )}
+                          </label>
+                        </div>
+                        {verificationData?.personal_photo_url && !personalPhotoFile && (
+                          <a
+                            href={verificationData.personal_photo_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 text-sm text-[#03215F] hover:underline flex items-center gap-1"
+                          >
+                            <FileText className="w-4 h-4" />
+                            View uploaded document
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {(idCardFile || personalPhotoFile) && !verificationData?.is_member_verified && (
+                      <button
+                        onClick={handleUploadDocuments}
+                        disabled={uploadingDocs || verificationData?.is_member_verified}
+                        className="mt-4 w-full px-4 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {uploadingDocs ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-5 h-5" />
+                            Upload Documents
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )}
 
               </div>
             </div>
