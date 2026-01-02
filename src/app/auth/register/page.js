@@ -23,6 +23,10 @@ import {
   Check,
   PartyPopper,
   Loader2,
+  Upload,
+  Camera,
+  IdCard,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import MainLayout from "@/components/MainLayout";
@@ -48,6 +52,10 @@ function RegisterPageContent() {
   const [plans, setPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [selectedPlanFromUrl, setSelectedPlanFromUrl] = useState(null);
+  const [idCardFile, setIdCardFile] = useState(null);
+  const [personalPhotoFile, setPersonalPhotoFile] = useState(null);
+  const [idCardPreview, setIdCardPreview] = useState(null);
+  const [personalPhotoPreview, setPersonalPhotoPreview] = useState(null);
 
   const [formData, setFormData] = useState({
     // Step 1: Personal & Account Information
@@ -330,6 +338,56 @@ function RegisterPageContent() {
   };
 
   // Remove the old handleFinalSubmit and use this one instead
+  const handleIdCardChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+      // Validate file type
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Invalid file type. Please upload JPEG, PNG, WebP, or PDF.");
+        return;
+      }
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size too large. Maximum size is 10MB.");
+        return;
+      }
+      setIdCardFile(file);
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setIdCardPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setIdCardPreview(null);
+      }
+    }
+  };
+
+  const handlePersonalPhotoChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+      // Validate file type (images only)
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Invalid file type. Please upload JPEG, PNG, or WebP image.");
+        return;
+      }
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size too large. Maximum size is 10MB.");
+        return;
+      }
+      setPersonalPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPersonalPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleFinalSubmitWithToast = async (e) => {
     e.preventDefault();
     setError("");
@@ -352,33 +410,75 @@ function RegisterPageContent() {
         duration: Infinity,
       });
 
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullNameEng: formData.fullNameEng,
-          fullNameArb: formData.fullNameArb,
-          email: formData.email,
-          password: formData.password,
-          mobile: formData.mobile,
-          cpr: formData.cpr,
-          gender: formData.gender,
-          nationality: formData.nationality,
+      // Create FormData if files are present, otherwise use JSON
+      const hasFiles = idCardFile || personalPhotoFile;
+      let res;
 
-          category: formData.category,
-          workSector: formData.workSector,
-          employer: formData.employer,
-          position: formData.position,
-          specialty: formData.specialty,
-          address: formData.address,
+      if (hasFiles) {
+        const formDataToSend = new FormData();
+        formDataToSend.append("fullNameEng", formData.fullNameEng);
+        formDataToSend.append("fullNameArb", formData.fullNameArb || "");
+        formDataToSend.append("email", formData.email);
+        formDataToSend.append("password", formData.password);
+        formDataToSend.append("mobile", formData.mobile);
+        formDataToSend.append("cpr", formData.cpr || "");
+        formDataToSend.append("gender", formData.gender || "");
+        formDataToSend.append("nationality", formData.nationality || "");
+        formDataToSend.append("category", formData.category);
+        formDataToSend.append("workSector", formData.workSector);
+        formDataToSend.append("employer", formData.employer);
+        formDataToSend.append("position", formData.position);
+        formDataToSend.append("specialty", formData.specialty || "");
+        formDataToSend.append("address", formData.address || "");
+        formDataToSend.append("membershipType", formData.membershipType);
+        formDataToSend.append("subscriptionPlanId", formData.subscriptionPlanId || "");
+        formDataToSend.append("typeOfApplication", formData.typeOfApplication);
+        formDataToSend.append("membershipDate", formData.membershipDate || new Date().toISOString().split("T")[0]);
+        formDataToSend.append("licenseNumber", formData.licenseNumber || "");
+        formDataToSend.append("yearsOfExperience", formData.yearsOfExperience || "");
 
-          membershipType: formData.membershipType,
-          subscriptionPlanId: formData.subscriptionPlanId,
-          typeOfApplication: formData.typeOfApplication,
-          membershipDate:
-            formData.membershipDate || new Date().toISOString().split("T")[0],
-        }),
-      });
+        if (idCardFile) {
+          formDataToSend.append("id_card", idCardFile);
+        }
+        if (personalPhotoFile) {
+          formDataToSend.append("personal_photo", personalPhotoFile);
+        }
+
+        res = await fetch("/api/auth/register", {
+          method: "POST",
+          body: formDataToSend,
+        });
+      } else {
+        res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullNameEng: formData.fullNameEng,
+            fullNameArb: formData.fullNameArb,
+            email: formData.email,
+            password: formData.password,
+            mobile: formData.mobile,
+            cpr: formData.cpr,
+            gender: formData.gender,
+            nationality: formData.nationality,
+
+            category: formData.category,
+            workSector: formData.workSector,
+            employer: formData.employer,
+            position: formData.position,
+            specialty: formData.specialty,
+            address: formData.address,
+
+            membershipType: formData.membershipType,
+            subscriptionPlanId: formData.subscriptionPlanId,
+            typeOfApplication: formData.typeOfApplication,
+            membershipDate:
+              formData.membershipDate || new Date().toISOString().split("T")[0],
+            licenseNumber: formData.licenseNumber || "",
+            yearsOfExperience: formData.yearsOfExperience || "",
+          }),
+        });
+      }
 
       const data = await res.json();
 
@@ -1084,6 +1184,152 @@ function RegisterPageContent() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Document Upload Section */}
+      <div className="pt-6 border-t border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Verification Documents
+        </h3>
+        <p className="text-sm text-gray-600 mb-6">
+          Please upload your ID card (CPR) copy and personal photo for verification purposes.
+        </p>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* ID Card Upload */}
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-gray-900">
+              ID Card (CPR) Copy <span className="text-[#b8352d]">*</span>
+            </label>
+            <div className={`relative border-2 ${idCardFile ? 'border-[#AE9B66]' : 'border-gray-300'} border-dashed rounded-2xl p-6 transition-all duration-200 hover:border-[#03215F] ${idCardFile ? 'bg-[#AE9B66]/5' : 'bg-gray-50'}`}>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleIdCardChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                required
+              />
+              <div className="flex flex-col items-center justify-center text-center space-y-4">
+                <div className={`p-4 rounded-full ${idCardFile ? 'bg-[#AE9B66]/20' : 'bg-gray-100'}`}>
+                  <IdCard className={`w-8 h-8 ${idCardFile ? 'text-[#AE9B66]' : 'text-gray-400'}`} />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-medium text-sm">
+                      <Upload className="w-4 h-4 inline mr-2" />
+                      {idCardFile ? 'Change File' : 'Upload File'}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    {idCardFile ? (
+                      <span className="flex items-center justify-center gap-2 text-[#AE9B66] font-medium">
+                        <CheckCircle className="w-4 h-4" />
+                        {idCardFile.name} ({Math.round(idCardFile.size / 1024)} KB)
+                      </span>
+                    ) : (
+                      "Click to upload PDF or image (max 10MB)"
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Upload a clear CPR card copy (PDF, JPG, PNG)
+                  </p>
+                </div>
+              </div>
+              {idCardPreview && idCardFile && idCardFile.type && !idCardFile.type.includes('application/pdf') && (
+                <div className="mt-6 space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Preview:</p>
+                  <div className="relative h-48 rounded-xl overflow-hidden border border-gray-200">
+                    <img
+                      src={idCardPreview}
+                      alt="ID Card Preview"
+                      className="w-full h-full object-contain bg-gray-50"
+                    />
+                  </div>
+                </div>
+              )}
+              {idCardFile && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIdCardFile(null);
+                    setIdCardPreview(null);
+                  }}
+                  className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Personal Photo Upload */}
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-gray-900">
+              Personal Photo <span className="text-[#b8352d]">*</span>
+            </label>
+            <div className={`relative border-2 ${personalPhotoFile ? 'border-[#AE9B66]' : 'border-gray-300'} border-dashed rounded-2xl p-6 transition-all duration-200 hover:border-[#03215F] ${personalPhotoFile ? 'bg-[#AE9B66]/5' : 'bg-gray-50'}`}>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePersonalPhotoChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                required
+              />
+              <div className="flex flex-col items-center justify-center text-center space-y-4">
+                <div className={`p-4 rounded-full ${personalPhotoFile ? 'bg-[#AE9B66]/20' : 'bg-gray-100'}`}>
+                  <Camera className={`w-8 h-8 ${personalPhotoFile ? 'text-[#AE9B66]' : 'text-gray-400'}`} />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-medium text-sm">
+                      <Upload className="w-4 h-4 inline mr-2" />
+                      {personalPhotoFile ? 'Change Photo' : 'Upload Photo'}
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    {personalPhotoFile ? (
+                      <span className="flex items-center justify-center gap-2 text-[#AE9B66] font-medium">
+                        <CheckCircle className="w-4 h-4" />
+                        {personalPhotoFile.name} ({Math.round(personalPhotoFile.size / 1024)} KB)
+                      </span>
+                    ) : (
+                      "Click to upload image (max 10MB)"
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Upload a recent passport-sized photo
+                  </p>
+                </div>
+              </div>
+              {personalPhotoPreview && (
+                <div className="mt-6 space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Preview:</p>
+                  <div className="relative h-48 rounded-xl overflow-hidden border border-gray-200">
+                    <img
+                      src={personalPhotoPreview}
+                      alt="Personal Photo Preview"
+                      className="w-full h-full object-contain bg-gray-50"
+                    />
+                  </div>
+                </div>
+              )}
+              {personalPhotoFile && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPersonalPhotoFile(null);
+                    setPersonalPhotoPreview(null);
+                  }}
+                  className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Terms & Conditions */}

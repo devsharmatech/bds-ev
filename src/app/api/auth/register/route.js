@@ -1,10 +1,50 @@
 import { supabase } from "@/lib/supabaseAdmin";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req) {
   try {
-    const body = await req.json();
+    const contentType = req.headers.get("content-type") || "";
+    const isMultipart = contentType.includes("multipart/form-data");
+
+    let body;
+    let idCardFile = null;
+    let personalPhotoFile = null;
+
+    if (isMultipart) {
+      const formData = await req.formData();
+      
+      // Extract form fields
+      body = {
+        fullNameEng: formData.get("fullNameEng"),
+        fullNameArb: formData.get("fullNameArb") || "",
+        email: formData.get("email"),
+        password: formData.get("password"),
+        mobile: formData.get("mobile"),
+        cpr: formData.get("cpr") || "",
+        gender: formData.get("gender") || "",
+        nationality: formData.get("nationality") || "",
+        category: formData.get("category"),
+        workSector: formData.get("workSector"),
+        employer: formData.get("employer"),
+        position: formData.get("position"),
+        specialty: formData.get("specialty") || "",
+        address: formData.get("address") || "",
+        membershipType: formData.get("membershipType"),
+        subscriptionPlanId: formData.get("subscriptionPlanId") || "",
+        typeOfApplication: formData.get("typeOfApplication"),
+        membershipDate: formData.get("membershipDate") || new Date().toISOString().split("T")[0],
+        licenseNumber: formData.get("licenseNumber") || "",
+        yearsOfExperience: formData.get("yearsOfExperience") || "",
+      };
+
+      // Extract files
+      idCardFile = formData.get("id_card");
+      personalPhotoFile = formData.get("personal_photo");
+    } else {
+      body = await req.json();
+    }
 
     const {
       fullNameEng,
@@ -25,6 +65,8 @@ export async function POST(req) {
       subscriptionPlanId, // UUID of selected subscription plan
       typeOfApplication,
       membershipDate,
+      licenseNumber,
+      yearsOfExperience,
     } = body;
 
     // --------------------------------------------------
@@ -156,6 +198,128 @@ export async function POST(req) {
     if (userError) throw userError;
 
     // --------------------------------------------------
+    // HANDLE FILE UPLOADS (if provided)
+    // --------------------------------------------------
+    let idCardUrl = null;
+    let personalPhotoUrl = null;
+
+    if (isMultipart) {
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+
+      // Upload ID Card
+      if (idCardFile && idCardFile.size > 0) {
+        if (!allowedTypes.includes(idCardFile.type)) {
+          // Delete user if created
+          await supabase.from("users").delete().eq("id", user.id);
+          return NextResponse.json(
+            { success: false, message: "ID Card must be JPEG/PNG/WebP/PDF" },
+            { status: 400 }
+          );
+        }
+        if (idCardFile.size > maxSize) {
+          await supabase.from("users").delete().eq("id", user.id);
+          return NextResponse.json(
+            { success: false, message: "ID Card file too large (max 10MB)" },
+            { status: 400 }
+          );
+        }
+
+        const ext = idCardFile.name.split(".").pop();
+        const filename = `${uuidv4()}.${ext}`;
+        const path = `verification/${user.id}/id_card_${filename}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("profile_pictures")
+          .upload(path, idCardFile, { cacheControl: "3600", upsert: false });
+
+        if (uploadError) {
+          console.error("ID Card upload error:", uploadError);
+          await supabase.from("users").delete().eq("id", user.id);
+          return NextResponse.json(
+            { success: false, message: "Failed to upload ID Card", error: uploadError.message },
+            { status: 500 }
+          );
+        }
+
+        const { data: urlData } = supabase.storage.from("profile_pictures").getPublicUrl(path);
+        idCardUrl = urlData.publicUrl || null;
+      } else if (isMultipart && (!idCardFile || idCardFile.size === 0)) {
+        // If FormData is sent but ID card is missing, it's required
+        await supabase.from("users").delete().eq("id", user.id);
+        return NextResponse.json(
+          { success: false, message: "ID Card (CPR) copy is required" },
+          { status: 400 }
+        );
+      }
+
+      // Upload Personal Photo
+      if (personalPhotoFile && personalPhotoFile.size > 0) {
+        const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+        if (!allowedImageTypes.includes(personalPhotoFile.type)) {
+          // Clean up ID card if it was uploaded
+          if (idCardUrl) {
+            const idPath = idCardUrl.split("/").slice(-2).join("/");
+            await supabase.storage.from("profile_pictures").remove([idPath]);
+          }
+          await supabase.from("users").delete().eq("id", user.id);
+          return NextResponse.json(
+            { success: false, message: "Personal Photo must be JPEG/PNG/WebP" },
+            { status: 400 }
+          );
+        }
+        if (personalPhotoFile.size > maxSize) {
+          // Clean up ID card if it was uploaded
+          if (idCardUrl) {
+            const idPath = idCardUrl.split("/").slice(-2).join("/");
+            await supabase.storage.from("profile_pictures").remove([idPath]);
+          }
+          await supabase.from("users").delete().eq("id", user.id);
+          return NextResponse.json(
+            { success: false, message: "Personal Photo file too large (max 10MB)" },
+            { status: 400 }
+          );
+        }
+
+        const ext = personalPhotoFile.name.split(".").pop();
+        const filename = `${uuidv4()}.${ext}`;
+        const path = `verification/${user.id}/personal_photo_${filename}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("profile_pictures")
+          .upload(path, personalPhotoFile, { cacheControl: "3600", upsert: false });
+
+        if (uploadError) {
+          console.error("Personal Photo upload error:", uploadError);
+          // Clean up ID card if it was uploaded
+          if (idCardUrl) {
+            const idPath = idCardUrl.split("/").slice(-2).join("/");
+            await supabase.storage.from("profile_pictures").remove([idPath]);
+          }
+          await supabase.from("users").delete().eq("id", user.id);
+          return NextResponse.json(
+            { success: false, message: "Failed to upload Personal Photo", error: uploadError.message },
+            { status: 500 }
+          );
+        }
+
+        const { data: urlData } = supabase.storage.from("profile_pictures").getPublicUrl(path);
+        personalPhotoUrl = urlData.publicUrl || null;
+      } else if (isMultipart && (!personalPhotoFile || personalPhotoFile.size === 0)) {
+        // If FormData is sent but personal photo is missing, clean up and return error
+        if (idCardUrl) {
+          const idPath = idCardUrl.split("/").slice(-2).join("/");
+          await supabase.storage.from("profile_pictures").remove([idPath]);
+        }
+        await supabase.from("users").delete().eq("id", user.id);
+        return NextResponse.json(
+          { success: false, message: "Personal photo is required" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // --------------------------------------------------
     // CREATE MEMBER PROFILE
     // --------------------------------------------------
     const { error: profileError } = await supabase
@@ -173,9 +337,25 @@ export async function POST(req) {
         cpr_id: cpr || null,
         type_of_application: typeOfApplication,
         membership_date: membershipDate || new Date(),
+        license_number: licenseNumber || null,
+        years_of_experience: yearsOfExperience || null,
+        id_card_url: idCardUrl,
+        personal_photo_url: personalPhotoUrl,
       });
 
-    if (profileError) throw profileError;
+    if (profileError) {
+      // Clean up uploaded files if profile creation fails
+      if (idCardUrl) {
+        const path = idCardUrl.split("/").slice(-2).join("/");
+        await supabase.storage.from("profile_pictures").remove([path]);
+      }
+      if (personalPhotoUrl) {
+        const path = personalPhotoUrl.split("/").slice(-2).join("/");
+        await supabase.storage.from("profile_pictures").remove([path]);
+      }
+      await supabase.from("users").delete().eq("id", user.id);
+      throw profileError;
+    }
 
     // --------------------------------------------------
     // CREATE SUBSCRIPTION AND PAYMENT RECORDS
