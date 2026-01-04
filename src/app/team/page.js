@@ -127,12 +127,14 @@ export default function TeamPage() {
     return (
       <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 flex gap-6 items-center border border-gray-100 hover:border-[#03215F]/20 group">
         <div className="relative flex-shrink-0">
-          <Image
+          <img
             src={member.image}
             alt={member.name}
             width={120}
             height={120}
             className="rounded-xl object-cover border-2 border-gray-200 group-hover:border-[#03215F] transition-colors duration-300"
+            loading="lazy"
+            
           />
           <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#03215F]/0 to-[#03215F]/0 group-hover:from-[#03215F]/10 group-hover:to-[#AE9B66]/10 transition-all duration-300"></div>
         </div>
