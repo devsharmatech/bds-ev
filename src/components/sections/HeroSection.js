@@ -155,7 +155,7 @@ export default function HeroSection() {
   // Dummy member data for non-logged-in or non-paid members
   const dummyMemberData = {
     full_name: "DR. ABBAS AlFardan",
-    membership_code: "BDS-2000-0000",
+    membership_code: "BDS-XXX-XXXX",
     membership_expiry_date: "2029-12-31",
     membership_type: "paid",
     membership_status: "active",
