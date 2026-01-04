@@ -301,6 +301,43 @@ INSERT INTO subscription_plans (name, display_name, subtitle, description, regis
 ON CONFLICT (name) DO NOTHING;
 ```
 
+## Research Management
+
+```sql
+-- Create research table
+CREATE TABLE IF NOT EXISTS public.research (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT, -- Small description
+  featured_image_url TEXT, -- Optional featured image
+  researcher_name TEXT NOT NULL, -- Name of researcher
+  research_content_url TEXT, -- Downloadable research content
+  external_link TEXT, -- External reference link
+  more_information JSONB DEFAULT '{}'::jsonb, -- Additional information as JSON
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_research_is_active ON research(is_active);
+CREATE INDEX IF NOT EXISTS idx_research_created_at ON research(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_research_title ON research USING gin(to_tsvector('english', title));
+CREATE INDEX IF NOT EXISTS idx_research_description ON research USING gin(to_tsvector('english', description));
+
+-- Storage bucket for research files (if not exists)
+-- Run in Supabase SQL editor:
+-- select storage.create_bucket('research', jsonb_build_object('public', true));
+```
+
+Notes:
+- Storage bucket: `research` (public) to store featured images and research content files
+- Featured image is optional
+- Research content is downloadable (PDF, DOC, etc.)
+- External link for referencing other websites
+- More information stored as JSONB for flexibility
+
+---
+
 ## Environment Variables Required
 
 Add these to your `.env.local` file:

@@ -83,6 +83,7 @@ export default function Sidebar({
     { name: "Committee Pages", icon: FileText, href: "/admin/committee-pages", badge: null },
     { name: "Committee Members", icon: Users, href: "/admin/committee-members", badge: null },
     { name: "Gallery", icon: ImageIcon, href: "/admin/gallery", badge: null },
+    { name: "Research", icon: FileText, href: "/admin/research", badge: null },
     { name: "Site Members", icon: Users, href: "/admin/site-members", badge: null },
     { name: "Subscriptions", icon: CreditCard, href: "/admin/subscriptions", badge: null },
     { name: "Contact Messages", icon: Mail, href: "/admin/contact-messages", badge: null },

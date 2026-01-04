@@ -24,6 +24,7 @@ import {
   Loader2,
   MapPin,
   Clock,
+  FileText,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -138,6 +139,11 @@ export default function Navbar() {
       href: "/committees",
       icon: <Users className="w-4 h-4" />,
       submenu: committeesMenu,
+    },
+    {
+      name: "Research",
+      href: "/research",
+      icon: <FileText className="w-4 h-4" />,
     },
     {
       name: "Gallery",
