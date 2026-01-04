@@ -35,6 +35,14 @@ yarn-error.log*
 
 # vercel
 .vercel
+API_Documentation
+Database_Schema
+DATABASE_MIGRATION
+Environment_Setup
+Integration_Specs
+README.md
+System_Architecture
+Tech_Stack
 
 # typescript
 *.tsbuildinfo
