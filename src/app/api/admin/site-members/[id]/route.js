@@ -37,7 +37,7 @@ export async function PUT(req, { params }) {
       const twitter = (form.get("twitter") || "").toString().trim();
       const sort_order = form.get("sort_order");
       const is_active = form.get("is_active");
-      const group_key = (form.get("group_key") || "").toString().trim().toLowerCase();
+      const group_key = "team";
       const photo = form.get("photo");
       if (name) update.name = name;
       if (title !== undefined) update.title = title || null;

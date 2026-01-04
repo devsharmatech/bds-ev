@@ -641,7 +641,7 @@ function RegisterPageContent() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Full Name (English) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -752,7 +752,7 @@ function RegisterPageContent() {
         </div>
 
         {/* Nationality */}
-        <div className="col-span-2">
+        <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <Globe className="inline w-4 h-4 mr-2" />
             Nationality
@@ -844,7 +844,7 @@ function RegisterPageContent() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Category */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -991,7 +991,7 @@ function RegisterPageContent() {
         </div>
 
         {/* Address */}
-        <div className="md:col-span-2">
+        <div className="grid-cols-1 md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <MapPin className="inline w-4 h-4 mr-2" />
             Address
@@ -1034,7 +1034,7 @@ function RegisterPageContent() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Type of Application */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1094,7 +1094,7 @@ function RegisterPageContent() {
             <p className="text-gray-600">Loading subscription plans...</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {plans.map((plan) => {
               const isSelected = formData.subscriptionPlanId === plan.id;
               const isHighlighted = selectedPlanFromUrl === plan.name;
@@ -1195,7 +1195,7 @@ function RegisterPageContent() {
           Please upload your ID card (CPR) copy and personal photo for verification purposes.
         </p>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* ID Card Upload */}
           <div className="space-y-3">
             <label className="block text-sm font-semibold text-gray-900">

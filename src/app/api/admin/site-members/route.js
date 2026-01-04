@@ -73,7 +73,7 @@ export async function POST(req) {
     } else {
       const body = await req.json();
       const payload = {
-        group_key: (body.group_key || "team").toLowerCase(),
+        group_key: "team",
         name: body.name,
         title: body.title || null,
         role: body.role || null,
