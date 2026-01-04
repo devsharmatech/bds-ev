@@ -349,6 +349,7 @@ CREATE TABLE IF NOT EXISTS public.research (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
+  category TEXT, -- Research category (e.g., Clinical Studies, Case Reports, Review Articles)
   featured_image_url TEXT,
   researcher_name TEXT NOT NULL,
   research_content_url TEXT,
@@ -360,6 +361,7 @@ CREATE TABLE IF NOT EXISTS public.research (
 );
 
 CREATE INDEX IF NOT EXISTS idx_research_is_active ON research(is_active);
+CREATE INDEX IF NOT EXISTS idx_research_category ON research(category);
 CREATE INDEX IF NOT EXISTS idx_research_created_at ON research(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_research_title ON research USING gin(to_tsvector('english', title));
 CREATE INDEX IF NOT EXISTS idx_research_description ON research USING gin(to_tsvector('english', description));

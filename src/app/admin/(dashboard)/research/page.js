@@ -65,6 +65,8 @@ export default function AdminResearchPage() {
   const [form, setForm] = useState({
     title: "",
     description: "",
+    category: "",
+    customCategory: "",
     researcher_name: "",
     external_link: "",
     more_information: {},
@@ -129,6 +131,8 @@ export default function AdminResearchPage() {
     setForm({
       title: "",
       description: "",
+      category: "",
+      customCategory: "",
       researcher_name: "",
       external_link: "",
       more_information: {},
@@ -151,9 +155,15 @@ export default function AdminResearchPage() {
   // Open edit modal
   const openEditModal = (item) => {
     setEditing(item);
+    // Check if category is "Other" or not in the predefined list
+    const predefinedCategories = ["Clinical Studies", "Case Reports", "Review Articles", "Research Papers", "Systematic Reviews", "Meta-Analysis"];
+    const isCustomCategory = item.category && !predefinedCategories.includes(item.category);
+    
     setForm({
       title: item.title || "",
       description: item.description || "",
+      category: isCustomCategory ? "Other" : (item.category || ""),
+      customCategory: isCustomCategory ? item.category : "",
       researcher_name: item.researcher_name || "",
       external_link: item.external_link || "",
       more_information: item.more_information || {},
@@ -234,6 +244,11 @@ export default function AdminResearchPage() {
       const fd = new FormData();
       fd.append("title", form.title.trim());
       fd.append("description", form.description.trim() || "");
+      // Use custom category if "Other" is selected, otherwise use selected category
+      const finalCategory = form.category === "Other" && form.customCategory.trim() 
+        ? form.customCategory.trim() 
+        : (form.category.trim() || "");
+      fd.append("category", finalCategory);
       fd.append("researcher_name", form.researcher_name.trim());
       fd.append("external_link", form.external_link.trim() || "");
       fd.append("more_information", JSON.stringify(form.more_information || {}));
@@ -451,6 +466,47 @@ export default function AdminResearchPage() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F]/30 focus:border-[#03215F] bg-white/50 transition-all"
                       placeholder="Enter research title"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Category
+                    </label>
+                    <select
+                      value={form.category}
+                      onChange={(e) => {
+                        setForm({ 
+                          ...form, 
+                          category: e.target.value,
+                          customCategory: e.target.value !== "Other" ? "" : form.customCategory
+                        });
+                      }}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F]/30 focus:border-[#03215F] bg-white/50 transition-all"
+                    >
+                      <option value="">Select Category</option>
+                      <option value="Clinical Studies">Clinical Studies</option>
+                      <option value="Case Reports">Case Reports</option>
+                      <option value="Review Articles">Review Articles</option>
+                      <option value="Research Papers">Research Papers</option>
+                      <option value="Systematic Reviews">Systematic Reviews</option>
+                      <option value="Meta-Analysis">Meta-Analysis</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    {form.category === "Other" && (
+                      <div className="mt-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Custom Category <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required={form.category === "Other"}
+                          value={form.customCategory}
+                          onChange={(e) => setForm({ ...form, customCategory: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F]/30 focus:border-[#03215F] bg-white/50 transition-all"
+                          placeholder="Enter custom category name"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -941,6 +997,7 @@ export default function AdminResearchPage() {
                     <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
                       <CalendarDays className="w-3 h-3" />
                       <span>{formatDate(item.created_at)}</span>
+                     
                       {item.updated_at !== item.created_at && (
                         <>
                           <span className="mx-1">•</span>
@@ -948,7 +1005,12 @@ export default function AdminResearchPage() {
                         </>
                       )}
                     </div>
-                    
+                    {item.category && (
+                        <div className="text-xs text-gray-500">
+                          
+                          <span className="px-2 py-0.5 bg-[#03215F]/10 text-[#03215F] rounded-full">{item.category}</span>
+                        </div>
+                      )}
                     <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-2 hover:text-[#03215F] transition-colors">
                       {item.title}
                     </h3>
@@ -1106,6 +1168,15 @@ export default function AdminResearchPage() {
                       <span className="font-medium text-gray-800">{selectedItem.researcher_name}</span>
                     </div>
                   </div>
+                  
+                  {selectedItem.category && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2 text-sm">Category</h4>
+                      <div className="bg-[#03215F]/10 text-[#03215F] px-4 py-3 rounded-lg font-medium">
+                        {selectedItem.category}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {selectedItem.external_link && (

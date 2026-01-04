@@ -108,6 +108,7 @@ export async function PUT(request, { params }) {
 
       if (formData.get('title') !== null) updateData.title = formData.get('title');
       if (formData.get('description') !== null) updateData.description = formData.get('description') || null;
+      if (formData.get('category') !== null) updateData.category = formData.get('category') || null;
       if (formData.get('researcher_name') !== null) updateData.researcher_name = formData.get('researcher_name');
       if (formData.get('external_link') !== null) updateData.external_link = formData.get('external_link') || null;
       
@@ -136,6 +137,7 @@ export async function PUT(request, { params }) {
       const body = await request.json();
       if (body.title !== undefined) updateData.title = body.title;
       if (body.description !== undefined) updateData.description = body.description || null;
+      if (body.category !== undefined) updateData.category = body.category || null;
       if (body.researcher_name !== undefined) updateData.researcher_name = body.researcher_name;
       if (body.external_link !== undefined) updateData.external_link = body.external_link || null;
       if (body.more_information !== undefined) updateData.more_information = body.more_information || {};

@@ -33,21 +33,32 @@ export default function ResearchPage() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("created_at.desc");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
   const [selectedResearch, setSelectedResearch] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const searchTimeoutRef = useRef(null);
 
   // Load research
-  const loadResearch = useCallback(async (page = 1, append = false, search = null) => {
+  const loadResearch = useCallback(async (page = 1, append = false, search = null, category = null, customCat = null) => {
     if (!append) setLoading(true);
     try {
       const searchTerm = search !== null ? search : searchQuery;
+      const categoryFilter = category !== null ? category : selectedCategory;
+      const customCatFilter = customCat !== null ? customCat : customCategory;
+      
+      // Use custom category if "Other" is selected, otherwise use selected category
+      const finalCategory = categoryFilter === "Other" && customCatFilter.trim() 
+        ? customCatFilter.trim() 
+        : (categoryFilter || "");
+      
       const params = new URLSearchParams({
         page: page.toString(),
         per_page: pagination.per_page.toString(),
         sort: sortBy,
         ...(searchTerm && { q: searchTerm }),
+        ...(finalCategory && { category: finalCategory }),
       });
 
       const res = await fetch(`/api/research?${params}`);
@@ -74,7 +85,7 @@ export default function ResearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.per_page, sortBy, searchQuery]);
+  }, [pagination.per_page, sortBy, searchQuery, selectedCategory, customCategory]);
 
   // Debounced search effect
   useEffect(() => {
@@ -84,7 +95,7 @@ export default function ResearchPage() {
 
     searchTimeoutRef.current = setTimeout(() => {
       setPagination((prev) => ({ ...prev, page: 1 }));
-      loadResearch(1, false, searchQuery);
+      loadResearch(1, false, searchQuery, selectedCategory, customCategory);
     }, 500);
 
     return () => {
@@ -94,9 +105,35 @@ export default function ResearchPage() {
     };
   }, [searchQuery, loadResearch]);
 
+  // Debounced custom category filter effect
+  useEffect(() => {
+    if (selectedCategory !== "Other") return;
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      if (customCategory.trim()) {
+        setPagination((prev) => ({ ...prev, page: 1 }));
+        loadResearch(1, false, searchQuery, selectedCategory, customCategory.trim());
+      } else if (customCategory === "") {
+        // If custom category is cleared, reload without category filter
+        setPagination((prev) => ({ ...prev, page: 1 }));
+        loadResearch(1, false, searchQuery, "", "");
+      }
+    }, 500);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [customCategory, selectedCategory, searchQuery, loadResearch]);
+
   useEffect(() => {
     loadResearch(1, false);
-  }, [sortBy, loadResearch]);
+  }, [sortBy, selectedCategory, customCategory, loadResearch]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -290,12 +327,49 @@ export default function ResearchPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Category
                       </label>
-                      <select className="w-full px-3 py-2 border border-gray-200 rounded-lg">
-                        <option>All Categories</option>
-                        <option>Clinical Studies</option>
-                        <option>Case Reports</option>
-                        <option>Review Articles</option>
+                      <select 
+                        value={selectedCategory}
+                        onChange={(e) => {
+                          setSelectedCategory(e.target.value);
+                          if (e.target.value !== "Other") {
+                            setCustomCategory("");
+                          }
+                          setPagination({ ...pagination, page: 1 });
+                          const finalCat = e.target.value === "Other" && customCategory.trim() 
+                            ? customCategory.trim() 
+                            : e.target.value;
+                          loadResearch(1, false, searchQuery, e.target.value, e.target.value === "Other" ? customCategory : "");
+                        }}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                      >
+                        <option value="">All Categories</option>
+                        <option value="Clinical Studies">Clinical Studies</option>
+                        <option value="Case Reports">Case Reports</option>
+                        <option value="Review Articles">Review Articles</option>
+                        <option value="Research Papers">Research Papers</option>
+                        <option value="Systematic Reviews">Systematic Reviews</option>
+                        <option value="Meta-Analysis">Meta-Analysis</option>
+                        <option value="Other">Other</option>
                       </select>
+                      {selectedCategory === "Other" && (
+                        <div className="mt-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Custom Category <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={customCategory}
+                            onChange={(e) => {
+                              setCustomCategory(e.target.value);
+                            }}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#03215F]/20 focus:border-[#03215F]"
+                            placeholder="Enter custom category name"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Enter the category name to filter by
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -412,8 +486,12 @@ export default function ResearchPage() {
                       <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
                         <CalendarDays className="w-3 h-3" />
                         <span>{formatDate(item.created_at)}</span>
-                        <span className="mx-1">•</span>
-                        <span className="px-2 py-0.5 bg-gray-100 rounded-full">Study</span>
+                        {item.category && (
+                          <>
+                            <span className="mx-1">•</span>
+                            <span className="px-2 py-0.5 bg-[#03215F]/10 text-[#03215F] rounded-full">{item.category}</span>
+                          </>
+                        )}
                       </div>
                       
                       <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-2 group-hover:text-[#03215F] transition-colors">
@@ -581,6 +659,11 @@ export default function ResearchPage() {
                     <span className="px-3 py-1 bg-[#03215F]/10 text-[#03215F] text-sm font-medium rounded-full">
                       Research Paper
                     </span>
+                    {selectedResearch.category && (
+                      <span className="px-3 py-1 bg-[#AE9B66]/10 text-[#AE9B66] text-sm font-medium rounded-full">
+                        {selectedResearch.category}
+                      </span>
+                    )}
                     <span className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
                       Published {formatDate(selectedResearch.created_at)}
                     </span>

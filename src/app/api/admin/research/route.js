@@ -30,6 +30,7 @@ export async function GET(request) {
     const page = parseInt(url.searchParams.get('page') || '1', 10);
     const per_page = parseInt(url.searchParams.get('per_page') || '20', 10);
     const q = (url.searchParams.get('q') || '').trim();
+    const category = url.searchParams.get('category') || '';
     const sort = url.searchParams.get('sort') || 'created_at.desc';
 
     const from = Math.max(0, (page - 1) * per_page);
@@ -42,6 +43,11 @@ export async function GET(request) {
     // Search filter
     if (q) {
       query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%,researcher_name.ilike.%${q}%`);
+    }
+
+    // Category filter
+    if (category) {
+      query = query.eq('category', category);
     }
 
     // Sort
@@ -110,6 +116,7 @@ export async function POST(request) {
 
       researchData.title = formData.get('title');
       researchData.description = formData.get('description') || null;
+      researchData.category = formData.get('category') || null;
       researchData.researcher_name = formData.get('researcher_name');
       researchData.external_link = formData.get('external_link') || null;
       
@@ -132,6 +139,7 @@ export async function POST(request) {
       researchData = {
         title: body.title,
         description: body.description || null,
+        category: body.category || null,
         researcher_name: body.researcher_name,
         external_link: body.external_link || null,
         more_information: body.more_information || {}

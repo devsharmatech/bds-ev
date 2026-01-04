@@ -309,6 +309,7 @@ CREATE TABLE IF NOT EXISTS public.research (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT, -- Small description
+  category TEXT, -- Research category (e.g., Clinical Studies, Case Reports, Review Articles)
   featured_image_url TEXT, -- Optional featured image
   researcher_name TEXT NOT NULL, -- Name of researcher
   research_content_url TEXT, -- Downloadable research content
@@ -320,6 +321,7 @@ CREATE TABLE IF NOT EXISTS public.research (
 );
 
 CREATE INDEX IF NOT EXISTS idx_research_is_active ON research(is_active);
+CREATE INDEX IF NOT EXISTS idx_research_category ON research(category);
 CREATE INDEX IF NOT EXISTS idx_research_created_at ON research(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_research_title ON research USING gin(to_tsvector('english', title));
 CREATE INDEX IF NOT EXISTS idx_research_description ON research USING gin(to_tsvector('english', description));
@@ -327,6 +329,10 @@ CREATE INDEX IF NOT EXISTS idx_research_description ON research USING gin(to_tsv
 -- Storage bucket for research files (if not exists)
 -- Run in Supabase SQL editor:
 -- select storage.create_bucket('research', jsonb_build_object('public', true));
+
+-- Add category column if table already exists (migration)
+ALTER TABLE public.research ADD COLUMN IF NOT EXISTS category TEXT;
+CREATE INDEX IF NOT EXISTS idx_research_category ON research(category);
 ```
 
 Notes:

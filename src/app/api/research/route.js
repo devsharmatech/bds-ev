@@ -8,6 +8,7 @@ export async function GET(request) {
     const page = parseInt(url.searchParams.get('page') || '1', 10);
     const per_page = parseInt(url.searchParams.get('per_page') || '12', 10);
     const q = (url.searchParams.get('q') || '').trim();
+    const category = url.searchParams.get('category') || '';
     const sort = url.searchParams.get('sort') || 'created_at.desc';
 
     const from = Math.max(0, (page - 1) * per_page);
@@ -15,12 +16,17 @@ export async function GET(request) {
 
     let query = supabase
       .from('research')
-      .select('id, title, description, featured_image_url, researcher_name, external_link, research_content_url, created_at, updated_at', { count: 'exact' })
+      .select('id, title, description, category, featured_image_url, researcher_name, external_link, research_content_url, created_at, updated_at', { count: 'exact' })
       .eq('is_active', true);
 
     // Search filter
     if (q) {
       query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%,researcher_name.ilike.%${q}%`);
+    }
+
+    // Category filter
+    if (category) {
+      query = query.eq('category', category);
     }
 
     // Sort
