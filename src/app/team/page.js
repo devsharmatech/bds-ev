@@ -130,11 +130,10 @@ export default function TeamPage() {
           <img
             src={member.image}
             alt={member.name}
-            width={120}
-            height={120}
+            style={{ width: "120px", height: "120px" }}
             className="rounded-xl object-cover border-2 border-gray-200 group-hover:border-[#03215F] transition-colors duration-300"
             loading="lazy"
-            
+
           />
           <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#03215F]/0 to-[#03215F]/0 group-hover:from-[#03215F]/10 group-hover:to-[#AE9B66]/10 transition-all duration-300"></div>
         </div>
