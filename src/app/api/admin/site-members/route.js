@@ -41,7 +41,7 @@ export async function POST(req) {
     const contentType = req.headers.get("content-type") || "";
     if (contentType.includes("multipart/form-data")) {
       const form = await req.formData();
-      const group_key = (form.get("group_key") || "about").toString().toLowerCase();
+      const group_key = "team";
       const name = (form.get("name") || "").toString().trim();
       const title = (form.get("title") || "").toString().trim() || null;
       const role = (form.get("role") || "").toString().trim() || null;
