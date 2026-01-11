@@ -176,7 +176,7 @@ export default function CommitteesPage() {
               </div>
               <div className="flex items-center">
                 <Users className="w-5 h-5 mr-2" />
-                <span>60+ Committee Members</span>
+                <span>60+ Committee Chairman</span>
               </div>
               <div className="flex items-center">
                 <Calendar className="w-5 h-5 mr-2" />
@@ -366,7 +366,7 @@ export default function CommitteesPage() {
                 <ul className="space-y-3">
                   {[
                     "Professional leadership experience",
-                    "Networking with committee members",
+                    "Networking with committee chairman",
                     "Skill development in specialized areas",
                     "Direct impact on BDS activities",
                     "Recognition within dental community",

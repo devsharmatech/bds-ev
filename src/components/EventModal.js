@@ -1548,11 +1548,11 @@ export default function EventModal({
                   />
                 </div>
 
-                {/* NERA Fields */}
+                {/* NHRA Fields */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      NERA CME Hrs
+                      NHRA-CME Hrs
                     </label>
                     <MemoizedInput
                       name="nera_cme_hours"
@@ -1566,13 +1566,13 @@ export default function EventModal({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      NERA Code
+                    NHRA Code
                     </label>
                     <MemoizedInput
                       name="nera_code"
                       value={formData.nera_code}
                       onChange={handleChange}
-                      placeholder="Enter NERA code"
+                      placeholder="Enter NHRA code"
                     />
                   </div>
                 </div>

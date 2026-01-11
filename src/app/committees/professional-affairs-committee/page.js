@@ -98,7 +98,7 @@ export default function ProfessionalAffairsCommitteePage() {
 
         {members.length > 0 && (
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Committee Members</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Committee Chairman</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {members.map((m) => (
                 <div key={m.id} className="bg-white rounded-xl p-6 shadow-lg">

@@ -355,7 +355,7 @@ export default function AdminCommitteeMembersPage() {
         {showDeleteModal && selectedMember && (
           <DeleteModal
             item={selectedMember}
-            itemType="committee member"
+            itemType="committee chairman"
             onClose={() => setShowDeleteModal(false)}
             onConfirm={handleDeleteConfirm}
             loading={modalLoading}
@@ -369,7 +369,7 @@ export default function AdminCommitteeMembersPage() {
           <Modal
             open={showCreateModal}
             onClose={() => setShowCreateModal(false)}
-            title={editing ? "Edit Committee Member" : "Add New Member"}
+            title={editing ? "Edit Committee Chairman" : "Committee Chairman"}
             size="lg"
           >
             <form onSubmit={handleSave} className="space-y-6">
@@ -578,7 +578,7 @@ export default function AdminCommitteeMembersPage() {
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      {editing ? "Update Member" : "Add Member"}
+                      {editing ? "Update Member" : "Add Committee Chairman"}
                     </>
                   )}
                 </button>
@@ -602,10 +602,10 @@ export default function AdminCommitteeMembersPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
-                  Committee Members
+                  Committee Chairman
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Manage committee members, positions, and profiles
+                  Manage committee chairman, positions, and profiles
                 </p>
               </div>
             </div>
@@ -617,7 +617,7 @@ export default function AdminCommitteeMembersPage() {
               className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#03215F] transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
             >
               <Plus className="w-5 h-5" />
-              Add New Member
+              Committee Chairman
             </button>
           </div>
         </motion.div>
@@ -635,7 +635,7 @@ export default function AdminCommitteeMembersPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search members..."
+                placeholder="Search chairman..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange("search", e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
@@ -705,25 +705,25 @@ export default function AdminCommitteeMembersPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="w-12 h-12 text-[#03215F] animate-spin mb-4" />
-              <p className="text-gray-600">Loading committee members...</p>
+              <p className="text-gray-600">Loading committee chairman...</p>
             </div>
           ) : members.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Users className="w-16 h-16 text-gray-300 mb-4" />
               <p className="text-gray-600 text-lg mb-2">
-                No members found
+                No chairman found
               </p>
               <p className="text-gray-500 text-sm mb-6">
                 {filters.search || filters.committee
                   ? "Try changing your filters"
-                  : "Add your first committee member to get started"}
+                  : "Add your first committee chairman to get started"}
               </p>
               <button
                 onClick={openCreateModal}
                 className="px-6 py-2.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#03215F] transition-all duration-200 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Add Member
+                Committee Chairman
               </button>
             </div>
           ) : (
@@ -843,7 +843,7 @@ export default function AdminCommitteeMembersPage() {
                     <span className="font-semibold text-gray-900">
                       {pagination.total}
                     </span>{" "}
-                    members
+                    chairman
                   </div>
                   <div className="flex items-center gap-2">
                     <button
