@@ -452,7 +452,8 @@ export async function POST(request) {
       invoiceItems,
       callbackUrl,
       errorUrl,
-      referenceId: payment_id
+      referenceId: payment_id,
+      logoUrl: process.env.NEXT_PUBLIC_SITE_LOGO_URL
     });
 
     if (!initiateResult.success) {

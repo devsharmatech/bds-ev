@@ -24,7 +24,9 @@ import {
   Key,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Mic,
+  Video
 } from "lucide-react";
 // import { jwtDecode } from "jwt-decode";
 import { Image as ImageIcon } from "lucide-react";
@@ -79,6 +81,8 @@ export default function Sidebar({
     { name: "Events", icon: Calendar, href: "/admin/events", badge: null },
     { name: "Members", icon: Users, href: "/admin/members", badge: null },
     { name: "CheckIn", icon: Users, href: "/admin/check-in", badge: null },
+    { name: "Speaker Requests", icon: Mic, href: "/admin/speaker-requests", badge: null },
+    { name: "Hero Settings", icon: Video, href: "/admin/hero-settings", badge: null },
     { name: "Committees", icon: Globe, href: "/admin/committees", badge: null },
     { name: "Committee Pages", icon: FileText, href: "/admin/committee-pages", badge: null },
     { name: "Committee Chairman", icon: Users, href: "/admin/committee-members", badge: null },

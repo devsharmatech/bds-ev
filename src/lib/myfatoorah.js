@@ -40,7 +40,8 @@ export async function initiateEventPayment({
   invoiceItems,
   callbackUrl,
   errorUrl,
-  referenceId
+  referenceId,
+  logoUrl // Optional: URL to your logo image
 }) {
   try {
     if (!MYFATOORAH_EVENT_API_KEY) {
@@ -62,8 +63,14 @@ export async function initiateEventPayment({
       ErrorUrl: errorUrl,
       InvoiceItems: invoiceItems,
       DisplayCurrencyIso: 'BHD',
-      ReferenceId: referenceId
+      ReferenceId: referenceId,
+      MobileCountryCode: '+973'
     };
+
+    // Add logo URL if provided
+    if (logoUrl) {
+      requestBody.UserDefinedField = logoUrl;
+    }
 
     console.log('[MYFATOORAH] InitiatePayment Request (Events):', {
       url: `${MYFATOORAH_BASE_URL}/v2/InitiatePayment`,
@@ -179,7 +186,8 @@ export async function executeEventPayment({
   callbackUrl,
   errorUrl,
   referenceId,
-  paymentMethodId
+  paymentMethodId,
+  logoUrl // Optional: URL to your logo image
 }) {
   try {
     if (!MYFATOORAH_EVENT_API_KEY) {
@@ -209,8 +217,16 @@ export async function executeEventPayment({
       InvoiceItems: invoiceItems,
       DisplayCurrencyIso: 'BHD',
       ReferenceId: referenceId,
-      PaymentMethodId: paymentMethodId
+      PaymentMethodId: paymentMethodId,
+      MobileCountryCode: '+973',
+      Language: 'en',
+      SupplierName: 'Bahrain Dental Society'
     };
+
+    // Add logo URL if provided
+    if (logoUrl) {
+      requestBody.UserDefinedField = logoUrl;
+    }
 
     console.log('[MYFATOORAH] ExecutePayment Request (Events):', {
       url: `${MYFATOORAH_BASE_URL}/v2/ExecutePayment`,
@@ -406,7 +422,8 @@ export async function createSubscriptionPaymentInvoice({
   invoiceItems,
   callbackUrl,
   errorUrl,
-  referenceId
+  referenceId,
+  logoUrl // Optional: URL to your logo image
 }) {
   try {
     if (!MYFATOORAH_SUBSCRIPTION_API_KEY) {
@@ -429,8 +446,16 @@ export async function createSubscriptionPaymentInvoice({
       ErrorUrl: errorUrl,
       InvoiceItems: invoiceItems,
       DisplayCurrencyIso: 'BHD',
-      ReferenceId: referenceId
+      ReferenceId: referenceId,
+      MobileCountryCode: '+973',
+      Language: 'en',
+      SupplierName: 'Bahrain Dental Society'
     };
+
+    // Add logo URL if provided
+    if (logoUrl) {
+      requestBody.UserDefinedField = logoUrl;
+    }
 
     // Log full request details
     console.log('[MYFATOORAH] SendPayment Request (Subscriptions):', {
@@ -587,7 +612,8 @@ export async function initiateSubscriptionPayment({
   invoiceItems,
   callbackUrl,
   errorUrl,
-  referenceId
+  referenceId,
+  logoUrl // Optional: URL to your logo image
 }) {
   try {
     if (!MYFATOORAH_SUBSCRIPTION_API_KEY) {
@@ -609,8 +635,16 @@ export async function initiateSubscriptionPayment({
       ErrorUrl: errorUrl,
       InvoiceItems: invoiceItems,
       DisplayCurrencyIso: 'BHD',
-      ReferenceId: referenceId
+      ReferenceId: referenceId,
+      MobileCountryCode: '+973',
+      Language: 'en',
+      SupplierName: 'Bahrain Dental Society'
     };
+
+    // Add logo URL if provided
+    if (logoUrl) {
+      requestBody.UserDefinedField = logoUrl;
+    }
 
     console.log('[MYFATOORAH] InitiatePayment Request:', {
       url: `${MYFATOORAH_BASE_URL}/v2/InitiatePayment`,
@@ -733,7 +767,8 @@ export async function executeSubscriptionPayment({
   callbackUrl,
   errorUrl,
   referenceId,
-  paymentMethodId
+  paymentMethodId,
+  logoUrl // Optional: URL to your logo image
 }) {
   try {
     if (!MYFATOORAH_SUBSCRIPTION_API_KEY) {
@@ -763,8 +798,16 @@ export async function executeSubscriptionPayment({
       InvoiceItems: invoiceItems,
       DisplayCurrencyIso: 'BHD',
       ReferenceId: referenceId,
-      PaymentMethodId: paymentMethodId
+      PaymentMethodId: paymentMethodId,
+      MobileCountryCode: '+973',
+      Language: 'en',
+      SupplierName: 'Bahrain Dental Society'
     };
+
+    // Add logo URL if provided
+    if (logoUrl) {
+      requestBody.UserDefinedField = logoUrl;
+    }
 
     console.log('[MYFATOORAH] ExecutePayment Request:', {
       url: `${MYFATOORAH_BASE_URL}/v2/ExecutePayment`,

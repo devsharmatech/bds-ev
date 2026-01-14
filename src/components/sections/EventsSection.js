@@ -28,6 +28,7 @@ import {
 import EventModal from "@/components/modals/EventModal";
 import LoginModal from "@/components/modals/LoginModal";
 import RegistrationLiteModal from "@/components/modals/RegistrationLiteModal";
+import SpeakerApplicationModal from "@/components/SpeakerApplicationModal";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import EventDetailsModal from "@/components/modals/EventDetailsModal";
@@ -211,10 +212,20 @@ export default function EventsSection() {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedDetailsEvent, setSelectedDetailsEvent] = useState(null);
+  const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
+  const [selectedSpeakerEvent, setSelectedSpeakerEvent] = useState(null);
+
   const handleViewDetails = (event) => {
     setSelectedDetailsEvent(event);
     setIsDetailsModalOpen(true);
   };
+
+  const handleJoinAsSpeaker = (event) => {
+    // No login required - anyone can apply as speaker
+    setSelectedSpeakerEvent(event);
+    setIsSpeakerModalOpen(true);
+  };
+
   // Check if user is logged in
   useEffect(() => {
     checkAuth();
@@ -735,41 +746,54 @@ export default function EventsSection() {
                           </div>
 
                           {/* Action Button */}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleViewDetails(event)}
-                              className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-1.5"
-                            >
-                              <Eye className="w-4 h-4" />
-                              Details
-                            </button>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleViewDetails(event)}
+                                className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-1.5"
+                              >
+                                <Eye className="w-4 h-4" />
+                                Details
+                              </button>
 
-                            {!event.joined && derivedStatus === "upcoming" && !isFull ? (
+                              {!event.joined && derivedStatus === "upcoming" && !isFull ? (
+                                <button
+                                  onClick={() => handleJoinNow(event)}
+                                  className="flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
+                                >
+                                  <ArrowRight className="w-4 h-4" />
+                                  Join
+                                </button>
+                              ) : event.joined && event.is_paid && !hasPaid ? (
+                               
+                                <button
+                                  onClick={() => handleViewDetails(event)}
+                                  className="flex-1 py-2.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  Joined
+                                </button>
+                              ) : event.joined ? (
+                                <button
+                                  onClick={() => handleViewDetails(event)}
+                                  className="flex-1 py-2.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  Joined
+                                </button>
+                              ) : null}
+                            </div>
+                            
+                            {/* Join as Speaker Button */}
+                            {derivedStatus === "upcoming" && (
                               <button
-                                onClick={() => handleJoinNow(event)}
-                                className="flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
+                                onClick={() => handleJoinAsSpeaker(event)}
+                                className="w-full py-2 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity"
                               >
-                                <ArrowRight className="w-4 h-4" />
-                                Join
+                                <Briefcase className="w-4 h-4" />
+                                Join as Speaker
                               </button>
-                            ) : event.joined && event.is_paid && !hasPaid ? (
-                             
-                              <button
-                                onClick={() => handleViewDetails(event)}
-                                className="flex-1 py-2.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                                Joined
-                              </button>
-                            ) : event.joined ? (
-                              <button
-                                onClick={() => handleViewDetails(event)}
-                                className="flex-1 py-2.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                                Joined
-                              </button>
-                            ) : null}
+                            )}
                           </div>
                         </div>
                       </div>
@@ -891,6 +915,18 @@ export default function EventsSection() {
           onJoinClick={(event) => {
             setIsDetailsModalOpen(false);
             handleJoinNow(event);
+          }}
+        />
+      )}
+
+      {/* Speaker Application Modal */}
+      {selectedSpeakerEvent && (
+        <SpeakerApplicationModal
+          event={selectedSpeakerEvent}
+          isOpen={isSpeakerModalOpen}
+          onClose={() => {
+            setIsSpeakerModalOpen(false);
+            setSelectedSpeakerEvent(null);
           }}
         />
       )}

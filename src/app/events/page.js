@@ -37,17 +37,21 @@ import {
   TrendingUp,
   AlertCircle,
   X,
+  BadgeCheck,
+  Printer,
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { jwtDecode } from "jwt-decode";
+import { QRCodeCanvas } from "qrcode.react";
 import LoginModal from "@/components/modals/LoginModal";
 import RegistrationLiteModal from "@/components/modals/RegistrationLiteModal";
 import EventDetailsModal from "@/components/modals/EventDetailsModal";
 import EventModal from "@/components/modals/EventModal"; // Your join modal
+import SpeakerApplicationModal from "@/components/SpeakerApplicationModal";
 
 // Bahrain Flag Component
 const BahrainFlag = () => (
@@ -232,6 +236,13 @@ function EventsPageContent() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalAllCount, setTotalAllCount] = useState(0);
   const [isQuickSignupOpen, setIsQuickSignupOpen] = useState(false);
+  const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
+  const [selectedSpeakerEvent, setSelectedSpeakerEvent] = useState(null);
+  const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
+  const [badgeFormData, setBadgeFormData] = useState({ event_id: '', email: '' });
+  const [badgeVerifying, setBadgeVerifying] = useState(false);
+  const [badgeData, setBadgeData] = useState(null);
+  const [badgeStatus, setBadgeStatus] = useState(null); // 'approved', 'rejected', 'not_found'
 
   const categories = [
     "All",
@@ -553,6 +564,212 @@ function EventsPageContent() {
     }
   };
 
+  // Handle badge verification
+  const handleBadgeVerify = async (e) => {
+    e.preventDefault();
+    
+    if (!badgeFormData.event_id || !badgeFormData.email) {
+      toast.error('Please select an event and enter your email');
+      return;
+    }
+
+    setBadgeVerifying(true);
+    setBadgeData(null);
+    setBadgeStatus(null);
+
+    try {
+      // First try to get approved speaker badge
+      const badgeRes = await fetch(`/api/speaker-badge/verify?event_id=${badgeFormData.event_id}&email=${encodeURIComponent(badgeFormData.email)}`);
+
+      if (badgeRes.ok) {
+        const data = await badgeRes.json();
+        if (data.success) {
+          setBadgeData(data);
+          setBadgeStatus('approved');
+        } else {
+          // Check if there's a pending/rejected request
+          const checkRes = await fetch(`/api/events/speaker-request/check?event_id=${badgeFormData.event_id}&email=${encodeURIComponent(badgeFormData.email)}`);
+
+          if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            if (checkData.exists) {
+              setBadgeStatus(checkData.status);
+            } else {
+              setBadgeStatus('not_found');
+            }
+          } else {
+            setBadgeStatus('not_found');
+          }
+        }
+      } else {
+        // Check if there's a pending/rejected request
+        const checkRes = await fetch(`/api/events/speaker-request/check?event_id=${badgeFormData.event_id}&email=${encodeURIComponent(badgeFormData.email)}`);
+
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          if (checkData.exists) {
+            setBadgeStatus(checkData.status);
+          } else {
+            setBadgeStatus('not_found');
+          }
+        } else {
+          setBadgeStatus('not_found');
+        }
+      }
+    } catch (error) {
+      console.error('Badge verification error:', error);
+      setBadgeStatus('error');
+    } finally {
+      setBadgeVerifying(false);
+    }
+  };
+
+  // Handle badge print
+  const handleBadgePrint = () => {
+    const printContent = document.getElementById('speaker-badge-print');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Speaker Badge - ${badgeData?.speaker?.full_name}</title>
+          <style>
+            @page { 
+              size: 4in 6in; 
+              margin: 0; 
+            }
+            @media print {
+              * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+              }
+              body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              color-adjust: exact !important;
+            }
+            body { 
+              margin: 0; 
+              padding: 0; 
+              display: flex; 
+              justify-content: center; 
+              align-items: center; 
+              min-height: 100vh; 
+              background: #f5f5f5;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .badge { 
+              width: 4in; 
+              height: 6in; 
+              background: #03215F !important;
+              color: white !important; 
+              padding: 20px; 
+              box-sizing: border-box; 
+              display: flex; 
+              flex-direction: column; 
+              align-items: center; 
+              text-align: center; 
+              font-family: Arial, sans-serif;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .badge-header { 
+              font-size: 12px; 
+              text-transform: uppercase; 
+              letter-spacing: 2px; 
+              margin-bottom: 10px; 
+              color: white !important; 
+            }
+            .badge-title { 
+              font-size: 28px; 
+              font-weight: bold; 
+              color: white !important; 
+              margin-bottom: 20px; 
+            }
+            .badge-avatar {
+              width: 80px;
+              height: 80px;
+              background: rgba(255,255,255,0.2) !important;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-bottom: 15px;
+              font-size: 32px;
+              font-weight: bold;
+              color: white !important;
+            }
+            .badge-name { 
+              font-size: 24px; 
+              font-weight: bold; 
+              margin-bottom: 8px; 
+              color: white !important;
+            }
+            .badge-designation { 
+              font-size: 14px; 
+              color: white !important; 
+              margin-bottom: 20px; 
+            }
+            .badge-event { 
+              font-size: 16px; 
+              margin-bottom: 8px; 
+              border-top: 1px solid rgba(174, 155, 102, 0.5); 
+              border-bottom: 1px solid rgba(174, 155, 102, 0.5); 
+              padding: 15px 0; 
+              width: 100%; 
+              color: white !important;
+              text-transform: capitalize;
+            }
+            .badge-date { 
+              font-size: 12px; 
+              color: white !important; 
+              margin-bottom: 20px; 
+            }
+            .badge-qr { 
+              background: white !important; 
+              padding: 10px; 
+              border-radius: 8px; 
+              margin-bottom: 15px; 
+            }
+            .badge-footer { 
+              font-size: 10px; 
+              color: white !important; 
+              margin-top: auto; 
+            }
+          </style>
+        </head>
+        <body>
+          <div class="badge">
+            <div class="badge-header">Bahrain Dental Society</div>
+            <div class="badge-title">SPEAKER</div>
+            <div class="badge-avatar">${badgeData?.speaker?.full_name?.charAt(0) || 'S'}</div>
+            <div class="badge-name">${badgeData?.speaker?.full_name}</div>
+            <div class="badge-designation">${badgeData?.speaker?.designation || 'Speaker'}</div>
+            <div class="badge-event">${badgeData?.event?.title}</div>
+            <div class="badge-date">${badgeData?.event?.start_datetime ? new Date(badgeData.event.start_datetime).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}</div>
+            <div class="badge-qr">
+              <img src="${document.querySelector('#speaker-badge-print canvas')?.toDataURL()}" width="100" height="100" />
+            </div>
+            <div class="badge-footer">www.bds.org.bh</div>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  };
+
   // Get user price
   const getUserPrice = (event) => {
     if (!event.is_paid) return null;
@@ -662,6 +879,22 @@ function EventsPageContent() {
                   <div className="text-sm">Expert Hosts</div>
                 </div>
               </div>
+            </div>
+
+            {/* Speaker Badge Button */}
+            <div className="mt-8">
+              <button
+                onClick={() => {
+                  setIsBadgeModalOpen(true);
+                  setBadgeFormData({ event_id: '', email: '' });
+                  setBadgeData(null);
+                  setBadgeStatus(null);
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#AE9B66] hover:bg-[#9a8a5a] text-white rounded-full font-semibold transition-all shadow-lg hover:shadow-xl"
+              >
+                <BadgeCheck className="w-5 h-5" />
+                Speaker Badge
+              </button>
             </div>
           </div>
         </div>
@@ -1059,47 +1292,63 @@ function EventsPageContent() {
                             </div>
 
                             {/* Action Button */}
-                            <div className="flex gap-2">
-                              {/* Details Button - Opens EventDetailsModal */}
-                              <button
-                                onClick={() => handleViewDetails(event)}
-                                className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-1.5"
-                              >
-                                <Eye className="w-4 h-4" />
-                                Details
-                              </button>
-
-                              {/* Join allowed only for upcoming and not full; otherwise show details or joined */}
-                              {!event.joined && event.status === "upcoming" && !event.isFull ? (
-                                <button
-                                  onClick={() => handleJoinClick(event)}
-                                  disabled={joiningEvent === event.id}
-                                  className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${joiningEvent === event.id
-                                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                      : "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
-                                    }`}
-                                >
-                                  {joiningEvent === event.id ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                      Joining...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ArrowRight className="w-4 h-4" />
-                                      Join
-                                    </>
-                                  )}
-                                </button>
-                              ) : event.joined ? (
+                            <div className="flex flex-col gap-2">
+                              <div className="flex gap-2">
+                                {/* Details Button - Opens EventDetailsModal */}
                                 <button
                                   onClick={() => handleViewDetails(event)}
-                                  className="flex-1 py-2 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                  className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-1.5"
                                 >
-                                  <CheckCircle className="w-4 h-4" />
-                                  Joined
+                                  <Eye className="w-4 h-4" />
+                                  Details
                                 </button>
-                              ) : null}
+
+                                {/* Join allowed only for upcoming and not full; otherwise show details or joined */}
+                                {!event.joined && event.status === "upcoming" && !event.isFull ? (
+                                  <button
+                                    onClick={() => handleJoinClick(event)}
+                                    disabled={joiningEvent === event.id}
+                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${joiningEvent === event.id
+                                        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                        : "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
+                                      }`}
+                                  >
+                                    {joiningEvent === event.id ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Joining...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ArrowRight className="w-4 h-4" />
+                                        Join
+                                      </>
+                                    )}
+                                  </button>
+                                ) : event.joined ? (
+                                  <button
+                                    onClick={() => handleViewDetails(event)}
+                                    className="flex-1 py-2 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                    Joined
+                                  </button>
+                                ) : null}
+                              </div>
+                              
+                              {/* Join as Speaker - only for upcoming events */}
+                              {event.status === "upcoming" && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedSpeakerEvent(event);
+                                    setIsSpeakerModalOpen(true);
+                                  }}
+                                  className="w-full py-2 border-2 border-[#AE9B66] text-[#AE9B66] rounded-lg font-medium text-sm hover:bg-[#AE9B66] hover:text-white transition-all flex items-center justify-center gap-1.5"
+                                >
+                                  <Mic className="w-4 h-4" />
+                                  Join as Speaker
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1219,6 +1468,203 @@ function EventsPageContent() {
           setIsLoginModalOpen(true);
         }}
       />
+
+      {/* Speaker Application Modal */}
+      {selectedSpeakerEvent && (
+        <SpeakerApplicationModal
+          isOpen={isSpeakerModalOpen}
+          onClose={() => {
+            setIsSpeakerModalOpen(false);
+            setSelectedSpeakerEvent(null);
+          }}
+          event={selectedSpeakerEvent}
+        />
+      )}
+
+      {/* Speaker Badge Verification Modal */}
+      <AnimatePresence>
+        {isBadgeModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setIsBadgeModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-[#03215F] to-[#1a3a7f] p-6 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                      <BadgeCheck className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Speaker Badge</h2>
+                      <p className="text-white/70 text-sm">Verify your speaker status</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsBadgeModalOpen(false)}
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6">
+                {!badgeStatus ? (
+                  <form onSubmit={handleBadgeVerify} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Select Event</label>
+                      <select
+                        value={badgeFormData.event_id}
+                        onChange={e => setBadgeFormData(prev => ({ ...prev, event_id: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                        required
+                      >
+                        <option value="">Choose an event...</option>
+                        {events.map(event => (
+                          <option key={event.id} value={event.id}>{event.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                      <input
+                        type="email"
+                        value={badgeFormData.email}
+                        onChange={e => setBadgeFormData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                        placeholder="Enter your registered email"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={badgeVerifying}
+                      className="w-full py-3 bg-gradient-to-r from-[#03215F] to-[#1a3a7f] text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {badgeVerifying ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        <>
+                          <BadgeCheck className="w-5 h-5" />
+                          Verify Badge
+                        </>
+                      )}
+                    </button>
+                  </form>
+                ) : badgeStatus === 'approved' && badgeData ? (
+                  <div className="space-y-6">
+                    {/* Badge Preview */}
+                    <div id="speaker-badge-print" className="bg-gradient-to-br from-[#03215F] to-[#1a3a7f] rounded-2xl p-6 text-center text-white">
+                      <p className="text-xs uppercase tracking-widest text-white mb-2">Bahrain Dental Society</p>
+                      <h3 className="text-2xl font-bold text-white mb-4">SPEAKER</h3>
+                      <div className="w-20 h-20 bg-white/20 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <span className="text-3xl font-bold">{badgeData.speaker?.full_name?.charAt(0) || 'S'}</span>
+                      </div>
+                      <h4 className="text-xl font-bold mb-1">{badgeData.speaker?.full_name}</h4>
+                      <p className="text-white text-sm mb-4">{badgeData.speaker?.designation || 'Speaker'}</p>
+                      <div className="border-t border-b border-white/20 py-4 mb-4">
+                        <p className="font-semibold capitalize">{badgeData.event?.title}</p>
+                        <p className="text-sm text-white">
+                          {badgeData.event?.start_datetime && new Date(badgeData.event.start_datetime).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg inline-block">
+                        <QRCodeCanvas
+                          value={`https://bds.org.bh/speaker/${badgeData.speaker?.id}`}
+                          size={80}
+                          level="H"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleBadgePrint}
+                        className="flex-1 py-3 bg-[#AE9B66] text-white rounded-xl font-semibold hover:bg-[#9a8a5a] transition-all flex items-center justify-center gap-2"
+                      >
+                        <Printer className="w-5 h-5" />
+                        Print Badge
+                      </button>
+                      <button
+                        onClick={() => {
+                          setBadgeStatus(null);
+                          setBadgeData(null);
+                          setBadgeFormData({ event_id: '', email: '' });
+                        }}
+                        className="px-6 py-3 border-2 border-gray-300 rounded-xl font-semibold hover:bg-gray-50 transition-all"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    {badgeStatus === 'pending' && (
+                      <div className="space-y-4">
+                        <div className="w-16 h-16 bg-yellow-100 rounded-full mx-auto flex items-center justify-center">
+                          <Clock className="w-8 h-8 text-yellow-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900">Application Pending</h3>
+                        <p className="text-gray-600">Your speaker application is currently under review. You will receive an email once it&apos;s approved.</p>
+                      </div>
+                    )}
+                    {badgeStatus === 'rejected' && (
+                      <div className="space-y-4">
+                        <div className="w-16 h-16 bg-red-100 rounded-full mx-auto flex items-center justify-center">
+                          <AlertCircle className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900">Application Rejected</h3>
+                        <p className="text-gray-600">Unfortunately, your speaker application was not approved. Please contact us for more information.</p>
+                      </div>
+                    )}
+                    {(badgeStatus === 'not_found' || badgeStatus === 'error') && (
+                      <div className="space-y-4">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto flex items-center justify-center">
+                          <AlertCircle className="w-8 h-8 text-gray-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900">No Application Found</h3>
+                        <p className="text-gray-600">We couldn&apos;t find a speaker application with this email for the selected event.</p>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        setBadgeStatus(null);
+                        setBadgeData(null);
+                        setBadgeFormData({ event_id: '', email: '' });
+                      }}
+                      className="mt-6 px-6 py-3 bg-[#03215F] text-white rounded-xl font-semibold hover:bg-[#03215F]/90 transition-all"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </MainLayout>
   );
 }

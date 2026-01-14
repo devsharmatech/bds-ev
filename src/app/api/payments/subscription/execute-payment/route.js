@@ -234,7 +234,8 @@ export async function POST(request) {
       callbackUrl,
       errorUrl,
       referenceId: payment_id,
-      paymentMethodId: payment_method_id
+      paymentMethodId: payment_method_id,
+      logoUrl: process.env.NEXT_PUBLIC_SITE_LOGO_URL
     });
 
     if (!executeResult.success) {

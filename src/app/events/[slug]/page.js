@@ -29,12 +29,14 @@ import {
   Info,
   QrCode,
   Download,
+  Mic,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { QRCodeCanvas } from "qrcode.react";
 import LoginModal from "@/components/modals/LoginModal";
 import RegistrationLiteModal from "@/components/modals/RegistrationLiteModal";
 import EventModal from "@/components/modals/EventModal";
+import SpeakerApplicationModal from "@/components/SpeakerApplicationModal";
 
 const formatBHD = (amount) => {
   if (!amount) return "FREE";
@@ -130,6 +132,7 @@ export default function EventDetailsPage() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isQuickSignupOpen, setIsQuickSignupOpen] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
   const qrRef = useRef(null);
 
   useEffect(() => {
@@ -811,6 +814,17 @@ export default function EventDetailsPage() {
                       <Share2 className="w-5 h-5" />
                       Share Event
                     </button>
+
+                    {/* Join as Speaker Button - only for upcoming events */}
+                    {status?.label === "Upcoming" && (
+                      <button
+                        onClick={() => setIsSpeakerModalOpen(true)}
+                        className="w-full px-6 py-3 bg-white border-2 border-[#AE9B66] text-[#AE9B66] rounded-xl font-semibold hover:bg-[#AE9B66] hover:text-white transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Mic className="w-5 h-5" />
+                        Join as Speaker
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -865,6 +879,15 @@ export default function EventDetailsPage() {
             fetchEvent();
             checkAuth();
           }}
+        />
+      )}
+
+      {/* Speaker Application Modal */}
+      {event && (
+        <SpeakerApplicationModal
+          isOpen={isSpeakerModalOpen}
+          onClose={() => setIsSpeakerModalOpen(false)}
+          event={event}
         />
       )}
     </MainLayout>
