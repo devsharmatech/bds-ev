@@ -317,145 +317,278 @@ export default function HeroSection() {
     const printContent = document.getElementById('speaker-badge-print');
     if (!printContent) return;
 
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    
+    const badgeHTML = `
       <!DOCTYPE html>
       <html>
         <head>
           <title>Speaker Badge - ${badgeData?.speaker?.full_name}</title>
           <style>
-            @page { 
-              size: 4in 6in; 
-              margin: 0; 
-            }
-            @media print {
-              * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-              }
-              body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-              }
-            }
-            * {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              color-adjust: exact !important;
-            }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             body { 
-              margin: 0; 
-              padding: 0; 
-              display: flex; 
-              justify-content: center; 
-              align-items: center; 
-              min-height: 100vh; 
-              background: #f5f5f5;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              background: white;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              padding: 20px;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
             }
-            .badge { 
-              width: 4in; 
-              height: 6in; 
-              background: #03215F !important;
-              color: white !important; 
-              padding: 20px; 
-              box-sizing: border-box; 
-              display: flex; 
-              flex-direction: column; 
-              align-items: center; 
-              text-align: center; 
-              font-family: Arial, sans-serif;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
+            .badge-container {
+              width: 400px;
+              height: 600px;
+              background: linear-gradient(135deg, #03215F 0%, #1a3a7f 100%);
+              border-radius: 20px;
+              padding: 30px;
+              color: white;
+              position: relative;
+              overflow: hidden;
+              box-shadow: 0 20px 40px rgba(3, 33, 95, 0.3);
             }
-            .badge-header { 
-              font-size: 12px; 
-              text-transform: uppercase; 
-              letter-spacing: 2px; 
-              margin-bottom: 10px; 
-              color: white !important; 
-            }
-            .badge-title { 
-              font-size: 28px; 
-              font-weight: bold; 
-              color:white !important; 
-              margin-bottom: 20px; 
-            }
-            .badge-avatar {
-              width: 80px;
-              height: 80px;
-              background: rgba(255,255,255,0.2) !important;
+            .badge-bg {
+              position: absolute;
+              top: -100px;
+              right: -100px;
+              width: 300px;
+              height: 300px;
+              background: rgba(255, 255, 255, 0.05);
               border-radius: 50%;
+            }
+            .badge-bg2 {
+              position: absolute;
+              bottom: -150px;
+              left: -150px;
+              width: 400px;
+              height: 400px;
+              background: rgba(255, 255, 255, 0.03);
+              border-radius: 50%;
+            }
+            .header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 30px;
+              position: relative;
+              z-index: 2;
+            }
+            .logo-section {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+            }
+            .logo {
+              width: 50px;
+              height: 50px;
+              background: white;
+              border-radius: 12px;
+              padding: 8px;
               display: flex;
               align-items: center;
               justify-content: center;
-              margin-bottom: 15px;
+            }
+            .org-info h3 {
+              font-size: 14px;
+              font-weight: 700;
+              letter-spacing: 0.5px;
+              margin-bottom: 4px;
+            }
+            .org-info p {
+              font-size: 10px;
+              opacity: 0.8;
+              letter-spacing: 1px;
+            }
+            .speaker-title {
+              text-align: center;
+              margin: 30px 0;
+              position: relative;
+              z-index: 2;
+            }
+            .speaker-title h1 {
               font-size: 32px;
-              font-weight: bold;
-              color: white !important;
+              font-weight: 900;
+              letter-spacing: 2px;
+              margin-bottom: 8px;
             }
-            .badge-name { 
-              font-size: 24px; 
-              font-weight: bold; 
-              margin-bottom: 8px; 
-              color: white !important;
+            .category {
+              font-size: 18px;
+              background: rgba(255, 255, 255, 0.2);
+              padding: 8px 20px;
+              border-radius: 25px;
+              display: inline-block;
+              font-weight: 700;
+              letter-spacing: 2px;
+              text-transform: uppercase;
             }
-            .badge-designation { 
-              font-size: 14px; 
-              color: white !important; 
-              margin-bottom: 20px; 
+            .speaker-info {
+              text-align: center;
+              margin-bottom: 25px;
+              position: relative;
+              z-index: 2;
             }
-            .badge-event { 
-              font-size: 16px; 
-              margin-bottom: 8px; 
-              border-top: 1px solid rgba(174, 155, 102, 0.5); 
-              border-bottom: 1px solid rgba(174, 155, 102, 0.5); 
-              padding: 15px 0; 
-              width: 100%; 
-              color: white !important;
-              text-transform: capitalize;
+            .speaker-name {
+              font-size: 24px;
+              font-weight: 700;
+              margin-bottom: 8px;
             }
-            .badge-date { 
-              font-size: 12px; 
-              color: white !important; 
-              margin-bottom: 20px; 
+            .speaker-title-text {
+              font-size: 16px;
+              opacity: 0.9;
+              margin-bottom: 4px;
             }
-            .badge-qr { 
-              background: white !important; 
-              padding: 10px; 
-              border-radius: 8px; 
-              margin-bottom: 15px; 
+            .speaker-designation {
+              font-size: 14px;
+              opacity: 0.8;
             }
-            .badge-footer { 
-              font-size: 10px; 
-              color: white !important; 
-              margin-top: auto; 
+            .event-info {
+              background: rgba(255, 255, 255, 0.1);
+              border-radius: 15px;
+              padding: 20px;
+              margin-bottom: 25px;
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              position: relative;
+              z-index: 2;
+            }
+            .event-title {
+              font-size: 16px;
+              font-weight: 600;
+              margin-bottom: 12px;
+              line-height: 1.3;
+            }
+            .event-details {
+              font-size: 12px;
+              opacity: 0.9;
+              line-height: 1.4;
+            }
+            .event-date {
+              margin-bottom: 6px;
+              font-weight: 500;
+            }
+            .event-end-date {
+              margin-bottom: 6px;
+              font-weight: 400;
+              color: rgba(255, 255, 255, 0.8);
+            }
+            .event-agendas {
+              margin-bottom: 6px;
+              font-weight: 500;
+              color: rgba(255, 255, 255, 0.9);
+            }
+            .event-venue {
+              opacity: 0.8;
+            }
+            .qr-section {
+              display: flex;
+              justify-content: center;
+              position: relative;
+              z-index: 2;
+            }
+            .qr-container {
+              background: white;
+              padding: 8px;
+              border-radius: 12px;
+              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            }
+            @media print {
+              body { margin: 0; padding: 0; }
+              .badge-container { 
+                width: 100%;
+                max-width: 400px;
+                height: auto;
+                min-height: 600px;
+                margin: 0 auto;
+                box-shadow: none;
+              }
             }
           </style>
         </head>
         <body>
-          <div class="badge">
-            <div class="badge-header">Bahrain Dental Society</div>
-            <div class="badge-title">SPEAKER</div>
-            <div class="badge-avatar">${badgeData?.speaker?.full_name?.charAt(0) || 'S'}</div>
-            <div class="badge-name">${badgeData?.speaker?.full_name}</div>
-            <div class="badge-designation">${badgeData?.speaker?.designation || 'Speaker'}</div>
-            <div class="badge-event">${badgeData?.event?.title}</div>
-            <div class="badge-date">${badgeData?.event?.start_datetime ? new Date(badgeData.event.start_datetime).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}</div>
-            <div class="badge-qr">
-              <img src="${document.querySelector('#speaker-badge-print canvas')?.toDataURL()}" width="100" height="100" />
+          <div class="badge-container">
+            <div class="badge-bg"></div>
+            <div class="badge-bg2"></div>
+            
+            <div class="header">
+              <div class="logo-section">
+                <div class="logo">
+                  <img src="/logo.png" alt="BDS Logo" style="width: 100%; height: 100%; object-fit: contain;" />
+                </div>
+                <div class="org-info">
+                  <h3>BAHRAIN DENTAL SOCIETY</h3>
+                  <p>OFFICIAL SPEAKER</p>
+                </div>
+              </div>
             </div>
-            <div class="badge-footer">www.bds.org.bh</div>
+            
+            <div class="speaker-title">
+              
+              <div class="category">${(badgeData?.speaker?.category || 'SPEAKER').toUpperCase()}</div>
+            </div>
+            
+            <div class="speaker-info">
+              <div class="speaker-name">${badgeData?.speaker?.full_name?.toUpperCase()}</div>
+              <div class="speaker-title-text">${badgeData?.speaker?.speaker_title || 'Professional Speaker'}</div>
+              <div class="speaker-designation">${badgeData?.speaker?.designation || ''}</div>
+            </div>
+            
+            <div class="event-info">
+              <div class="event-title">${badgeData?.event?.title}</div>
+              <div class="event-details">
+                <div class="event-date">Start: ${badgeData?.event?.start_datetime ? new Date(badgeData.event.start_datetime).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) : ''}</div>
+                ${badgeData?.event?.end_datetime ? `<div class="event-end-date">End: ${new Date(badgeData.event.end_datetime).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}</div>` : ''}
+                ${badgeData?.event?.event_agendas && badgeData.event.event_agendas.length > 0 ? `<div class="event-agendas">Total Agendas: ${badgeData.event.event_agendas.length}</div>` : ''}
+                ${badgeData?.event?.venue_name ? `<div class="event-venue">${badgeData.event.venue_name}</div>` : ''}
+              </div>
+            </div>
+            
+            <div class="qr-section">
+              <div class="qr-container" id="qr-container">
+                <!-- QR Code will be inserted here -->
+              </div>
+            </div>
           </div>
+          
+          <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+          <script>
+            // Generate QR code
+            const qrData = JSON.stringify({
+              type: 'SPEAKER_VERIFICATION',
+              speaker_id: '${badgeData?.speaker?.id}',
+              speaker_name: '${badgeData?.speaker?.full_name}',
+              event_id: '${badgeData?.event?.id}',
+              event_title: '${badgeData?.event?.title}',
+              category: '${(badgeData?.speaker?.category || 'SPEAKER').toUpperCase()}'
+            });
+            
+            const qr = qrcode(0, 'M');
+            qr.addData(qrData);
+            qr.make();
+            
+            const qrContainer = document.getElementById('qr-container');
+            qrContainer.innerHTML = qr.createImgTag(3, 4);
+            
+            // Auto print after a short delay
+            setTimeout(() => {
+              window.print();
+            }, 1000);
+          </script>
         </body>
       </html>
-    `);
+    `;
+    
+    printWindow.document.write(badgeHTML);
     printWindow.document.close();
-    printWindow.onload = () => {
-      printWindow.print();
-    };
   };
 
   return (
@@ -898,32 +1031,88 @@ export default function HeroSection() {
                   </form>
                 ) : badgeStatus === 'approved' && badgeData ? (
                   <div className="space-y-6">
-                    {/* Badge Preview */}
-                    <div id="speaker-badge-print" className="bg-gradient-to-br from-[#03215F] to-[#1a3a7f] rounded-2xl p-6 text-center text-white">
-                      <p className="text-xs uppercase tracking-widest text-white mb-2">Bahrain Dental Society</p>
-                      <h3 className="text-2xl font-bold text-white mb-4">SPEAKER</h3>
-                      <div className="w-20 h-20 bg-white/20 rounded-full mx-auto mb-4 flex items-center justify-center">
-                        <span className="text-3xl font-bold">{badgeData.speaker?.full_name?.charAt(0) || 'S'}</span>
-                      </div>
-                      <h4 className="text-xl font-bold mb-1">{badgeData.speaker?.full_name}</h4>
-                      <p className="text-white text-sm mb-4">{badgeData.speaker?.designation || 'Speaker'}</p>
-                      <div className="border-t border-b border-white/20 py-4 mb-4">
-                        <p className="font-semibold capitalize">{badgeData.event?.title}</p>
-                        <p className="text-sm text-white">
-                          {badgeData.event?.start_datetime && new Date(badgeData.event.start_datetime).toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                      <div className="bg-white p-3 rounded-lg inline-block">
-                        <QRCodeCanvas
-                          value={`https://bds.org.bh/speaker/${badgeData.speaker?.id}`}
-                          size={80}
-                          level="H"
-                        />
+                    {/* Enhanced Badge Preview - Matching Admin Design */}
+                    <div id="speaker-badge-print" className="w-full flex justify-center">
+                      <div className="w-[320px] h-[500px] bg-gradient-to-br from-[#03215F] to-[#1a3a7f] rounded-2xl p-5 text-white relative overflow-hidden shadow-2xl">
+                        {/* Background decorations */}
+                        <div className="absolute top-[-80px] right-[-80px] w-48 h-48 bg-white/5 rounded-full"></div>
+                        <div className="absolute bottom-[-100px] left-[-100px] w-64 h-64 bg-white/[0.03] rounded-full"></div>
+                        
+                        {/* Content */}
+                        <div className="relative z-10 h-full flex flex-col">
+                          {/* Header with logo */}
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 bg-white rounded-xl p-1.5 flex items-center justify-center">
+                              <img src="/logo.png" alt="BDS" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class="text-[#03215F] font-bold text-xs">BDS</span>'; }} />
+                            </div>
+                            <div>
+                              <h3 className="text-xs font-bold tracking-wide">BAHRAIN DENTAL SOCIETY</h3>
+                              <p className="text-[10px] opacity-80 tracking-wider">OFFICIAL SPEAKER</p>
+                            </div>
+                          </div>
+                          
+                          {/* BIG Speaker title and category */}
+                          <div className="text-center mb-4 mt-0">
+                           
+                            <div className="inline-block bg-white/20 px-5 py-2 rounded-full">
+                              <span className="text-lg font-bold tracking-widest uppercase">
+                                {badgeData.speaker?.category || 'SPEAKER'}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Speaker info */}
+                          <div className="text-center mb-2">
+                            <h4 className="text-xl font-bold mb-1 uppercase tracking-wide">{badgeData.speaker?.full_name}</h4>
+                            <p className="text-sm opacity-90 mb-0.5">{badgeData.speaker?.speaker_title || 'Professional Speaker'}</p>
+                            <p className="text-xs opacity-80">{badgeData.speaker?.designation || ''}</p>
+                          </div>
+                          
+                          {/* Event info */}
+                          <div className="bg-white/10 rounded-xl p-3 mb-3 border border-white/20">
+                            <p className="font-semibold text-center capitalize text-sm mb-2 leading-tight">{badgeData.event?.title}</p>
+                            <div className="text-[11px] space-y-1">
+                              <p className="font-medium">
+                                Start: {badgeData.event?.start_datetime && new Date(badgeData.event.start_datetime).toLocaleDateString('en-US', {
+                                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                                })}
+                              </p>
+                              {badgeData.event?.end_datetime && (
+                                <p className="opacity-80">
+                                  End: {new Date(badgeData.event.end_datetime).toLocaleDateString('en-US', {
+                                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                                  })}
+                                </p>
+                              )}
+                              {badgeData.event?.event_agendas && badgeData.event.event_agendas.length > 0 && (
+                                <p className="opacity-90 font-medium">
+                                  Total Agendas: {badgeData.event.event_agendas.length}
+                                </p>
+                              )}
+                              {badgeData.event?.venue_name && (
+                                <p className="opacity-80">{badgeData.event.venue_name}</p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* QR Code */}
+                          <div className="flex justify-center mt-auto">
+                            <div className="bg-white p-1.5 rounded-lg shadow-lg">
+                              <QRCodeCanvas
+                                value={JSON.stringify({
+                                  type: 'SPEAKER_VERIFICATION',
+                                  speaker_id: badgeData.speaker?.id,
+                                  speaker_name: badgeData.speaker?.full_name,
+                                  event_id: badgeData.event?.id,
+                                  event_title: badgeData.event?.title,
+                                  category: (badgeData.speaker?.category || 'SPEAKER').toUpperCase()
+                                })}
+                                size={100}
+                                level="M"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 

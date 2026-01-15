@@ -51,7 +51,7 @@ const StatCard = ({ title, value, icon: Icon, color, isLoading, change, trendDir
   };
 
   const iconColors = {
-    blue: "text-[#03215F]",
+    blue: "text-white",
     green: "text-white",
     orange: "text-white",
     red: "text-white",
@@ -94,8 +94,8 @@ const StatCard = ({ title, value, icon: Icon, color, isLoading, change, trendDir
               )}
             </div>
 
-            <div className={`p-2.5 rounded-xl bg-white/50 backdrop-blur-sm border ${iconColors[color]}`}>
-              <Icon className="w-5 h-5" />
+            <div className={`p-2.5 rounded-xl bg-gradient-to-r ${gradientColors[color]}`}>
+              <Icon className={`w-5 h-5 ${iconColors[color]}`} />
             </div>
           </div>
 
@@ -486,7 +486,7 @@ export default function Page() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-gray-900">
-                      Today's Events
+                      Today&apos;s Events
                     </h3>
                     <p className="text-gray-500 text-sm">
                       {stats?.today_events_count || 0} events scheduled
@@ -723,7 +723,7 @@ export default function Page() {
               {/* Event Members */}
               <div className="mt-6 pt-6 border-t border-gray-200/50">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 rounded-xl bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed]">
+                  <div className="text-center p-3 rounded-xl bg-gradient-to-br from-[#1b81f5] to-[#062f5f]">
                     <p className="text-xl font-bold text-white">
                       {stats?.event_members || 0}
                     </p>

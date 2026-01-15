@@ -63,36 +63,280 @@ export default function SpeakerBadgePage() {
   };
 
   const handlePrint = () => {
-    if (badgeRef.current) {
-      const printContents = badgeRef.current.innerHTML;
-      const originalContents = document.body.innerHTML;
-      
-      document.body.innerHTML = `
-        <html>
-          <head>
-            <title>Speaker Badge - ${badgeData?.full_name}</title>
-            <style>
-              @media print {
-                body { margin: 0; padding: 20px; }
-                .badge-container { 
-                  width: 4in; 
-                  height: 6in; 
-                  margin: 0 auto;
-                  page-break-after: always;
-                }
+    if (!badgeData) return;
+
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    
+    const badgeHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Speaker Badge - ${badgeData.full_name}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              background: white;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              padding: 20px;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
+            }
+            .badge-container {
+              width: 400px;
+              height: 600px;
+              background: linear-gradient(135deg, #03215F 0%, #1a3a7f 100%);
+              border-radius: 20px;
+              padding: 30px;
+              color: white;
+              position: relative;
+              overflow: hidden;
+              box-shadow: 0 20px 40px rgba(3, 33, 95, 0.3);
+            }
+            .badge-bg {
+              position: absolute;
+              top: -100px;
+              right: -100px;
+              width: 300px;
+              height: 300px;
+              background: rgba(255, 255, 255, 0.05);
+              border-radius: 50%;
+            }
+            .badge-bg2 {
+              position: absolute;
+              bottom: -150px;
+              left: -150px;
+              width: 400px;
+              height: 400px;
+              background: rgba(255, 255, 255, 0.03);
+              border-radius: 50%;
+            }
+            .header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 30px;
+              position: relative;
+              z-index: 2;
+            }
+            .logo-section {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+            }
+            .logo {
+              width: 50px;
+              height: 50px;
+              background: white;
+              border-radius: 12px;
+              padding: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .org-info h3 {
+              font-size: 14px;
+              font-weight: 700;
+              letter-spacing: 0.5px;
+              margin-bottom: 4px;
+            }
+            .org-info p {
+              font-size: 10px;
+              opacity: 0.8;
+              letter-spacing: 1px;
+            }
+            .speaker-title {
+              text-align: center;
+              margin: 30px 0;
+              position: relative;
+              z-index: 2;
+            }
+            .speaker-title h1 {
+              font-size: 32px;
+              font-weight: 900;
+              letter-spacing: 2px;
+              margin-bottom: 8px;
+            }
+            .category {
+              font-size: 18px;
+              background: rgba(255, 255, 255, 0.2);
+              padding: 8px 20px;
+              border-radius: 25px;
+              display: inline-block;
+              font-weight: 700;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+            }
+            .speaker-info {
+              text-align: center;
+              margin-bottom: 25px;
+              position: relative;
+              z-index: 2;
+            }
+            .speaker-name {
+              font-size: 24px;
+              font-weight: 700;
+              margin-bottom: 8px;
+            }
+            .speaker-title-text {
+              font-size: 16px;
+              opacity: 0.9;
+              margin-bottom: 4px;
+            }
+            .speaker-designation {
+              font-size: 14px;
+              opacity: 0.8;
+            }
+            .event-info {
+              background: rgba(255, 255, 255, 0.1);
+              border-radius: 15px;
+              padding: 20px;
+              margin-bottom: 25px;
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              position: relative;
+              z-index: 2;
+            }
+            .event-title {
+              font-size: 16px;
+              font-weight: 600;
+              margin-bottom: 12px;
+              line-height: 1.3;
+            }
+            .event-details {
+              font-size: 12px;
+              opacity: 0.9;
+              line-height: 1.4;
+            }
+            .event-date {
+              margin-bottom: 6px;
+              font-weight: 500;
+            }
+            .event-end-date {
+              margin-bottom: 6px;
+              font-weight: 400;
+              color: rgba(255, 255, 255, 0.8);
+            }
+            .event-agendas {
+              margin-bottom: 6px;
+              font-weight: 500;
+              color: rgba(255, 255, 255, 0.9);
+            }
+            .event-venue {
+              opacity: 0.8;
+            }
+            .qr-section {
+              display: flex;
+              justify-content: center;
+              position: relative;
+              z-index: 2;
+            }
+            .qr-container {
+              background: white;
+              padding: 8px;
+              border-radius: 12px;
+              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            }
+            @media print {
+              body { margin: 0; padding: 0; }
+              .badge-container { 
+                width: 100%;
+                max-width: 400px;
+                height: auto;
+                min-height: 600px;
+                margin: 0 auto;
+                box-shadow: none;
               }
-            </style>
-          </head>
-          <body>
-            ${printContents}
-          </body>
-        </html>
-      `;
-      
-      window.print();
-      document.body.innerHTML = originalContents;
-      window.location.reload();
-    }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="badge-container">
+            <div class="badge-bg"></div>
+            <div class="badge-bg2"></div>
+            
+            <div class="header">
+              <div class="logo-section">
+                <div class="logo">
+                  <img src="/logo.png" alt="BDS Logo" style="width: 100%; height: 100%; object-fit: contain;" />
+                </div>
+                <div class="org-info">
+                  <h3>BAHRAIN DENTAL SOCIETY</h3>
+                  <p>OFFICIAL SPEAKER</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="speaker-title">
+              
+              <div class="category">${(badgeData.category || 'SPEAKER').toUpperCase()}</div>
+            </div>
+            
+            <div class="speaker-info">
+              <div class="speaker-name">${badgeData.full_name.toUpperCase()}</div>
+              <div class="speaker-title-text">${badgeData.professional_title || 'Professional Speaker'}</div>
+              <div class="speaker-designation">${badgeData.affiliation_institution || ''}</div>
+            </div>
+            
+            <div class="event-info">
+              <div class="event-title">${badgeData.events?.title}</div>
+              <div class="event-details">
+                <div class="event-date">Start: ${badgeData.events?.start_datetime ? new Date(badgeData.events.start_datetime).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) : ''}</div>
+                ${badgeData.events?.end_datetime ? `<div class="event-end-date">End: ${new Date(badgeData.events.end_datetime).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}</div>` : ''}
+                ${badgeData.events?.event_agendas && badgeData.events.event_agendas.length > 0 ? `<div class="event-agendas">Total Agendas: ${badgeData.events.event_agendas.length}</div>` : ''}
+                ${badgeData.events?.venue_name ? `<div class="event-venue">${badgeData.events.venue_name}</div>` : ''}
+              </div>
+            </div>
+            
+            <div class="qr-section">
+              <div class="qr-container" id="qr-container">
+                <!-- QR Code will be inserted here -->
+              </div>
+            </div>
+          </div>
+          
+          <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+          <script>
+            // Generate QR code
+            const qrData = JSON.stringify({
+              type: 'SPEAKER_VERIFICATION',
+              speaker_id: '${badgeData.id}',
+              speaker_name: '${badgeData.full_name}',
+              event_id: '${badgeData.events?.id}',
+              event_title: '${badgeData.events?.title}',
+              category: '${(badgeData.category || 'SPEAKER').toUpperCase()}'
+            });
+            
+            const qr = qrcode(0, 'M');
+            qr.addData(qrData);
+            qr.make();
+            
+            const qrContainer = document.getElementById('qr-container');
+            qrContainer.innerHTML = qr.createImgTag(3, 4);
+            
+            // Auto print after a short delay
+            setTimeout(() => {
+              window.print();
+            }, 1000);
+          </script>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(badgeHTML);
+    printWindow.document.close();
   };
 
   return (

@@ -39,7 +39,8 @@ export async function GET(request) {
           title,
           start_datetime,
           end_datetime,
-          venue_name
+          venue_name,
+          event_agendas (id)
         )
       `)
       .eq('event_id', event_id)
@@ -69,7 +70,9 @@ export async function GET(request) {
         id: speaker.id,
         full_name: speaker.full_name,
         email: speaker.email,
-        designation: speaker.professional_title || speaker.category,
+        speaker_title: speaker.professional_title || 'Professional Speaker',
+        designation: speaker.affiliation_institution || '',
+        category: speaker.category || 'SPEAKER',
         affiliation: speaker.affiliation_institution,
         country: speaker.country_of_practice,
         topics: speaker.presentation_topics,
@@ -80,6 +83,7 @@ export async function GET(request) {
         start_datetime: speaker.events.start_datetime,
         end_datetime: speaker.events.end_datetime,
         venue_name: speaker.events.venue_name,
+        event_agendas: speaker.events.event_agendas || [],
       } : null,
     };
 

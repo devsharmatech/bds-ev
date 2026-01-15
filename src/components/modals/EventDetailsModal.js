@@ -364,41 +364,38 @@ export default function EventDetailsModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-50 overflow-y-auto">
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-start justify-center p-0 z-50 overflow-y-auto">
         <motion.div
           ref={modalRef}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-6xl flex flex-col overflow-y-auto max-h-[95vh] border border-white/20 relative"
+          className="bg-white rounded-none sm:rounded-xl md:rounded-2xl shadow-2xl w-full sm:max-w-2xl md:max-w-4xl lg:max-w-6xl flex flex-col overflow-hidden min-h-screen sm:min-h-0 sm:max-h-[95vh] sm:my-4 border-0 sm:border border-white/20 relative"
           style={{
             WebkitOverflowScrolling: "touch",
-            maxWidth: isMobile ? "calc(100vw - 16px)" : "",
-
-            height: "auto",
-            display: "flex",
-            flexDirection: "column",
+            height: "100vh",
+            maxHeight: "100vh",
           }}
         >
-          {/* Close Button - Fixed Position */}
+          {/* Close Button - Always Visible */}
           <button
             onClick={onClose}
-            className="absolute top-2 md:top-4 right-2 md:right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 hover:text-gray-900 transition-colors hover:scale-110 shadow-lg active:scale-95 z-30"
+            className="absolute top-3 sm:top-4 right-3 sm:right-4 p-2 bg-white/95 backdrop-blur-sm rounded-full text-gray-700 hover:text-gray-900 transition-colors hover:scale-110 shadow-lg active:scale-95 z-50"
             aria-label="Close modal"
           >
-            <X className="w-4 h-4 md:w-5 md:h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           {/* Scrollable Content Container */}
           <div
-            className="flex-1"
+            className="flex-1 overflow-y-auto"
             style={{
               WebkitOverflowScrolling: "touch",
             }}
           >
-            {/* Header with Gradient - Responsive Height */}
-            <div className="relative h-24 sm:h-32 md:h-40 lg:h-48 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden">
+            {/* Header with Gradient - Optimized Mobile Height */}
+            <div className="relative h-32 sm:h-36 md:h-48 lg:h-56 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden flex-shrink-0">
               {event?.banner_url ? (
                 <>
                   <img
@@ -543,12 +540,75 @@ export default function EventDetailsModal({
               </div>
             </div>
 
-            {/* Tabs - Hidden on mobile (replaced by bottom nav) */}
-            <div className="hidden md:flex border-b border-gray-200 bg-white">
+            {/* Mobile Tab Navigation - Wrapped Layout */}
+            <div className="sm:hidden bg-white border-b border-gray-200 flex-shrink-0">
+              <div className="flex flex-wrap gap-2 p-3">
+                <button
+                  onClick={() => setActiveTab("overview")}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${
+                    activeTab === "overview"
+                      ? "bg-[#9cc2ed] text-[#03215F]"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Overview
+                </button>
+                <button
+                  onClick={() => setActiveTab("agenda")}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${
+                    activeTab === "agenda"
+                      ? "bg-[#9cc2ed] text-[#03215F]"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  Agenda
+                </button>
+                <button
+                  onClick={() => setActiveTab("hosts")}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${
+                    activeTab === "hosts"
+                      ? "bg-[#9cc2ed] text-[#03215F]"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  <TeamIcon className="w-3.5 h-3.5" />
+                  Hosts
+                </button>
+                <button
+                  onClick={() => setActiveTab("details")}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${
+                    activeTab === "details"
+                      ? "bg-[#9cc2ed] text-[#03215F]"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                  }`}
+                >
+                  <Target className="w-3.5 h-3.5" />
+                  Details
+                </button>
+                {event?.joined && (
+                  <button
+                    onClick={() => setActiveTab("myticket")}
+                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${
+                      activeTab === "myticket"
+                        ? "bg-[#9cc2ed] text-[#03215F]"
+                        : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Ticket className="w-3.5 h-3.5" />
+                    My Ticket
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Desktop Tabs */}
+            <div className="hidden sm:flex border-b border-gray-200 bg-white">
               <div className="flex overflow-x-auto">
                 <button
                   onClick={() => setActiveTab("overview")}
-                  className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap ${activeTab === "overview"
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap ${activeTab === "overview"
                       ? "text-[#03215F] border-b-2 border-[#03215F]"
                       : "text-gray-500 hover:text-gray-700"
                     }`}
@@ -558,7 +618,7 @@ export default function EventDetailsModal({
                 </button>
                 <button
                   onClick={() => setActiveTab("agenda")}
-                  className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap ${activeTab === "agenda"
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap ${activeTab === "agenda"
                       ? "text-[#03215F] border-b-2 border-[#03215F]"
                       : "text-gray-500 hover:text-gray-700"
                     }`}
@@ -601,8 +661,8 @@ export default function EventDetailsModal({
               </div>
             </div>
 
-            {/* Content */}
-            <div className="p-3 md:p-6">
+            {/* Content - Properly Scrollable */}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6" style={{ WebkitOverflowScrolling: "touch" }}>
               {/* Overview Tab */}
               {activeTab === "overview" && (
                 <div className="space-y-4 md:space-y-6">
@@ -1196,14 +1256,7 @@ export default function EventDetailsModal({
         </motion.div>
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      {isMobile && isOpen && (
-        <MobileTabsMenu
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          event={event}
-        />
-      )}
+
     </>
   );
 }

@@ -24,6 +24,7 @@ import {
   Shield,
   Briefcase,
   Globe,
+  QrCode,
 } from "lucide-react";
 import EventModal from "@/components/modals/EventModal";
 import LoginModal from "@/components/modals/LoginModal";
@@ -32,6 +33,7 @@ import SpeakerApplicationModal from "@/components/SpeakerApplicationModal";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import EventDetailsModal from "@/components/modals/EventDetailsModal";
+import EventQRModal from "@/components/modals/EventQRModal";
 
 // Bahrain flag component
 const BahrainFlag = () => (
@@ -214,10 +216,18 @@ export default function EventsSection() {
   const [selectedDetailsEvent, setSelectedDetailsEvent] = useState(null);
   const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
   const [selectedSpeakerEvent, setSelectedSpeakerEvent] = useState(null);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [selectedQREvent, setSelectedQREvent] = useState(null);
 
   const handleViewDetails = (event) => {
     setSelectedDetailsEvent(event);
     setIsDetailsModalOpen(true);
+  };
+
+  // Handle QR code modal
+  const handleQRCode = (event) => {
+    setSelectedQREvent(event);
+    setIsQRModalOpen(true);
   };
 
   const handleJoinAsSpeaker = (event) => {
@@ -756,6 +766,15 @@ export default function EventsSection() {
                                 Details
                               </button>
 
+                              {/* QR Code Button */}
+                              <button
+                                onClick={() => handleQRCode(event)}
+                                className="px-3 py-2.5 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg hover:opacity-90 transition-colors flex items-center justify-center"
+                                title="Share QR Code"
+                              >
+                                <QrCode className="w-4 h-4" />
+                              </button>
+
                               {!event.joined && derivedStatus === "upcoming" && !isFull ? (
                                 <button
                                   onClick={() => handleJoinNow(event)}
@@ -928,6 +947,15 @@ export default function EventsSection() {
             setIsSpeakerModalOpen(false);
             setSelectedSpeakerEvent(null);
           }}
+        />
+      )}
+
+      {/* QR Code Modal */}
+      {selectedQREvent && (
+        <EventQRModal
+          isOpen={isQRModalOpen}
+          onClose={() => setIsQRModalOpen(false)}
+          event={selectedQREvent}
         />
       )}
     </>

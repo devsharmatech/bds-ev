@@ -35,6 +35,7 @@ import {
   Mic,
   ListChecks,
   MessageSquare,
+  QrCode,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -42,6 +43,7 @@ import toast, { Toaster } from "react-hot-toast";
 import EventModal from "@/components/EventModal";
 import DeleteModal from "@/components/DeleteModal";
 import ViewModal from "@/components/ViewModal";
+import EventQRModal from "@/components/modals/EventQRModal";
 
 // Bahrain data
 const BAHRAIN_CITIES = [
@@ -170,6 +172,7 @@ export default function EventsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const params = useParams();
@@ -234,6 +237,12 @@ export default function EventsPage() {
   const handleView = (event) => {
     setSelectedEvent(event);
     setShowViewModal(true);
+  };
+
+  // Handle QR code modal
+  const handleQRCode = (event) => {
+    setSelectedEvent(event);
+    setShowQRModal(true);
   };
 
   // Handle delete event
@@ -365,6 +374,17 @@ export default function EventsPage() {
               setShowViewModal(false);
               handleEdit(selectedEvent);
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* QR Code Modal */}
+      <AnimatePresence>
+        {showQRModal && selectedEvent && (
+          <EventQRModal
+            isOpen={showQRModal}
+            onClose={() => setShowQRModal(false)}
+            event={selectedEvent}
           />
         )}
       </AnimatePresence>
@@ -637,6 +657,13 @@ export default function EventsPage() {
                               title="View Details"
                             >
                               <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleQRCode(event)}
+                              className="p-2 rounded-lg bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] hover:opacity-90 transition-colors hover:scale-105 active:scale-95"
+                              title="Share QR Code"
+                            >
+                              <QrCode className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleEdit(event)}
