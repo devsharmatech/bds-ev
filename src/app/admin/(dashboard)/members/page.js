@@ -380,6 +380,8 @@ export default function MembersPage() {
   const [usePersonalAsProfile, setUsePersonalAsProfile] = useState(true);
   const [verifying, setVerifying] = useState(false);
   const [deleteConfig, setDeleteConfig] = useState({ type: "single", ids: [] });
+  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Form state
   const initialForm = {
@@ -417,6 +419,8 @@ export default function MembersPage() {
   };
   const [form, setForm] = useState(initialForm);
   const [profileImageFile, setProfileImageFile] = useState(null);
+  const [addIdCardFile, setAddIdCardFile] = useState(null);
+  const [addPersonalPhotoFile, setAddPersonalPhotoFile] = useState(null);
   const fileInputRef = useRef(null);
 
   // Theme colors
@@ -805,6 +809,15 @@ export default function MembersPage() {
       });
 
       if (profileImageFile) fd.append("profile_image", profileImageFile);
+      
+      // Add verification documents for auto-verification
+      if (addIdCardFile) fd.append("id_card", addIdCardFile);
+      if (addPersonalPhotoFile) fd.append("personal_photo", addPersonalPhotoFile);
+      
+      // If both documents are provided, mark as verified
+      if (addIdCardFile && addPersonalPhotoFile) {
+        fd.append("is_verified", "true");
+      }
 
       if (form.membership_fee_registration !== undefined)
         fd.append(
@@ -827,21 +840,26 @@ export default function MembersPage() {
       const data = await res.json();
       if (data.success) {
         setShowAddModal(false);
+        setAddIdCardFile(null);
+        setAddPersonalPhotoFile(null);
+        setProfileImageFile(null);
         fetchMembers();
-        toast.success("Member created successfully!");
+        toast.success(addIdCardFile && addPersonalPhotoFile ? "Member created and verified successfully!" : "Member created successfully!");
       } else {
         toast.error("Create failed: " + (data.error || "Unknown"));
       }
     } catch (err) {
       console.error(err);
       toast.error("Create error");
+    } finally {
+      setIsCreating(false);
     }
   }
 
   async function handleEditSubmit(e) {
     e.preventDefault();
     if (!activeMember) return;
-
+    setIsEditing(true);
     try {
       const fd = new FormData();
       fd.append("full_name", form.full_name);
@@ -904,6 +922,7 @@ export default function MembersPage() {
       if (data.success) {
         setShowEditModal(false);
         setActiveMember(null);
+        setProfileImageFile(null);
         fetchMembers();
         toast.success("Member updated successfully!");
       } else {
@@ -912,6 +931,8 @@ export default function MembersPage() {
     } catch (err) {
       console.error(err);
       toast.error("Update error");
+    } finally {
+      setIsEditing(false);
     }
   }
 
@@ -1431,7 +1452,12 @@ export default function MembersPage() {
       {/* Add Modal (truncated for brevity) */}
       <BaseModal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => {
+          setShowAddModal(false);
+          setAddIdCardFile(null);
+          setAddPersonalPhotoFile(null);
+          setProfileImageFile(null);
+        }}
         size="xl"
       >
         <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl overflow-hidden">
@@ -1445,7 +1471,12 @@ export default function MembersPage() {
               </p>
             </div>
             <button
-              onClick={() => setShowAddModal(false)}
+              onClick={() => {
+                setShowAddModal(false);
+                setAddIdCardFile(null);
+                setAddPersonalPhotoFile(null);
+                setProfileImageFile(null);
+              }}
               className="p-2 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:text-gray-900 transition-colors hover:scale-110 active:scale-95"
             >
               <X className="w-5 h-5" />
@@ -1456,6 +1487,59 @@ export default function MembersPage() {
             className="p-4 sm:p-6 overflow-y-auto max-h-[70vh] modal-scrollbar"
           >
             <div className="space-y-6">
+              {/* Profile Picture Upload Section */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-[#03215F]/10">
+                    <Camera className="w-5 h-5 text-[#03215F]" />
+                  </div>
+                  Profile Picture
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 flex-shrink-0">
+                    {profileImageFile ? (
+                      <img
+                        src={URL.createObjectURL(profileImageFile)}
+                        alt="Profile preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <User className="w-10 h-10 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setProfileImageFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="add-profile-image-upload"
+                    />
+                    <label
+                      htmlFor="add-profile-image-upload"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-medium cursor-pointer hover:opacity-90 transition-all"
+                    >
+                      <Upload className="w-4 h-4" />
+                      {profileImageFile ? "Change Photo" : "Upload Photo"}
+                    </label>
+                    {profileImageFile && (
+                      <button
+                        type="button"
+                        onClick={() => setProfileImageFile(null)}
+                        className="ml-2 text-sm text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">
+                      JPEG, PNG or WebP (max 5MB)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Basic Information */}
               <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -1871,21 +1955,77 @@ export default function MembersPage() {
                 </div>
               </div>
 
+              {/* Verification Documents */}
+              <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-r from-emerald-600 to-green-600 rounded-xl flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-900">Verification Documents</h4>
+                    <p className="text-sm text-emerald-600">Upload both documents to auto-verify member</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <VerificationFileUpload
+                    label="ID Card (CPR) Copy *"
+                    icon={IdCard}
+                    file={addIdCardFile}
+                    onFileChange={setAddIdCardFile}
+                    accept="image/*,.pdf"
+                    description="Upload clear copy of CPR/ID card"
+                  />
+                  <VerificationFileUpload
+                    label="Personal Photo *"
+                    icon={Camera}
+                    file={addPersonalPhotoFile}
+                    onFileChange={setAddPersonalPhotoFile}
+                    accept="image/*"
+                    description="Upload passport-style photo"
+                  />
+                </div>
+
+                {addIdCardFile && addPersonalPhotoFile && (
+                  <div className="mt-4 p-3 bg-emerald-100 border border-emerald-300 rounded-xl flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                    <span className="text-sm font-medium text-emerald-700">
+                      Both documents uploaded - Member will be automatically verified upon creation
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {/* Form Actions */}
               <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setAddIdCardFile(null);
+                    setAddPersonalPhotoFile(null);
+                    setProfileImageFile(null);
+                  }}
                   className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#AE9B66] transition-all duration-200 flex items-center gap-2"
+                  disabled={isCreating}
+                  className="px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#AE9B66] transition-all duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <UserPlus className="w-4 h-4" />
-                  Create Member
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      Create Member
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -2639,7 +2779,10 @@ export default function MembersPage() {
       {/* Edit Modal (truncated for brevity) */}
       <BaseModal
         isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
+        onClose={() => {
+          setShowEditModal(false);
+          setProfileImageFile(null);
+        }}
         size="xl"
       >
         <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl overflow-hidden">
@@ -2653,7 +2796,10 @@ export default function MembersPage() {
               </p>
             </div>
             <button
-              onClick={() => setShowEditModal(false)}
+              onClick={() => {
+                setShowEditModal(false);
+                setProfileImageFile(null);
+              }}
               className="p-2 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:text-gray-900 transition-colors hover:scale-110 active:scale-95"
             >
               <X className="w-5 h-5" />
@@ -2665,6 +2811,65 @@ export default function MembersPage() {
             className="p-6 overflow-y-auto max-h-[70vh]"
           >
             <div className="space-y-6">
+              {/* Profile Picture Update Section */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-[#03215F]/10">
+                    <Camera className="w-5 h-5 text-[#03215F]" />
+                  </div>
+                  Profile Picture
+                </h3>
+                <div className="flex items-center gap-4">
+                  <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200 flex-shrink-0">
+                    {profileImageFile ? (
+                      <img
+                        src={URL.createObjectURL(profileImageFile)}
+                        alt="Profile preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : activeMember?.profile_image ? (
+                      <img
+                        src={activeMember.profile_image}
+                        alt="Current profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <User className="w-10 h-10 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setProfileImageFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="edit-profile-image-upload"
+                    />
+                    <label
+                      htmlFor="edit-profile-image-upload"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-medium cursor-pointer hover:opacity-90 transition-all"
+                    >
+                      <Upload className="w-4 h-4" />
+                      {profileImageFile ? "Change Photo" : activeMember?.profile_image ? "Update Photo" : "Upload Photo"}
+                    </label>
+                    {(profileImageFile || activeMember?.profile_image) && (
+                      <button
+                        type="button"
+                        onClick={() => setProfileImageFile(null)}
+                        className="ml-2 text-sm text-red-500 hover:text-red-700"
+                      >
+                        {profileImageFile ? "Remove New" : ""}
+                      </button>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">
+                      JPEG, PNG or WebP (max 5MB)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Basic Information */}
               <div className="bg-white rounded-xl p-6 border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -3088,17 +3293,30 @@ export default function MembersPage() {
               <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() => setShowEditModal(false)}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setProfileImageFile(null);
+                  }}
                   className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#AE9B66] transition-all duration-200 flex items-center gap-2"
+                  disabled={isEditing}
+                  className="px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#AE9B66] transition-all duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <Edit2 className="w-4 h-4" />
-                  Save Changes
+                  {isEditing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Edit2 className="w-4 h-4" />
+                      Save Changes
+                    </>
+                  )}
                 </button>
               </div>
             </div>

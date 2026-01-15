@@ -261,7 +261,7 @@ export default function AdminSiteMembersPage() {
         throw new Error(data.message || "Save failed");
       }
       
-      toast.success(editing ? "Team member updated successfully" : "Team member added successfully");
+      toast.success(editing ? "Board member updated successfully" : "Board member added successfully");
       setShowCreateModal(false);
       resetForm();
       await loadMembers();
@@ -290,7 +290,7 @@ export default function AdminSiteMembersPage() {
         throw new Error(data.message || "Delete failed");
       }
       
-      toast.success("Team member deleted successfully");
+      toast.success("Board member deleted successfully");
       setShowDeleteModal(false);
       setSelectedMember(null);
       await loadMembers();
@@ -357,7 +357,7 @@ export default function AdminSiteMembersPage() {
       <AnimatePresence>
         {showDeleteModal && selectedMember && (
           <DeleteModal2
-            title="Delete Team Member"
+            title="Delete Board member"
             description={
               <>
                 Are you sure you want to delete <span className="font-semibold">"{selectedMember.name}"</span>?
@@ -379,7 +379,7 @@ export default function AdminSiteMembersPage() {
           <Modal
             open={showCreateModal}
             onClose={() => setShowCreateModal(false)}
-            title={editing ? "Edit Team Member" : "Add New Team Member"}
+            title={editing ? "Edit Board member" : "Add New Board member"}
             size="lg"
           >
             <form onSubmit={handleSave} className="space-y-6">
@@ -391,7 +391,7 @@ export default function AdminSiteMembersPage() {
               >
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <UserCircle className="w-5 h-5" />
-                  Team Member Information
+                  Board member Information
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -404,7 +404,7 @@ export default function AdminSiteMembersPage() {
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       required
                       className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
-                      placeholder="Enter team member's full name"
+                      placeholder="Enter Board member's full name"
                     />
                   </div>
 
@@ -701,7 +701,7 @@ export default function AdminSiteMembersPage() {
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      {editing ? "Update Member" : "Add Team Member"}
+                      {editing ? "Update Member" : "Add Board member"}
                     </>
                   )}
                 </button>
@@ -725,10 +725,10 @@ export default function AdminSiteMembersPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
-                  Team Members
+                  Board members
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Manage team members displayed on the Team page
+                  Manage Board members displayed on the Team page
                 </p>
               </div>
             </div>
@@ -740,7 +740,7 @@ export default function AdminSiteMembersPage() {
               className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#03215F] transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
             >
               <Plus className="w-5 h-5" />
-              Add Team Member
+              Add Board member
             </button>
           </div>
         </motion.div>
@@ -758,7 +758,7 @@ export default function AdminSiteMembersPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search team members..."
+                placeholder="Search Board members..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange("search", e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
@@ -816,7 +816,7 @@ export default function AdminSiteMembersPage() {
             <div className="flex items-center gap-2 text-sm text-blue-700">
               <Sparkles className="w-4 h-4" />
               <span>
-                <strong>Display:</strong> All team members are displayed on the main Team page
+                <strong>Display:</strong> All Board members are displayed on the main Team page
               </span>
             </div>
           </div>
@@ -832,25 +832,25 @@ export default function AdminSiteMembersPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="w-12 h-12 text-[#03215F] animate-spin mb-4" />
-              <p className="text-gray-600">Loading team members...</p>
+              <p className="text-gray-600">Loading Board members...</p>
             </div>
           ) : members.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Users className="w-16 h-16 text-gray-300 mb-4" />
               <p className="text-gray-600 text-lg mb-2">
-                No team members found
+                No Board members found
               </p>
               <p className="text-gray-500 text-sm mb-6">
                 {filters.search
                   ? "Try changing your search term"
-                  : "Add your first team member to get started"}
+                  : "Add your first Board member to get started"}
               </p>
               <button
                 onClick={openCreateModal}
                 className="px-6 py-2.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#03215F] transition-all duration-200 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Add Team Member
+                Add Board member
               </button>
             </div>
           ) : (
@@ -971,7 +971,7 @@ export default function AdminSiteMembersPage() {
                     <span className="font-semibold text-gray-900">
                       {pagination.total}
                     </span>{" "}
-                    team members
+                    Board members
                   </div>
                   <div className="flex items-center gap-2">
                     <button

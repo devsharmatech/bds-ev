@@ -4,6 +4,48 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 
 /**
+ * Parse date string to YYYY-MM-DD format
+ * Handles formats: DD-MM-YYYY, DD/MM/YYYY, MM-DD-YYYY, MM/DD/YYYY, YYYY-MM-DD
+ */
+function parseDate(dateStr) {
+  if (!dateStr || !dateStr.trim()) return null;
+  
+  const str = dateStr.trim();
+  
+  // Already in YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return str;
+  }
+  
+  // Try DD-MM-YYYY or DD/MM/YYYY format
+  const ddmmyyyy = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (ddmmyyyy) {
+    const day = ddmmyyyy[1].padStart(2, '0');
+    const month = ddmmyyyy[2].padStart(2, '0');
+    const year = ddmmyyyy[3];
+    
+    // Check if day > 12, then it's DD-MM-YYYY
+    if (parseInt(day) > 12) {
+      return `${year}-${month}-${day}`;
+    }
+    // Check if month > 12, then it's MM-DD-YYYY
+    if (parseInt(month) > 12) {
+      return `${year}-${day}-${month}`;
+    }
+    // Assume DD-MM-YYYY by default (more common in Bahrain)
+    return `${year}-${month}-${day}`;
+  }
+  
+  // Try to parse as date
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toISOString().split('T')[0];
+  }
+  
+  return null;
+}
+
+/**
  * Bulk upload members from CSV
  * POST /api/admin/members/bulk-upload
  */
@@ -230,6 +272,24 @@ export async function POST(request) {
         const password = data.password?.trim() || `${membershipCode}123`;
         const passwordHash = await bcrypt.hash(password, 10);
 
+        // Handle subscription plan
+        let subscriptionPlanId = null;
+        let subscriptionPlanName = null;
+        
+        if (data.subscription_plan?.trim()) {
+          const planName = data.subscription_plan.trim().toLowerCase();
+          const { data: plan } = await supabase
+            .from('subscription_plans')
+            .select('id, display_name')
+            .eq('name', planName)
+            .single();
+          
+          if (plan) {
+            subscriptionPlanId = plan.id;
+            subscriptionPlanName = plan.display_name;
+          }
+        }
+
         // Create user
         const { data: user, error: userError } = await supabase
           .from('users')
@@ -242,7 +302,10 @@ export async function POST(request) {
             role: 'member',
             membership_code: membershipCode,
             membership_status: data.membership_status?.trim() || 'active',
-            membership_type: data.membership_type?.trim() || 'free'
+            membership_type: data.membership_type?.trim() || 'free',
+            profile_image: data.profile_image?.trim() || null,
+            current_subscription_plan_id: subscriptionPlanId,
+            current_subscription_plan_name: subscriptionPlanName
           })
           .select()
           .single();
@@ -261,7 +324,7 @@ export async function POST(request) {
         const profileData = {
           user_id: user.id,
           gender: data.gender?.trim() || null,
-          dob: data.dob?.trim() || null,
+          dob: parseDate(data.dob),
           address: data.address?.trim() || null,
           city: data.city?.trim() || null,
           state: data.state?.trim() || null,
@@ -269,12 +332,14 @@ export async function POST(request) {
           cpr_id: data.cpr_id?.trim() || null,
           nationality: data.nationality?.trim() || null,
           type_of_application: data.type_of_application?.trim() || null,
-          membership_date: data.membership_date?.trim() || new Date().toISOString().split('T')[0],
+          membership_date: parseDate(data.membership_date) || new Date().toISOString().split('T')[0],
           work_sector: data.work_sector?.trim() || null,
           employer: data.employer?.trim() || null,
           position: data.position?.trim() || null,
           specialty: data.specialty?.trim() || null,
-          category: data.category?.trim() || null
+          category: data.category?.trim() || null,
+          id_card_url: data.id_card_url?.trim() || null,
+          personal_photo_url: data.personal_photo_url?.trim() || null
         };
 
         const { error: profileError } = await supabase
@@ -293,11 +358,37 @@ export async function POST(request) {
           continue;
         }
 
+        // Create subscription record if subscription plan is provided
+        if (subscriptionPlanId && subscriptionPlanName) {
+          // Calculate expiry date (1 year from now)
+          const expiresAt = new Date();
+          expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+          const { error: subscriptionError } = await supabase
+            .from('user_subscriptions')
+            .insert({
+              user_id: user.id,
+              subscription_plan_id: subscriptionPlanId,
+              subscription_plan_name: subscriptionPlanName,
+              status: 'active',
+              started_at: new Date().toISOString(),
+              expires_at: expiresAt.toISOString(),
+              registration_paid: true,
+              annual_paid: true
+            });
+
+          if (subscriptionError) {
+            console.error('Subscription creation error:', subscriptionError);
+            // Don't fail the whole row, just log the error
+          }
+        }
+
         results.success.push({
           row: rowNumber,
           email: email,
           full_name: data.full_name.trim(),
-          membership_code: membershipCode
+          membership_code: membershipCode,
+          subscription_plan: subscriptionPlanName || 'None'
         });
         results.successCount++;
 

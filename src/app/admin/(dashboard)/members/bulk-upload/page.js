@@ -78,9 +78,9 @@ export default function BulkUploadPage() {
 
   // Download CSV template
   const downloadTemplate = () => {
-    const template = `email,full_name,membership_code,password,phone,mobile,gender,dob,address,city,state,pin_code,cpr_id,nationality,type_of_application,membership_date,work_sector,employer,position,specialty,category,membership_status,membership_type
-john.doe@example.com,John Doe,MEM001,password123,+97312345678,+97312345678,Male,1990-01-15,123 Main St,Manama,Capital Governorate,12345,123456789,Bahraini,New,2024-01-01,Private,Hospital,Doctor,General Dentistry,Regular,active,free
-jane.smith@example.com,Jane Smith,MEM002,password123,+97387654321,+97387654321,Female,1985-05-20,456 Park Ave,Riffa,Northern Governorate,54321,987654321,Bahraini,New,2024-01-01,Public,Clinic,Dentist,Orthodontics,Premium,active,paid`;
+    const template = `email,full_name,membership_code,password,phone,mobile,gender,dob,address,city,state,pin_code,cpr_id,nationality,type_of_application,membership_date,work_sector,employer,position,specialty,category,membership_status,membership_type,subscription_plan,profile_image,id_card_url,personal_photo_url
+john.doe@example.com,John Doe,MEM001,password123,+97312345678,+97312345678,Male,1990-01-15,123 Main St,Manama,Capital Governorate,12345,123456789,Bahraini,New,2024-01-01,Private,Hospital,Doctor,General Dentistry,Dental Technologist,active,free,active,https://drive.google.com/profile.jpg,https://drive.google.com/id_card.jpg,https://drive.google.com/photo.jpg
+jane.smith@example.com,Jane Smith,MEM002,password123,+97387654321,+97387654321,Female,1985-05-20,456 Park Ave,Riffa,Northern Governorate,54321,987654321,Bahraini,New,2024-01-01,Public,Clinic,Dentist,Orthodontics,Dental Hygienist,active,paid,associate,,https://drive.google.com/id.jpg,`;
 
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -185,7 +185,19 @@ jane.smith@example.com,Jane Smith,MEM002,password123,+97387654321,+97387654321,F
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
-                  <span><strong>Optional columns:</strong> password, phone, mobile, gender, dob, address, city, state, pin_code, cpr_id, nationality, type_of_application, membership_date, work_sector, employer, position, specialty, category, membership_status, membership_type</span>
+                  <span><strong>Optional columns:</strong> password, phone, mobile, gender, dob, address, city, state, pin_code, cpr_id, nationality, type_of_application, membership_date, work_sector, employer, position, specialty, category, membership_status, membership_type, subscription_plan, profile_image, id_card_url, personal_photo_url</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
+                  <span><strong>Subscription plan:</strong> Use plan name like <code className="bg-gray-100 px-1 rounded">active</code>, <code className="bg-gray-100 px-1 rounded">associate</code>, <code className="bg-gray-100 px-1 rounded">honorary</code>, <code className="bg-gray-100 px-1 rounded">student</code></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
+                  <span><strong>Image/Document URLs:</strong> Direct links to images (Google Drive, Dropbox, etc.) for profile_image, id_card_url, personal_photo_url</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
+                  <span><strong>Date formats:</strong> Supported formats for dob and membership_date: <code className="bg-gray-100 px-1 rounded">YYYY-MM-DD</code>, <code className="bg-gray-100 px-1 rounded">DD-MM-YYYY</code>, <code className="bg-gray-100 px-1 rounded">DD/MM/YYYY</code></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
@@ -369,6 +381,7 @@ jane.smith@example.com,Jane Smith,MEM002,password123,+97387654321,+97387654321,F
                         <th className="px-4 py-2 text-left font-medium text-gray-700">Email</th>
                         <th className="px-4 py-2 text-left font-medium text-gray-700">Full Name</th>
                         <th className="px-4 py-2 text-left font-medium text-gray-700">Membership Code</th>
+                        <th className="px-4 py-2 text-left font-medium text-gray-700">Subscription</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -378,6 +391,15 @@ jane.smith@example.com,Jane Smith,MEM002,password123,+97387654321,+97387654321,F
                           <td className="px-4 py-2 text-gray-900">{item.email}</td>
                           <td className="px-4 py-2 text-gray-900">{item.full_name}</td>
                           <td className="px-4 py-2 text-gray-900">{item.membership_code}</td>
+                          <td className="px-4 py-2 text-gray-900">
+                            {item.subscription_plan ? (
+                              <span className="px-2 py-1 bg-[#AE9B66]/10 text-[#AE9B66] rounded text-xs">
+                                {item.subscription_plan}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

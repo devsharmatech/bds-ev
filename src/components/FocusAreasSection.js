@@ -184,10 +184,10 @@ export default function FocusAreasSection() {
             </p>
             <div className="flex items-center justify-center gap-4">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center text-white font-bold">
-                <img src="/profile1.png" alt="Dr. Abbas M Ebrahim" className="w-12 h-12 rounded-full object-cover" />
+                <img src="/profile1.png" alt="DR Abbas AlFardan" className="w-12 h-12 rounded-full object-cover" />
               </div>
               <div className="text-left">
-                <h4 className="font-bold text-[#03215F]">Dr. Abbas M Ebrahim</h4>
+                <h4 className="font-bold text-[#03215F]">DR Abbas AlFardan</h4>
                 <p className="text-gray-600 text-sm">BDS President</p>
               </div>
             </div>

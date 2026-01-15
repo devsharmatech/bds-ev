@@ -22,8 +22,8 @@ function MembershipCard({ user, qrRef }) {
 
   const qrValue = JSON.stringify({
     type: "MEMBERSHIP_VERIFICATION",
-    membership_id: user.membership_code,
-    member_name: user.full_name,
+    membership_id: user.membership_code=="BDS-XXXXX" ? "DEMO-XXXXX" : user.membership_code,
+    member_name: user.full_name=="DR Ahmed Ahmed" ? "DEMO MEMBER" : user.full_name,
     member_type: user.membership_type,
     expiry_date: user.membership_expiry_date,
   });
@@ -165,9 +165,9 @@ export default function HeroSection() {
 
   // Dummy member data for non-logged-in or non-paid members
   const dummyMemberData = {
-    full_name: "DR. ABBAS AlFardan",
-    membership_code: "BDS-XXXX-XXXX",
-    membership_expiry_date: "2029-12-31",
+    full_name: "DR Ahmed Ahmed",
+    membership_code: "BDS-XXXXX",
+    membership_expiry_date: "12/31/2030",
     membership_type: "paid",
     membership_status: "active",
     current_subscription_plan_name: "Active Membership"

@@ -44,10 +44,8 @@ export default function Footer() {
   };
 
   const socialLinks = [
-    { icon: Youtube, href: "https://youtube.com/@bahraindentalsociety", color: "hover:bg-[#FF0000]" },
     { icon: Instagram, href: "https://www.instagram.com/bahrain.dental.society", color: "hover:bg-gradient-to-br from-purple-500 to-pink-500" },
     { icon: PhoneCall, href: "https://wa.link/k6rtdf", color: "hover:bg-[#25D366]" },
-    { icon: Facebook, href: "#", color: "hover:bg-[#1877F2]" },
     { icon: Linkedin, href: "#", color: "hover:bg-[#0A66C2]" },
   ];
 

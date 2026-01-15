@@ -79,14 +79,6 @@ export default function ContactSection() {
         { label: "Address", value: "Building 1487, Road 2425, Block 324, Juffair, Kingdom of Bahrain.🇧🇭" },
         { label: "P.O. Box", value: "Juffair, Kingdom of Bahrain.🇧🇭" }
       ]
-    },
-    {
-      icon: <Clock className="w-5 h-5" />,
-      title: "Working Hours",
-      details: [
-        { label: "Sunday - Thursday", value: "8:00 AM - 4:00 PM" },
-        { label: "Friday - Saturday", value: "Closed" }
-      ]
     }
   ]
 
@@ -114,7 +106,7 @@ export default function ContactSection() {
           <div className="bg-white  rounded-2xl shadow-xl p-8">
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-[#03215F] mb-2">
-                Your certificate is waiting for you?
+                Contact Us
               </h2>
               <p className="text-gray-600">
                 Fill the form below with your name and title.

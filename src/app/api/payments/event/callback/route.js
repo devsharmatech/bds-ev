@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabaseAdmin';
 import { NextResponse } from 'next/server';
 import { getPaymentStatus } from '@/lib/myfatoorah';
 import { redirect } from 'next/navigation';
+import { sendEventJoinEmail } from '@/lib/email';
 
 /**
  * GET /api/payments/event/callback
@@ -367,6 +368,24 @@ export async function GET(request) {
         verified: updatedMember?.price_paid > 0,
         duration_ms: Date.now() - startTime
       });
+
+      // Send event join confirmation email
+      try {
+        if (eventMember.user?.email) {
+          await sendEventJoinEmail(eventMember.user.email, {
+            name: eventMember.user.full_name || 'Member',
+            event_name: eventMember.event?.title || 'Event',
+            event_date: null, // Event date not available in current query
+            event_location: null,
+            event_code: eventMember.token,
+            price_paid: amount
+          });
+          console.log('[EVENT-PAYMENT-CALLBACK] Event join email sent to:', eventMember.user.email);
+        }
+      } catch (emailError) {
+        console.error('[EVENT-PAYMENT-CALLBACK] Failed to send event join email:', emailError);
+        // Don't fail the callback if email fails
+      }
 
       // Redirect to events page with success message
       return redirect(`/events?success=payment_completed&event=${encodeURIComponent(eventMember.event?.title || 'Event')}`);

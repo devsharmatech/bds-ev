@@ -108,6 +108,7 @@ export async function POST(request) {
       body.role = formData.get('role') || 'member';
       body.membership_code = formData.get('membership_code') || null;
       body.membership_status = formData.get('membership_status') || 'active';
+      body.is_verified = formData.get('is_verified') === 'true';
 
       body.member_profile = {
         gender: formData.get('gender') || null,
@@ -130,6 +131,8 @@ export async function POST(request) {
       };
 
       profileImage = formData.get('profile_image');
+      body.id_card = formData.get('id_card');
+      body.personal_photo = formData.get('personal_photo');
       body.membership_fee_registration = formData.get('membership_fee_registration') ? parseFloat(formData.get('membership_fee_registration')) : undefined;
       body.membership_fee_annual = formData.get('membership_fee_annual') ? parseFloat(formData.get('membership_fee_annual')) : undefined;
       body.membership_pay_now = formData.get('membership_pay_now') === 'true';
@@ -162,7 +165,8 @@ export async function POST(request) {
         mobile: body.mobile || null,
         role: body.role || 'member',
         membership_code: body.membership_code || null,
-        membership_status: body.membership_status || 'active'
+        membership_status: body.membership_status || 'active',
+        is_member_verified: body.is_verified || false
       })
       .select()
       .single();
@@ -184,16 +188,64 @@ export async function POST(request) {
 
       const ext = profileImage.name.split('.').pop();
       const filename = `${uuidv4()}.${ext}`;
-      const path = `profiles/${filename}`;
+      const path = `profile/${filename}`;
 
       const { error: uploadErr } = await supabase.storage.from('profile_pictures').upload(path, profileImage, { cacheControl: '3600', upsert: false });
       if (uploadErr) throw uploadErr;
 
-      const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
+      const { data: urlData } = supabase.storage.from('profile_pictures').getPublicUrl(path);
       publicProfileUrl = urlData.publicUrl || null;
 
       // update user with profile_image
       await supabase.from('users').update({ profile_image: publicProfileUrl }).eq('id', userId);
+    }
+
+    // Handle ID card upload if provided
+    let idCardUrl = null;
+    if (body.id_card && body.id_card.size > 0) {
+      const idCard = body.id_card;
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+      const maxSize = 5 * 1024 * 1024;
+      if (!allowedTypes.includes(idCard.type)) {
+        return NextResponse.json({ success: false, error: 'ID card must be JPEG/PNG/WebP/PDF' }, { status: 400 });
+      }
+      if (idCard.size > maxSize) {
+        return NextResponse.json({ success: false, error: 'ID card file too large (max 5MB)' }, { status: 400 });
+      }
+
+      const ext = idCard.name.split('.').pop();
+      const filename = `id_card_${uuidv4()}.${ext}`;
+      const path = `verification/${userId}/${filename}`;
+
+      const { error: uploadErr } = await supabase.storage.from('profile_pictures').upload(path, idCard, { cacheControl: '3600', upsert: false });
+      if (uploadErr) throw uploadErr;
+
+      const { data: idCardUrlData } = supabase.storage.from('profile_pictures').getPublicUrl(path);
+      idCardUrl = idCardUrlData.publicUrl || null;
+    }
+
+    // Handle personal photo upload if provided
+    let personalPhotoUrl = null;
+    if (body.personal_photo && body.personal_photo.size > 0) {
+      const personalPhoto = body.personal_photo;
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const maxSize = 5 * 1024 * 1024;
+      if (!allowedTypes.includes(personalPhoto.type)) {
+        return NextResponse.json({ success: false, error: 'Personal photo must be JPEG/PNG/WebP' }, { status: 400 });
+      }
+      if (personalPhoto.size > maxSize) {
+        return NextResponse.json({ success: false, error: 'Personal photo file too large (max 5MB)' }, { status: 400 });
+      }
+
+      const ext = personalPhoto.name.split('.').pop();
+      const filename = `personal_photo_${uuidv4()}.${ext}`;
+      const path = `verification/${userId}/${filename}`;
+
+      const { error: uploadErr } = await supabase.storage.from('profile_pictures').upload(path, personalPhoto, { cacheControl: '3600', upsert: false });
+      if (uploadErr) throw uploadErr;
+
+      const { data: personalPhotoUrlData } = supabase.storage.from('profile_pictures').getPublicUrl(path);
+      personalPhotoUrl = personalPhotoUrlData.publicUrl || null;
     }
 
     // create member_profile
@@ -218,7 +270,9 @@ export async function POST(request) {
         specialty: profile.specialty || null,
         category: profile.category || null,
         license_number: profile.license_number || null,
-        years_of_experience: profile.years_of_experience || null
+        years_of_experience: profile.years_of_experience || null,
+        id_card_url: idCardUrl,
+        personal_photo_url: personalPhotoUrl
       });
 
     if (profileErr) throw profileErr;
@@ -260,16 +314,16 @@ export async function POST(request) {
     const { data: createdUser } = await supabase
       .from('users')
       .select(`
-        id,email,full_name,phone,mobile,profile_image,membership_code,membership_status,role,created_at,updated_at,
+        id,email,full_name,phone,mobile,profile_image,membership_code,membership_status,is_member_verified,role,created_at,updated_at,
         member_profile:member_profiles (
           id, gender, dob, address, city, state, pin_code, cpr_id, nationality, type_of_application, membership_date,
-          work_sector, employer, position, specialty, category, created_at
+          work_sector, employer, position, specialty, category, id_card_url, personal_photo_url, created_at
         )
       `)
       .eq('id', userId)
       .single();
 
-    return NextResponse.json({ success: true, user: createdUser, message: 'Member created' }, { status: 201 });
+    return NextResponse.json({ success: true, user: createdUser, message: body.is_verified ? 'Member created and verified' : 'Member created' }, { status: 201 });
   } catch (err) {
     console.error('Members CREATE Error:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

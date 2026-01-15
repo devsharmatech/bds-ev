@@ -92,7 +92,7 @@ export default function WelcomeSection() {
                 {/* Avatar Placeholder */}
                 <div className="relative">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#AE9B66] to-[#AE9B66] flex items-center justify-center text-white text-2xl font-bold">
-                    <img src="/profile1.png" alt="President Dr. Abbas M Ebrahim" className="w-20 h-20 rounded-full object-cover" />
+                    <img src="/profile1.png" alt="President DR Abbas AlFardan" className="w-20 h-20 rounded-full object-cover" />
                   </div>
                   <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-gradient-to-br from-[#ECCF0F] to-[#b8352d] flex items-center justify-center">
                     <BookOpen className="w-5 h-5 text-white" />
@@ -101,7 +101,7 @@ export default function WelcomeSection() {
                 
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-[#03215F] mb-2">
-                    Dr. Abbas M Ebrahim
+                    DR Abbas AlFardan
                   </h3>
                   <p className="text-gray-600 mb-3">
                     President of the Bahrain Dental Society

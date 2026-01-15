@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabaseAdmin";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { sendCheckInEmail } from "@/lib/email";
 
 export async function POST(req) {
   try {
@@ -258,6 +259,34 @@ export async function POST(req) {
 
       if (logError) throw logError;
 
+      // Send check-in confirmation email
+      try {
+        // Get user email
+        const { data: userData } = await supabase
+          .from("users")
+          .select("email, full_name")
+          .eq("id", eventMember.user_id)
+          .single();
+
+        if (userData?.email) {
+          await sendCheckInEmail(userData.email, {
+            name: userData.full_name || 'Member',
+            event_name: eventMember.events?.title || 'Event',
+            check_in_time: new Date().toLocaleString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          });
+          console.log('[CHECK-IN] Confirmation email sent to:', userData.email);
+        }
+      } catch (emailError) {
+        console.error('[CHECK-IN] Failed to send confirmation email:', emailError);
+        // Don't fail the check-in if email fails
+      }
+
       return NextResponse.json({
         success: true,
         message: resolvedAgendaId ? "Agenda check-in successful" : "Event check-in successful",
@@ -394,6 +423,27 @@ export async function POST(req) {
         });
 
       if (logError) throw logError;
+
+      // Send check-in confirmation email
+      try {
+        if (member.email) {
+          await sendCheckInEmail(member.email, {
+            name: member.full_name || 'Member',
+            event_name: event.title || 'Event',
+            check_in_time: new Date().toLocaleString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          });
+          console.log('[CHECK-IN] Confirmation email sent to:', member.email);
+        }
+      } catch (emailError) {
+        console.error('[CHECK-IN] Failed to send confirmation email:', emailError);
+        // Don't fail the check-in if email fails
+      }
 
       return NextResponse.json({
         success: true,

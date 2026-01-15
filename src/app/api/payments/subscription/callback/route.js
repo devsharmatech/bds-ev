@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getPaymentStatus } from '@/lib/myfatoorah';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { sendPaymentConfirmationEmail, sendWelcomeEmail } from '@/lib/email';
 
 /**
  * GET /api/payments/subscription/callback
@@ -358,6 +359,47 @@ export async function GET(request) {
               } : null
             }))
           });
+
+          // Send payment confirmation email
+          try {
+            if (payment.user?.email) {
+              // Get subscription details for email
+              const { data: subscriptionData } = await supabase
+                .from('user_subscriptions')
+                .select('*, subscription_plan:subscription_plans(*)')
+                .eq('id', payment.subscription_id)
+                .single();
+
+              const planName = subscriptionData?.subscription_plan?.name || 'Membership Plan';
+              const expiryDate = subscriptionData?.expires_at 
+                ? new Date(subscriptionData.expires_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                : 'N/A';
+
+              // Send payment confirmation email
+              await sendPaymentConfirmationEmail(payment.user.email, {
+                name: payment.user.full_name || 'Member',
+                plan_name: planName,
+                amount: payment.amount,
+                payment_date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+                expiry_date: expiryDate,
+                invoice_id: payment.invoice_id
+              });
+
+              // If this is a registration payment, also send welcome email
+              if (payment.payment_type === 'subscription_registration') {
+                await sendWelcomeEmail(payment.user.email, {
+                  name: payment.user.full_name || 'Member',
+                  membership_type: planName,
+                  member_id: payment.user.id
+                });
+              }
+
+              console.log('[PAYMENT-CALLBACK] Confirmation emails sent to:', payment.user.email);
+            }
+          } catch (emailError) {
+            console.error('[PAYMENT-CALLBACK] Failed to send confirmation email:', emailError);
+            // Don't fail the callback if email fails
+          }
 
           // Always redirect to login page with query parameters
           // Login page will handle navigation based on redirect_to parameter

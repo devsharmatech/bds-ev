@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
+import { sendEventJoinEmail } from "@/lib/email";
 
 export async function POST(req) {
   try {
@@ -155,6 +156,44 @@ export async function POST(req) {
       });
 
     if (insertErr) throw insertErr;
+
+    // Get user email and event details for notification
+    try {
+      const { data: userData } = await supabase
+        .from("users")
+        .select("email, full_name")
+        .eq("id", loggedInUser.id)
+        .single();
+
+      const { data: eventData } = await supabase
+        .from("events")
+        .select("title, start_date, location")
+        .eq("id", event_id)
+        .single();
+
+      if (userData?.email) {
+        await sendEventJoinEmail(userData.email, {
+          name: userData.full_name || 'Member',
+          event_name: eventData?.title || 'Event',
+          event_date: eventData?.start_date 
+            ? new Date(eventData.start_date).toLocaleDateString('en-GB', { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) 
+            : null,
+          event_location: eventData?.location || null,
+          event_code: eventMemberToken,
+          price_paid
+        });
+        console.log('[EVENT-JOIN] Confirmation email sent to:', userData.email);
+      }
+    } catch (emailError) {
+      console.error('[EVENT-JOIN] Failed to send confirmation email:', emailError);
+      // Don't fail the join if email fails
+    }
 
     return NextResponse.json({
       success: true,
