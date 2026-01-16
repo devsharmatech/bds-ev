@@ -40,6 +40,7 @@ import {
   BadgeCheck,
   Printer,
   QrCode,
+  DollarSign,
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { useState, useEffect, Suspense } from "react";
@@ -54,6 +55,16 @@ import EventDetailsModal from "@/components/modals/EventDetailsModal";
 import EventModal from "@/components/modals/EventModal"; // Your join modal
 import SpeakerApplicationModal from "@/components/SpeakerApplicationModal";
 import EventQRModal from "@/components/modals/EventQRModal";
+import PricingModal from "@/components/modals/PricingModal";
+import {
+  getUserEventPrice,
+  calculateSavings,
+  formatBHD as formatBHDPrice,
+  getPricingTier,
+  getTierDisplayName,
+  getAllEventPrices,
+  hasMultiplePricingTiers,
+} from "@/lib/eventPricing";
 
 // Bahrain Flag Component
 const BahrainFlag = () => (
@@ -247,6 +258,8 @@ function EventsPageContent() {
   const [badgeStatus, setBadgeStatus] = useState(null); // 'approved', 'rejected', 'not_found'
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [selectedQREvent, setSelectedQREvent] = useState(null);
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [selectedPricingEvent, setSelectedPricingEvent] = useState(null);
 
   const categories = [
     "All",
@@ -452,6 +465,12 @@ function EventsPageContent() {
   const handleQRCode = (event) => {
     setSelectedQREvent(event);
     setIsQRModalOpen(true);
+  };
+
+  // Handle view prices modal
+  const handleViewPrices = (event) => {
+    setSelectedPricingEvent(event);
+    setIsPricingModalOpen(true);
   };
 
   // Handle join event click - opens your EventModal
@@ -913,13 +932,9 @@ function EventsPageContent() {
     printWindow.document.close();
   };
 
-  // Get user price
-  const getUserPrice = (event) => {
-    if (!event.is_paid) return null;
-    if (user?.membership_type === "paid" && event.member_price) {
-      return event.member_price;
-    }
-    return event.regular_price;
+  // Get user price using new pricing utility
+  const getUserPriceInfo = (event) => {
+    return getUserEventPrice(event, user);
   };
 
   // Get running and upcoming counts
@@ -1149,13 +1164,12 @@ function EventsPageContent() {
               <>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredEvents.map((event, index) => {
-                    const userPrice = getUserPrice(event);
-                    const priceToPay =
-                      userPrice !== null ? formatBHD(userPrice) : "FREE";
-                    const memberSavings =
-                      user?.membership_type === "paid" && event.member_price
-                        ? formatBHD(event.regular_price - event.member_price)
-                        : null;
+                    const priceInfo = getUserPriceInfo(event);
+                    const priceToPay = priceInfo.isFree ? "FREE" : formatBHDPrice(priceInfo.price);
+                    const savings = calculateSavings(event, user);
+                    const savingsDisplay = savings > 0 ? formatBHDPrice(savings) : null;
+                    const currentTier = getPricingTier(event);
+                    const tierDisplay = getTierDisplayName(currentTier);
 
                     return (
                       <motion.div
@@ -1218,21 +1232,49 @@ function EventsPageContent() {
                               </div>
 
                               {/* Price Badge */}
-                              <div className="px-2.5 py-1.5 bg-white/90 backdrop-blur-sm rounded-full text-sm font-semibold flex items-center gap-1 shadow-lg">
-                                {event.is_paid ? (
-                                  <>
-                                    <BahrainFlag />
-                                    {priceToPay}
-                                    {event.member_price &&
-                                      user?.membership_type === "paid" && (
-                                        <span className="text-xs text-gray-500 ml-1">
-                                          | {formatBHD(event.member_price)}{" "}
-                                          member
-                                        </span>
-                                      )}
-                                  </>
-                                ) : (
-                                  <span className="text-[#AE9B66]">FREE</span>
+                              <div className="flex flex-col items-end gap-1.5">
+                                <div className="bg-gradient-to-br from-white to-gray-50 backdrop-blur-md rounded-xl shadow-xl border border-white/50 overflow-hidden">
+                                  {event.is_paid ? (
+                                    <div className="px-2.5 py-2 md:px-3 md:py-2.5">
+                                      <div className="flex items-center gap-1.5 justify-end">
+                                        <BahrainFlag />
+                                        <span className="text-sm md:text-base font-bold text-[#03215F]">{priceToPay}</span>
+                                      </div>
+                                      {(user && priceInfo.category !== 'regular') || hasMultiplePricingTiers(event) ? (
+                                        <div className="flex flex-col items-end mt-0.5">
+                                          {user && priceInfo.category !== 'regular' && (
+                                            <span className="text-[9px] md:text-[10px] text-[#AE9B66] font-semibold">
+                                              {priceInfo.categoryDisplay}
+                                            </span>
+                                          )}
+                                          {hasMultiplePricingTiers(event) && (
+                                            <span className="text-[9px] md:text-[10px] text-gray-500 font-medium">
+                                              {tierDisplay}
+                                            </span>
+                                          )}
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                  ) : (
+                                    <div className="px-3 py-2 md:px-4 md:py-2.5">
+                                      <span className="text-sm md:text-base font-bold text-[#AE9B66]">FREE</span>
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Show More Prices Button */}
+                                {event.is_paid && (event.price > 0 || event.member_price > 0 || event.student_price > 0) && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleViewPrices(event);
+                                    }}
+                                    className="px-2 py-1 md:px-2.5 md:py-1.5 bg-[#03215F]/90 backdrop-blur-sm rounded-lg text-[9px] md:text-[10px] font-medium text-white hover:bg-[#03215F] shadow-lg flex items-center gap-1 transition-all hover:scale-105 hover:shadow-xl"
+                                    title="View all prices"
+                                  >
+                                    <DollarSign className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                                    <span className="hidden xs:inline">More prices</span>
+                                    <span className="xs:hidden">More</span>
+                                  </button>
                                 )}
                               </div>
                             </div>
@@ -1248,11 +1290,11 @@ function EventsPageContent() {
                                   </div>
                                 )}
 
-                                {/* Member Savings */}
-                                {memberSavings && (
+                                {/* Savings Badge */}
+                                {savingsDisplay && (
                                   <div className="px-2.5 py-1 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
                                     <Gift className="w-3 h-3" />
-                                    Save {memberSavings}
+                                    Save {savingsDisplay}
                                   </div>
                                 )}
 
@@ -1454,6 +1496,17 @@ function EventsPageContent() {
                                 >
                                   <QrCode className="w-4 h-4" />
                                 </button>
+
+                                {/* View Prices Button */}
+                                {(event.price > 0 || event.member_price > 0 || event.student_price > 0) && (
+                                  <button
+                                    onClick={() => handleViewPrices(event)}
+                                    className="px-3 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:opacity-90 transition-colors flex items-center justify-center"
+                                    title="View Prices"
+                                  >
+                                    <DollarSign className="w-4 h-4" />
+                                  </button>
+                                )}
 
                                 {/* Join allowed only for upcoming and not full; otherwise show details or joined */}
                                 {!event.joined && event.status === "upcoming" && !event.isFull ? (
@@ -1883,6 +1936,14 @@ function EventsPageContent() {
           />
         )}
       </AnimatePresence>
+
+      {/* Pricing Modal */}
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+        event={selectedPricingEvent}
+        user={user}
+      />
     </MainLayout>
   );
 }

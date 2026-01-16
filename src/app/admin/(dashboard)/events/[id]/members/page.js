@@ -440,6 +440,328 @@ export default function EventMembersPage() {
     fetchMembers();
   };
 
+  // Handle print badge for attendees
+  const handlePrintBadge = (member) => {
+    if (!event) {
+      toast.error('Event information not found');
+      return;
+    }
+
+    // Create a new window with the badge content
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    
+    const badgeHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Attendee Badge - ${member.users?.full_name || 'Attendee'}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              background: #f5f5f5;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              padding: 20px;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
+            }
+            .badge-container {
+              width: 100%;
+              max-width: 400px;
+              min-height: 600px;
+              background: linear-gradient(135deg, #03215F 0%, #1a3a7f 100%);
+              border-radius: 20px;
+              padding: 30px;
+              color: white;
+              position: relative;
+              overflow: hidden;
+              box-shadow: 0 20px 40px rgba(3, 33, 95, 0.3);
+            }
+            .badge-bg {
+              position: absolute;
+              top: -100px;
+              right: -100px;
+              width: 300px;
+              height: 300px;
+              background: rgba(255, 255, 255, 0.05);
+              border-radius: 50%;
+            }
+            .badge-bg2 {
+              position: absolute;
+              bottom: -150px;
+              left: -150px;
+              width: 400px;
+              height: 400px;
+              background: rgba(255, 255, 255, 0.03);
+              border-radius: 50%;
+            }
+            .header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 30px;
+              position: relative;
+              z-index: 2;
+            }
+            .logo-section {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+            }
+            .logo {
+              width: 50px;
+              height: 50px;
+              background: white;
+              border-radius: 12px;
+              padding: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .org-info h3 {
+              font-size: 14px;
+              font-weight: 700;
+              letter-spacing: 0.5px;
+              margin-bottom: 4px;
+            }
+            .org-info p {
+              font-size: 10px;
+              opacity: 0.8;
+              letter-spacing: 1px;
+            }
+            .attendee-title {
+              text-align: center;
+              margin: 30px 0;
+              position: relative;
+              z-index: 2;
+            }
+            .category {
+              font-size: 18px;
+              padding: 8px 20px;
+              display: inline-block;
+              font-weight: 700;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+            }
+            .attendee-info {
+              text-align: center;
+              margin-bottom: 25px;
+              position: relative;
+              z-index: 2;
+            }
+            .attendee-name {
+              font-size: 24px;
+              font-weight: 700;
+              margin-bottom: 8px;
+            }
+            .attendee-email {
+              font-size: 14px;
+              opacity: 0.9;
+              margin-bottom: 4px;
+            }
+            .attendee-code {
+              font-size: 12px;
+              opacity: 0.8;
+              font-family: monospace;
+              background: rgba(255, 255, 255, 0.1);
+              padding: 4px 12px;
+              border-radius: 4px;
+              display: inline-block;
+              margin-top: 8px;
+            }
+            .event-info {
+              background: rgba(255, 255, 255, 0.1);
+              border-radius: 15px;
+              padding: 20px;
+              margin-bottom: 25px;
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              position: relative;
+              z-index: 2;
+            }
+            .event-title {
+              font-size: 16px;
+              font-weight: 600;
+              margin-bottom: 12px;
+              line-height: 1.3;
+            }
+            .event-details {
+              font-size: 12px;
+              opacity: 0.9;
+              line-height: 1.4;
+            }
+            .event-date {
+              margin-bottom: 6px;
+              font-weight: 500;
+            }
+            .event-end-date {
+              margin-bottom: 6px;
+              font-weight: 400;
+              color: rgba(255, 255, 255, 0.8);
+            }
+            .event-venue {
+              opacity: 0.8;
+            }
+            .qr-section {
+              display: flex;
+              justify-content: center;
+              position: relative;
+              z-index: 2;
+            }
+            .qr-container {
+              background: white;
+              padding: 8px;
+              border-radius: 12px;
+              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            }
+            @media (max-width: 480px) {
+              body {
+                padding: 10px;
+              }
+              .badge-container {
+                padding: 20px;
+                min-height: auto;
+              }
+              .header {
+                margin-bottom: 20px;
+              }
+              .logo {
+                width: 40px;
+                height: 40px;
+              }
+              .org-info h3 {
+                font-size: 12px;
+              }
+              .org-info p {
+                font-size: 9px;
+              }
+              .attendee-title {
+                margin: 20px 0;
+              }
+              .category {
+                font-size: 16px;
+                padding: 6px 16px;
+              }
+              .attendee-name {
+                font-size: 20px;
+              }
+              .attendee-email {
+                font-size: 12px;
+              }
+              .event-info {
+                padding: 15px;
+                margin-bottom: 20px;
+              }
+              .event-title {
+                font-size: 14px;
+              }
+              .event-details {
+                font-size: 11px;
+              }
+            }
+            @media print {
+              body { 
+                margin: 0; 
+                padding: 0;
+                background: white;
+              }
+              .badge-container { 
+                width: 100%;
+                max-width: 400px;
+                height: auto;
+                min-height: 600px;
+                margin: 0 auto;
+                box-shadow: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="badge-container">
+            <div class="badge-bg"></div>
+            <div class="badge-bg2"></div>
+            
+            <div class="header">
+              <div class="logo-section">
+                <div class="logo">
+                  <img src="/logo.png" alt="BDS Logo" style="width: 100%; height: 100%; object-fit: contain;" />
+                </div>
+                <div class="org-info">
+                  <h3>BAHRAIN DENTAL SOCIETY</h3>
+                  <p>EVENT ATTENDEE</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="attendee-title">
+              <div class="category">${member.is_member ? 'MEMBER' : 'ATTENDEE'}</div>
+            </div>
+            
+            <div class="attendee-info">
+              <div class="attendee-name">${(member.users?.full_name || 'ATTENDEE').toUpperCase()}</div>
+              <div class="attendee-email">${member.users?.email || ''}</div>
+              ${member.users?.membership_code ? '<div class="attendee-code">ID: ' + member.users.membership_code + '</div>' : ''}
+            </div>
+            
+            <div class="event-info">
+              <div class="event-title">${event.title}</div>
+              <div class="event-details">
+                <div class="event-date">Start: ${new Date(event.start_datetime).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}</div>
+                ${event.end_datetime ? '<div class="event-end-date">End: ' + new Date(event.end_datetime).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                }) + '</div>' : ''}
+                ${event.venue_name ? '<div class="event-venue">' + event.venue_name + '</div>' : ''}
+              </div>
+            </div>
+            
+            <div class="qr-section">
+              <div class="qr-container" id="qr-container">
+                <!-- QR Code will be inserted here -->
+              </div>
+            </div>
+          </div>
+          
+          <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"><\/script>
+          <script>
+            // Generate QR code
+            const qrData = JSON.stringify({
+              type: 'EVENT_CHECKIN',
+              token: '${member.token}',
+              event_id: '${event.id}',
+              event_title: '${event.title}',
+              attendee_name: '${member.users?.full_name || 'Attendee'}',
+              is_member: ${member.is_member ? 'true' : 'false'}
+            });
+            
+            const qr = qrcode(0, 'M');
+            qr.addData(qrData);
+            qr.make();
+            
+            document.getElementById('qr-container').innerHTML = qr.createImgTag(4, 0);
+            
+            // Auto print after a short delay
+            setTimeout(() => {
+              window.print();
+            }, 500);
+          <\/script>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(badgeHTML);
+    printWindow.document.close();
+  };
+
   if (loading && !event) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
@@ -909,6 +1231,13 @@ export default function EventMembersPage() {
                               title="View Details"
                             >
                               <Eye className="w-4 h-4 text-[#03215F]" />
+                            </button>
+                            <button
+                              onClick={() => handlePrintBadge(member)}
+                              className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors hover:scale-110 active:scale-95"
+                              title="Print Badge"
+                            >
+                              <Printer className="w-4 h-4 text-white" />
                             </button>
                             <button
                               onClick={() => handleCheckInOut(member)}

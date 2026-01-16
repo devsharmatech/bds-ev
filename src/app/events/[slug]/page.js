@@ -30,6 +30,7 @@ import {
   QrCode,
   Download,
   Mic,
+  Tag,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { QRCodeCanvas } from "qrcode.react";
@@ -37,6 +38,14 @@ import LoginModal from "@/components/modals/LoginModal";
 import RegistrationLiteModal from "@/components/modals/RegistrationLiteModal";
 import EventModal from "@/components/modals/EventModal";
 import SpeakerApplicationModal from "@/components/SpeakerApplicationModal";
+import {
+  getUserEventPrice,
+  calculateSavings,
+  formatBHD as formatBHDPrice,
+  getAllEventPrices,
+  hasMultiplePricingTiers,
+  hasCategoryPricing,
+} from "@/lib/eventPricing";
 
 const formatBHD = (amount) => {
   if (!amount) return "FREE";
@@ -666,15 +675,83 @@ export default function EventDetailsPage() {
                       <DollarSign className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Price</p>
-                      <p className="font-bold text-gray-900 text-xl">{event.price_to_show}</p>
-                      {event.is_paid && event.member_price && (
-                        <p className="text-sm text-[#AE9B66] mt-1 font-medium">
-                          Member: {formatBHD(event.member_price)}
-                        </p>
-                      )}
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Your Price</p>
+                      {(() => {
+                        const priceInfo = getUserEventPrice(event, user);
+                        const savings = calculateSavings(event, user);
+                        return (
+                          <>
+                            <p className="font-bold text-gray-900 text-xl">
+                              {priceInfo.isFree ? 'FREE' : formatBHDPrice(priceInfo.price)}
+                            </p>
+                            {!priceInfo.isFree && user && (
+                              <p className="text-sm text-[#AE9B66] mt-1 font-medium">
+                                {priceInfo.categoryDisplay} • {priceInfo.tierDisplay}
+                              </p>
+                            )}
+                            {savings > 0 && (
+                              <p className="text-xs text-green-600 mt-1">
+                                You save {formatBHDPrice(savings)}!
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
+
+                  {/* Full Pricing Table (if multiple prices exist) */}
+                  {event.is_paid && (hasMultiplePricingTiers(event) || hasCategoryPricing(event)) && (
+                    <div className="pt-4 border-t border-gray-200">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1">
+                        <Tag className="w-3 h-3" />
+                        All Pricing Options
+                      </p>
+                      {(() => {
+                        const allPrices = getAllEventPrices(event);
+                        if (!allPrices) return null;
+                        return (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs border-collapse">
+                              <thead>
+                                <tr className="bg-gray-100">
+                                  <th className="border border-gray-200 px-2 py-1.5 text-left text-gray-600 font-semibold">Category</th>
+                                  <th className={`border border-gray-200 px-2 py-1.5 text-center font-semibold ${allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' : 'text-gray-600'}`}>
+                                    Early Bird
+                                  </th>
+                                  <th className={`border border-gray-200 px-2 py-1.5 text-center font-semibold ${allPrices.currentTier === 'standard' ? 'bg-green-100 text-green-700' : 'text-gray-600'}`}>
+                                    Standard
+                                  </th>
+                                  <th className={`border border-gray-200 px-2 py-1.5 text-center font-semibold ${allPrices.currentTier === 'onsite' ? 'bg-green-100 text-green-700' : 'text-gray-600'}`}>
+                                    On-site
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {allPrices.categories.map((cat) => (
+                                  <tr key={cat.id} className={user && getUserEventPrice(event, user).category === cat.id ? 'bg-blue-50' : ''}>
+                                    <td className="border border-gray-200 px-2 py-1.5 text-gray-700 font-medium">{cat.name}</td>
+                                    <td className="border border-gray-200 px-2 py-1.5 text-center text-gray-700">
+                                      {cat.earlybird ? formatBHDPrice(cat.earlybird) : '-'}
+                                    </td>
+                                    <td className="border border-gray-200 px-2 py-1.5 text-center text-gray-700">
+                                      {cat.standard ? formatBHDPrice(cat.standard) : '-'}
+                                    </td>
+                                    <td className="border border-gray-200 px-2 py-1.5 text-center text-gray-700">
+                                      {cat.onsite ? formatBHDPrice(cat.onsite) : '-'}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            <p className="text-[10px] text-gray-500 mt-2 text-center">
+                              Current tier: <span className="font-semibold text-green-600">{allPrices.currentTierDisplay}</span>
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
 
                   {/* Registration Stats */}
                   {event.capacity && (

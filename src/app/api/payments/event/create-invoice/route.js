@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { initiateEventPayment } from '@/lib/myfatoorah';
+import { getUserEventPrice } from '@/lib/eventPricing';
 
 /**
  * POST /api/payments/event/create-invoice
@@ -90,12 +91,20 @@ export async function POST(request) {
       );
     }
 
-    // Get user details
+    // Get user details - include category for pricing
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, full_name, email, phone, mobile, membership_type')
+      .select(`
+        id, full_name, email, phone, mobile, membership_type,
+        member_profiles!member_profiles_user_id_fkey(category)
+      `)
       .eq('id', user_id)
       .single();
+
+    // Flatten category from member_profiles
+    if (user && user.member_profiles) {
+      user.category = user.member_profiles.category;
+    }
 
     if (userError || !user) {
       console.error('[EVENT-CREATE-INVOICE] User not found:', { user_id, error: userError });
@@ -127,17 +136,24 @@ export async function POST(request) {
       );
     }
 
-    // Calculate price
-    const isMember = user.membership_type === 'paid';
-    const amount = isMember 
-      ? (event.member_price ?? event.regular_price)
-      : event.regular_price;
+    // Calculate price using the new pricing utility
+    // This handles member type, category (student, hygienist), and pricing tier (early bird, standard, onsite)
+    const priceInfo = getUserEventPrice(event, user);
+    const amount = priceInfo.price;
+
+    console.log('[EVENT-CREATE-INVOICE] Price calculated:', {
+      user_category: priceInfo.category,
+      pricing_tier: priceInfo.tier,
+      amount,
+      user_membership_type: user.membership_type,
+      user_profile_category: user.category
+    });
 
     if (!amount || amount <= 0) {
       return NextResponse.json(
         { 
           success: false, 
-          message: 'Event price is not set'
+          message: 'Event price is not set for your category'
         },
         { status: 400 }
       );

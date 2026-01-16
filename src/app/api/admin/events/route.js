@@ -137,6 +137,16 @@ export async function POST(request) {
     const is_paid = formData.get('is_paid') === 'true';
     const regular_price = formData.get('regular_price') ? parseFloat(formData.get('regular_price')) : null;
     const member_price = formData.get('member_price') ? parseFloat(formData.get('member_price')) : null;
+    const student_price = formData.get('student_price') ? parseFloat(formData.get('student_price')) : null;
+    const hygienist_price = formData.get('hygienist_price') ? parseFloat(formData.get('hygienist_price')) : null;
+    const regular_standard_price = formData.get('regular_standard_price') ? parseFloat(formData.get('regular_standard_price')) : null;
+    const member_standard_price = formData.get('member_standard_price') ? parseFloat(formData.get('member_standard_price')) : null;
+    const student_standard_price = formData.get('student_standard_price') ? parseFloat(formData.get('student_standard_price')) : null;
+    const hygienist_standard_price = formData.get('hygienist_standard_price') ? parseFloat(formData.get('hygienist_standard_price')) : null;
+    const regular_onsite_price = formData.get('regular_onsite_price') ? parseFloat(formData.get('regular_onsite_price')) : null;
+    const member_onsite_price = formData.get('member_onsite_price') ? parseFloat(formData.get('member_onsite_price')) : null;
+    const student_onsite_price = formData.get('student_onsite_price') ? parseFloat(formData.get('student_onsite_price')) : null;
+    const hygienist_onsite_price = formData.get('hygienist_onsite_price') ? parseFloat(formData.get('hygienist_onsite_price')) : null;
     const status = formData.get('status') || 'upcoming';
     const bannerImage = formData.get('banner_image');
     const nera_cme_hours = formData.get('nera_cme_hours') ? parseFloat(formData.get('nera_cme_hours')) : null;
@@ -242,6 +252,16 @@ export async function POST(request) {
       is_paid,
       regular_price,
       member_price,
+      student_price,
+      hygienist_price,
+      regular_standard_price,
+      member_standard_price,
+      student_standard_price,
+      hygienist_standard_price,
+      regular_onsite_price,
+      member_onsite_price,
+      student_onsite_price,
+      hygienist_onsite_price,
       status,
       banner_url,
       created_by: created_by || null,

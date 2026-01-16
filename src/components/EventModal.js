@@ -255,6 +255,16 @@ export default function EventModal({
     is_paid: false,
     regular_price: "",
     member_price: "",
+    student_price: "",
+    hygienist_price: "",
+    regular_standard_price: "",
+    member_standard_price: "",
+    student_standard_price: "",
+    hygienist_standard_price: "",
+    regular_onsite_price: "",
+    member_onsite_price: "",
+    student_onsite_price: "",
+    hygienist_onsite_price: "",
     status: "upcoming",
     created_by: "",
     nera_cme_hours: "",
@@ -353,6 +363,16 @@ export default function EventModal({
         is_paid: event.is_paid || false,
         regular_price: event.regular_price || "",
         member_price: event.member_price || "",
+        student_price: event.student_price || "",
+        hygienist_price: event.hygienist_price || "",
+        regular_standard_price: event.regular_standard_price || "",
+        member_standard_price: event.member_standard_price || "",
+        student_standard_price: event.student_standard_price || "",
+        hygienist_standard_price: event.hygienist_standard_price || "",
+        regular_onsite_price: event.regular_onsite_price || "",
+        member_onsite_price: event.member_onsite_price || "",
+        student_onsite_price: event.student_onsite_price || "",
+        hygienist_onsite_price: event.hygienist_onsite_price || "",
         status: event.status || "upcoming",
         created_by: event.created_by || "",
         nera_cme_hours: event.nera_cme_hours ?? "",
@@ -697,12 +717,15 @@ export default function EventModal({
   const formatFormData = useCallback(() => {
     const data = new FormData();
 
+    const priceFields = [
+      'regular_price', 'member_price', 'student_price', 'hygienist_price',
+      'regular_standard_price', 'member_standard_price', 'student_standard_price', 'hygienist_standard_price',
+      'regular_onsite_price', 'member_onsite_price', 'student_onsite_price', 'hygienist_onsite_price'
+    ];
+
     Object.keys(formData).forEach((key) => {
       if (formData[key] !== null && formData[key] !== undefined) {
-        if (
-          (key === "regular_price" || key === "member_price") &&
-          !formData.is_paid
-        ) {
+        if (priceFields.includes(key) && !formData.is_paid) {
           data.append(key, "");
         } else if (key === "province") {
           data.append("province", formData[key]);
@@ -1851,65 +1874,202 @@ export default function EventModal({
                   </div>
 
                   {formData.is_paid && (
-                    <div className="space-y-4 animate-fadeIn">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Regular Price (BHD) *
-                        </label>
-                        <div className="relative">
-                          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                              <BahrainFlag />
-                              <span className="text-gray-700 font-medium">
-                                BHD
-                              </span>
-                            </div>
-                          </div>
-                          <MemoizedInput
-                            type="number"
-                            name="regular_price"
-                            value={formData.regular_price}
-                            onChange={handleChange}
-                            error={errors.regular_price}
-                            min="0"
-                            step="0.001"
-                            className="pl-20 pr-4"
-                            placeholder="0.000"
-                          />
-                        </div>
+                    <div className="space-y-6 animate-fadeIn">
+                      <p className="text-xs text-gray-500 bg-blue-50 p-3 rounded-lg">
+                        💡 Set prices for different member categories and pricing tiers. All prices are in Bahrain Dinar (BHD) with 3 decimal places.
+                      </p>
+                      
+                      {/* Pricing Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-sm">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              <th className="border border-gray-300 px-3 py-2 text-left font-semibold text-gray-700">Category</th>
+                              <th className="border border-gray-300 px-3 py-2 text-center font-semibold text-gray-700">Early Bird</th>
+                              <th className="border border-gray-300 px-3 py-2 text-center font-semibold text-gray-700">Standard</th>
+                              <th className="border border-gray-300 px-3 py-2 text-center font-semibold text-gray-700">On-site</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {/* BDS Member Row */}
+                            <tr>
+                              <td className="border border-gray-300 px-3 py-2 font-medium text-gray-700 bg-blue-50">
+                                BDS & Partner Dentists
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="member_price"
+                                  value={formData.member_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="member_standard_price"
+                                  value={formData.member_standard_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="member_onsite_price"
+                                  value={formData.member_onsite_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                            </tr>
+                            {/* Non-Member Row */}
+                            <tr>
+                              <td className="border border-gray-300 px-3 py-2 font-medium text-gray-700 bg-gray-50">
+                                Non-Member Dentist *
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="regular_price"
+                                  value={formData.regular_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="regular_standard_price"
+                                  value={formData.regular_standard_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="regular_onsite_price"
+                                  value={formData.regular_onsite_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                            </tr>
+                            {/* Student Row */}
+                            <tr>
+                              <td className="border border-gray-300 px-3 py-2 font-medium text-gray-700 bg-green-50">
+                                Undergraduate Student
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="student_price"
+                                  value={formData.student_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="student_standard_price"
+                                  value={formData.student_standard_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="student_onsite_price"
+                                  value={formData.student_onsite_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                            </tr>
+                            {/* Hygienist Row */}
+                            <tr>
+                              <td className="border border-gray-300 px-3 py-2 font-medium text-gray-700 bg-purple-50">
+                                Hygienist / Assistant / Technician
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="hygienist_price"
+                                  value={formData.hygienist_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="hygienist_standard_price"
+                                  value={formData.hygienist_standard_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                              <td className="border border-gray-300 px-2 py-1">
+                                <input
+                                  type="number"
+                                  name="hygienist_onsite_price"
+                                  value={formData.hygienist_onsite_price}
+                                  onChange={handleChange}
+                                  min="0"
+                                  step="0.001"
+                                  className="w-full px-2 py-1.5 border border-gray-200 rounded text-center focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                                  placeholder="0.000"
+                                />
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Member Price (BHD) (Optional)
-                        </label>
-                        <div className="relative">
-                          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                              <BahrainFlag />
-                              <span className="text-gray-700 font-medium">
-                                BHD
-                              </span>
-                            </div>
-                          </div>
-                          <MemoizedInput
-                            type="number"
-                            name="member_price"
-                            value={formData.member_price}
-                            onChange={handleChange}
-                            min="0"
-                            step="0.001"
-                            className="pl-20 pr-4"
-                            placeholder="0.000"
-                          />
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">
-                          Special price for members. Leave empty if same as
-                          regular price.
+                      {errors.regular_price && (
+                        <p className="text-[#b8352d] text-sm flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {errors.regular_price}
                         </p>
-                      </div>
+                      )}
                       <p className="text-xs text-gray-500">
-                        Bahrain Dinar with 3 decimal places (e.g., 50.000)
+                        * Non-Member Early Bird price is required for paid events. Other prices are optional.
                       </p>
                     </div>
                   )}

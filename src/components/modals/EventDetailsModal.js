@@ -39,10 +39,20 @@ import {
   ChevronRight,
   Menu,
   Smartphone,
+  DollarSign,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { QRCodeCanvas } from "qrcode.react";
+import {
+  getUserEventPrice,
+  calculateSavings,
+  formatBHD as formatBHDPrice,
+  getAllEventPrices,
+  hasMultiplePricingTiers,
+  hasCategoryPricing,
+} from "@/lib/eventPricing";
+import PricingModal from "@/components/modals/PricingModal";
 
 // Bahrain flag component
 const BahrainFlag = () => (
@@ -246,6 +256,7 @@ export default function EventDetailsModal({
   const [activeTab, setActiveTab] = useState("overview");
   const [showQR, setShowQR] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const isMobile = useIsMobile();
   const modalRef = useRef(null);
 
@@ -287,17 +298,11 @@ export default function EventDetailsModal({
     ? Math.min(100, ((event.registered_count || 0) / event.capacity) * 100)
     : 0;
 
-  // Get member price
-  const getMemberPrice = () => {
-    if (!event?.is_paid) return null;
-    if (event.member_price && user?.membership_type === "paid") {
-      return event.member_price;
-    }
-    return null;
-  };
-
-  const memberPrice = getMemberPrice();
-  const memberSavings = memberPrice ? event.regular_price - memberPrice : 0;
+  // Get user's price info using new pricing utility
+  const userPriceInfo = getUserEventPrice(event, user);
+  const userSavings = calculateSavings(event, user);
+  const allPrices = getAllEventPrices(event);
+  const showPricingTable = event?.is_paid && (hasMultiplePricingTiers(event) || hasCategoryPricing(event));
 
   // Get event type
   const getEventType = () => {
@@ -364,18 +369,17 @@ export default function EventDetailsModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-start justify-center p-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-0 z-50 overflow-y-auto">
         <motion.div
           ref={modalRef}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="bg-white rounded-none sm:rounded-xl md:rounded-2xl shadow-2xl w-full sm:max-w-2xl md:max-w-4xl lg:max-w-6xl flex flex-col overflow-hidden min-h-screen sm:min-h-0 sm:max-h-[95vh] sm:my-4 border-0 sm:border border-white/20 relative"
+          className="bg-white rounded-none sm:rounded-xl md:rounded-2xl shadow-2xl w-full sm:max-w-2xl md:max-w-4xl lg:max-w-6xl flex flex-col overflow-hidden min-h-screen sm:min-h-0 sm:max-h-[95vh] border-0 sm:border border-white/20 relative"
           style={{
             WebkitOverflowScrolling: "touch",
-            height: "100vh",
-            maxHeight: "100vh",
+            maxHeight: "95vh",
           }}
         >
           {/* Close Button - Always Visible */}
@@ -507,18 +511,33 @@ export default function EventDetailsModal({
                     {/* Price Display */}
                     <div className="text-right">
                       <div className="text-xs md:text-sm text-gray-600">
-                        Price
+                        Your Price
                       </div>
-                      <div className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-1">
+                      <div className="text-lg md:text-xl font-bold text-gray-900 flex items-center justify-end gap-1">
                         <BahrainFlag />
                         <span className="truncate">
-                          {formatBHD(event?.regular_price)}
+                          {userPriceInfo.isFree ? 'FREE' : formatBHDPrice(userPriceInfo.price)}
                         </span>
                       </div>
-                      {memberPrice && (
+                      {!userPriceInfo.isFree && user && (
                         <div className="text-xs md:text-sm text-[#AE9B66] truncate">
-                          Member: {formatBHD(memberPrice)}
+                          {userPriceInfo.categoryDisplay} • {userPriceInfo.tierDisplay}
                         </div>
+                      )}
+                      {userSavings > 0 && (
+                        <div className="text-xs text-green-600">
+                          Save {formatBHDPrice(userSavings)}
+                        </div>
+                      )}
+                      {/* More Prices Link */}
+                      {event?.is_paid && (event?.price > 0 || event?.member_price > 0 || event?.student_price > 0) && (
+                        <button
+                          onClick={() => setIsPricingModalOpen(true)}
+                          className="text-xs text-[#03215F] hover:text-[#AE9B66] flex items-center gap-1 transition-colors mt-1"
+                        >
+                          <DollarSign className="w-3 h-3" />
+                          More prices
+                        </button>
                       )}
                     </div>
 
@@ -782,6 +801,62 @@ export default function EventDetailsModal({
                       </div>
                     </div>
                   </div>
+
+                  {/* Pricing Table - Show if event has multiple pricing options */}
+                  {showPricingTable && allPrices && (
+                    <div>
+                      <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2 md:mb-4 flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
+                        Registration Prices
+                      </h3>
+                      <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 md:p-4 overflow-x-auto">
+                        <table className="w-full text-xs md:text-sm border-collapse min-w-[300px]">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              <th className="border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-left text-gray-600 font-semibold">Category</th>
+                              <th className={`border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-center font-semibold ${allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' : 'text-gray-600'}`}>
+                                Early Bird
+                              </th>
+                              <th className={`border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-center font-semibold ${allPrices.currentTier === 'standard' ? 'bg-green-100 text-green-700' : 'text-gray-600'}`}>
+                                Standard
+                              </th>
+                              <th className={`border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-center font-semibold ${allPrices.currentTier === 'onsite' ? 'bg-green-100 text-green-700' : 'text-gray-600'}`}>
+                                On-site
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {allPrices.categories.map((cat) => {
+                              const isUserCategory = user && userPriceInfo.category === cat.id;
+                              return (
+                                <tr key={cat.id} className={isUserCategory ? 'bg-blue-50' : ''}>
+                                  <td className="border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-gray-700 font-medium">
+                                    {cat.name}
+                                    {isUserCategory && (
+                                      <span className="ml-1 text-[10px] text-[#03215F] font-bold">(You)</span>
+                                    )}
+                                  </td>
+                                  <td className={`border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-center ${allPrices.currentTier === 'earlybird' && isUserCategory ? 'bg-green-100 font-bold text-green-700' : 'text-gray-700'}`}>
+                                    {cat.earlybird ? formatBHDPrice(cat.earlybird) : '-'}
+                                  </td>
+                                  <td className={`border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-center ${allPrices.currentTier === 'standard' && isUserCategory ? 'bg-green-100 font-bold text-green-700' : 'text-gray-700'}`}>
+                                    {cat.standard ? formatBHDPrice(cat.standard) : '-'}
+                                  </td>
+                                  <td className={`border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-center ${allPrices.currentTier === 'onsite' && isUserCategory ? 'bg-green-100 font-bold text-green-700' : 'text-gray-700'}`}>
+                                    {cat.onsite ? formatBHDPrice(cat.onsite) : '-'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                        <p className="text-[10px] md:text-xs text-gray-500 mt-2 text-center">
+                          Current pricing tier: <span className="font-semibold text-green-600">{allPrices.currentTierDisplay}</span>
+                          {user && <span> • Your category: <span className="font-semibold text-[#03215F]">{userPriceInfo.categoryDisplay}</span></span>}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1256,7 +1331,13 @@ export default function EventDetailsModal({
         </motion.div>
       </div>
 
-
+      {/* Pricing Modal */}
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+        event={event}
+        user={user}
+      />
     </>
   );
 }

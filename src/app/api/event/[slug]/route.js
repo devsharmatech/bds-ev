@@ -229,8 +229,24 @@ export async function GET(request, { params }) {
       state: event.state,
       capacity: event.capacity,
       is_paid: event.is_paid,
+      // Early Bird prices
       regular_price: event.regular_price,
       member_price: event.member_price,
+      student_price: event.student_price,
+      hygienist_price: event.hygienist_price,
+      // Standard prices
+      regular_standard_price: event.regular_standard_price,
+      member_standard_price: event.member_standard_price,
+      student_standard_price: event.student_standard_price,
+      hygienist_standard_price: event.hygienist_standard_price,
+      // On-site prices
+      regular_onsite_price: event.regular_onsite_price,
+      member_onsite_price: event.member_onsite_price,
+      student_onsite_price: event.student_onsite_price,
+      hygienist_onsite_price: event.hygienist_onsite_price,
+      // Pricing deadlines
+      early_bird_deadline: event.early_bird_deadline,
+      standard_deadline: event.standard_deadline,
       status: event.status,
       slug: event.slug,
       google_map_url: event.google_map_url,

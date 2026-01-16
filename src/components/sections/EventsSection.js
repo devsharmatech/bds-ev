@@ -25,6 +25,7 @@ import {
   Briefcase,
   Globe,
   QrCode,
+  DollarSign,
 } from "lucide-react";
 import EventModal from "@/components/modals/EventModal";
 import LoginModal from "@/components/modals/LoginModal";
@@ -33,7 +34,17 @@ import SpeakerApplicationModal from "@/components/SpeakerApplicationModal";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import EventDetailsModal from "@/components/modals/EventDetailsModal";
+import PricingModal from "@/components/modals/PricingModal";
+import {
+  getUserEventPrice,
+  calculateSavings,
+  formatBHD as formatBHDPrice,
+  getPricingTier,
+  getTierDisplayName,
+  hasMultiplePricingTiers,
+} from "@/lib/eventPricing";
 import EventQRModal from "@/components/modals/EventQRModal";
+
 
 // Bahrain flag component
 const BahrainFlag = () => (
@@ -218,10 +229,18 @@ export default function EventsSection() {
   const [selectedSpeakerEvent, setSelectedSpeakerEvent] = useState(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [selectedQREvent, setSelectedQREvent] = useState(null);
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [selectedPricingEvent, setSelectedPricingEvent] = useState(null);
 
   const handleViewDetails = (event) => {
     setSelectedDetailsEvent(event);
     setIsDetailsModalOpen(true);
+  };
+
+  // Handle pricing modal
+  const handleViewPrices = (event) => {
+    setSelectedPricingEvent(event);
+    setIsPricingModalOpen(true);
   };
 
   // Handle QR code modal
@@ -468,9 +487,15 @@ export default function EventsSection() {
                   );
                   const isAlmostFull = progress >= 80 && progress < 100;
                   const isFull = progress >= 100;
-                  const memberSavings = event.member_price
-                    ? event.regular_price - event.member_price
-                    : 0;
+                  
+                  // Use new pricing utility
+                  const priceInfo = getUserEventPrice(event, user);
+                  const priceToPay = priceInfo.isFree ? "FREE" : formatBHDPrice(priceInfo.price);
+                  const savings = calculateSavings(event, user);
+                  const savingsDisplay = savings > 0 ? formatBHDPrice(savings) : null;
+                  const currentTier = getPricingTier(event);
+                  const tierDisplay = getTierDisplayName(currentTier);
+                  
                   const hasPaid =
                     !!(event.payment_paid ||
                       (event.event_member_data &&
@@ -537,19 +562,49 @@ export default function EventsSection() {
                             </div>
 
                             {/* Price Badge */}
-                            <div className="px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full text-sm font-semibold flex items-center gap-1 shadow-lg">
-                              {event.is_paid ? (
-                                <>
-                                  <BahrainFlag />
-                                  {formatBHD(event.regular_price)}
-                                  {event.member_price && (
-                                    <span className="text-xs text-gray-500 ml-1">
-                                      | {formatBHD(event.member_price)} member
-                                    </span>
-                                  )}
-                                </>
-                              ) : (
-                                <span className="text-[#AE9B66]">FREE</span>
+                            <div className="flex flex-col items-end gap-1.5">
+                              <div className="bg-gradient-to-br from-white to-gray-50 backdrop-blur-md rounded-xl shadow-xl border border-white/50 overflow-hidden">
+                                {event.is_paid ? (
+                                  <div className="px-2.5 py-2 md:px-3 md:py-2.5">
+                                    <div className="flex items-center gap-1.5 justify-end">
+                                      <BahrainFlag />
+                                      <span className="text-sm md:text-base font-bold text-[#03215F]">{priceToPay}</span>
+                                    </div>
+                                    {(user && priceInfo.category !== 'regular') || hasMultiplePricingTiers(event) ? (
+                                      <div className="flex flex-col items-end mt-0.5">
+                                        {user && priceInfo.category !== 'regular' && (
+                                          <span className="text-[9px] md:text-[10px] text-[#AE9B66] font-semibold">
+                                            {priceInfo.categoryDisplay}
+                                          </span>
+                                        )}
+                                        {hasMultiplePricingTiers(event) && (
+                                          <span className="text-[9px] md:text-[10px] text-gray-500 font-medium">
+                                            {tierDisplay}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                ) : (
+                                  <div className="px-3 py-2 md:px-4 md:py-2.5">
+                                    <span className="text-sm md:text-base font-bold text-[#AE9B66]">FREE</span>
+                                  </div>
+                                )}
+                              </div>
+                              {/* More Prices Link */}
+                              {event.is_paid && (event.price > 0 || event.member_price > 0 || event.student_price > 0) && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewPrices(event);
+                                  }}
+                                  className="px-2 py-1 md:px-2.5 md:py-1.5 bg-[#03215F]/90 backdrop-blur-sm rounded-lg text-[9px] md:text-[10px] font-medium text-white hover:bg-[#03215F] shadow-lg flex items-center gap-1 transition-all hover:scale-105 hover:shadow-xl"
+                                  title="View all prices"
+                                >
+                                  <DollarSign className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                                  <span className="hidden xs:inline">More prices</span>
+                                  <span className="xs:hidden">More</span>
+                                </button>
                               )}
                             </div>
                           </div>
@@ -565,11 +620,11 @@ export default function EventsSection() {
                                 </div>
                               )}
 
-                              {/* Member Savings */}
-                              {memberSavings > 0 && (
+                              {/* Savings Badge */}
+                              {savingsDisplay && (
                                 <div className="px-3 py-1.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
                                   <Gift className="w-3 h-3" />
-                                  Save {formatBHD(memberSavings)}
+                                  Save {savingsDisplay}
                                 </div>
                               )}
 
@@ -766,6 +821,17 @@ export default function EventsSection() {
                                 Details
                               </button>
 
+                              {/* View Prices Button */}
+                              {event.is_paid && (
+                                <button
+                                  onClick={() => handleViewPrices(event)}
+                                  className="px-3 py-2.5 bg-gradient-to-r from-[#AE9B66]/20 to-[#AE9B66]/10 text-[#AE9B66] border border-[#AE9B66]/30 rounded-lg hover:bg-[#AE9B66]/20 transition-colors flex items-center justify-center"
+                                  title="View All Prices"
+                                >
+                                  <DollarSign className="w-4 h-4" />
+                                </button>
+                              )}
+
                               {/* QR Code Button */}
                               <button
                                 onClick={() => handleQRCode(event)}
@@ -956,6 +1022,19 @@ export default function EventsSection() {
           isOpen={isQRModalOpen}
           onClose={() => setIsQRModalOpen(false)}
           event={selectedQREvent}
+        />
+      )}
+
+      {/* Pricing Modal */}
+      {selectedPricingEvent && (
+        <PricingModal
+          event={selectedPricingEvent}
+          user={user}
+          isOpen={isPricingModalOpen}
+          onClose={() => {
+            setIsPricingModalOpen(false);
+            setSelectedPricingEvent(null);
+          }}
         />
       )}
     </>
