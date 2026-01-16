@@ -189,7 +189,7 @@ export async function GET(request, { params }) {
     if (loggedInUser) {
       const { data: eventMember } = await supabase
         .from('event_members')
-        .select('event_id, token, checked_in, joined_at, id')
+        .select('event_id, token, checked_in, joined_at, id, price_paid')
         .eq('user_id', loggedInUser.id)
         .eq('event_id', event.id)
         .maybeSingle();
@@ -200,12 +200,29 @@ export async function GET(request, { params }) {
           checked_in: eventMember.checked_in,
           joined_at: eventMember.joined_at,
           event_member_id: eventMember.id,
+          price_paid: eventMember.price_paid,
         };
       }
     }
 
     /* ---------- TRANSFORM ---------- */
-    const joined = !!userEventMemberData;
+    // For paid events, only mark as joined if payment is confirmed (price_paid > 0)
+    // For free events, joined is true if event_member record exists
+    let joined = false;
+    let paymentPending = false;
+    
+    if (userEventMemberData) {
+      if (event.is_paid) {
+        // Paid event: check if payment is confirmed
+        const pricePaid = parseFloat(userEventMemberData.price_paid) || 0;
+        joined = pricePaid > 0;
+        paymentPending = !joined; // Has record but no payment
+      } else {
+        // Free event: joined if record exists
+        joined = true;
+      }
+    }
+    
     let price_to_show = "FREE";
 
     if (event.is_paid) {
@@ -257,6 +274,7 @@ export async function GET(request, { params }) {
 
       registered_count: registeredCount || 0,
       joined,
+      payment_pending: paymentPending,
       event_member_data: userEventMemberData,
 
       date_display: formatDateForDisplay(event.start_datetime),

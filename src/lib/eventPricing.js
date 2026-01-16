@@ -94,38 +94,64 @@ export function getTierDisplayName(tier) {
 
 /**
  * Determine user category for pricing
- * @param {Object} user - User object with membership_type and category
+ * @param {Object} user - User object with membership_type, category, position, specialty
  * @returns {'member' | 'regular' | 'student' | 'hygienist'} - User's pricing category
  */
 export function getUserPricingCategory(user) {
   if (!user) return 'regular';
   
-  // Check user's category (from member_profiles)
+  // Check user's category and position (from member_profiles)
   const category = (user.category || user.member_category || '').toLowerCase();
+  const position = (user.position || '').toLowerCase();
   
-  // Student categories
-  if (category.includes('student') || category.includes('undergraduate')) {
+  // Student categories - check both category and position
+  if (
+    category.includes('student') || 
+    category.includes('undergraduate') ||
+    category.includes('postgraduate') ||
+    position === 'student'
+  ) {
     return 'student';
   }
   
-  // Hygienist/Assistant/Technician categories
+  // Hygienist/Assistant/Technician categories - check both category and position
   if (
     category.includes('hygienist') || 
     category.includes('assistant') || 
     category.includes('technician') ||
     category.includes('dental assistant') ||
     category.includes('dental hygienist') ||
-    category.includes('dental technician')
+    category.includes('dental technologist') ||
+    position.includes('hygienist') ||
+    position.includes('assistant') ||
+    position.includes('technologist')
   ) {
     return 'hygienist';
   }
   
-  // BDS Member (paid membership)
-  if (user.membership_type === 'paid') {
+  // BDS Member (paid membership) - only applies if user is a dentist
+  // Check if user is a dentist based on category or position
+  const isDentist = 
+    category === 'dentist' ||
+    category.includes('dentist') ||
+    position.includes('dentist') ||
+    position.includes('specialist') ||
+    position.includes('consultant') ||
+    position.includes('resident') ||
+    position.includes('intern') ||
+    position.includes('hod') ||
+    position.includes('lead') ||
+    position.includes('faculty') ||
+    position.includes('lecturer');
+  
+  if (isDentist && user.membership_type === 'paid') {
     return 'member';
   }
   
-  // Default to regular (non-member)
+  // Non-dental / Others - treat as regular (non-member) pricing
+  // This includes "Others (Non Dental)" category
+  
+  // Default to regular (non-member dentist pricing)
   return 'regular';
 }
 

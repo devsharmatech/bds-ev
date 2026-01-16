@@ -23,6 +23,7 @@ import {
   Crown,
   ExternalLink,
   Eye,
+  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -183,9 +184,11 @@ export default function MyEventsPage() {
     if (filters.type !== "all") {
       filtered = filtered.filter((event) => {
         if (filters.type === "paid") {
-          return event.price_paid > 0;
+          return event.is_paid && event.price_paid > 0;
         } else if (filters.type === "free") {
-          return event.price_paid === 0;
+          return !event.is_paid;
+        } else if (filters.type === "pending") {
+          return event.payment_pending;
         }
         return true;
       });
@@ -450,6 +453,7 @@ export default function MyEventsPage() {
               <option value="all">All Types</option>
               <option value="paid">Paid Events</option>
               <option value="free">Free Events</option>
+              <option value="pending">Payment Pending</option>
             </select>
 
             <button
@@ -518,7 +522,11 @@ export default function MyEventsPage() {
 
                           <div className="flex items-center text-gray-600">
                             <Ticket className="w-4 h-4 mr-2" />
-                            {event.price_paid > 0 ? "Paid Event" : "Free Event"}
+                            {event.payment_pending 
+                              ? <span className="text-orange-600 font-medium">Payment Pending</span>
+                              : event.price_paid > 0 
+                              ? "Paid Event" 
+                              : "Free Event"}
                             {event.price_paid > 0 && (
                               <span className="ml-2 font-medium">
                                 BHD {event.price_paid}
@@ -552,6 +560,16 @@ export default function MyEventsPage() {
 
                   {/* Actions */}
                   <div className="flex flex-col sm:flex-row items-center gap-2">
+                    {/* Complete Payment Button for Pending Payments */}
+                    {event.payment_pending && !event.checked_in && (
+                      <Link href={`/events/${event.slug}`} className="w-full sm:w-auto">
+                        <button className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors flex items-center w-full justify-center">
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Complete Payment
+                        </button>
+                      </Link>
+                    )}
+                    
                     {event.checked_in && isEventCompleted(event) && (
                       <button
                         onClick={() => handleViewCertificate(event)}

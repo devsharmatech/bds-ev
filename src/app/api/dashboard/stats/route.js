@@ -159,7 +159,8 @@ export async function GET(req) {
           regular_price,
           member_price,
           banner_url,
-          capacity
+          capacity,
+          is_paid
         )
       `)
       .eq("user_id", userId)
@@ -167,20 +168,29 @@ export async function GET(req) {
       .order("joined_at", { ascending: false })
       .limit(5);
 
-    const formattedUpcomingEvents = (upcomingEvents || []).map(item => ({
-      id: item.events?.id,
-      title: item.events?.title,
-      slug: item.events?.slug,
-      start_datetime: item.events?.start_datetime,
-      end_datetime: item.events?.end_datetime,
-      venue_name: item.events?.venue_name,
-      address: item.events?.address,
-      regular_price: item.events?.regular_price,
-      member_price: item.events?.member_price,
-      banner_url: item.events?.banner_url,
-      checked_in: item.checked_in,
-      price_paid: item.price_paid
-    })).filter(event => event.id); // Filter out null events
+    const formattedUpcomingEvents = (upcomingEvents || []).map(item => {
+      const isPaidEvent = item.events?.is_paid;
+      const pricePaid = item.price_paid || 0;
+      // Payment is pending if it's a paid event but user hasn't paid yet
+      const paymentPending = isPaidEvent && pricePaid === 0;
+      
+      return {
+        id: item.events?.id,
+        title: item.events?.title,
+        slug: item.events?.slug,
+        start_datetime: item.events?.start_datetime,
+        end_datetime: item.events?.end_datetime,
+        venue_name: item.events?.venue_name,
+        address: item.events?.address,
+        regular_price: item.events?.regular_price,
+        member_price: item.events?.member_price,
+        banner_url: item.events?.banner_url,
+        checked_in: item.checked_in,
+        price_paid: item.price_paid,
+        is_paid: item.events?.is_paid,
+        payment_pending: paymentPending
+      };
+    }).filter(event => event.id); // Filter out null events
 
     /* ---------- RECENT ACTIVITIES ---------- */
     const { data: recentActivities } = await supabase
@@ -192,7 +202,8 @@ export async function GET(req) {
         checked_in_at,
         price_paid,
         events (
-          title
+          title,
+          is_paid
         ),
         users (
           full_name
@@ -204,14 +215,19 @@ export async function GET(req) {
 
     const formattedActivities = (recentActivities || []).map(item => {
       const isCheckIn = item.checked_in;
-      const isFree = item.price_paid === 0 || item.price_paid === null;
+      const isPaidEvent = item.events?.is_paid;
+      const pricePaid = item.price_paid || 0;
+      const paymentPending = isPaidEvent && pricePaid === 0;
       
       let action = '';
       let status = 'success';
       
       if (isCheckIn) {
         action = `Attended ${item.events?.title || 'event'}`;
-      } else if (isFree) {
+      } else if (paymentPending) {
+        action = `Payment pending for ${item.events?.title || 'event'}`;
+        status = 'warning';
+      } else if (!isPaidEvent) {
         action = `Registered for ${item.events?.title || 'event'} (Free)`;
         status = 'pending';
       } else {

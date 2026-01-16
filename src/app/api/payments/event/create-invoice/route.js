@@ -91,19 +91,21 @@ export async function POST(request) {
       );
     }
 
-    // Get user details - include category for pricing
+    // Get user details - include category and position for pricing
     const { data: user, error: userError } = await supabase
       .from('users')
       .select(`
         id, full_name, email, phone, mobile, membership_type,
-        member_profiles!member_profiles_user_id_fkey(category)
+        member_profiles!member_profiles_user_id_fkey(category, position, specialty)
       `)
       .eq('id', user_id)
       .single();
 
-    // Flatten category from member_profiles
+    // Flatten category and position from member_profiles
     if (user && user.member_profiles) {
       user.category = user.member_profiles.category;
+      user.position = user.member_profiles.position;
+      user.specialty = user.member_profiles.specialty;
     }
 
     if (userError || !user) {

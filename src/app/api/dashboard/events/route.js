@@ -76,34 +76,41 @@ export async function GET(req) {
     if (error) throw error;
 
     // Format events data
-    const formattedEvents = (events || []).map(item => ({
-      id: item.events?.id,
-      event_member_id: item.id,
-      title: item.events?.title,
-      slug: item.events?.slug,
-      description: item.events?.description,
-      banner_url: item.events?.banner_url,
-      start_datetime: item.events?.start_datetime,
-      end_datetime: item.events?.end_datetime,
-      venue_name: item.events?.venue_name,
-      address: item.events?.address,
-      city: item.events?.city,
-      state: item.events?.state,
-      pin_code: item.events?.pin_code,
-      google_map_url: item.events?.google_map_url,
-      capacity: item.events?.capacity,
-      is_paid: item.events?.is_paid,
-      regular_price: item.events?.regular_price,
-      member_price: item.events?.member_price,
-      event_status: item.events?.status,
-      checked_in: item.checked_in,
-      checked_in_at: item.checked_in_at,
-      price_paid: item.price_paid,
-      token: item.token,
-      joined_at: item.joined_at,
-      event_hosts: item.events?.event_hosts || [],
-      event_agendas: item.events?.event_agendas || []
-    })).filter(event => event.id); // Filter out null events
+    const formattedEvents = (events || []).map(item => {
+      const isPaidEvent = item.events?.is_paid;
+      const pricePaid = item.price_paid || 0;
+      const paymentPending = isPaidEvent && pricePaid === 0;
+      
+      return {
+        id: item.events?.id,
+        event_member_id: item.id,
+        title: item.events?.title,
+        slug: item.events?.slug,
+        description: item.events?.description,
+        banner_url: item.events?.banner_url,
+        start_datetime: item.events?.start_datetime,
+        end_datetime: item.events?.end_datetime,
+        venue_name: item.events?.venue_name,
+        address: item.events?.address,
+        city: item.events?.city,
+        state: item.events?.state,
+        pin_code: item.events?.pin_code,
+        google_map_url: item.events?.google_map_url,
+        capacity: item.events?.capacity,
+        is_paid: item.events?.is_paid,
+        regular_price: item.events?.regular_price,
+        member_price: item.events?.member_price,
+        event_status: item.events?.status,
+        checked_in: item.checked_in,
+        checked_in_at: item.checked_in_at,
+        price_paid: item.price_paid,
+        payment_pending: paymentPending,
+        token: item.token,
+        joined_at: item.joined_at,
+        event_hosts: item.events?.event_hosts || [],
+        event_agendas: item.events?.event_agendas || []
+      };
+    }).filter(event => event.id); // Filter out null events
 
     return NextResponse.json({
       success: true,

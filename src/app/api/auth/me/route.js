@@ -21,7 +21,7 @@ export async function GET() {
       return NextResponse.json({ user: null }, { status: 401 });
     }
     
-    // 3️⃣ Fetch user from DB
+    // 3️⃣ Fetch user from DB with member_profiles for pricing category
     const { data: user, error } = await supabase
       .from("users")
       .select(
@@ -32,7 +32,12 @@ export async function GET() {
         email,
         role,
         membership_type,
-        membership_expiry_date
+        membership_expiry_date,
+        member_profiles!member_profiles_user_id_fkey(
+          category,
+          position,
+          specialty
+        )
       `
       )
       .eq("id", decoded.user_id)
@@ -42,7 +47,10 @@ export async function GET() {
       return NextResponse.json({ user: null, error }, { status: 404 });
     }
 
-    // 4️⃣ Return safe user object
+    // Flatten member_profiles data
+    const memberProfile = user.member_profiles || {};
+
+    // 4️⃣ Return safe user object with pricing-related fields
     return NextResponse.json({
       user: {
         id: user.id,
@@ -52,6 +60,9 @@ export async function GET() {
         role: user.role,
         membership_type: user.membership_type,
         membership_expiry_date: user.membership_expiry_date,
+        category: memberProfile.category || null,
+        position: memberProfile.position || null,
+        specialty: memberProfile.specialty || null,
       },
     });
   } catch (err) {

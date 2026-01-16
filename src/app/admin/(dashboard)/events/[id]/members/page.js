@@ -95,6 +95,7 @@ export default function EventMembersPage() {
     notCheckedIn: 0,
     paid: 0,
     free: 0,
+    paymentPending: 0,
   });
 
   const [pagination, setPagination] = useState({
@@ -171,24 +172,29 @@ export default function EventMembersPage() {
           const statsData = await statsResponse.json();
           
           if (statsData.success) {
+            const paymentPending = statsData.stats.payment_pending_members || 0;
             setStats({
               total: statsData.stats.total_members || 0,
               checkedIn: statsData.stats.checked_in_members || 0,
               notCheckedIn: (statsData.stats.total_members || 0) - (statsData.stats.checked_in_members || 0),
               paid: statsData.stats.paid_members || 0,
-              free: (statsData.stats.total_members || 0) - (statsData.stats.paid_members || 0),
+              free: (statsData.stats.total_members || 0) - (statsData.stats.paid_members || 0) - paymentPending,
+              paymentPending: paymentPending,
             });
           } else {
             // Fallback to pagination-based calculation if stats API fails
             const total = data.pagination.total;
             const checkedIn = data.members.filter((m) => m.checked_in).length;
             const paid = data.members.filter((m) => m.price_paid && m.price_paid > 0).length;
+            // Payment pending = members with no payment on a paid event
+            const paymentPending = event?.is_paid ? data.members.filter((m) => !m.price_paid || m.price_paid === 0).length : 0;
             setStats({
               total,
               checkedIn,
               notCheckedIn: total - checkedIn,
               paid,
-              free: total - paid,
+              free: event?.is_paid ? 0 : total - paid,
+              paymentPending: paymentPending,
             });
           }
         } catch (statsError) {
@@ -197,12 +203,14 @@ export default function EventMembersPage() {
           const total = data.pagination.total;
           const checkedIn = data.members.filter((m) => m.checked_in).length;
           const paid = data.members.filter((m) => m.price_paid && m.price_paid > 0).length;
+          const paymentPending = event?.is_paid ? data.members.filter((m) => !m.price_paid || m.price_paid === 0).length : 0;
           setStats({
             total,
             checkedIn,
             notCheckedIn: total - checkedIn,
             paid,
-            free: total - paid,
+            free: event?.is_paid ? 0 : total - paid,
+            paymentPending: paymentPending,
           });
         }
       } else {
@@ -417,7 +425,11 @@ export default function EventMembersPage() {
       member.token,
       member.checked_in ? "Checked In" : "Not Checked In",
       member.checked_in_at ? formatTimeBH(member.checked_in_at) : "",
-      member.price_paid ? formatBHD(member.price_paid) : "Free",
+      member.price_paid 
+        ? formatBHD(member.price_paid) 
+        : event?.is_paid 
+        ? "Payment Pending" 
+        : "Free",
     ]);
 
     return [headers, ...rows].map((row) => row.join(",")).join("\n");
@@ -909,7 +921,7 @@ export default function EventMembersPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+          className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${event?.is_paid && stats.paymentPending > 0 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}
         >
           <div className="bg-gradient-to-br from-white to-[#9cc2ed] rounded-2xl shadow-lg border border-[#9cc2ed]/50 p-6">
             <div className="flex items-center justify-between">
@@ -974,6 +986,25 @@ export default function EventMembersPage() {
               </div>
             </div>
           </div>
+
+          {/* Payment Pending Card - Only shown for paid events */}
+          {event?.is_paid && stats.paymentPending > 0 && (
+            <div className="bg-gradient-to-br from-white to-orange-400 rounded-2xl shadow-lg border border-orange-400/50 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Payment Pending
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900 mt-2">
+                    {stats.paymentPending}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-orange-500">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
 
         {/* FILTERS AND SEARCH */}
@@ -1175,16 +1206,22 @@ export default function EventMembersPage() {
                               className={`inline-flex items-center gap-1 text-sm font-medium ${
                                 member.price_paid
                                   ? "text-[#AE9B66]"
+                                  : event?.is_paid && !member.price_paid
+                                  ? "text-orange-600"
                                   : "text-gray-600"
                               }`}
                             >
                               <CreditCard className={`w-3 h-3 ${
                                 member.price_paid
                                   ? "text-[#AE9B66]"
+                                  : event?.is_paid && !member.price_paid
+                                  ? "text-orange-600"
                                   : "text-gray-600"
                               }`} />
                               {member.price_paid
                                 ? formatBHD(member.price_paid)
+                                : event?.is_paid
+                                ? "Payment Pending"
                                 : "Free"}
                             </div>
                             {member.is_member && (

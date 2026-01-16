@@ -47,6 +47,17 @@ export async function GET(req, { params }) {
       .eq("event_id", eventId)
       .gt("price_paid", 0);
 
+    // Get payment pending members count (for paid events - members with no payment)
+    let paymentPendingMembers = 0;
+    if (event?.is_paid) {
+      const { count: pendingCount } = await supabase
+        .from("event_members")
+        .select("*", { count: 'exact', head: true })
+        .eq("event_id", eventId)
+        .or("price_paid.is.null,price_paid.eq.0");
+      paymentPendingMembers = pendingCount || 0;
+    }
+
     // Get event member IDs for this event
     const { data: eventMembers } = await supabase
       .from("event_members")
@@ -82,6 +93,7 @@ export async function GET(req, { params }) {
       total_members: totalMembers || 0,
       checked_in_members: checkedInMembers || 0,
       paid_members: paidMembers || 0,
+      payment_pending_members: paymentPendingMembers,
       attendance_logs: attendanceLogs || 0,
       recent_checkins: recentCheckins || 0,
       remaining_capacity: event?.capacity ? event.capacity - (totalMembers || 0) : null,

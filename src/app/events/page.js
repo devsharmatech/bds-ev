@@ -41,6 +41,7 @@ import {
   Printer,
   QrCode,
   DollarSign,
+  CreditCard,
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import { useState, useEffect, Suspense } from "react";
@@ -1298,13 +1299,18 @@ function EventsPageContent() {
                                   </div>
                                 )}
 
-                                {/* Already Joined */}
-                                {event.joined && (
+                                {/* Already Joined / Payment Pending */}
+                                {event.payment_pending ? (
+                                  <div className="px-2.5 py-1 bg-gradient-to-r from-[#ECCF0F] to-[#b8352d] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
+                                    <CreditCard className="w-3 h-3" />
+                                    Payment Pending
+                                  </div>
+                                ) : event.joined ? (
                                   <div className="px-2.5 py-1 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
                                     <CheckCircle className="w-3 h-3" />
                                     Joined
                                   </div>
-                                )}
+                                ) : null}
                               </div>
                             </div>
                           </div>
@@ -1509,7 +1515,7 @@ function EventsPageContent() {
                                 )}
 
                                 {/* Join allowed only for upcoming and not full; otherwise show details or joined */}
-                                {!event.joined && event.status === "upcoming" && !event.isFull ? (
+                                {!event.joined && !event.payment_pending && event.status === "upcoming" && !event.isFull ? (
                                   <button
                                     onClick={() => handleJoinClick(event)}
                                     disabled={joiningEvent === event.id}
@@ -1529,6 +1535,14 @@ function EventsPageContent() {
                                         Join
                                       </>
                                     )}
+                                  </button>
+                                ) : event.payment_pending ? (
+                                  <button
+                                    onClick={() => handleJoinClick(event)}
+                                    className="flex-1 py-2 bg-gradient-to-r from-[#ECCF0F] to-[#b8352d] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                  >
+                                    <CreditCard className="w-4 h-4" />
+                                    Complete Payment
                                   </button>
                                 ) : event.joined ? (
                                   <button

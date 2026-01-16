@@ -90,7 +90,7 @@ export async function GET(request) {
 
             const { data: eventMembers } = await supabase
               .from("event_members")
-              .select("event_id, token, checked_in, joined_at, id")
+              .select("event_id, token, checked_in, joined_at, id, price_paid")
               .eq("user_id", user.id);
 
             eventMembers?.forEach((m) => {
@@ -98,6 +98,8 @@ export async function GET(request) {
                 token: m.token,
                 checked_in: m.checked_in,
                 joined_at: m.joined_at,
+                event_member_id: m.id,
+                price_paid: m.price_paid,
                 event_member_id: m.id,
               });
             });
@@ -164,7 +166,7 @@ export async function GET(request) {
     if (eventIds.length) {
       const { data: members } = await supabase
         .from("event_members")
-        .select("event_id, user_id, token, checked_in, joined_at, id")
+        .select("event_id, user_id, token, checked_in, joined_at, id, price_paid")
         .in("event_id", eventIds);
 
       members?.forEach((m) => {
@@ -179,6 +181,7 @@ export async function GET(request) {
             checked_in: m.checked_in,
             joined_at: m.joined_at,
             event_member_id: m.id,
+            price_paid: m.price_paid,
           });
         }
       });
@@ -191,7 +194,23 @@ export async function GET(request) {
         allEventMembersData.get(event.id) ||
         null;
 
-      const joined = !!eventMemberData;
+      // For paid events, only mark as joined if payment is confirmed (price_paid > 0)
+      // For free events, joined is true if event_member record exists
+      let joined = false;
+      let paymentPending = false;
+      
+      if (eventMemberData) {
+        if (event.is_paid) {
+          // Paid event: check if payment is confirmed
+          const pricePaid = parseFloat(eventMemberData.price_paid) || 0;
+          joined = pricePaid > 0;
+          paymentPending = !joined; // Has record but no payment
+        } else {
+          // Free event: joined if record exists
+          joined = true;
+        }
+      }
+      
       const registered_count = registeredCounts.get(event.id) || 0;
 
       let price_to_show = "FREE";
@@ -241,6 +260,7 @@ export async function GET(request) {
 
         registered_count,
         joined,
+        payment_pending: paymentPending,
         event_member_data: eventMemberData,
 
         date_display: formatDateForDisplay(event.start_datetime),

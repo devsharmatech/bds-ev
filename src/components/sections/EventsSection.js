@@ -26,6 +26,7 @@ import {
   Globe,
   QrCode,
   DollarSign,
+  CreditCard,
 } from "lucide-react";
 import EventModal from "@/components/modals/EventModal";
 import LoginModal from "@/components/modals/LoginModal";
@@ -629,17 +630,17 @@ export default function EventsSection() {
                               )}
 
                               {/* Joined / Payment Pending */}
-                              {event.joined && (
-                                event.is_paid && !hasPaid ? (
-                                 
-                                  ''
-                                ) : (
-                                  <div className="px-3 py-1.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
-                                    <CheckCircle className="w-3 h-3" />
-                                    Joined
-                                  </div>
-                                )
-                              )}
+                              {event.payment_pending ? (
+                                <div className="px-3 py-1.5 bg-gradient-to-r from-[#ECCF0F] to-[#b8352d] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
+                                  <CreditCard className="w-3 h-3" />
+                                  Payment Pending
+                                </div>
+                              ) : event.joined ? (
+                                <div className="px-3 py-1.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm rounded-full text-white text-xs font-medium flex items-center gap-1.5">
+                                  <CheckCircle className="w-3 h-3" />
+                                  Joined
+                                </div>
+                              ) : null}
                             </div>
                           </div>
                         </div>
@@ -841,7 +842,7 @@ export default function EventsSection() {
                                 <QrCode className="w-4 h-4" />
                               </button>
 
-                              {!event.joined && derivedStatus === "upcoming" && !isFull ? (
+                              {!event.joined && !event.payment_pending && derivedStatus === "upcoming" && !isFull ? (
                                 <button
                                   onClick={() => handleJoinNow(event)}
                                   className="flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
@@ -849,14 +850,13 @@ export default function EventsSection() {
                                   <ArrowRight className="w-4 h-4" />
                                   Join
                                 </button>
-                              ) : event.joined && event.is_paid && !hasPaid ? (
-                               
+                              ) : event.payment_pending ? (
                                 <button
-                                  onClick={() => handleViewDetails(event)}
-                                  className="flex-1 py-2.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                  onClick={() => handleJoinNow(event)}
+                                  className="flex-1 py-2.5 bg-gradient-to-r from-[#ECCF0F] to-[#b8352d] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
                                 >
-                                  <CheckCircle className="w-4 h-4" />
-                                  Joined
+                                  <CreditCard className="w-4 h-4" />
+                                  Complete Payment
                                 </button>
                               ) : event.joined ? (
                                 <button
