@@ -36,10 +36,20 @@ import {
   Menu,
   ChevronDown,
   ChevronUp,
-  AlertCircle
+  AlertCircle,
+  Tag
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
+import {
+  getUserEventPrice,
+  getAllEventPrices,
+  formatBHD as formatBHDUtil,
+  calculateSavings,
+  getPricingTier,
+  hasMultiplePricingTiers,
+  hasCategoryPricing,
+} from '@/lib/eventPricing'
 
 // Bahrain flag component
 const BahrainFlag = () => (
@@ -372,21 +382,37 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
 
   if (!isOpen) return null
 
-  const getPriceToPay = () => {
-    if (!event.is_paid) return 0
-    if (user?.membership_type === 'paid' && event.member_price) {
-      return event.member_price
-    }
-    return event.regular_price
-  }
+  // Use the pricing utility to get correct price
+  const userPriceInfo = getUserEventPrice(event, user);
+  const allPrices = getAllEventPrices(event);
+  const userSavings = calculateSavings(event, user);
+  const currentTier = getPricingTier(event);
+  const isEarlyBird = currentTier === 'earlybird';
+  const showPricingTable = event?.is_paid && (hasMultiplePricingTiers(event) || hasCategoryPricing(event));
 
-  const priceToPay = getPriceToPay()
+  // Calculate early bird deadline countdown
+  const getEarlyBirdCountdown = () => {
+    if (!event?.early_bird_deadline) return null;
+    const deadline = new Date(event.early_bird_deadline);
+    const now = new Date();
+    if (now >= deadline) return null;
+    
+    const diff = deadline - now;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} left`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} left`;
+    return 'Ending soon!';
+  };
+
+  const earlyBirdCountdown = getEarlyBirdCountdown();
+
+  const priceToPay = userPriceInfo.price || 0;
   const derivedStatus = deriveEventStatus(event)
 
-  // Calculate member savings
-  const memberSavings = event.is_paid && event.member_price 
-    ? event.regular_price - event.member_price 
-    : 0
+  // Calculate member savings using the utility
+  const memberSavings = userSavings;
 
   // Success Modal Overlay
   if (showSuccess) {
@@ -644,12 +670,29 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
               {event.title}
             </h2>
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Early Bird Badge */}
+              {isEarlyBird && event.is_paid && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="px-2 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-green-400 to-emerald-500 backdrop-blur-sm text-white rounded-full text-xs md:text-sm font-bold flex items-center gap-1.5 shadow-lg"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  EARLY BIRD
+                  {earlyBirdCountdown && (
+                    <span className="flex items-center gap-1 ml-1 pl-1.5 border-l border-white/30 text-[10px] md:text-xs font-normal">
+                      <Clock className="w-3 h-3" />
+                      {earlyBirdCountdown}
+                    </span>
+                  )}
+                </motion.span>
+              )}
               <span className="px-2 py-1 md:px-3 md:py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-xs md:text-sm font-medium border border-white/30">
-                {event.is_paid ? formatBHD(event.regular_price) : '🎟️ FREE'}
+                {event.is_paid ? formatBHD(priceToPay) : '🎟️ FREE'}
               </span>
               {memberSavings > 0 && (
                 <span className="px-2 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm text-white rounded-full text-xs md:text-sm font-medium">
-                  Save {formatBHD(memberSavings)} as Member
+                  Save {formatBHD(memberSavings)}
                 </span>
               )}
               <span className="px-2 py-1 md:px-3 md:py-1.5 bg-[#9cc2ed]/20 backdrop-blur-sm text-white rounded-full text-xs md:text-sm">
@@ -746,11 +789,18 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                   ) : (
                     <div className="mt-3">
                       <div className="flex items-center justify-between text-xs md:text-sm text-gray-600 mb-1">
-                        <span>Your Price</span>
+                        <div className="flex items-center gap-2">
+                          <span>Your Price</span>
+                          {user && (
+                            <span className="px-2 py-0.5 bg-[#03215F]/10 text-[#03215F] text-[10px] md:text-xs rounded-full font-medium">
+                              {userPriceInfo.categoryDisplay} • {userPriceInfo.tierDisplay}
+                            </span>
+                          )}
+                        </div>
                         {memberSavings > 0 && (
                           <span className="text-[#AE9B66] flex items-center gap-1 text-xs">
                             <Gift className="w-3 h-3" />
-                            Member discount applied
+                            Save {formatBHD(memberSavings)}
                           </span>
                         )}
                       </div>
@@ -760,6 +810,97 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                     </div>
                   )}
                 </div>
+
+                {/* Pricing Table (for paid events with multiple tiers) */}
+                {showPricingTable && allPrices && (
+                  <div className="bg-white rounded-xl border border-gray-200/50 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-gray-900 text-sm md:text-base flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-[#03215F]" />
+                        All Registration Prices
+                      </h4>
+                      {isEarlyBird && (
+                        <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" />
+                          Early Bird Active
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="overflow-x-auto -mx-4 px-4">
+                      <table className="w-full text-xs md:text-sm border-collapse min-w-[400px]">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="border border-gray-200 px-2 py-2 text-left text-gray-700 font-semibold">
+                              Category
+                            </th>
+                            <th className={`border border-gray-200 px-2 py-2 text-center font-semibold ${
+                              allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' : 'text-gray-700'
+                            }`}>
+                              Early Bird
+                              {allPrices.currentTier === 'earlybird' && <span className="block text-[9px] font-normal">(Current)</span>}
+                            </th>
+                            <th className={`border border-gray-200 px-2 py-2 text-center font-semibold ${
+                              allPrices.currentTier === 'standard' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+                            }`}>
+                              Standard
+                              {allPrices.currentTier === 'standard' && <span className="block text-[9px] font-normal">(Current)</span>}
+                            </th>
+                            <th className={`border border-gray-200 px-2 py-2 text-center font-semibold ${
+                              allPrices.currentTier === 'onsite' ? 'bg-orange-100 text-orange-700' : 'text-gray-700'
+                            }`}>
+                              On-site
+                              {allPrices.currentTier === 'onsite' && <span className="block text-[9px] font-normal">(Current)</span>}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allPrices.categories.map((cat) => {
+                            // Highlight user's category, or 'regular' if not logged in
+                            const isUserCategory = user
+                              ? userPriceInfo.category === cat.id
+                              : cat.id === 'regular';
+                            return (
+                              <tr key={cat.id} className={isUserCategory ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+                                <td className="border border-gray-200 px-2 py-2 text-gray-700 font-medium">
+                                  <div className="flex items-center gap-1">
+                                    <span className="truncate">{cat.name}</span>
+                                    {isUserCategory && (
+                                      <span className="px-1 py-0.5 bg-[#03215F] text-white text-[8px] rounded font-bold shrink-0">
+                                        YOU
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className={`border border-gray-200 px-2 py-2 text-center ${
+                                  allPrices.currentTier === 'earlybird' && isUserCategory
+                                    ? 'bg-green-100 font-bold text-green-700'
+                                    : 'text-gray-700'
+                                }`}>
+                                  {cat.earlybird ? formatBHD(cat.earlybird) : '-'}
+                                </td>
+                                <td className={`border border-gray-200 px-2 py-2 text-center ${
+                                  allPrices.currentTier === 'standard' && isUserCategory
+                                    ? 'bg-blue-100 font-bold text-blue-700'
+                                    : 'text-gray-700'
+                                }`}>
+                                  {cat.standard ? formatBHD(cat.standard) : '-'}
+                                </td>
+                                <td className={`border border-gray-200 px-2 py-2 text-center ${
+                                  allPrices.currentTier === 'onsite' && isUserCategory
+                                    ? 'bg-orange-100 font-bold text-orange-700'
+                                    : 'text-gray-700'
+                                }`}>
+                                  {cat.onsite ? formatBHD(cat.onsite) : '-'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {/* Event Details Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
@@ -1075,14 +1216,24 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
               {/* Pricing Summary */}
               <div className="mb-3 sm:mb-4 md:mb-6">
                 <div className="flex items-center justify-between mb-2 md:mb-3">
-                  <div className="text-xs md:text-sm font-medium text-gray-700">
+                  <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-gray-700">
                     Registration Summary
+                    {isEarlyBird && event.is_paid && (
+                      <span className="px-2 py-0.5 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full text-[10px] font-bold flex items-center gap-1 ml-2">
+                        <Sparkles className="w-3 h-3" /> EARLY BIRD
+                        {earlyBirdCountdown && (
+                          <span className="flex items-center gap-1 ml-1 pl-1.5 border-l border-white/30">
+                            <Clock className="w-3 h-3" />
+                            {earlyBirdCountdown}
+                          </span>
+                        )}
+                      </span>
+                    )}
                   </div>
                   <div className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
                     {formatBHD(priceToPay)}
                   </div>
                 </div>
-                
                 {event.is_paid && (
                   <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
                     <div className="flex items-center justify-between">

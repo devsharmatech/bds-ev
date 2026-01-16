@@ -46,7 +46,6 @@ import {
 } from "@/lib/eventPricing";
 import EventQRModal from "@/components/modals/EventQRModal";
 
-
 // Bahrain flag component
 const BahrainFlag = () => (
   <svg
@@ -345,7 +344,11 @@ export default function EventsSection() {
     // - For paid+paid or free, show already joined
     if (event.joined) {
       const isPaidEvent = !!event.is_paid;
-      const hasPaid = !!(event.payment_paid || (event.event_member_data && Number(event.event_member_data.price_paid) > 0));
+      const hasPaid = !!(
+        event.payment_paid ||
+        (event.event_member_data &&
+          Number(event.event_member_data.price_paid) > 0)
+      );
       if (isPaidEvent && !hasPaid) {
         setSelectedEvent(event);
         setIsEventModalOpen(true);
@@ -488,19 +491,43 @@ export default function EventsSection() {
                   );
                   const isAlmostFull = progress >= 80 && progress < 100;
                   const isFull = progress >= 100;
-                  
+
                   // Use new pricing utility
                   const priceInfo = getUserEventPrice(event, user);
-                  const priceToPay = priceInfo.isFree ? "FREE" : formatBHDPrice(priceInfo.price);
+                  const priceToPay = priceInfo.isFree
+                    ? "FREE"
+                    : formatBHDPrice(priceInfo.price);
                   const savings = calculateSavings(event, user);
-                  const savingsDisplay = savings > 0 ? formatBHDPrice(savings) : null;
+                  const savingsDisplay =
+                    savings > 0 ? formatBHDPrice(savings) : null;
                   const currentTier = getPricingTier(event);
                   const tierDisplay = getTierDisplayName(currentTier);
-                  
-                  const hasPaid =
-                    !!(event.payment_paid ||
-                      (event.event_member_data &&
-                        Number(event.event_member_data.price_paid) > 0));
+                  // Early Bird badge logic
+                  const isEarlyBird =
+                    currentTier === "earlybird" && event.is_paid;
+                  const getEarlyBirdCountdown = () => {
+                    if (!event.early_bird_deadline) return null;
+                    const deadline = new Date(event.early_bird_deadline);
+                    const now = new Date();
+                    if (now >= deadline) return null;
+                    const diff = deadline - now;
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor(
+                      (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+                    );
+                    if (days > 0)
+                      return `${days} day${days > 1 ? "s" : ""} left`;
+                    if (hours > 0)
+                      return `${hours} hour${hours > 1 ? "s" : ""} left`;
+                    return "Ending soon!";
+                  };
+                  const earlyBirdCountdown = getEarlyBirdCountdown();
+
+                  const hasPaid = !!(
+                    event.payment_paid ||
+                    (event.event_member_data &&
+                      Number(event.event_member_data.price_paid) > 0)
+                  );
                   const derivedStatus = deriveEventStatus(event);
 
                   return (
@@ -515,8 +542,9 @@ export default function EventsSection() {
                     >
                       {/* Glow effect on hover */}
                       <div
-                        className={`absolute -inset-0.5 bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-1000 ${hoveredCard === event.id ? "opacity-20" : ""
-                          }`}
+                        className={`absolute -inset-0.5 bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-xl blur opacity-0 group-hover:opacity-20 transition duration-1000 ${
+                          hoveredCard === event.id ? "opacity-20" : ""
+                        }`}
                       ></div>
 
                       <div className="relative bg-white  rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 group-hover:border-[#03215F]/30 h-full flex flex-col">
@@ -550,12 +578,13 @@ export default function EventsSection() {
 
                               {/* Status Badge */}
                               <span
-                                className={`px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm ${derivedStatus === "upcoming"
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm ${
+                                  derivedStatus === "upcoming"
                                     ? "bg-[#9cc2ed]/80 text-white"
                                     : derivedStatus === "ongoing"
-                                      ? "bg-[#AE9B66]/80 text-white"
-                                      : "bg-gray-500/80 text-white"
-                                  }`}
+                                    ? "bg-[#AE9B66]/80 text-white"
+                                    : "bg-gray-500/80 text-white"
+                                }`}
                               >
                                 {derivedStatus.charAt(0).toUpperCase() +
                                   derivedStatus.slice(1)}
@@ -569,15 +598,20 @@ export default function EventsSection() {
                                   <div className="px-2.5 py-2 md:px-3 md:py-2.5">
                                     <div className="flex items-center gap-1.5 justify-end">
                                       <BahrainFlag />
-                                      <span className="text-sm md:text-base font-bold text-[#03215F]">{priceToPay}</span>
+                                      <span className="text-sm md:text-base font-bold text-[#03215F]">
+                                        {priceToPay}
+                                      </span>
                                     </div>
-                                    {(user && priceInfo.category !== 'regular') || hasMultiplePricingTiers(event) ? (
+                                    {(user &&
+                                      priceInfo.category !== "regular") ||
+                                    hasMultiplePricingTiers(event) ? (
                                       <div className="flex flex-col items-end mt-0.5">
-                                        {user && priceInfo.category !== 'regular' && (
-                                          <span className="text-[9px] md:text-[10px] text-[#AE9B66] font-semibold">
-                                            {priceInfo.categoryDisplay}
-                                          </span>
-                                        )}
+                                        {user &&
+                                          priceInfo.category !== "regular" && (
+                                            <span className="text-[9px] md:text-[10px] text-[#AE9B66] font-semibold">
+                                              {priceInfo.categoryDisplay}
+                                            </span>
+                                          )}
                                         {hasMultiplePricingTiers(event) && (
                                           <span className="text-[9px] md:text-[10px] text-gray-500 font-medium">
                                             {tierDisplay}
@@ -588,25 +622,32 @@ export default function EventsSection() {
                                   </div>
                                 ) : (
                                   <div className="px-3 py-2 md:px-4 md:py-2.5">
-                                    <span className="text-sm md:text-base font-bold text-[#AE9B66]">FREE</span>
+                                    <span className="text-sm md:text-base font-bold text-[#AE9B66]">
+                                      FREE
+                                    </span>
                                   </div>
                                 )}
                               </div>
                               {/* More Prices Link */}
-                              {event.is_paid && (event.price > 0 || event.member_price > 0 || event.student_price > 0) && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewPrices(event);
-                                  }}
-                                  className="px-2 py-1 md:px-2.5 md:py-1.5 bg-[#03215F]/90 backdrop-blur-sm rounded-lg text-[9px] md:text-[10px] font-medium text-white hover:bg-[#03215F] shadow-lg flex items-center gap-1 transition-all hover:scale-105 hover:shadow-xl"
-                                  title="View all prices"
-                                >
-                                  <DollarSign className="w-2.5 h-2.5 md:w-3 md:h-3" />
-                                  <span className="hidden xs:inline">More prices</span>
-                                  <span className="xs:hidden">More</span>
-                                </button>
-                              )}
+                              {event.is_paid &&
+                                (event.price > 0 ||
+                                  event.member_price > 0 ||
+                                  event.student_price > 0) && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleViewPrices(event);
+                                    }}
+                                    className="px-2 py-1 md:px-2.5 md:py-1.5 bg-[#03215F]/90 backdrop-blur-sm rounded-lg text-[9px] md:text-[10px] font-medium text-white hover:bg-[#03215F] shadow-lg flex items-center gap-1 transition-all hover:scale-105 hover:shadow-xl"
+                                    title="View all prices"
+                                  >
+                                    <DollarSign className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                                    <span className="hidden xs:inline">
+                                      More prices
+                                    </span>
+                                    <span className="xs:hidden">More</span>
+                                  </button>
+                                )}
                             </div>
                           </div>
 
@@ -641,6 +682,19 @@ export default function EventsSection() {
                                   Joined
                                 </div>
                               ) : null}
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {isEarlyBird && (
+                              <span className="px-2 py-0.5 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full text-[10px] font-bold flex items-center gap-1 mr-1">
+                                <Sparkles className="w-3 h-3" /> EARLY BIRD
+                                {earlyBirdCountdown && (
+                                  <span className="flex items-center gap-1 ml-1 pl-1.5 border-l border-white/30">
+                                    <Clock className="w-3 h-3" />
+                                    {earlyBirdCountdown}
+                                  </span>
+                                )}
+                              </span>
+                            )}
                             </div>
                           </div>
                         </div>
@@ -734,7 +788,8 @@ export default function EventsSection() {
                                     <div className="text-xs text-gray-500 truncate">
                                       {event.event_hosts[0]?.name}
                                       {event.event_hosts.length > 1 &&
-                                        ` +${event.event_hosts.length - 1
+                                        ` +${
+                                          event.event_hosts.length - 1
                                         } more`}
                                     </div>
                                   </div>
@@ -773,12 +828,13 @@ export default function EventsSection() {
                             {event.capacity && (
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
-                                  className={`h-2 rounded-full transition-all duration-500 ${isFull
+                                  className={`h-2 rounded-full transition-all duration-500 ${
+                                    isFull
                                       ? "bg-[#b8352d]"
                                       : isAlmostFull
-                                        ? "bg-[#ECCF0F]"
-                                        : "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66]"
-                                    }`}
+                                      ? "bg-[#ECCF0F]"
+                                      : "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66]"
+                                  }`}
                                   style={{ width: `${progress}%` }}
                                 ></div>
                               </div>
@@ -842,7 +898,10 @@ export default function EventsSection() {
                                 <QrCode className="w-4 h-4" />
                               </button>
 
-                              {!event.joined && !event.payment_pending && derivedStatus === "upcoming" && !isFull ? (
+                              {!event.joined &&
+                              !event.payment_pending &&
+                              derivedStatus === "upcoming" &&
+                              !isFull ? (
                                 <button
                                   onClick={() => handleJoinNow(event)}
                                   className="flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
@@ -868,7 +927,7 @@ export default function EventsSection() {
                                 </button>
                               ) : null}
                             </div>
-                            
+
                             {/* Join as Speaker Button */}
                             {derivedStatus === "upcoming" && (
                               <button
@@ -926,10 +985,11 @@ export default function EventsSection() {
                         <button
                           key={pageNum}
                           onClick={() => handlePageChange(pageNum)}
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${currentPage === pageNum
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${
+                            currentPage === pageNum
                               ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white shadow-lg"
                               : "bg-gray-100  text-gray-700 hover:bg-gray-200"
-                            }`}
+                          }`}
                         >
                           {pageNum}
                         </button>

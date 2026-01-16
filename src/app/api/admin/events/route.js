@@ -147,6 +147,7 @@ export async function POST(request) {
     const member_onsite_price = formData.get('member_onsite_price') ? parseFloat(formData.get('member_onsite_price')) : null;
     const student_onsite_price = formData.get('student_onsite_price') ? parseFloat(formData.get('student_onsite_price')) : null;
     const hygienist_onsite_price = formData.get('hygienist_onsite_price') ? parseFloat(formData.get('hygienist_onsite_price')) : null;
+    const early_bird_deadline = formData.get('early_bird_deadline');
     const status = formData.get('status') || 'upcoming';
     const bannerImage = formData.get('banner_image');
     const nera_cme_hours = formData.get('nera_cme_hours') ? parseFloat(formData.get('nera_cme_hours')) : null;
@@ -262,6 +263,7 @@ export async function POST(request) {
       member_onsite_price,
       student_onsite_price,
       hygienist_onsite_price,
+      early_bird_deadline: early_bird_deadline ? new Date(early_bird_deadline).toISOString() : null,
       status,
       banner_url,
       created_by: created_by || null,

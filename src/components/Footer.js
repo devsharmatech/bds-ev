@@ -28,7 +28,7 @@ export default function Footer() {
       { name: "Home", href: "/" },
       { name: "About Us", href: "/about" },
       { name: "Events", href: "/events" },
-      { name: "Our Team", href: "/team" },
+      { name: "Our Board Members", href: "/our-board-members" },
       { name: "Committees", href: "/committees" },
     ],
     Resources: [

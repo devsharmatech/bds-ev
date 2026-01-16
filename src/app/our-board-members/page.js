@@ -232,12 +232,12 @@ export default function TeamPage() {
           <div className="max-w-4xl">
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm mb-6">
               <Users className="w-4 h-4 mr-2" />
-              <span className="text-sm font-medium">Leadership Team</span>
+              <span className="text-sm font-medium">Leadership Members</span>
             </div>
-            <h1 className="text-5xl font-bold mb-6">Meet Our Team</h1>
+            <h1 className="text-5xl font-bold mb-6">Meet Our Board Members</h1>
             <p className="text-xl opacity-90">
               Dedicated professionals working together to advance dentistry in
-              Bahrain. Our team brings together diverse expertise and shared
+              Bahrain. Our Board Members brings together diverse expertise and shared
               commitment to professional excellence.
             </p>
           </div>
@@ -269,7 +269,7 @@ export default function TeamPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-gray-900 mb-8">
-              Our Team Values
+              Our Board Values
             </h2>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -319,7 +319,7 @@ export default function TeamPage() {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             <div>
               <h2 className="text-3xl font-bold mb-4">
-                Want to Work With Our Team?
+                Want to Work With Our Board Members?
               </h2>
               <p className="opacity-90">
                 Contact our executive board or committee chairs for
@@ -331,7 +331,7 @@ export default function TeamPage() {
               href="mailto:Bahrain.ds94@gmail.com"
               className="px-8 py-3 bg-white text-[#03215F] rounded-lg hover:bg-gray-100 transition-colors font-semibold whitespace-nowrap"
             >
-              Contact Our Team
+              Contact Our Board
             </a>
           </div>
         </div>

@@ -1235,32 +1235,38 @@ function EventsPageContent() {
                               {/* Price Badge */}
                               <div className="flex flex-col items-end gap-1.5">
                                 <div className="bg-gradient-to-br from-white to-gray-50 backdrop-blur-md rounded-xl shadow-xl border border-white/50 overflow-hidden">
-                                  {event.is_paid ? (
-                                    <div className="px-2.5 py-2 md:px-3 md:py-2.5">
-                                      <div className="flex items-center gap-1.5 justify-end">
-                                        <BahrainFlag />
-                                        <span className="text-sm md:text-base font-bold text-[#03215F]">{priceToPay}</span>
-                                      </div>
-                                      {(user && priceInfo.category !== 'regular') || hasMultiplePricingTiers(event) ? (
-                                        <div className="flex flex-col items-end mt-0.5">
-                                          {user && priceInfo.category !== 'regular' && (
-                                            <span className="text-[9px] md:text-[10px] text-[#AE9B66] font-semibold">
-                                              {priceInfo.categoryDisplay}
-                                            </span>
-                                          )}
-                                          {hasMultiplePricingTiers(event) && (
-                                            <span className="text-[9px] md:text-[10px] text-gray-500 font-medium">
-                                              {tierDisplay}
+                                    {event.is_paid ? (
+                                      <div className="px-2.5 py-2 md:px-3 md:py-2.5">
+                                        <div className="flex items-center gap-1.5 justify-end">
+                                          <BahrainFlag />
+                                          <span className="text-sm md:text-base font-bold text-[#03215F]">{priceToPay}</span>
+                                          {/* Early Bird Badge */}
+                                          {currentTier === 'earlybird' && (
+                                            <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FFD700]/90 text-[#03215F] text-[10px] font-semibold animate-pulse shadow-md">
+                                              <Sparkles className="w-3 h-3 text-[#AE9B66]" /> Early Bird
                                             </span>
                                           )}
                                         </div>
-                                      ) : null}
-                                    </div>
-                                  ) : (
-                                    <div className="px-3 py-2 md:px-4 md:py-2.5">
-                                      <span className="text-sm md:text-base font-bold text-[#AE9B66]">FREE</span>
-                                    </div>
-                                  )}
+                                        {(user && priceInfo.category !== 'regular') || hasMultiplePricingTiers(event) ? (
+                                          <div className="flex flex-col items-end mt-0.5">
+                                            {user && priceInfo.category !== 'regular' && (
+                                              <span className="text-[9px] md:text-[10px] text-[#AE9B66] font-semibold">
+                                                {priceInfo.categoryDisplay}
+                                              </span>
+                                            )}
+                                            {hasMultiplePricingTiers(event) && (
+                                              <span className="text-[9px] md:text-[10px] text-gray-500 font-medium">
+                                                {tierDisplay}
+                                              </span>
+                                            )}
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                    ) : (
+                                      <div className="px-3 py-2 md:px-4 md:py-2.5">
+                                        <span className="text-sm md:text-base font-bold text-[#AE9B66]">FREE</span>
+                                      </div>
+                                    )}
                                 </div>
                                 {/* Show More Prices Button */}
                                 {event.is_paid && (event.price > 0 || event.member_price > 0 || event.student_price > 0) && (

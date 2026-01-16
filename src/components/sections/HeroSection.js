@@ -675,19 +675,7 @@ export default function HeroSection() {
                 View Events
               </button>
 
-              <button
-                onClick={() => {
-                  setIsBadgeModalOpen(true);
-                  setBadgeFormData({ event_id: '', email: '' });
-                  setBadgeData(null);
-                  setBadgeStatus(null);
-                  fetchBadgeEvents();
-                }}
-                className="group px-3 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:shadow-xl hover:shadow-[#03215F]/30 transition-all duration-300 font-semibold flex items-center justify-center hover:scale-105 transform"
-              >
-                <BadgeCheck className="mr-2 w-5 h-5 group-hover:rotate-12 transition-transform" />
-                Speaker Badge
-              </button>
+             
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">

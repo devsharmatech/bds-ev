@@ -1,12 +1,13 @@
 "use client";
 
-import { X, DollarSign, Tag, CheckCircle, Info } from "lucide-react";
+import { X, DollarSign, Tag, CheckCircle, Info, Clock, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   getUserEventPrice,
   getAllEventPrices,
   formatBHD,
   calculateSavings,
+  getPricingTier,
 } from "@/lib/eventPricing";
 
 // Bahrain flag component
@@ -45,6 +46,26 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
   const allPrices = getAllEventPrices(event);
   const userPriceInfo = getUserEventPrice(event, user);
   const savings = calculateSavings(event, user);
+  const currentTier = getPricingTier(event);
+  const isEarlyBird = currentTier === 'earlybird';
+
+  // Calculate early bird deadline countdown
+  const getEarlyBirdCountdown = () => {
+    if (!event.early_bird_deadline) return null;
+    const deadline = new Date(event.early_bird_deadline);
+    const now = new Date();
+    if (now >= deadline) return null;
+    
+    const diff = deadline - now;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} left`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} left`;
+    return 'Ending soon!';
+  };
+
+  const earlyBirdCountdown = getEarlyBirdCountdown();
 
   // If event is free
   if (!event.is_paid) {
@@ -104,6 +125,23 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
             <div className="flex items-center gap-2 text-white">
               <DollarSign className="w-5 h-5" />
               <h3 className="font-bold text-lg">Registration Prices</h3>
+              {/* Early Bird Badge */}
+              {isEarlyBird && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full text-white text-xs font-bold shadow-lg"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>EARLY BIRD</span>
+                  {earlyBirdCountdown && (
+                    <span className="flex items-center gap-1 ml-1 pl-1.5 border-l border-white/30">
+                      <Clock className="w-3 h-3" />
+                      {earlyBirdCountdown}
+                    </span>
+                  )}
+                </motion.div>
+              )}
             </div>
             <button
               onClick={onClose}
@@ -211,7 +249,10 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
                   </thead>
                   <tbody>
                     {allPrices.categories.map((cat) => {
-                      const isUserCategory = user && userPriceInfo.category === cat.id;
+                      // Highlight user's category, or 'regular' if not logged in
+                      const isUserCategory = user
+                        ? userPriceInfo.category === cat.id
+                        : cat.id === 'regular';
                       return (
                         <tr
                           key={cat.id}

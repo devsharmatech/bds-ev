@@ -125,8 +125,8 @@ export default function Navbar() {
       icon: <Calendar className="w-4 h-4" />,
     },
     {
-      name: "Our Team",
-      href: "/team",
+      name: "Board Members",
+      href: "/our-board-members",
       icon: <Users2 className="w-4 h-4" />,
     },
     {
@@ -141,14 +141,20 @@ export default function Navbar() {
       submenu: committeesMenu,
     },
     {
-      name: "Research",
-      href: "/research",
-      icon: <FileText className="w-4 h-4" />,
-    },
-    {
-      name: "Gallery",
-      href: "/gallery",
-      icon: <ImageIcon className="w-4 h-4" />,
+      name: "More",
+      icon: <MoreVertical className="w-4 h-4" />,
+      submenu: [
+        {
+          name: "Research",
+          href: "/research",
+          icon: <FileText className="w-4 h-4" />,
+        },
+        {
+          name: "Gallery",
+          href: "/gallery",
+          icon: <ImageIcon className="w-4 h-4" />,
+        },
+      ],
     },
   ];
 
@@ -457,39 +463,42 @@ export default function Navbar() {
 
             {/* Desktop Navigation */}
             <div className="hidden xl:flex items-center space-x-1">
-              {mainNavItems.map((item) =>
-                item.name === "Committees" ? (
-                  <div key={item.name} className="relative group">
-                    <button className="flex items-center space-x-1 px-2 py-2 text-[#03215F] hover:text-[#AE9B66] transition-colors font-medium text-sm">
+              {mainNavItems.map((item) => {
+                if (item.name === "Committees" || item.name === "More") {
+                  return (
+                    <div key={item.name} className="relative group">
+                      <button className="flex items-center space-x-1 px-2 py-2 text-[#03215F] hover:text-[#AE9B66] transition-colors font-medium text-sm">
+                        {item.icon}
+                        <span>{item.name}</span>
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                      {/* Dropdown Menu */}
+                      <div className="absolute top-full left-0 w-48 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+                        {item.submenu?.map((subItem) => (
+                          <Link
+                            key={subItem.name}
+                            href={subItem.href}
+                            className="block px-2 py-3 text-[#03215F] hover:bg-gray-50 hover:text-[#AE9B66] transition-colors first:rounded-t-lg last:rounded-b-lg text-sm"
+                          >
+                            <span className="inline-flex items-center gap-2">{subItem.icon}{subItem.name}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className="flex items-center space-x-2 px-2 py-2 text-[#03215F] hover:text-[#AE9B66] transition-colors font-medium text-sm"
+                    >
                       {item.icon}
                       <span>{item.name}</span>
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    <div className="absolute top-full left-0  w-48 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
-                      {item.submenu?.map((subItem) => (
-                        <Link
-                          key={subItem.name}
-                          href={subItem.href}
-                          className="block px-2 py-3 text-[#03215F] hover:bg-gray-50 hover:text-[#AE9B66] transition-colors first:rounded-t-lg last:rounded-b-lg text-sm"
-                        >
-                          {subItem.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="flex items-center space-x-2 px-2 py-2 text-[#03215F] hover:text-[#AE9B66] transition-colors font-medium text-sm"
-                  >
-                    {item.icon}
-                    <span>{item.name}</span>
-                  </Link>
-                )
-              )}
+                    </Link>
+                  );
+                }
+              })}
             </div>
 
             {/* Search and Right Side Controls */}
@@ -585,58 +594,59 @@ export default function Navbar() {
 
               {/* Main Navigation Items */}
               <div className="flex flex-col space-y-1 px-2">
-                {mainNavItems.map((item) =>
-                  item.name === "Committees" ? (
-                    <div key={item.name}>
-                      <button
-                        onClick={() =>
-                          setIsMembershipDropdownOpen(!isMembershipDropdownOpen)
-                        }
-                        className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-gray-100 transition-colors  text-sm"
+                {mainNavItems.map((item) => {
+                  if (item.name === "Committees" || item.name === "More") {
+                    const isDropdownOpen = item.name === "Committees" ? isMembershipDropdownOpen : isMoreDropdownOpen;
+                    const setDropdownOpen = item.name === "Committees" ? setIsMembershipDropdownOpen : setIsMoreDropdownOpen;
+                    return (
+                      <div key={item.name}>
+                        <button
+                          onClick={() => setDropdownOpen(!isDropdownOpen)}
+                          className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-gray-100 transition-colors  text-sm"
+                        >
+                          <div className="flex items-center space-x-3  text-sm">
+                            {item.icon}
+                            <span className="font-medium text-[#03215F]">
+                              {item.name}
+                            </span>
+                          </div>
+                          <ChevronDown
+                            className={`w-5 h-5 transition-transform text-gray-500 ${isDropdownOpen ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        {/* Dropdown for Committees/More */}
+                        {isDropdownOpen && (
+                          <div className="ml-8 mt-1 mb-2 space-y-1">
+                            {item.submenu?.map((subItem) => (
+                              <Link
+                                key={subItem.name}
+                                href={subItem.href}
+                                className="block p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-600  text-sm"
+                                onClick={() => setIsMenuOpen(false)}
+                              >
+                                <span className="inline-flex items-center gap-2">{subItem.icon}{subItem.name}</span>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors  text-sm"
+                        onClick={() => setIsMenuOpen(false)}
                       >
-                        <div className="flex items-center space-x-3  text-sm">
-                          {item.icon}
-                          <span className="font-medium text-[#03215F]">
-                            {item.name}
-                          </span>
-                        </div>
-                        <ChevronDown
-                          className={`w-5 h-5 transition-transform text-gray-500 ${
-                            isMembershipDropdownOpen ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-
-                      {/* Dropdown for Membership */}
-                      {isMembershipDropdownOpen && (
-                        <div className="ml-8 mt-1 mb-2 space-y-1">
-                          {item.submenu?.map((subItem) => (
-                            <Link
-                              key={subItem.name}
-                              href={subItem.href}
-                              className="block p-3 rounded-lg hover:bg-gray-100 transition-colors text-gray-600  text-sm"
-                              onClick={() => setIsMenuOpen(false)}
-                            >
-                              {subItem.name}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors  text-sm"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.icon}
-                      <span className="font-medium text-[#03215F]">
-                        {item.name}
-                      </span>
-                    </Link>
-                  )
-                )}
+                        {item.icon}
+                        <span className="font-medium text-[#03215F]">
+                          {item.name}
+                        </span>
+                      </Link>
+                    );
+                  }
+                })}
               </div>
 
               {/* Divider */}

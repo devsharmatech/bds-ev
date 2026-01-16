@@ -153,6 +153,7 @@ export async function PUT(request, { params }) {
     const member_onsite_price = formData.get('member_onsite_price') ? parseFloat(formData.get('member_onsite_price')) : null;
     const student_onsite_price = formData.get('student_onsite_price') ? parseFloat(formData.get('student_onsite_price')) : null;
     const hygienist_onsite_price = formData.get('hygienist_onsite_price') ? parseFloat(formData.get('hygienist_onsite_price')) : null;
+    const early_bird_deadline = formData.get('early_bird_deadline');
     const status = formData.get('status');
     const bannerImage = formData.get('banner_image');
     const removeBanner = formData.get('remove_banner') === 'true';
@@ -202,6 +203,7 @@ export async function PUT(request, { params }) {
     if (member_onsite_price !== undefined) updateData.member_onsite_price = member_onsite_price;
     if (student_onsite_price !== undefined) updateData.student_onsite_price = student_onsite_price;
     if (hygienist_onsite_price !== undefined) updateData.hygienist_onsite_price = hygienist_onsite_price;
+    if (early_bird_deadline !== undefined) updateData.early_bird_deadline = early_bird_deadline ? new Date(early_bird_deadline).toISOString() : null;
     if (created_by !== undefined) updateData.created_by = created_by;
     if (status) updateData.status = status;
     updateData.updated_at = new Date().toISOString();
