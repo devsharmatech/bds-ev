@@ -31,6 +31,7 @@ import {
   Download,
   Mic,
   Tag,
+  AlertCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { QRCodeCanvas } from "qrcode.react";
@@ -145,6 +146,7 @@ export default function EventDetailsPage() {
   const [isQuickSignupOpen, setIsQuickSignupOpen] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
+  const [selectedPreviewCategory, setSelectedPreviewCategory] = useState(null);
   const qrRef = useRef(null);
 
   useEffect(() => {
@@ -707,41 +709,151 @@ export default function EventDetailsPage() {
                       </p>
                       {(() => {
                         const allPrices = getAllEventPrices(event);
+                        const userPriceInfo = getUserEventPrice(event, user);
                         if (!allPrices) return null;
                         return (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs border-collapse">
-                              <thead>
-                                <tr className="bg-gray-100">
-                                  <th className="border border-gray-200 px-2 py-1.5 text-left text-gray-600 font-semibold">Category</th>
-                                  <th className={`border border-gray-200 px-2 py-1.5 text-center font-semibold ${allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' : 'text-gray-600'}`}>
-                                    Early Bird
-                                  </th>
-                                  <th className={`border border-gray-200 px-2 py-1.5 text-center font-semibold ${allPrices.currentTier === 'standard' ? 'bg-green-100 text-green-700' : 'text-gray-600'}`}>
-                                    Standard
-                                  </th>
-                                  <th className={`border border-gray-200 px-2 py-1.5 text-center font-semibold ${allPrices.currentTier === 'onsite' ? 'bg-green-100 text-green-700' : 'text-gray-600'}`}>
-                                    On-site
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {allPrices.categories.map((cat) => (
-                                  <tr key={cat.id} className={user && getUserEventPrice(event, user).category === cat.id ? 'bg-blue-50' : ''}>
-                                    <td className="border border-gray-200 px-2 py-1.5 text-gray-700 font-medium">{cat.name}</td>
-                                    <td className="border border-gray-200 px-2 py-1.5 text-center text-gray-700">
-                                      {cat.earlybird ? formatBHDPrice(cat.earlybird) : '-'}
-                                    </td>
-                                    <td className="border border-gray-200 px-2 py-1.5 text-center text-gray-700">
-                                      {cat.standard ? formatBHDPrice(cat.standard) : '-'}
-                                    </td>
-                                    <td className="border border-gray-200 px-2 py-1.5 text-center text-gray-700">
-                                      {cat.onsite ? formatBHDPrice(cat.onsite) : '-'}
-                                    </td>
+                          <div>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs border-collapse">
+                                <thead>
+                                  <tr className="bg-gray-100">
+                                    <th className="border border-gray-200 px-2 py-1.5 text-left text-gray-600 font-semibold">Category</th>
+                                    <th className={`border border-gray-200 px-2 py-1.5 text-center font-semibold ${allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' : 'text-gray-600'}`}>
+                                      Early Bird
+                                      {allPrices.currentTier === 'earlybird' && <span className="block text-[8px] font-normal">(Current)</span>}
+                                    </th>
+                                    <th className={`border border-gray-200 px-2 py-1.5 text-center font-semibold ${allPrices.currentTier === 'standard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600'}`}>
+                                      Standard
+                                      {allPrices.currentTier === 'standard' && <span className="block text-[8px] font-normal">(Current)</span>}
+                                    </th>
+                                    <th className={`border border-gray-200 px-2 py-1.5 text-center font-semibold ${allPrices.currentTier === 'onsite' ? 'bg-orange-100 text-orange-700' : 'text-gray-600'}`}>
+                                      On-site
+                                      {allPrices.currentTier === 'onsite' && <span className="block text-[8px] font-normal">(Current)</span>}
+                                    </th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                                </thead>
+                                <tbody>
+                                  {allPrices.categories.map((cat) => {
+                                    const isUserCategory = user
+                                      ? userPriceInfo.category === cat.id
+                                      : cat.id === 'regular';
+                                    const isSelectedPreview = selectedPreviewCategory === cat.id;
+                                    return (
+                                      <tr 
+                                        key={cat.id} 
+                                        className={`cursor-pointer transition-colors ${
+                                          isSelectedPreview 
+                                            ? 'bg-[#03215F]/10 ring-2 ring-[#03215F] ring-inset' 
+                                            : isUserCategory 
+                                              ? 'bg-blue-50 hover:bg-blue-100' 
+                                              : 'hover:bg-gray-100'
+                                        }`}
+                                        onClick={() => setSelectedPreviewCategory(cat.id)}
+                                      >
+                                        <td className="border border-gray-200 px-2 py-1.5 text-gray-700 font-medium">
+                                          <div className="flex items-center gap-1.5">
+                                            <input
+                                              type="radio"
+                                              name="categoryPreviewDetails"
+                                              checked={isSelectedPreview}
+                                              onChange={() => setSelectedPreviewCategory(cat.id)}
+                                              className="w-3 h-3 text-[#03215F] border-gray-300 focus:ring-[#03215F] cursor-pointer"
+                                            />
+                                            <span className="truncate text-[11px]">{cat.name}</span>
+                                            {isUserCategory && (
+                                              <span className="px-1 py-0.5 bg-[#03215F] text-white text-[7px] rounded font-bold shrink-0">
+                                                YOU
+                                              </span>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td className={`border border-gray-200 px-2 py-1.5 text-center ${
+                                          allPrices.currentTier === 'earlybird' && isSelectedPreview
+                                            ? 'bg-green-200 font-bold text-green-700'
+                                            : allPrices.currentTier === 'earlybird' && isUserCategory
+                                              ? 'bg-green-100 font-bold text-green-700'
+                                              : 'text-gray-700'
+                                        }`}>
+                                          {cat.earlybird ? formatBHDPrice(cat.earlybird) : '-'}
+                                        </td>
+                                        <td className={`border border-gray-200 px-2 py-1.5 text-center ${
+                                          allPrices.currentTier === 'standard' && isSelectedPreview
+                                            ? 'bg-blue-200 font-bold text-blue-700'
+                                            : allPrices.currentTier === 'standard' && isUserCategory
+                                              ? 'bg-blue-100 font-bold text-blue-700'
+                                              : 'text-gray-700'
+                                        }`}>
+                                          {cat.standard ? formatBHDPrice(cat.standard) : '-'}
+                                        </td>
+                                        <td className={`border border-gray-200 px-2 py-1.5 text-center ${
+                                          allPrices.currentTier === 'onsite' && isSelectedPreview
+                                            ? 'bg-orange-200 font-bold text-orange-700'
+                                            : allPrices.currentTier === 'onsite' && isUserCategory
+                                              ? 'bg-orange-100 font-bold text-orange-700'
+                                              : 'text-gray-700'
+                                        }`}>
+                                          {cat.onsite ? formatBHDPrice(cat.onsite) : '-'}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {/* Selected Category Price Preview */}
+                            {selectedPreviewCategory && (() => {
+                              const selectedCat = allPrices.categories.find(c => c.id === selectedPreviewCategory);
+                              if (!selectedCat) return null;
+                              const previewPrice = selectedCat[allPrices.currentTier] || selectedCat.earlybird || selectedCat.standard || selectedCat.onsite || 0;
+                              const isActualUserCategory = user ? userPriceInfo.category === selectedPreviewCategory : selectedPreviewCategory === 'regular';
+                              const tierLabels = { earlybird: 'Early Bird', standard: 'Standard', onsite: 'On-site' };
+                              
+                              return (
+                                <div className={`mt-3 p-3 rounded-lg border-2 ${
+                                  isActualUserCategory 
+                                    ? 'bg-gradient-to-r from-[#03215F]/10 to-[#03215F]/5 border-[#03215F]' 
+                                    : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-400'
+                                }`}>
+                                  <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <div>
+                                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                        <span className="text-xs font-semibold text-gray-700">
+                                          {selectedCat.name}
+                                        </span>
+                                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
+                                          allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' :
+                                          allPrices.currentTier === 'standard' ? 'bg-blue-100 text-blue-700' :
+                                          'bg-orange-100 text-orange-700'
+                                        }`}>
+                                          {tierLabels[allPrices.currentTier] || 'Current'}
+                                        </span>
+                                        {isActualUserCategory && (
+                                          <span className="px-1.5 py-0.5 bg-[#03215F] text-white text-[9px] rounded-full font-bold">
+                                            YOUR CATEGORY
+                                          </span>
+                                        )}
+                                      </div>
+                                      {!isActualUserCategory && (
+                                        <p className="text-[10px] text-amber-700">
+                                          <AlertCircle className="w-3 h-3 inline mr-1" />
+                                          Preview only. Your price is based on your profile.
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-lg font-bold text-[#03215F]">
+                                        {formatBHDPrice(previewPrice)}
+                                      </div>
+                                      <div className="text-[10px] text-gray-500">
+                                        {tierLabels[allPrices.currentTier]} Price
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
                             <p className="text-[10px] text-gray-500 mt-2 text-center">
                               Current tier: <span className="font-semibold text-green-600">{allPrices.currentTierDisplay}</span>
                             </p>
