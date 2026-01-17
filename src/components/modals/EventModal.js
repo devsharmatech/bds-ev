@@ -877,10 +877,12 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                     </div>
 
                     {/* Category Selection Info */}
-                    <p className="text-xs text-gray-500 mb-3 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      Select a category below to see the price you would pay
-                    </p>
+                    {!user && (
+                      <p className="text-xs text-gray-500 mb-3 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Select a category below to see the price you would pay
+                      </p>
+                    )}
                     
                     <div className="overflow-x-auto -mx-4 px-4">
                       <table className="w-full text-xs md:text-sm border-collapse min-w-[400px]">
@@ -919,27 +921,33 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                             const isSelectedPreview = selectedPreviewCategory === cat.id;
                             // Get the current tier price for this category
                             const currentTierPrice = cat[allPrices.currentTier] || cat.earlybird || cat.standard || cat.onsite;
+                            // Disable selection if user is logged in
+                            const canSelect = !user;
                             return (
                               <tr 
                                 key={cat.id} 
-                                className={`cursor-pointer transition-colors ${
-                                  isSelectedPreview 
+                                className={`transition-colors ${
+                                  canSelect ? 'cursor-pointer' : 'cursor-default'
+                                } ${
+                                  isSelectedPreview && canSelect
                                     ? 'bg-[#03215F]/10 ring-2 ring-[#03215F] ring-inset' 
                                     : isUserCategory 
-                                      ? 'bg-blue-50 hover:bg-blue-100' 
-                                      : 'hover:bg-gray-100'
+                                      ? 'bg-blue-50' 
+                                      : canSelect ? 'hover:bg-gray-100' : ''
                                 }`}
-                                onClick={() => setSelectedPreviewCategory(cat.id)}
+                                onClick={() => canSelect && setSelectedPreviewCategory(cat.id)}
                               >
                                 <td className="border border-gray-200 px-2 py-2 text-gray-700 font-medium">
                                   <div className="flex items-center gap-2">
-                                    <input
-                                      type="radio"
-                                      name="categoryPreview"
-                                      checked={isSelectedPreview}
-                                      onChange={() => setSelectedPreviewCategory(cat.id)}
-                                      className="w-4 h-4 text-[#03215F] border-gray-300 focus:ring-[#03215F] cursor-pointer"
-                                    />
+                                    {!user && (
+                                      <input
+                                        type="radio"
+                                        name="categoryPreview"
+                                        checked={isSelectedPreview}
+                                        onChange={() => setSelectedPreviewCategory(cat.id)}
+                                        className="w-4 h-4 text-[#03215F] border-gray-300 focus:ring-[#03215F] cursor-pointer"
+                                      />
+                                    )}
                                     <span className="truncate">{cat.name}</span>
                                     {isUserCategory && (
                                       <span className="px-1 py-0.5 bg-[#03215F] text-white text-[8px] rounded font-bold shrink-0">
@@ -982,8 +990,8 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                       </table>
                     </div>
 
-                    {/* Selected Category Price Preview */}
-                    {selectedPreviewCategory && (() => {
+                    {/* Selected Category Price Preview - only for non-logged in users */}
+                    {!user && selectedPreviewCategory && (() => {
                       const selectedCat = allPrices.categories.find(c => c.id === selectedPreviewCategory);
                       if (!selectedCat) return null;
                       const previewPrice = selectedCat[allPrices.currentTier] || selectedCat.earlybird || selectedCat.standard || selectedCat.onsite || 0;

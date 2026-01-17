@@ -10,6 +10,7 @@ export default function RegistrationLiteModal({
   onClose,
   onSuccess,
   onLoginClick,
+  defaultPricingCategory, // Optional: 'member', 'student', 'hygienist', 'regular'
 }) {
   // Select options
   const COUNTRY_OPTIONS = [
@@ -88,6 +89,28 @@ export default function RegistrationLiteModal({
 
   // Build full country list with phone codes (client-side)
   const [countryOptions, setCountryOptions] = useState(COUNTRY_OPTIONS);
+  
+  // Map pricing category to form fields when modal opens
+  useEffect(() => {
+    if (isOpen && defaultPricingCategory) {
+      // Map pricing categories to registration form options
+      const categoryMapping = {
+        'member': { category: 'Dentist', specialty: 'General Dentistry', position: 'General Dentist' },
+        'student': { category: 'Student - Undergraduate', specialty: 'Student', position: 'Student', workSector: 'Student' },
+        'hygienist': { category: 'Dental Hygienist', specialty: 'Dental Hygiene', position: 'Dental Hygienist' },
+        'regular': { category: '', specialty: '', position: '' },
+      };
+      
+      const defaults = categoryMapping[defaultPricingCategory];
+      if (defaults) {
+        if (defaults.category) setCategory(defaults.category);
+        if (defaults.specialty) setSpecialty(defaults.specialty);
+        if (defaults.position) setPosition(defaults.position);
+        if (defaults.workSector) setWorkSector(defaults.workSector);
+      }
+    }
+  }, [isOpen, defaultPricingCategory]);
+  
   useEffect(() => {
     let cancelled = false;
     (async () => {
