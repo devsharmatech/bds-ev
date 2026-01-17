@@ -410,7 +410,38 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
 
   const earlyBirdCountdown = getEarlyBirdCountdown();
 
-  const priceToPay = userPriceInfo.price || 0;
+  // Calculate the display price - use selected preview category if set, otherwise user's actual price
+  const getDisplayPrice = () => {
+    if (selectedPreviewCategory && allPrices?.categories) {
+      const selectedCat = allPrices.categories.find(c => c.id === selectedPreviewCategory);
+      if (selectedCat) {
+        return selectedCat[allPrices.currentTier] || selectedCat.earlybird || selectedCat.standard || selectedCat.onsite || 0;
+      }
+    }
+    return userPriceInfo.price || 0;
+  };
+  
+  const getDisplayCategoryInfo = () => {
+    if (selectedPreviewCategory && allPrices?.categories) {
+      const selectedCat = allPrices.categories.find(c => c.id === selectedPreviewCategory);
+      if (selectedCat) {
+        const tierLabels = { earlybird: 'Early Bird', standard: 'Standard', onsite: 'On-site' };
+        return {
+          categoryDisplay: selectedCat.name,
+          tierDisplay: tierLabels[allPrices.currentTier] || 'Current',
+          isPreview: selectedPreviewCategory !== userPriceInfo.category
+        };
+      }
+    }
+    return {
+      categoryDisplay: userPriceInfo.categoryDisplay,
+      tierDisplay: userPriceInfo.tierDisplay,
+      isPreview: false
+    };
+  };
+
+  const priceToPay = getDisplayPrice();
+  const displayCategoryInfo = getDisplayCategoryInfo();
   const derivedStatus = deriveEventStatus(event)
 
   // Calculate member savings using the utility
@@ -791,24 +822,40 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                   ) : (
                     <div className="mt-3">
                       <div className="flex items-center justify-between text-xs md:text-sm text-gray-600 mb-1">
-                        <div className="flex items-center gap-2">
-                          <span>Your Price</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span>{displayCategoryInfo.isPreview ? 'Preview Price' : 'Your Price'}</span>
                           {user && (
-                            <span className="px-2 py-0.5 bg-[#03215F]/10 text-[#03215F] text-[10px] md:text-xs rounded-full font-medium">
-                              {userPriceInfo.categoryDisplay} • {userPriceInfo.tierDisplay}
+                            <span className={`px-2 py-0.5 text-[10px] md:text-xs rounded-full font-medium ${
+                              displayCategoryInfo.isPreview 
+                                ? 'bg-amber-100 text-amber-700 border border-amber-300' 
+                                : 'bg-[#03215F]/10 text-[#03215F]'
+                            }`}>
+                              {displayCategoryInfo.categoryDisplay} • {displayCategoryInfo.tierDisplay}
                             </span>
                           )}
+                          {displayCategoryInfo.isPreview && (
+                            <span className="text-[10px] text-amber-600">(Preview)</span>
+                          )}
                         </div>
-                        {memberSavings > 0 && (
+                        {!displayCategoryInfo.isPreview && memberSavings > 0 && (
                           <span className="text-[#AE9B66] flex items-center gap-1 text-xs">
                             <Gift className="w-3 h-3" />
                             Save {formatBHD(memberSavings)}
                           </span>
                         )}
                       </div>
-                      <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
+                      <div className={`text-2xl md:text-3xl font-bold ${
+                        displayCategoryInfo.isPreview 
+                          ? 'text-amber-600' 
+                          : 'bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent'
+                      }`}>
                         {formatBHD(priceToPay)}
                       </div>
+                      {displayCategoryInfo.isPreview && (
+                        <p className="text-[10px] text-amber-600 mt-1">
+                          Your actual price: {formatBHD(userPriceInfo.price || 0)} ({userPriceInfo.categoryDisplay})
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
