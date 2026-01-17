@@ -327,7 +327,7 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
             {/* Category Descriptions */}
             <div className="mt-4 space-y-2 text-xs text-gray-600">
               <p>
-                <strong>BDS & Partner Dentists:</strong> Active BDS members with paid
+                <strong>BDS Member & Partner Dentists:</strong> Active BDS members with paid
                 membership
               </p>
               <p>

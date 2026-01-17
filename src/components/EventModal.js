@@ -2003,7 +2003,7 @@ export default function EventModal({
                     {/* BDS Member Row */}
                     <tr>
                       <td className="border border-gray-300 px-3 py-2 font-medium text-gray-700 bg-blue-50">
-                        BDS & Partner Dentists
+                        BDS Member & Partner Dentists
                       </td>
                       <td className="border border-gray-300 px-2 py-1 bg-green-50/50">
                         <input

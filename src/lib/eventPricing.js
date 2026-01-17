@@ -298,7 +298,7 @@ export function getAllEventPrices(event) {
     categories: [
       {
         id: 'member',
-        name: 'BDS & Partner Dentists',
+        name: 'BDS Member & Partner Dentists',
         earlybird: event.member_price,
         standard: event.member_standard_price,
         onsite: event.member_onsite_price,

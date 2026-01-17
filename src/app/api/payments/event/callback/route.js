@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getPaymentStatus } from '@/lib/myfatoorah';
 import { redirect } from 'next/navigation';
 import { sendEventJoinEmail } from '@/lib/email';
+import { getUserEventPrice } from '@/lib/eventPricing';
 
 /**
  * GET /api/payments/event/callback
@@ -40,8 +41,17 @@ export async function GET(request) {
       .from('event_members')
       .select(`
         *,
-        event:events (id, title, is_paid, regular_price, member_price),
-        user:users (id, full_name, email, membership_type)
+        event:events (
+          id, title, is_paid, start_datetime, early_bird_deadline,
+          regular_price, regular_standard_price, regular_onsite_price,
+          member_price, member_standard_price, member_onsite_price,
+          student_price, student_standard_price, student_onsite_price,
+          hygienist_price, hygienist_standard_price, hygienist_onsite_price
+        ),
+        user:users (
+          id, full_name, email, membership_type,
+          member_profiles!member_profiles_user_id_fkey(category, position, specialty)
+        )
       `)
       .eq('event_id', eventId)
       .eq('user_id', userId)
@@ -67,8 +77,17 @@ export async function GET(request) {
           .from('event_members')
           .select(`
             *,
-            event:events (id, title, is_paid, regular_price, member_price),
-            user:users (id, full_name, email, membership_type)
+            event:events (
+              id, title, is_paid, start_datetime, early_bird_deadline,
+              regular_price, regular_standard_price, regular_onsite_price,
+              member_price, member_standard_price, member_onsite_price,
+              student_price, student_standard_price, student_onsite_price,
+              hygienist_price, hygienist_standard_price, hygienist_onsite_price
+            ),
+            user:users (
+              id, full_name, email, membership_type,
+              member_profiles!member_profiles_user_id_fkey(category, position, specialty)
+            )
           `)
           .eq('event_id', eventId)
           .eq('user_id', userId)
@@ -119,20 +138,36 @@ export async function GET(request) {
     if (!eventMember) {
       console.log('[EVENT-PAYMENT-CALLBACK] Event member not found, creating record after successful payment');
       
-      // Get event and user details to create the record
+      // Get event and user details to create the record - include all pricing fields
       const { data: event } = await supabase
         .from('events')
-        .select('id, title, is_paid, regular_price, member_price')
+        .select(`
+          id, title, is_paid, start_datetime, early_bird_deadline,
+          regular_price, regular_standard_price, regular_onsite_price,
+          member_price, member_standard_price, member_onsite_price,
+          student_price, student_standard_price, student_onsite_price,
+          hygienist_price, hygienist_standard_price, hygienist_onsite_price
+        `)
         .eq('id', eventId)
         .single();
       
       const { data: user } = await supabase
         .from('users')
-        .select('id, full_name, email, membership_type')
+        .select(`
+          id, full_name, email, membership_type,
+          member_profiles!member_profiles_user_id_fkey(category, position, specialty)
+        `)
         .eq('id', userId)
         .single();
 
       if (event && user) {
+        // Flatten member profile data
+        if (user.member_profiles) {
+          user.category = user.member_profiles.category;
+          user.position = user.member_profiles.position;
+          user.specialty = user.member_profiles.specialty;
+        }
+        
         const isMember = user.membership_type === 'paid';
         const eventMemberToken = `EVT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
         
@@ -149,8 +184,17 @@ export async function GET(request) {
           })
           .select(`
             *,
-            event:events (id, title, is_paid, regular_price, member_price),
-            user:users (id, full_name, email, membership_type)
+            event:events (
+              id, title, is_paid, start_datetime, early_bird_deadline,
+              regular_price, regular_standard_price, regular_onsite_price,
+              member_price, member_standard_price, member_onsite_price,
+              student_price, student_standard_price, student_onsite_price,
+              hygienist_price, hygienist_standard_price, hygienist_onsite_price
+            ),
+            user:users (
+              id, full_name, email, membership_type,
+              member_profiles!member_profiles_user_id_fkey(category, position, specialty)
+            )
           `)
           .single();
 
@@ -297,16 +341,29 @@ export async function GET(request) {
     if (isPaid) {
       console.log('[EVENT-PAYMENT-CALLBACK] Payment confirmed as paid, updating event member record');
 
-      // Calculate price - get from event data
-      const isMember = eventMember.user?.membership_type === 'paid';
+      // Calculate price using the pricing utility (handles member type, category, and pricing tier)
       let amount = 0;
       
-      if (eventMember.event) {
-        if (eventMember.event.is_paid) {
-          amount = isMember 
-            ? (eventMember.event.member_price ?? eventMember.event.regular_price ?? 0)
-            : (eventMember.event.regular_price ?? 0);
+      if (eventMember.event && eventMember.event.is_paid && eventMember.user) {
+        // Flatten member profile data for getUserEventPrice
+        const userForPricing = { ...eventMember.user };
+        if (userForPricing.member_profiles) {
+          userForPricing.category = userForPricing.member_profiles.category;
+          userForPricing.position = userForPricing.member_profiles.position;
+          userForPricing.specialty = userForPricing.member_profiles.specialty;
         }
+        
+        // Use the same pricing utility as execute-payment
+        const priceInfo = getUserEventPrice(eventMember.event, userForPricing);
+        amount = priceInfo.price;
+        
+        console.log('[EVENT-PAYMENT-CALLBACK] Price calculated using getUserEventPrice:', {
+          user_category: priceInfo.category,
+          pricing_tier: priceInfo.tier,
+          amount,
+          user_membership_type: eventMember.user.membership_type,
+          user_profile_category: userForPricing.category
+        });
       }
 
       // If amount is 0, try to get from existing price_paid or calculate from event
@@ -327,7 +384,7 @@ export async function GET(request) {
       console.log('[EVENT-PAYMENT-CALLBACK] Updating event member with payment amount:', {
         event_member_id: eventMember.id,
         amount: amount,
-        is_member: isMember,
+        user_membership_type: eventMember.user?.membership_type,
         event_regular_price: eventMember.event?.regular_price,
         event_member_price: eventMember.event?.member_price
       });
@@ -375,7 +432,7 @@ export async function GET(request) {
           await sendEventJoinEmail(eventMember.user.email, {
             name: eventMember.user.full_name || 'Member',
             event_name: eventMember.event?.title || 'Event',
-            event_date: null, // Event date not available in current query
+            event_date: eventMember.event?.start_datetime || null,
             event_location: null,
             event_code: eventMember.token,
             price_paid: amount
