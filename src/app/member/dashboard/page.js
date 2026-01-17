@@ -349,7 +349,8 @@ export default function DashboardPage() {
     { label: 'Employer', value: user?.employer, icon: Building2 },
     { label: 'Position', value: user?.position, icon: GraduationCap },
     { label: 'Member Since', value: user?.membership_date ? formatDate(user.membership_date) : 'N/A', icon: CalendarDays },
-    { label: 'Membership ID', value: user?.membership_code, icon: BadgeCheck },
+    // Only show Membership ID for paid members
+    ...(isPremiumMember ? [{ label: 'Membership ID', value: user?.membership_code, icon: BadgeCheck }] : []),
     { label: 'Membership Type', value: planName || (isPremiumMember ? 'Paid' : 'Free'), icon: Crown }
   ]
 
@@ -384,10 +385,13 @@ export default function DashboardPage() {
           
           {/* Membership Badges - Mobile Stacked */}
           <div className="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3">
-            <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-xs md:text-sm flex items-center justify-center md:justify-start">
-              <BadgeCheck className="w-3 h-3 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-              <span className="font-medium">ID: {user?.membership_code || 'N/A'}</span>
-            </div>
+            {/* Only show Membership ID for paid members */}
+            {isPremiumMember && (
+              <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-xs md:text-sm flex items-center justify-center md:justify-start">
+                <BadgeCheck className="w-3 h-3 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                <span className="font-medium">ID: {user?.membership_code || 'N/A'}</span>
+              </div>
+            )}
             
             <div className={`px-3 py-1.5 backdrop-blur-sm rounded-full text-xs md:text-sm flex items-center justify-center md:justify-start ${
               user?.membership_status === 'active'

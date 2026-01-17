@@ -178,6 +178,19 @@ export default function RegistrationLiteModal({
         setLoading(false);
         return;
       }
+      // Validate category and specialty for price category determination
+      if (!category) {
+        setError("Please select your category");
+        toast.error("Please select your category");
+        setLoading(false);
+        return;
+      }
+      if (!specialty) {
+        setError("Please select your specialization");
+        toast.error("Please select your specialization");
+        setLoading(false);
+        return;
+      }
 
       const combinedPhone =
         phone.trim().startsWith("+") || countryDial === "+"

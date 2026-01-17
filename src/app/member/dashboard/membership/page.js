@@ -205,12 +205,15 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, pla
           </div>
 
           <div style={{ display: 'flex', gap: 16, marginTop: 14, flexWrap: isNarrow ? 'wrap' : 'nowrap' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 'clamp(9px, 2.6vw, 11px)', color: '#C7D7F2', textTransform: 'uppercase', margin: 0, letterSpacing: '0.1em' }}>Member ID</p>
-              <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', margin: '3px 0 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {user.membership_code || 'N/A'}
-              </p>
-            </div>
+            {/* Only show Member ID for paid members */}
+            {!isFreeMember && (
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 'clamp(9px, 2.6vw, 11px)', color: '#C7D7F2', textTransform: 'uppercase', margin: 0, letterSpacing: '0.1em' }}>Member ID</p>
+                <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', margin: '3px 0 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {user.membership_code || 'N/A'}
+                </p>
+              </div>
+            )}
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 'clamp(9px, 2.6vw, 11px)', color: '#C7D7F2', textTransform: 'uppercase', margin: 0, letterSpacing: '0.1em' }}>Expires</p>
               <p style={{ fontSize: 'clamp(12px, 3.5vw, 14px)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', margin: '3px 0 0 0' }}>
@@ -1656,15 +1659,18 @@ export default function MembershipCardPage() {
               </h3>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg">
-                  <div className="flex items-center">
-                    <BadgeCheck className="w-4 h-4 text-gray-500 mr-3" />
-                    <span className="text-gray-600">ID</span>
+                {/* Only show Membership ID for paid members */}
+                {!isFreeMember && (
+                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg">
+                    <div className="flex items-center">
+                      <BadgeCheck className="w-4 h-4 text-gray-500 mr-3" />
+                      <span className="text-gray-600">ID</span>
+                    </div>
+                    <span className="font-mono font-semibold text-gray-900">
+                      {user?.membership_code || "N/A"}
+                    </span>
                   </div>
-                  <span className="font-mono font-semibold text-gray-900">
-                    {user?.membership_code || "N/A"}
-                  </span>
-                </div>
+                )}
 
                 <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg">
                   <div className="flex items-center">

@@ -335,7 +335,10 @@ export default function ProfilePage() {
             </div>
             <div>
               <h3 className="font-bold text-lg md:text-xl">{user?.full_name || 'Member'}</h3>
-              <p className="text-white/80 text-sm">{user?.membership_code || 'No Membership ID'}</p>
+              {/* Only show Membership ID for paid members */}
+              {user?.membership_type === 'paid' && (
+                <p className="text-white/80 text-sm">{user?.membership_code || 'No Membership ID'}</p>
+              )}
               <div className="flex items-center gap-2 mt-1">
                 
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user?.membership_status)}`}>

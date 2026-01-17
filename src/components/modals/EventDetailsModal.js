@@ -438,12 +438,7 @@ export default function EventDetailsModal({
                       <span className="px-2 py-1 md:px-3 md:py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-xs md:text-sm">
                         {eventType}
                       </span>
-                      {eventDuration && (
-                        <span className="px-2 py-1 md:px-3 md:py-1.5 bg-[#03215F]/20 backdrop-blur-sm text-white rounded-full text-xs md:text-sm flex items-center gap-1">
-                          <ClockIcon className="w-3 h-3" />
-                          {eventDuration}
-                        </span>
-                      )}
+                     
                     </div>
                   </div>
                   <div className="flex items-center gap-1 md:gap-2 self-end md:self-auto">
