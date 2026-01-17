@@ -184,6 +184,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
   const [selectedMethod, setSelectedMethod] = useState(null)
   const [paymentStep, setPaymentStep] = useState(1) // 1: join button, 2: payment methods, 3: processing
   const [error, setError] = useState(null)
+  const [selectedPreviewCategory, setSelectedPreviewCategory] = useState(null) // For price preview switching
   const contentRef = useRef(null)
   const modalRef = useRef(null)
 
@@ -196,6 +197,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
       setPaymentMethods([])
       setSelectedMethod(null)
       setError(null)
+      setSelectedPreviewCategory(null) // Reset preview category on modal open
     }
   }, [isOpen])
 
@@ -826,6 +828,12 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                         </span>
                       )}
                     </div>
+
+                    {/* Category Selection Info */}
+                    <p className="text-xs text-gray-500 mb-3 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      Select a category below to see the price you would pay
+                    </p>
                     
                     <div className="overflow-x-auto -mx-4 px-4">
                       <table className="w-full text-xs md:text-sm border-collapse min-w-[400px]">
@@ -860,10 +868,31 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                             const isUserCategory = user
                               ? userPriceInfo.category === cat.id
                               : cat.id === 'regular';
+                            // Check if this category is selected for preview
+                            const isSelectedPreview = selectedPreviewCategory === cat.id;
+                            // Get the current tier price for this category
+                            const currentTierPrice = cat[allPrices.currentTier] || cat.earlybird || cat.standard || cat.onsite;
                             return (
-                              <tr key={cat.id} className={isUserCategory ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+                              <tr 
+                                key={cat.id} 
+                                className={`cursor-pointer transition-colors ${
+                                  isSelectedPreview 
+                                    ? 'bg-[#03215F]/10 ring-2 ring-[#03215F] ring-inset' 
+                                    : isUserCategory 
+                                      ? 'bg-blue-50 hover:bg-blue-100' 
+                                      : 'hover:bg-gray-100'
+                                }`}
+                                onClick={() => setSelectedPreviewCategory(cat.id)}
+                              >
                                 <td className="border border-gray-200 px-2 py-2 text-gray-700 font-medium">
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="radio"
+                                      name="categoryPreview"
+                                      checked={isSelectedPreview}
+                                      onChange={() => setSelectedPreviewCategory(cat.id)}
+                                      className="w-4 h-4 text-[#03215F] border-gray-300 focus:ring-[#03215F] cursor-pointer"
+                                    />
                                     <span className="truncate">{cat.name}</span>
                                     {isUserCategory && (
                                       <span className="px-1 py-0.5 bg-[#03215F] text-white text-[8px] rounded font-bold shrink-0">
@@ -873,23 +902,29 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                                   </div>
                                 </td>
                                 <td className={`border border-gray-200 px-2 py-2 text-center ${
-                                  allPrices.currentTier === 'earlybird' && isUserCategory
-                                    ? 'bg-green-100 font-bold text-green-700'
-                                    : 'text-gray-700'
+                                  allPrices.currentTier === 'earlybird' && isSelectedPreview
+                                    ? 'bg-green-200 font-bold text-green-700'
+                                    : allPrices.currentTier === 'earlybird' && isUserCategory
+                                      ? 'bg-green-100 font-bold text-green-700'
+                                      : 'text-gray-700'
                                 }`}>
                                   {cat.earlybird ? formatBHD(cat.earlybird) : '-'}
                                 </td>
                                 <td className={`border border-gray-200 px-2 py-2 text-center ${
-                                  allPrices.currentTier === 'standard' && isUserCategory
-                                    ? 'bg-blue-100 font-bold text-blue-700'
-                                    : 'text-gray-700'
+                                  allPrices.currentTier === 'standard' && isSelectedPreview
+                                    ? 'bg-blue-200 font-bold text-blue-700'
+                                    : allPrices.currentTier === 'standard' && isUserCategory
+                                      ? 'bg-blue-100 font-bold text-blue-700'
+                                      : 'text-gray-700'
                                 }`}>
                                   {cat.standard ? formatBHD(cat.standard) : '-'}
                                 </td>
                                 <td className={`border border-gray-200 px-2 py-2 text-center ${
-                                  allPrices.currentTier === 'onsite' && isUserCategory
-                                    ? 'bg-orange-100 font-bold text-orange-700'
-                                    : 'text-gray-700'
+                                  allPrices.currentTier === 'onsite' && isSelectedPreview
+                                    ? 'bg-orange-200 font-bold text-orange-700'
+                                    : allPrices.currentTier === 'onsite' && isUserCategory
+                                      ? 'bg-orange-100 font-bold text-orange-700'
+                                      : 'text-gray-700'
                                 }`}>
                                   {cat.onsite ? formatBHD(cat.onsite) : '-'}
                                 </td>
@@ -899,6 +934,59 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Selected Category Price Preview */}
+                    {selectedPreviewCategory && (() => {
+                      const selectedCat = allPrices.categories.find(c => c.id === selectedPreviewCategory);
+                      if (!selectedCat) return null;
+                      const previewPrice = selectedCat[allPrices.currentTier] || selectedCat.earlybird || selectedCat.standard || selectedCat.onsite || 0;
+                      const isActualUserCategory = user ? userPriceInfo.category === selectedPreviewCategory : selectedPreviewCategory === 'regular';
+                      const tierLabels = { earlybird: 'Early Bird', standard: 'Standard', onsite: 'On-site' };
+                      
+                      return (
+                        <div className={`mt-4 p-4 rounded-lg border-2 ${
+                          isActualUserCategory 
+                            ? 'bg-gradient-to-r from-[#03215F]/10 to-[#03215F]/5 border-[#03215F]' 
+                            : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-400'
+                        }`}>
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold text-gray-700">
+                                  {selectedCat.name}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                  allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' :
+                                  allPrices.currentTier === 'standard' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-orange-100 text-orange-700'
+                                }`}>
+                                  {tierLabels[allPrices.currentTier] || 'Current'}
+                                </span>
+                                {isActualUserCategory && (
+                                  <span className="px-2 py-0.5 bg-[#03215F] text-white text-[10px] rounded-full font-bold">
+                                    YOUR CATEGORY
+                                  </span>
+                                )}
+                              </div>
+                              {!isActualUserCategory && (
+                                <p className="text-xs text-amber-700">
+                                  <AlertCircle className="w-3 h-3 inline mr-1" />
+                                  This is a preview only. Your actual price is based on your profile category.
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-[#03215F]">
+                                {formatBHD(previewPrice)}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {tierLabels[allPrices.currentTier]} Price
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -907,13 +995,21 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                   <div className="flex items-start p-3 md:p-4 bg-white rounded-xl border border-gray-200/50">
                     <Calendar className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 mt-0.5 text-[#03215F] flex-shrink-0" />
                     <div>
-                      <div className="font-semibold text-gray-900 text-sm md:text-base">Date</div>
+                      <div className="font-semibold text-gray-900 text-sm md:text-base">Start Date</div>
                       <div className="text-xs md:text-sm text-gray-600">
                         {formatDate(event.start_datetime)}
                       </div>
                     </div>
                   </div>
-
+ <div className="flex items-start p-3 md:p-4 bg-white rounded-xl border border-gray-200/50">
+                    <Calendar className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 mt-0.5 text-[#03215F] flex-shrink-0" />
+                    <div>
+                      <div className="font-semibold text-gray-900 text-sm md:text-base">End Date</div>
+                      <div className="text-xs md:text-sm text-gray-600">
+                        {formatDate(event.end_datetime)}
+                      </div>
+                    </div>
+                  </div>
                   <div className="flex items-start p-3 md:p-4 bg-white rounded-xl border border-gray-200/50">
                     <Clock className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 mt-0.5 text-[#03215F] flex-shrink-0" />
                     <div>
@@ -924,6 +1020,9 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                       </div>
                     </div>
                   </div>
+                 
+
+                 
 
                   <div className="flex items-start p-3 md:p-4 bg-white rounded-xl border border-gray-200/50">
                     <MapPin className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 mt-0.5 text-[#03215F] flex-shrink-0" />
@@ -940,32 +1039,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                     </div>
                   </div>
 
-                  <div className="flex items-start p-3 md:p-4 bg-white rounded-xl border border-gray-200/50">
-                    <Users className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 mt-0.5 text-[#03215F] flex-shrink-0" />
-                    <div>
-                      <div className="font-semibold text-gray-900 text-sm md:text-base">Capacity</div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="text-gray-600">
-                              {event.registered_count || 0} / {event.capacity || "∞"}
-                            </span>
-                            <span className="font-semibold text-[#03215F]">
-                              {event.capacity ? `${Math.round(((event.registered_count || 0) / event.capacity) * 100)}%` : '∞'}
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-gradient-to-r from-[#03215F] to-[#03215F] h-2 rounded-full transition-all duration-500"
-                              style={{ 
-                                width: `${event.capacity ? Math.min(100, ((event.registered_count || 0) / event.capacity) * 100) : 0}%` 
-                              }}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                
                 </div>
 
                 {/* Description */}

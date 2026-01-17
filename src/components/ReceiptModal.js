@@ -19,6 +19,7 @@ export default function ReceiptModal({ receipt, onClose }) {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true,
+      timeZone: 'Asia/Bahrain',
     });
 
   /* ================= CLOSE ================= */

@@ -34,6 +34,7 @@ const formatDate = (dateString) => {
     month: "long",
     day: "numeric",
     year: "numeric",
+    timeZone: "Asia/Bahrain",
   });
 };
 
@@ -44,6 +45,7 @@ const formatTime = (dateString) => {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
+    timeZone: "Asia/Bahrain",
   });
 };
 
@@ -550,6 +552,7 @@ export default function CheckInsPage() {
                                       month: "short",
                                       day: "numeric",
                                       year: "numeric",
+                                      timeZone: "Asia/Bahrain",
                                     })}
                                   </span>
                                 </div>
@@ -627,6 +630,7 @@ export default function CheckInsPage() {
                                         year: "numeric",
                                         hour: "2-digit",
                                         minute: "2-digit",
+                                        timeZone: "Asia/Bahrain",
                                       })}
                                     </span>
                                   ) : (
@@ -637,6 +641,7 @@ export default function CheckInsPage() {
                                         year: "numeric",
                                         hour: "2-digit",
                                         minute: "2-digit",
+                                        timeZone: "Asia/Bahrain",
                                       })}
                                     </span>
                                   )}

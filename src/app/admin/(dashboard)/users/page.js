@@ -636,7 +636,7 @@ export default function ManageUsersPage() {
                         <span>{user.phone}</span>
                         <span className="mx-2">•</span>
                         <Calendar className="w-4 h-4" />
-                        <span>{new Date(user.created_at).toLocaleDateString()}</span>
+                        <span>{new Date(user.created_at).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })}</span>
                       </div>
 
                       <div className="flex gap-2">
@@ -749,10 +749,10 @@ export default function ManageUsersPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
-                          {new Date(user.created_at).toLocaleDateString()}
+                          {new Date(user.created_at).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {new Date(user.created_at).toLocaleTimeString()}
+                          {new Date(user.created_at).toLocaleTimeString('en-BH', { timeZone: 'Asia/Bahrain' })}
                         </div>
                       </td>
                       <td className="px-6 py-4">

@@ -148,10 +148,11 @@ export default function ResearchPage() {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString("en-BH", {
       year: "numeric",
       month: "long",
       day: "numeric",
+      timeZone: "Asia/Bahrain",
     });
   };
 

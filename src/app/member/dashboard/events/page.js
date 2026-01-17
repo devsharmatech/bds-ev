@@ -38,6 +38,7 @@ const formatDate = (dateString) => {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "Asia/Bahrain",
   });
 };
 
@@ -47,6 +48,7 @@ const formatTime = (dateString) => {
   return date.toLocaleTimeString("en-BH", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Asia/Bahrain",
   });
 };
 

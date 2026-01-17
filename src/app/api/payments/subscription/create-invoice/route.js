@@ -228,6 +228,29 @@ export async function POST(request) {
       });
     }
 
+    // If this is a combined payment, update the payment record's type and amount
+    if (payment_type === 'subscription_combined') {
+      const { error: updateTypeError } = await supabase
+        .from('membership_payments')
+        .update({
+          payment_type: 'subscription_combined',
+          amount: amount, // Update to total amount
+          notes: 'Combined registration and annual payment'
+        })
+        .eq('id', payment_id);
+      
+      if (updateTypeError) {
+        console.error('[CREATE-INVOICE] Error updating payment type to combined:', {
+          error: updateTypeError,
+          payment_id
+        });
+      } else {
+        console.log('[CREATE-INVOICE] Updated payment to combined type with total amount:', {
+          payment_id,
+          new_amount: amount
+        });
+      }
+    }
     // Check authentication (optional for registration flow)
     const cookieStore = await cookies();
     const token = cookieStore.get('bds_token')?.value;
@@ -404,6 +427,8 @@ export async function POST(request) {
         ? `Registration Fee - ${subscription.subscription_plan.display_name}`
         : payment_type === 'subscription_renewal'
         ? `Renewal Fee - ${subscription.subscription_plan.display_name}`
+        : payment_type === 'subscription_combined'
+        ? `Membership Fee - ${subscription.subscription_plan.display_name}`
         : `Annual Fee - ${subscription.subscription_plan.display_name}`,
       Quantity: 1,
       UnitPrice: amount

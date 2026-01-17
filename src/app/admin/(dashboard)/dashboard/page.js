@@ -127,15 +127,16 @@ const StatCard = ({ title, value, icon: Icon, color, isLoading, change, trendDir
 const EventCard = ({ event, type = "today" }) => {
   const formatTime = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('en-BH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bahrain' });
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString([], { 
+    return date.toLocaleDateString('en-BH', { 
       weekday: 'short',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: 'Asia/Bahrain'
     });
   };
 
@@ -229,9 +230,10 @@ export default function Page() {
         setMemberRegistrationData(data.charts?.member_registration || generateDemoRegistrationData());
         setUpcomingEvents(data.upcoming_events || generateDemoUpcomingEvents());
         setTodayEvents(data.today_events || generateDemoTodayEvents());
-        setLastUpdated(new Date().toLocaleTimeString([], { 
+        setLastUpdated(new Date().toLocaleTimeString('en-BH', { 
           hour: '2-digit', 
-          minute: '2-digit'
+          minute: '2-digit',
+          timeZone: 'Asia/Bahrain'
         }));
       } else {
         throw new Error("Failed to load dashboard data");

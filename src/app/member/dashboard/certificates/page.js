@@ -25,7 +25,8 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('en-BH', {
     day: 'numeric',
     month: 'short',
-    year: 'numeric'
+    year: 'numeric',
+    timeZone: 'Asia/Bahrain'
   });
 }
 

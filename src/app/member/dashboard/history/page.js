@@ -27,6 +27,7 @@ const formatDate = (dateString) => {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "Asia/Bahrain",
   });
 };
 

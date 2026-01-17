@@ -797,49 +797,7 @@ export default function EventsSection() {
                               </div>
                             )}
 
-                          {/* Capacity Progress */}
-                          <div className="mb-4">
-                            <div className="flex items-center justify-between text-xs mb-1.5">
-                              <div className="flex items-center gap-1.5">
-                                <Users className="w-3.5 h-3.5 text-[#AE9B66]" />
-                                <span className="text-gray-700">
-                                  {event.registered_count || 0} /{" "}
-                                  {event.capacity || "∞"} registered
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                {isAlmostFull && (
-                                  <span className="text-[#ECCF0F] text-xs font-medium">
-                                    Almost Full!
-                                  </span>
-                                )}
-                                {isFull && (
-                                  <span className="text-[#b8352d] text-xs font-medium">
-                                    Sold Out
-                                  </span>
-                                )}
-                                {event.capacity && (
-                                  <span className="text-[#AE9B66] font-medium">
-                                    {Math.round(progress)}%
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            {event.capacity && (
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className={`h-2 rounded-full transition-all duration-500 ${
-                                    isFull
-                                      ? "bg-[#b8352d]"
-                                      : isAlmostFull
-                                      ? "bg-[#ECCF0F]"
-                                      : "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66]"
-                                  }`}
-                                  style={{ width: `${progress}%` }}
-                                ></div>
-                              </div>
-                            )}
-                          </div>
+                          
 
                           {/* Features/Tags */}
                           <div className="mb-4 flex flex-wrap gap-1.5">
@@ -882,7 +840,7 @@ export default function EventsSection() {
                               {event.is_paid && (
                                 <button
                                   onClick={() => handleViewPrices(event)}
-                                  className="px-3 py-2.5 bg-gradient-to-r from-[#AE9B66]/20 to-[#AE9B66]/10 text-[#AE9B66] border border-[#AE9B66]/30 rounded-lg hover:bg-[#AE9B66]/20 transition-colors flex items-center justify-center"
+                                  className="px-3 py-2.5 bg-gradient-to-r from-[#AE9B66]/80 to-[#AE9B66]/90 text-white border border-[#AE9B66]/30 rounded-lg hover:bg-[#AE9B66]/20 transition-colors flex items-center justify-center"
                                   title="View All Prices"
                                 >
                                   <DollarSign className="w-4 h-4" />

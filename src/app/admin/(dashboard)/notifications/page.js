@@ -364,7 +364,7 @@ export default function NotificationsPage() {
                   <option value="">Select event</option>
                   {events.map((event) => (
                     <option key={event.id} value={event.id}>
-                      {event.title} - {new Date(event.start_datetime).toLocaleDateString()}
+                      {event.title} - {new Date(event.start_datetime).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })}
                     </option>
                   ))}
                 </select>
@@ -428,15 +428,16 @@ export default function NotificationsPage() {
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       <span>
-                        {new Date(event.start_datetime).toLocaleDateString()}
+                        {new Date(event.start_datetime).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
                       <span>
-                        {new Date(event.start_datetime).toLocaleTimeString([], {
+                        {new Date(event.start_datetime).toLocaleTimeString('en-BH', {
                           hour: "2-digit",
                           minute: "2-digit",
+                          timeZone: "Asia/Bahrain",
                         })}
                       </span>
                     </div>

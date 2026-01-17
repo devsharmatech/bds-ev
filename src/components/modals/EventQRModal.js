@@ -74,11 +74,12 @@ export default function EventQRModal({ isOpen, onClose, event }) {
   const formatDate = (dateString) => {
     if (!dateString) return "TBD";
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("en-BH", {
       weekday: "short",
       year: "numeric",
       month: "short",
       day: "numeric",
+      timeZone: "Asia/Bahrain",
     });
   };
 

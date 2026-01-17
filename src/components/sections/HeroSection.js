@@ -17,6 +17,7 @@ function MembershipCard({ user, qrRef }) {
       ? new Date(date).toLocaleDateString("en-BH", {
         month: "numeric",
         year: "numeric",
+        timeZone: "Asia/Bahrain",
       })
       : "N/A";
 
@@ -535,17 +536,19 @@ export default function HeroSection() {
             <div class="event-info">
               <div class="event-title">${badgeData?.event?.title}</div>
               <div class="event-details">
-                <div class="event-date">Start: ${badgeData?.event?.start_datetime ? new Date(badgeData.event.start_datetime).toLocaleDateString('en-US', {
+                <div class="event-date">Start: ${badgeData?.event?.start_datetime ? new Date(badgeData.event.start_datetime).toLocaleDateString('en-BH', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
+                  timeZone: 'Asia/Bahrain'
                 }) : ''}</div>
-                ${badgeData?.event?.end_datetime ? `<div class="event-end-date">End: ${new Date(badgeData.event.end_datetime).toLocaleDateString('en-US', {
+                ${badgeData?.event?.end_datetime ? `<div class="event-end-date">End: ${new Date(badgeData.event.end_datetime).toLocaleDateString('en-BH', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
+                  timeZone: 'Asia/Bahrain'
                 })}</div>` : ''}
                 ${badgeData?.event?.event_agendas && badgeData.event.event_agendas.length > 0 ? `<div class="event-agendas">Total Agendas: ${badgeData.event.event_agendas.length}</div>` : ''}
                 ${badgeData?.event?.venue_name ? `<div class="event-venue">${badgeData.event.venue_name}</div>` : ''}
@@ -1061,14 +1064,14 @@ export default function HeroSection() {
                             <p className="font-semibold text-center capitalize text-sm mb-2 leading-tight">{badgeData.event?.title}</p>
                             <div className="text-[11px] space-y-1">
                               <p className="font-medium">
-                                Start: {badgeData.event?.start_datetime && new Date(badgeData.event.start_datetime).toLocaleDateString('en-US', {
-                                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                                Start: {badgeData.event?.start_datetime && new Date(badgeData.event.start_datetime).toLocaleDateString('en-BH', {
+                                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bahrain'
                                 })}
                               </p>
                               {badgeData.event?.end_datetime && (
                                 <p className="opacity-80">
-                                  End: {new Date(badgeData.event.end_datetime).toLocaleDateString('en-US', {
-                                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                                  End: {new Date(badgeData.event.end_datetime).toLocaleDateString('en-BH', {
+                                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bahrain'
                                   })}
                                 </p>
                               )}

@@ -95,6 +95,7 @@ const formatDate = (dateString) => {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "Asia/Bahrain",
   });
 };
 

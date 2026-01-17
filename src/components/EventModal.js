@@ -1638,23 +1638,8 @@ export default function EventModal({
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Timezone
-                    </label>
-                    <select
-                      name="timezone"
-                      value={formData.timezone}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
-                    >
-                      {TIMEZONES.map((tz) => (
-                        <option key={tz.value} value={tz.value}>
-                          {tz.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Timezone is always Bahrain - hidden field */}
+                  <input type="hidden" name="timezone" value="Asia/Bahrain" />
                 </div>
               </div>
             </div>

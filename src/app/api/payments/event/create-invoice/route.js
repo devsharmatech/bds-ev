@@ -62,10 +62,16 @@ export async function POST(request) {
       );
     }
 
-    // Get event details
+    // Get event details - include all pricing fields for category-based pricing
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id, title, is_paid, regular_price, member_price')
+      .select(`
+        id, title, is_paid, start_datetime, early_bird_deadline,
+        regular_price, regular_standard_price, regular_onsite_price,
+        member_price, member_standard_price, member_onsite_price,
+        student_price, student_standard_price, student_onsite_price,
+        hygienist_price, hygienist_standard_price, hygienist_onsite_price
+      `)
       .eq('id', event_id)
       .single();
 

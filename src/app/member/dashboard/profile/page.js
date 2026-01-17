@@ -284,7 +284,8 @@ export default function ProfilePage() {
     return new Date(dateString).toLocaleDateString('en-BH', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: 'Asia/Bahrain'
     })
   }
 

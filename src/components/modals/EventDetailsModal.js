@@ -694,18 +694,31 @@ export default function EventDetailsModal({
                         </div>
                         <div className="min-w-0">
                           <div className="text-xs md:text-sm text-gray-600">
-                            Date
+                            Start Date
                           </div>
                           <div className="font-semibold text-sm md:text-base text-gray-900 truncate">
-                            {formatDate(event?.start_datetime)}
+                            {formatDate(event?.start_datetime)} 
+                            &nbsp;
+                            {formatTime(event?.start_datetime)}
                           </div>
                         </div>
                       </div>
-                      <div className="text-xs md:text-sm text-gray-500 pl-10 md:pl-11 truncate">
-                        {formatTime(event?.start_datetime)}
-                        {event?.end_datetime &&
-                          ` - ${formatTime(event.end_datetime)}`}
+                      <div className="flex mt-5 items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                        <div className="p-1.5 md:p-2 bg-[#9cc2ed] rounded-lg">
+                          <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs md:text-sm text-gray-600">
+                            End Date
+                          </div>
+                          <div className="font-semibold text-sm md:text-base text-gray-900 truncate">
+                            {formatDate(event?.end_datetime)}
+                            {event?.end_datetime &&
+                          `  ${formatTime(event.end_datetime)}`}
+                          </div>
+                        </div>
                       </div>
+                     
                     </div>
 
                     <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 md:p-4">
@@ -728,30 +741,7 @@ export default function EventDetailsModal({
                       </div>
                     </div>
 
-                    <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 md:p-4">
-                      <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
-                        <div className="p-1.5 md:p-2 bg-[#03215F] rounded-lg">
-                          <Users className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-xs md:text-sm text-gray-600">
-                            Attendance
-                          </div>
-                          <div className="font-semibold text-sm md:text-base text-gray-900 truncate">
-                            {event?.registered_count || 0} /{" "}
-                            {event?.capacity || "∞"} registered
-                          </div>
-                        </div>
-                      </div>
-                      <div className="pl-10 md:pl-11">
-                        <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
-                          <div
-                            className="bg-gradient-to-r from-[#03215F] to-[#03215F] h-1.5 md:h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
+                   
                   </div>
 
                   {/* Description */}

@@ -720,17 +720,19 @@ export default function EventMembersPage() {
             <div class="event-info">
               <div class="event-title">${event.title}</div>
               <div class="event-details">
-                <div class="event-date">Start: ${new Date(event.start_datetime).toLocaleDateString('en-US', {
+                <div class="event-date">Start: ${new Date(event.start_datetime).toLocaleDateString('en-BH', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
+                  timeZone: 'Asia/Bahrain'
                 })}</div>
-                ${event.end_datetime ? '<div class="event-end-date">End: ' + new Date(event.end_datetime).toLocaleDateString('en-US', {
+                ${event.end_datetime ? '<div class="event-end-date">End: ' + new Date(event.end_datetime).toLocaleDateString('en-BH', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
+                  timeZone: 'Asia/Bahrain'
                 }) + '</div>' : ''}
                 ${event.venue_name ? '<div class="event-venue">' + event.venue_name + '</div>' : ''}
               </div>

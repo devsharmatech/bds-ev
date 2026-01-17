@@ -283,17 +283,19 @@ export default function SpeakerBadgePage() {
             <div class="event-info">
               <div class="event-title">${badgeData.events?.title}</div>
               <div class="event-details">
-                <div class="event-date">Start: ${badgeData.events?.start_datetime ? new Date(badgeData.events.start_datetime).toLocaleDateString('en-US', {
+                <div class="event-date">Start: ${badgeData.events?.start_datetime ? new Date(badgeData.events.start_datetime).toLocaleDateString('en-BH', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
+                  timeZone: 'Asia/Bahrain'
                 }) : ''}</div>
-                ${badgeData.events?.end_datetime ? `<div class="event-end-date">End: ${new Date(badgeData.events.end_datetime).toLocaleDateString('en-US', {
+                ${badgeData.events?.end_datetime ? `<div class="event-end-date">End: ${new Date(badgeData.events.end_datetime).toLocaleDateString('en-BH', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
+                  timeZone: 'Asia/Bahrain'
                 })}</div>` : ''}
                 ${badgeData.events?.event_agendas && badgeData.events.event_agendas.length > 0 ? `<div class="event-agendas">Total Agendas: ${badgeData.events.event_agendas.length}</div>` : ''}
                 ${badgeData.events?.venue_name ? `<div class="event-venue">${badgeData.events.venue_name}</div>` : ''}
@@ -497,10 +499,11 @@ export default function SpeakerBadgePage() {
                   {/* Badge Footer */}
                   <div className="bg-gray-100 py-3 px-4 text-center border-t">
                     <p className="text-xs text-gray-500">
-                      {badgeData.events?.start_date && new Date(badgeData.events.start_date).toLocaleDateString('en-US', {
+                      {badgeData.events?.start_date && new Date(badgeData.events.start_date).toLocaleDateString('en-BH', {
                         year: 'numeric',
                         month: 'long',
-                        day: 'numeric'
+                        day: 'numeric',
+                        timeZone: 'Asia/Bahrain'
                       })}
                     </p>
                   </div>

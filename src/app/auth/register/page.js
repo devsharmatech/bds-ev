@@ -624,12 +624,6 @@ function RegisterPageContent() {
       return;
     }
 
-    // If category is Dentist, require license number
-    if (formData.category === "Dentist" && !formData.licenseNumber) {
-      setError("Dentists must provide a license number");
-      return;
-    }
-
     setStep(3);
   };
 
@@ -759,9 +753,23 @@ function RegisterPageContent() {
           </label>
           <select
             value={formData.nationality}
-            onChange={(e) =>
-              setFormData({ ...formData, nationality: e.target.value })
-            }
+            onChange={(e) => {
+              const newNationality = e.target.value;
+              const selectedPlan = plans.find(p => p.id === formData.subscriptionPlanId);
+              const selectedPlanName = (selectedPlan?.name || '').toLowerCase();
+              
+              // Clear plan selection if nationality change makes current plan invalid
+              const isBahraini = newNationality === 'Bahrain';
+              const shouldClearPlan = 
+                (isBahraini && selectedPlanName === 'associate') || 
+                (!isBahraini && newNationality && selectedPlanName !== 'associate' && selectedPlanName !== '');
+              
+              if (shouldClearPlan) {
+                setFormData({ ...formData, nationality: newNationality, subscriptionPlanId: '', membershipType: '' });
+              } else {
+                setFormData({ ...formData, nationality: newNationality });
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#03215F]"
           >
             <option value="">Select nationality</option>
@@ -868,22 +876,20 @@ function RegisterPageContent() {
           </select>
         </div>
 
-        {/* License Number (for Dentists) */}
+        {/* License Number (Optional) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <Shield className="inline w-4 h-4 mr-2" />
-            License Number {formData.category === "Dentist" && "*"}
+            License Number (Optional)
           </label>
           <input
             type="text"
-            required={formData.category === "Dentist"}
             value={formData.licenseNumber}
             onChange={(e) =>
               setFormData({ ...formData, licenseNumber: e.target.value })
             }
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#03215F]"
             placeholder="BH-DENT-XXXX"
-            disabled={formData.category !== "Dentist"}
           />
         </div>
 
@@ -1095,7 +1101,22 @@ function RegisterPageContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plans.map((plan) => {
+            {plans
+              .filter((plan) => {
+                const planName = (plan.name || '').toLowerCase();
+                const isBahraini = formData.nationality === 'Bahrain';
+                
+                if (isBahraini) {
+                  // Bahrain users can only join Active and Student plans (NOT Associate)
+                  return planName !== 'associate';
+                } else if (formData.nationality && formData.nationality !== 'Bahrain') {
+                  // Non-Bahrain users can only join Associate plan
+                  return planName === 'associate';
+                }
+                // If nationality not selected yet, show all plans
+                return true;
+              })
+              .map((plan) => {
               const isSelected = formData.subscriptionPlanId === plan.id;
               const isHighlighted = selectedPlanFromUrl === plan.name;
               const totalPrice = (plan.registration_fee || 0) + (plan.annual_fee || 0);
@@ -1531,7 +1552,7 @@ function RegisterPageContent() {
               </p>
               <p className="text-sm text-gray-500 mt-2">
                 Need help? Contact BDS Secretariat at
-                info@bahraindentalsociety.org
+                Bahrain.ds94@gmail.com
               </p>
             </div>
           </div>

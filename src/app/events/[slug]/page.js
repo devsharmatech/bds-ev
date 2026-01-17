@@ -65,6 +65,7 @@ const formatDate = (dateString) => {
     month: "long",
     day: "numeric",
     year: "numeric",
+    timeZone: "Asia/Bahrain",
   });
 };
 
@@ -75,6 +76,7 @@ const formatTime = (dateString) => {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
+    timeZone: "Asia/Bahrain",
   });
 };
 
@@ -89,6 +91,7 @@ const formatDateTime = (dateString) => {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
+    timeZone: "Asia/Bahrain",
   });
 };
 
@@ -276,7 +279,7 @@ export default function EventDetailsPage() {
           <div className="text-center">
             <XCircle className="w-16 h-16 text-[#b8352d] mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Event Not Found</h2>
-            <p className="text-gray-600 mb-4">The event you're looking for doesn't exist.</p>
+            <p className="text-gray-600 mb-4">The event you are looking for doesn't exist.</p>
             <button
               onClick={() => router.push("/events")}
               className="px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
@@ -380,33 +383,18 @@ export default function EventDetailsPage() {
                     <Calendar className="w-6 h-6" />
                     <h3 className="font-semibold">Start Date</h3>
                   </div>
-                  <p className="text-2xl font-bold">{formatDate(event.start_datetime)}</p>
+                  <p className="text-xl font-bold">{formatDate(event.start_datetime)}</p>
                   <p className="text-sm opacity-90 mt-1">{formatTime(event.start_datetime)}</p>
                 </div>
-
-                <div className="bg-gradient-to-br from-[#AE9B66] to-[#AE9B66] rounded-xl p-5 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-[#03215F] to-[#03215F] rounded-xl p-5 text-white shadow-lg">
                   <div className="flex items-center gap-3 mb-2">
-                    <Timer className="w-6 h-6" />
-                    <h3 className="font-semibold">Duration</h3>
+                    <Calendar className="w-6 h-6" />
+                    <h3 className="font-semibold">End Date</h3>
                   </div>
-                  <p className="text-2xl font-bold">{duration || "TBD"}</p>
-                  {event.end_datetime && (
-                    <p className="text-sm opacity-90 mt-1">Ends: {formatTime(event.end_datetime)}</p>
-                  )}
+                  <p className="text-xl font-bold">{formatDate(event.end_datetime)}</p>
+                  <p className="text-sm opacity-90 mt-1">{formatTime(event.end_datetime)}</p>
                 </div>
-
-                <div className="bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed] rounded-xl p-5 text-[#03215F] shadow-lg">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Users className="w-6 h-6" />
-                    <h3 className="font-semibold">Capacity</h3>
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {event.registered_count} / {event.capacity || "∞"}
-                  </p>
-                  {spotsLeft !== null && (
-                    <p className="text-sm mt-1">{spotsLeft} spots left</p>
-                  )}
-                </div>
+                
               </motion.div>
 
               {/* Description */}
@@ -623,8 +611,18 @@ export default function EventDetailsPage() {
                       <Calendar className="w-5 h-5 text-[#03215F]" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Date</p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Start Date</p>
                       <p className="font-bold text-gray-900">{formatDate(event.start_datetime)}</p>
+                    </div>
+                  </div>
+                  {/* Date */}
+                  <div className="flex items-start gap-3 p-3 bg-[#9cc2ed]/10 rounded-lg">
+                    <div className="p-2 bg-[#9cc2ed] rounded-lg flex-shrink-0">
+                      <Calendar className="w-5 h-5 text-[#03215F]" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">End Date</p>
+                      <p className="font-bold text-gray-900">{formatDate(event.end_datetime)}</p>
                     </div>
                   </div>
 

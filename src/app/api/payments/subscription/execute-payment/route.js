@@ -14,12 +14,13 @@ export async function POST(request) {
   
   try {
     requestData = await request.json();
-    const { subscription_id, payment_id, payment_method_id, redirect_to } = requestData;
+    const { subscription_id, payment_id, payment_method_id, redirect_to, amount: requestedAmount } = requestData;
 
     console.log('[EXECUTE-PAYMENT] Request received:', {
       subscription_id,
       payment_id,
       payment_method_id,
+      requestedAmount,
       timestamp: new Date().toISOString()
     });
 
@@ -203,21 +204,26 @@ export async function POST(request) {
       ? `${baseUrl}/member/dashboard/subscriptions?error=payment_failed`
       : `${baseUrl}/auth/login?error=payment_failed`;
 
+    // Use requested amount if provided (for combined payments), otherwise use payment record amount
+    const finalAmount = requestedAmount || payment.amount;
+    
     // Create invoice items
     const invoiceItems = [{
       ItemName: payment.payment_type === 'subscription_registration' 
         ? `Registration Fee - ${subscription.subscription_plan.display_name}`
         : payment.payment_type === 'subscription_renewal'
         ? `Renewal Fee - ${subscription.subscription_plan.display_name}`
+        : payment.payment_type === 'subscription_combined'
+        ? `Membership Fee - ${subscription.subscription_plan.display_name}`
         : `Annual Fee - ${subscription.subscription_plan.display_name}`,
       Quantity: 1,
-      UnitPrice: payment.amount
+      UnitPrice: finalAmount
     }];
 
     const customerMobile = (user.mobile || user.phone || '').trim() || null;
 
     console.log('[EXECUTE-PAYMENT] Calling MyFatoorah ExecutePayment:', {
-      invoiceAmount: payment.amount,
+      invoiceAmount: finalAmount,
       paymentMethodId: payment_method_id,
       customerName: user.full_name,
       customerEmail: user.email,
@@ -226,7 +232,7 @@ export async function POST(request) {
 
     // Execute payment with selected method
     const executeResult = await executeSubscriptionPayment({
-      invoiceAmount: payment.amount,
+      invoiceAmount: finalAmount,
       customerName: user.full_name,
       customerEmail: user.email,
       customerMobile: customerMobile,

@@ -408,17 +408,19 @@ export default function SpeakerRequestsPage() {
             <div class="event-info">
               <div class="event-title">${event.title}</div>
               <div class="event-details">
-                <div class="event-date">Start: ${new Date(event.start_datetime).toLocaleDateString('en-US', {
+                <div class="event-date">Start: ${new Date(event.start_datetime).toLocaleDateString('en-BH', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
+                  timeZone: 'Asia/Bahrain'
                 })}</div>
-                ${event.end_datetime ? `<div class="event-end-date">End: ${new Date(event.end_datetime).toLocaleDateString('en-US', {
+                ${event.end_datetime ? `<div class="event-end-date">End: ${new Date(event.end_datetime).toLocaleDateString('en-BH', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
+                  timeZone: 'Asia/Bahrain'
                 })}</div>` : ''}
                 ${event.event_agendas && event.event_agendas.length > 0 ? `<div class="event-agendas">Total Agendas: ${event.event_agendas.length}</div>` : ''}
                 ${event.venue_name ? `<div class="event-venue">${event.venue_name}</div>` : ''}
@@ -669,7 +671,7 @@ export default function SpeakerRequestsPage() {
                     </td>
                     <td className="px-4 py-3">{getStatusBadge(request.status)}</td>
                     <td className="px-4 py-3 text-gray-500 text-sm">
-                      {new Date(request.created_at).toLocaleDateString()}
+                      {new Date(request.created_at).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
@@ -818,7 +820,7 @@ export default function SpeakerRequestsPage() {
                 </div>
                 <div>
                   <label className="text-sm text-gray-500">Applied On</label>
-                  <p className="font-medium">{new Date(detailsModal.request.created_at).toLocaleString()}</p>
+                  <p className="font-medium">{new Date(detailsModal.request.created_at).toLocaleString('en-BH', { timeZone: 'Asia/Bahrain' })}</p>
                 </div>
                 {detailsModal.request.abstract_form_url && (
                   <div>

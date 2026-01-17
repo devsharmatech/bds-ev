@@ -30,6 +30,7 @@ const formatDate = (dateString) => {
     month: "long",
     day: "numeric",
     year: "numeric",
+    timeZone: "Asia/Bahrain",
   });
 };
 
@@ -43,6 +44,7 @@ const formatDateTime = (dateString) => {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Asia/Bahrain",
   });
 };
 

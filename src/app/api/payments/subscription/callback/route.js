@@ -236,6 +236,38 @@ export async function GET(request) {
           } else if (payment.payment_type === 'subscription_annual' || payment.payment_type === 'subscription_renewal') {
             subscriptionUpdates.annual_paid = true;
             subscriptionUpdates.annual_payment_id = paymentId;
+          } else if (payment.payment_type === 'subscription_combined') {
+            // Combined payment - mark both registration and annual as paid
+            subscriptionUpdates.registration_paid = true;
+            subscriptionUpdates.annual_paid = true;
+            subscriptionUpdates.registration_payment_id = paymentId;
+            subscriptionUpdates.annual_payment_id = paymentId;
+            console.log('[PAYMENT-CALLBACK] Combined payment - marking both registration and annual as paid');
+            
+            // Also mark any other unpaid payments for this subscription as paid
+            const { data: otherPayments } = await supabase
+              .from('membership_payments')
+              .select('id')
+              .eq('subscription_id', payment.subscription_id)
+              .eq('paid', false)
+              .neq('id', paymentId);
+            
+            if (otherPayments && otherPayments.length > 0) {
+              for (const otherPayment of otherPayments) {
+                updatePromises.push(
+                  supabase
+                    .from('membership_payments')
+                    .update({
+                      paid: true,
+                      paid_at: new Date().toISOString(),
+                      payment_gateway: 'myfatoorah',
+                      notes: 'Marked paid as part of combined payment'
+                    })
+                    .eq('id', otherPayment.id)
+                );
+              }
+              console.log('[PAYMENT-CALLBACK] Marking additional payments as paid:', otherPayments.map(p => p.id));
+            }
           }
 
           // Get subscription details to check if fully paid
@@ -252,11 +284,11 @@ export async function GET(request) {
             // Determine if account should be activated
             let shouldActivate = false;
             
-            if (payment.payment_type === 'subscription_registration') {
-              // For registration payments, always activate the account after payment
+            if (payment.payment_type === 'subscription_registration' || payment.payment_type === 'subscription_combined') {
+              // For registration or combined payments, always activate the account after payment
               // User can pay annual fee later, but should be able to login after registration payment
               shouldActivate = true;
-              console.log('[PAYMENT-CALLBACK] Registration payment confirmed - activating account');
+              console.log('[PAYMENT-CALLBACK] Registration/Combined payment confirmed - activating account');
             } else if (payment.payment_type === 'subscription_annual' || payment.payment_type === 'subscription_renewal') {
               // For annual payments, activate only if registration is already paid/waived
               const registrationPaidOrWaived = subscription.registration_paid || subscription.subscription_plan?.registration_waived;
@@ -284,6 +316,7 @@ export async function GET(request) {
 
             // Also check if subscription will be fully paid after this payment
             const willBeFullyPaid = 
+              payment.payment_type === 'subscription_combined' || // Combined payment pays everything
               (payment.payment_type === 'subscription_registration' && (subscription.annual_paid || subscription.subscription_plan?.annual_waived)) ||
               ((payment.payment_type === 'subscription_annual' || payment.payment_type === 'subscription_renewal') && (subscription.registration_paid || subscription.subscription_plan?.registration_waived));
 

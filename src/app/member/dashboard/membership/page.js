@@ -83,6 +83,7 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, pla
       ? new Date(date).toLocaleDateString("en-BH", {
         month: "numeric",
         year: "numeric",
+        timeZone: "Asia/Bahrain",
       })
       : "N/A";
 

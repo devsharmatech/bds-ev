@@ -8,7 +8,8 @@ export default function CertificateTemplate({ certificate, user }) {
     return date.toLocaleDateString('en-BH', {
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
+      timeZone: 'Asia/Bahrain'
     });
   }
 

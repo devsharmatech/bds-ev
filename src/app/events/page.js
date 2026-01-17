@@ -877,17 +877,19 @@ function EventsPageContent() {
             <div class="event-info">
               <div class="event-title">${badgeData?.event?.title}</div>
               <div class="event-details">
-                <div class="event-date">Start: ${badgeData?.event?.start_datetime ? new Date(badgeData.event.start_datetime).toLocaleDateString('en-US', {
+                <div class="event-date">Start: ${badgeData?.event?.start_datetime ? new Date(badgeData.event.start_datetime).toLocaleDateString('en-BH', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
+                  timeZone: 'Asia/Bahrain'
                 }) : ''}</div>
-                ${badgeData?.event?.end_datetime ? `<div class="event-end-date">End: ${new Date(badgeData.event.end_datetime).toLocaleDateString('en-US', {
+                ${badgeData?.event?.end_datetime ? `<div class="event-end-date">End: ${new Date(badgeData.event.end_datetime).toLocaleDateString('en-BH', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
-                  day: 'numeric'
+                  day: 'numeric',
+                  timeZone: 'Asia/Bahrain'
                 })}</div>` : ''}
                 ${badgeData?.event?.event_agendas && badgeData.event.event_agendas.length > 0 ? `<div class="event-agendas">Total Agendas: ${badgeData.event.event_agendas.length}</div>` : ''}
                 ${badgeData?.event?.venue_name ? `<div class="event-venue">${badgeData.event.venue_name}</div>` : ''}
@@ -1041,7 +1043,7 @@ function EventsPageContent() {
             </div>
 
             {/* Speaker Badge Button */}
-            <div className="mt-8">
+            <div className="mt-8 hidden">
               <button
                 onClick={() => {
                   setIsBadgeModalOpen(true);
@@ -1419,48 +1421,7 @@ function EventsPageContent() {
                                 </div>
                               )}
 
-                            {/* Capacity Progress */}
-                            <div className="mb-3 md:mb-4">
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <div className="flex items-center gap-1.5">
-                                  <Users className="w-3.5 h-3.5 text-[#03215F]" />
-                                  <span className="text-gray-700">
-                                    {event.registered_count || 0} /{" "}
-                                    {event.capacity || "∞"} registered
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  {event.isAlmostFull && (
-                                    <span className="text-[#ECCF0F] text-xs font-medium">
-                                      Almost Full!
-                                    </span>
-                                  )}
-                                  {event.isFull && (
-                                    <span className="text-[#b8352d] text-xs font-medium">
-                                      Sold Out
-                                    </span>
-                                  )}
-                                  {event.capacity && (
-                                    <span className="text-[#03215F] font-medium">
-                                      {Math.round(event.progress)}%
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              {event.capacity && (
-                                <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
-                                  <div
-                                    className={`h-1.5 md:h-2 rounded-full transition-all duration-500 ${event.isFull
-                                        ? "bg-[#b8352d]"
-                                        : event.isAlmostFull
-                                          ? "bg-[#ECCF0F]"
-                                          : "bg-gradient-to-r from-[#03215F] to-[#03215F]"
-                                      }`}
-                                    style={{ width: `${event.progress}%` }}
-                                  ></div>
-                                </div>
-                              )}
-                            </div>
+                           
 
                             {/* Features/Tags */}
                             <div className="mb-3 md:mb-4 flex flex-wrap gap-1">
@@ -1835,14 +1796,14 @@ function EventsPageContent() {
                             <p className="font-semibold text-center capitalize text-sm mb-2 leading-tight">{badgeData.event?.title}</p>
                             <div className="text-[11px] space-y-1">
                               <p className="font-medium">
-                                Start: {badgeData.event?.start_datetime && new Date(badgeData.event.start_datetime).toLocaleDateString('en-US', {
-                                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                                Start: {badgeData.event?.start_datetime && new Date(badgeData.event.start_datetime).toLocaleDateString('en-BH', {
+                                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bahrain'
                                 })}
                               </p>
                               {badgeData.event?.end_datetime && (
                                 <p className="opacity-80">
-                                  End: {new Date(badgeData.event.end_datetime).toLocaleDateString('en-US', {
-                                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                                  End: {new Date(badgeData.event.end_datetime).toLocaleDateString('en-BH', {
+                                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bahrain'
                                   })}
                                 </p>
                               )}

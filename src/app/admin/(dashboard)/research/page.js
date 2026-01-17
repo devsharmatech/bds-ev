@@ -337,10 +337,11 @@ export default function AdminResearchPage() {
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
     
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("en-BH", {
       year: "numeric",
       month: "short",
       day: "numeric",
+      timeZone: "Asia/Bahrain",
     });
   };
 

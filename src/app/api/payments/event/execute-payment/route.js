@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { executeEventPayment } from '@/lib/myfatoorah';
+import { getUserEventPrice } from '@/lib/eventPricing';
 
 // Local sanitizer to conform to MyFatoorah CustomerMobile constraints
 // - digits only
@@ -79,10 +80,16 @@ export async function POST(request) {
       );
     }
 
-    // Get event details
+    // Get event details - include all pricing fields for category-based pricing
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id, title, is_paid, regular_price, member_price')
+      .select(`
+        id, title, is_paid, start_datetime, early_bird_deadline,
+        regular_price, regular_standard_price, regular_onsite_price,
+        member_price, member_standard_price, member_onsite_price,
+        student_price, student_standard_price, student_onsite_price,
+        hygienist_price, hygienist_standard_price, hygienist_onsite_price
+      `)
       .eq('id', event_id)
       .single();
 
@@ -97,12 +104,22 @@ export async function POST(request) {
       );
     }
 
-    // Get user details
+    // Get user details - include category and position for pricing
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, full_name, email, phone, mobile, membership_type')
+      .select(`
+        id, full_name, email, phone, mobile, membership_type,
+        member_profiles!member_profiles_user_id_fkey(category, position, specialty)
+      `)
       .eq('id', user_id)
       .single();
+
+    // Flatten category and position from member_profiles
+    if (user && user.member_profiles) {
+      user.category = user.member_profiles.category;
+      user.position = user.member_profiles.position;
+      user.specialty = user.member_profiles.specialty;
+    }
 
     if (userError || !user) {
       console.error('[EVENT-EXECUTE-PAYMENT] User not found:', { user_id, error: userError });
@@ -133,11 +150,32 @@ export async function POST(request) {
       );
     }
 
-    // Calculate price
-    const isMember = user.membership_type === 'paid';
-    const amount = isMember 
-      ? (event.member_price ?? event.regular_price)
-      : event.regular_price;
+    // Calculate price using the pricing utility
+    // This handles member type, category (student, hygienist), and pricing tier (early bird, standard, onsite)
+    const priceInfo = getUserEventPrice(event, user);
+    const amount = priceInfo.price;
+    
+    // Determine if user is a BDS member based on pricing category
+    const isMember = priceInfo.category === 'member' || user.membership_type === 'paid';
+
+    console.log('[EVENT-EXECUTE-PAYMENT] Price calculated:', {
+      user_category: priceInfo.category,
+      pricing_tier: priceInfo.tier,
+      amount,
+      user_membership_type: user.membership_type,
+      user_profile_category: user.category,
+      isMember
+    });
+
+    if (!amount || amount <= 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Event price is not set for your category'
+        },
+        { status: 400 }
+      );
+    }
 
     // Get base URL
     let baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;

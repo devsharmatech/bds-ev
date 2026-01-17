@@ -57,7 +57,7 @@ function RegistrationPaymentPageContent() {
     setLoadingMethods(true);
     setError(null);
     try {
-      // Start with registration payment if it exists
+      // Get the first unpaid payment record (for reference)
       const paymentToProcess = paymentData.payments.registration || paymentData.payments.annual;
       
       if (!paymentToProcess) {
@@ -66,9 +66,8 @@ function RegistrationPaymentPageContent() {
         return;
       }
 
-      const paymentType = paymentData.payments.registration 
-        ? 'subscription_registration' 
-        : 'subscription_annual';
+      // Use TOTAL amount for payment gateway (registration + annual combined)
+      const totalAmount = paymentData.totals.total_amount;
 
       // Initiate payment to get payment methods
       const response = await fetch("/api/payments/subscription/create-invoice", {
@@ -79,8 +78,8 @@ function RegistrationPaymentPageContent() {
         body: JSON.stringify({
           subscription_id: paymentData.subscription.id,
           payment_id: paymentToProcess.id,
-          amount: paymentToProcess.amount,
-          payment_type: paymentType,
+          amount: totalAmount, // Use total amount instead of single payment amount
+          payment_type: 'subscription_combined', // Combined payment
           redirect_to: "/auth/login", // Redirect to login after payment completion
         }),
       });
@@ -122,7 +121,7 @@ function RegistrationPaymentPageContent() {
         return;
       }
 
-      // Execute payment with selected method
+      // Execute payment with selected method - pass total amount for combined payments
       const response = await fetch("/api/payments/subscription/execute-payment", {
         method: "POST",
         headers: {
@@ -132,6 +131,7 @@ function RegistrationPaymentPageContent() {
           subscription_id: paymentData.subscription.id,
           payment_id: paymentToProcess.id,
           payment_method_id: selectedMethod.id,
+          amount: paymentData.totals.total_amount, // Pass total amount for combined payment
           redirect_to: "/auth/login", // Redirect to login after payment completion
         }),
       });
