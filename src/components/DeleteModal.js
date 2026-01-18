@@ -114,9 +114,10 @@ export default function DeleteModal({ event, onClose, onConfirm, loading }) {
                     <div className="flex items-center gap-2 text-gray-600">
                       <Clock className="w-3 h-3" />
                       <span>
-                        {new Date(event.start_datetime).toLocaleTimeString([], {
+                        {new Date(event.start_datetime).toLocaleTimeString('en-BH', {
                           hour: '2-digit',
-                          minute: '2-digit'
+                          minute: '2-digit',
+                          timeZone: 'Asia/Bahrain'
                         })}
                       </span>
                     </div>

@@ -910,7 +910,7 @@ export default function AdminGalleryPage() {
                             </span>
                           </div>
                           <div className="text-xs text-gray-500">
-                            Updated: {new Date(item.updated_at).toLocaleDateString()}
+                            Updated: {new Date(item.updated_at).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })}
                           </div>
                         </div>
 

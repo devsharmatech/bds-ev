@@ -675,7 +675,7 @@ export default function AdminCommitteePagesPage() {
                         {/* Card Footer */}
                         <div className="flex items-center justify-between pt-4 border-t border-gray-200/60">
                           <div className="text-xs text-gray-500">
-                            Updated: {new Date(page.updated_at).toLocaleDateString()}
+                            Updated: {new Date(page.updated_at).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })}
                           </div>
                           <div className="flex items-center gap-2">
                             <button

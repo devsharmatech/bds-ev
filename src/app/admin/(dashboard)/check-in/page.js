@@ -1042,7 +1042,7 @@ export default function CheckInPage() {
                                   Checked in at{" "}
                                   {new Date(
                                     validationResult.checkinTime || validationResult.checked_in_at
-                                  ).toLocaleTimeString("en-BH")}
+                                  ).toLocaleTimeString("en-BH", { timeZone: 'Asia/Bahrain' })}
                                 </>
                               ) : (
                                 "Checked in"

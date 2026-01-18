@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import toast, { Toaster } from "react-hot-toast";
+import Link from "next/link";
 
 export default function GalleryPage() {
   const [loading, setLoading] = useState(true);

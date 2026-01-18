@@ -2410,7 +2410,7 @@ export default function MembersPage() {
                           {activeMember.membership_date
                             ? new Date(
                               activeMember.membership_date
-                            ).toLocaleDateString()
+                            ).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })
                             : "Not set"}
                         </span>
                       </div>
@@ -2463,7 +2463,7 @@ export default function MembersPage() {
                             {activeMember.member_profile?.dob
                               ? new Date(
                                 activeMember.member_profile.dob
-                              ).toLocaleDateString()
+                              ).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })
                               : "Not set"}
                           </p>
                         </div>
@@ -2632,7 +2632,7 @@ export default function MembersPage() {
                           {activeMember.created_at
                             ? new Date(
                               activeMember.created_at
-                            ).toLocaleDateString()
+                            ).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })
                             : "Unknown"}
                         </p>
                       </div>

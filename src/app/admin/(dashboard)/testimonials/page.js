@@ -585,7 +585,7 @@ export default function ManageTestimonials() {
                           <div>
                             <div className="font-medium">{testimonial.name}</div>
                             <div className="text-xs text-gray-500">
-                              {new Date(testimonial.created_at).toLocaleDateString()}
+                              {new Date(testimonial.created_at).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })}
                             </div>
                           </div>
                         </div>

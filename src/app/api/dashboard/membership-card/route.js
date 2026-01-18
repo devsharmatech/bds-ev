@@ -83,7 +83,7 @@ export async function GET(req) {
     
     if (user.membership_expiry_date) {
       doc.moveDown();
-      const expiryDate = new Date(user.membership_expiry_date).toLocaleDateString();
+      const expiryDate = new Date(user.membership_expiry_date).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' });
       doc.text(`Valid Until: ${expiryDate}`);
     }
     

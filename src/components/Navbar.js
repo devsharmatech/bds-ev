@@ -134,12 +134,12 @@ export default function Navbar() {
       href: "/membership",
       icon: <Shield className="w-4 h-4" />,
     },
-    {
-      name: "Committees",
-      href: "/committees",
-      icon: <Users className="w-4 h-4" />,
-      submenu: committeesMenu,
-    },
+    // {
+    //   name: "Committees",
+    //   href: "/committees",
+    //   icon: <Users className="w-4 h-4" />,
+    //   submenu: committeesMenu,
+    // },
     {
       name: "More",
       icon: <MoreVertical className="w-4 h-4" />,

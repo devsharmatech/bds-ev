@@ -25,9 +25,10 @@ function formatTimeForDisplay(startDateString, endDateString) {
   const start = new Date(startDateString);
   if (isNaN(start.getTime())) return "";
 
-  const startTime = start.toLocaleTimeString("en-US", {
+  const startTime = start.toLocaleTimeString("en-BH", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Asia/Bahrain",
   });
 
   if (!endDateString) return startTime;
@@ -35,9 +36,10 @@ function formatTimeForDisplay(startDateString, endDateString) {
   const end = new Date(endDateString);
   if (isNaN(end.getTime())) return startTime;
 
-  const endTime = end.toLocaleTimeString("en-US", {
+  const endTime = end.toLocaleTimeString("en-BH", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Asia/Bahrain",
   });
 
   return `${startTime} - ${endTime}`;

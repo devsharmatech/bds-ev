@@ -448,7 +448,7 @@ export default function PaymentsManagementPage() {
                               {formatDate(payment.created_at)}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {payment.payment_date ? new Date(payment.payment_date).toLocaleDateString() : "—"}
+                              {payment.payment_date ? new Date(payment.payment_date).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' }) : "—"}
                             </div>
                           </div>
                         </td>
