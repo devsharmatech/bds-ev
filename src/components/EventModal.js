@@ -95,6 +95,18 @@ const formatDateTimeForInput = (dateString) => {
   return `${year}-${month}-${day}T${hour}:${minute}`;
 };
 
+// Helper function to convert datetime input (treated as Bahrain time) to ISO string
+// This ensures dates are saved correctly regardless of user's local timezone
+const convertInputToBahrainISO = (dateTimeString) => {
+  if (!dateTimeString) return "";
+  // The input is like "2026-05-14T08:00" - we treat this as Bahrain time
+  // Bahrain is UTC+3, so we append the offset and create proper ISO string
+  const isoWithOffset = `${dateTimeString}:00+03:00`;
+  const date = new Date(isoWithOffset);
+  if (isNaN(date.getTime())) return dateTimeString;
+  return date.toISOString();
+};
+
 // Helper function to generate agenda slots
 const generateAgendaSlots = (startDate, endDate) => {
   if (!startDate || !endDate) return [];
@@ -744,10 +756,15 @@ export default function EventModal({
       'regular_onsite_price', 'member_onsite_price', 'student_onsite_price', 'hygienist_onsite_price'
     ];
 
+    const dateTimeFields = ['start_datetime', 'end_datetime', 'early_bird_deadline'];
+
     Object.keys(formData).forEach((key) => {
       if (formData[key] !== null && formData[key] !== undefined) {
         if (priceFields.includes(key) && !formData.is_paid) {
           data.append(key, "");
+        } else if (dateTimeFields.includes(key) && formData[key]) {
+          // Convert datetime inputs to Bahrain timezone ISO string
+          data.append(key, convertInputToBahrainISO(formData[key]));
         } else if (key === "province") {
           data.append("province", formData[key]);
         } else if (key === "nera_cme_hours") {
