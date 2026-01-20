@@ -290,6 +290,18 @@ export async function POST(request) {
           }
         }
 
+        // Normalize membership type and status to match database constraints
+        const rawMembershipType = (data.membership_type || '').trim().toLowerCase();
+        // Only 'paid' or 'free' are allowed; default to 'free' if invalid/empty
+        const membershipType = rawMembershipType === 'paid' ? 'paid' : 'free';
+
+        const rawMembershipStatus = (data.membership_status || '').trim().toLowerCase();
+        // Allowed: 'active', 'inactive', 'blocked', 'pending' (default 'active')
+        const allowedStatuses = ['active', 'inactive', 'blocked', 'pending'];
+        const membershipStatus = allowedStatuses.includes(rawMembershipStatus)
+          ? rawMembershipStatus
+          : 'active';
+
         // Create user
         const { data: user, error: userError } = await supabase
           .from('users')
@@ -301,8 +313,8 @@ export async function POST(request) {
             mobile: data.mobile?.trim() || data.phone?.trim() || null,
             role: 'member',
             membership_code: membershipCode,
-            membership_status: data.membership_status?.trim() || 'active',
-            membership_type: data.membership_type?.trim() || 'free',
+            membership_status: membershipStatus,
+            membership_type: membershipType,
             profile_image: data.profile_image?.trim() || null,
             current_subscription_plan_id: subscriptionPlanId,
             current_subscription_plan_name: subscriptionPlanName

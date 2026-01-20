@@ -346,15 +346,19 @@ export default function MembersPage() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [perPage] = useState(10);
+  const [perPage, setPerPage] = useState(10);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("created_at.desc");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [verifiedFilter, setVerifiedFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [summaryCounts, setSummaryCounts] = useState({
     total: 0,
     active: 0,
     inactive: 0,
+    blocked: 0,
     paid: 0,
     free: 0,
     verified: 0,
@@ -382,6 +386,7 @@ export default function MembersPage() {
   const [deleteConfig, setDeleteConfig] = useState({ type: "single", ids: [] });
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // Form state
   const initialForm = {
@@ -439,7 +444,7 @@ export default function MembersPage() {
   useEffect(() => {
     fetchMembers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, query, sort]);
+  }, [page, query, sort, perPage, statusFilter, typeFilter, verifiedFilter]);
 
   useEffect(() => {
     fetchSummary();
@@ -510,16 +515,18 @@ export default function MembersPage() {
       const nonAdmins = all.filter((m) => m.role !== "admin");
       const totalCount = nonAdmins.length;
       const activeCount = nonAdmins.filter((m) => m.membership_status === "active").length;
-      const inactiveCount = nonAdmins.filter((m) => m.membership_status === "pending").length;
+      const inactiveCount = nonAdmins.filter((m) => m.membership_status === "inactive").length;
+      const blockedCount = nonAdmins.filter((m) => m.membership_status === "blocked").length;
       const paidCount = nonAdmins.filter((m) => m.membership_type === "paid").length;
       const freeCount = Math.max(0, totalCount - paidCount);
       const verifiedCount = nonAdmins.filter((m) => m.is_member_verified === true).length;
-      const pendingCount = totalCount - verifiedCount;
+      const pendingCount = nonAdmins.filter((m) => m.membership_status === "pending").length;
 
       setSummaryCounts({
         total: totalCount,
         active: activeCount,
         inactive: inactiveCount,
+        blocked: blockedCount,
         paid: paidCount,
         free: freeCount,
         verified: verifiedCount,
@@ -539,6 +546,15 @@ export default function MembersPage() {
       url.searchParams.set("role", "member");
       if (query) url.searchParams.set("q", query);
       if (sort) url.searchParams.set("sort", sort);
+      if (statusFilter && statusFilter !== "all") {
+        url.searchParams.set("status", statusFilter);
+      }
+      if (typeFilter && typeFilter !== "all") {
+        url.searchParams.set("type", typeFilter);
+      }
+      if (verifiedFilter && verifiedFilter !== "all") {
+        url.searchParams.set("verified", verifiedFilter === "verified" ? "true" : "false");
+      }
 
       const res = await fetch(url.toString());
       const data = await res.json();
@@ -554,6 +570,140 @@ export default function MembersPage() {
       toast.error("Error fetching members");
     } finally {
       setLoading(false);
+    }
+  }
+
+  function formatDateISO(value) {
+    if (!value) return "";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    return d.toISOString().split("T")[0];
+  }
+
+  async function handleExportCSV() {
+    try {
+      setExporting(true);
+
+      const per = 500;
+      const firstUrl = new URL("/api/admin/members", window.location.origin);
+      firstUrl.searchParams.set("page", "1");
+      firstUrl.searchParams.set("per_page", String(per));
+      const firstRes = await fetch(firstUrl.toString());
+      const firstData = await firstRes.json();
+      if (!firstData?.success) {
+        toast.error("Failed to export members: " + (firstData?.error || "Unknown"));
+        return;
+      }
+
+      let all = Array.isArray(firstData.data) ? firstData.data : [];
+      const totalAll = (firstData.meta && firstData.meta.total) || all.length;
+      const totalPages = Math.max(1, Math.ceil(totalAll / per));
+
+      const promises = [];
+      for (let p = 2; p <= totalPages; p++) {
+        const url = new URL("/api/admin/members", window.location.origin);
+        url.searchParams.set("page", String(p));
+        url.searchParams.set("per_page", String(per));
+        promises.push(fetch(url.toString()).then((r) => r.json()).catch(() => null));
+      }
+
+      if (promises.length) {
+        const results = await Promise.all(promises);
+        results.forEach((d) => {
+          if (d?.success && Array.isArray(d.data)) {
+            all = all.concat(d.data);
+          }
+        });
+      }
+
+      const nonAdmins = all.filter((m) => m.role !== "admin");
+
+      const headers = [
+        "email",
+        "full_name",
+        "membership_code",
+        "membership_status",
+        "membership_type",
+        "membership_expiry_date",
+        "phone",
+        "mobile",
+        "gender",
+        "dob",
+        "address",
+        "city",
+        "state",
+        "pin_code",
+        "cpr_id",
+        "nationality",
+        "type_of_application",
+        "membership_date",
+        "work_sector",
+        "employer",
+        "position",
+        "specialty",
+        "category",
+        "license_number",
+        "years_of_experience",
+      ];
+
+      const rows = nonAdmins.map((m) => {
+        const p = m.member_profile || {};
+        return [
+          m.email || "",
+          m.full_name || "",
+          m.membership_code || "",
+          m.membership_status || "",
+          m.membership_type || "",
+          formatDateISO(m.membership_expiry_date),
+          m.phone || "",
+          m.mobile || "",
+          p.gender || "",
+          formatDateISO(p.dob),
+          p.address || "",
+          p.city || "",
+          p.state || "",
+          p.pin_code || "",
+          p.cpr_id || "",
+          p.nationality || "",
+          p.type_of_application || "",
+          formatDateISO(p.membership_date),
+          p.work_sector || "",
+          p.employer || "",
+          p.position || "",
+          p.specialty || "",
+          p.category || "",
+          p.license_number || "",
+          p.years_of_experience || "",
+        ];
+      });
+
+      const content = [headers, ...rows]
+        .map((row) => row.map((value) => {
+          if (value == null) return "";
+          const str = String(value);
+          if (str.includes(",") || str.includes("\"") || str.includes("\n")) {
+            return '"' + str.replace(/"/g, '""') + '"';
+          }
+          return str;
+        }).join(","))
+        .join("\n");
+
+      const blob = new Blob([content], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "members_export_with_expiry.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Members CSV exported successfully");
+    } catch (err) {
+      console.error("Export members CSV error", err);
+      toast.error("Failed to export members CSV");
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -1197,6 +1347,25 @@ export default function MembersPage() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 self-start sm:self-auto">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleExportCSV}
+                  disabled={exporting}
+                  className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200 flex items-center gap-2 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {exporting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-5 h-5" />
+                      Export CSV
+                    </>
+                  )}
+                </motion.button>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -1219,7 +1388,7 @@ export default function MembersPage() {
           </div>
 
           {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4 mb-6">
             <motion.div
               whileFocus={{ scale: 1.02 }}
               className="flex-1 relative"
@@ -1235,7 +1404,39 @@ export default function MembersPage() {
                 className="w-full pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
               />
             </motion.div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="blocked">Blocked</option>
+                  <option value="pending">Pending</option>
+                </select>
+                <select
+                  value={typeFilter}
+                  onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm"
+                >
+                  <option value="all">All Types</option>
+                  <option value="paid">Paid</option>
+                  <option value="free">Free</option>
+                </select>
+                <select
+                  value={verifiedFilter}
+                  onChange={(e) => { setVerifiedFilter(e.target.value); setPage(1); }}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm"
+                >
+                  <option value="all">All Verification</option>
+                  <option value="verified">Verified</option>
+                  <option value="unverified">Unverified</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -1264,6 +1465,7 @@ export default function MembersPage() {
                 <Trash2 className="w-4 h-4" />
                 Delete Selected ({selectedIds.size})
               </motion.button>
+              </div>
             </div>
           </div>
 
@@ -1287,6 +1489,12 @@ export default function MembersPage() {
                 value: summaryCounts.inactive,
                 icon: UserX,
                 color: "from-[#ECCF0F] to-[#ECCF0F]",
+              },
+              {
+                label: "Blocked Members",
+                value: summaryCounts.blocked,
+                icon: AlertCircle,
+                color: "from-[#b8352d] to-[#b8352d]",
               },
               {
                 label: "Verified",
@@ -1415,13 +1623,27 @@ export default function MembersPage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 p-4 bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg"
         >
-          <div className="text-sm text-gray-600">
-            Showing{" "}
-            <span className="font-semibold">{(page - 1) * perPage + 1}</span> -{" "}
-            <span className="font-semibold">
-              {Math.min(page * perPage, total)}
-            </span>{" "}
-            of <span className="font-semibold">{total}</span> members
+          <div className="flex flex-col sm:flex-row items-center gap-3 text-sm text-gray-600">
+            <span>
+              Showing{" "}
+              <span className="font-semibold">{total === 0 ? 0 : (page - 1) * perPage + 1}</span> -{" "}
+              <span className="font-semibold">
+                {Math.min(page * perPage, total)}
+              </span>{" "}
+              of <span className="font-semibold">{total}</span> members
+            </span>
+            <div className="flex items-center gap-2">
+              <span>Per page:</span>
+              <select
+                value={perPage}
+                onChange={(e) => { setPerPage(Number(e.target.value) || 10); setPage(1); }}
+                className="px-2 py-1 bg-white border border-gray-300 rounded-lg text-sm"
+              >
+                {[10, 50, 100, 200, 500].map((size) => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <motion.button

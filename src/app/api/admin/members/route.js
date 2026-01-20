@@ -11,6 +11,9 @@ export async function GET(request) {
     const per_page = parseInt(url.searchParams.get('per_page') || '20', 10);
     const q = (url.searchParams.get('q') || '').trim();
     const sort = url.searchParams.get('sort') || 'created_at.desc';
+    const status = (url.searchParams.get('status') || '').trim();
+    const type = (url.searchParams.get('type') || '').trim();
+    const verified = (url.searchParams.get('verified') || '').trim();
 
     const from = Math.max(0, (page - 1) * per_page);
     const to = from + per_page - 1;
@@ -27,6 +30,7 @@ export async function GET(request) {
         membership_code,
         membership_type,
         membership_status,
+        membership_expiry_date,
         is_member_verified,
         role,
         created_at,
@@ -63,6 +67,19 @@ export async function GET(request) {
       );
     }
 
+    if (status) {
+      query = query.eq('membership_status', status);
+    }
+
+    if (type) {
+      query = query.eq('membership_type', type);
+    }
+
+    if (verified) {
+      const isVerified = verified.toLowerCase() === 'true';
+      query = query.eq('is_member_verified', isVerified);
+    }
+
     if (sort) {
       const [col, dir] = sort.split('.');
       if (col && dir && ['asc', 'desc'].includes(dir.toLowerCase())) {
@@ -76,9 +93,31 @@ export async function GET(request) {
     if (error) throw error;
 
     // total count
-    const { count } = await supabase
+    let countQuery = supabase
       .from('users')
-      .select('id', { count: 'exact', head: true });
+      .select('id', { count: 'exact', head: true })
+      .eq('role', 'member');
+
+    if (q) {
+      countQuery = countQuery.or(
+        `full_name.ilike.%${q}%,email.ilike.%${q}%,membership_code.ilike.%${q}%`
+      );
+    }
+
+    if (status) {
+      countQuery = countQuery.eq('membership_status', status);
+    }
+
+    if (type) {
+      countQuery = countQuery.eq('membership_type', type);
+    }
+
+    if (verified) {
+      const isVerified = verified.toLowerCase() === 'true';
+      countQuery = countQuery.eq('is_member_verified', isVerified);
+    }
+
+    const { count } = await countQuery;
 
     return NextResponse.json({
       success: true,
@@ -314,7 +353,7 @@ export async function POST(request) {
     const { data: createdUser } = await supabase
       .from('users')
       .select(`
-        id,email,full_name,phone,mobile,profile_image,membership_code,membership_status,is_member_verified,role,created_at,updated_at,
+        id,email,full_name,phone,mobile,profile_image,membership_code,membership_type,membership_status,membership_expiry_date,is_member_verified,role,created_at,updated_at,
         member_profile:member_profiles (
           id, gender, dob, address, city, state, pin_code, cpr_id, nationality, type_of_application, membership_date,
           work_sector, employer, position, specialty, category, id_card_url, personal_photo_url, created_at
