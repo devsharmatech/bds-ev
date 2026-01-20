@@ -302,6 +302,16 @@ export async function POST(request) {
           ? rawMembershipStatus
           : 'active';
 
+        // Parse membership expiry date (from CSV column `membership_expiry_date`, if provided)
+        let membershipExpiryDate = null;
+        if (data.membership_expiry_date && data.membership_expiry_date.trim()) {
+          const parsedExpiry = parseDate(data.membership_expiry_date);
+          if (parsedExpiry) {
+            // Store as ISO timestamp (midnight for that date)
+            membershipExpiryDate = new Date(parsedExpiry).toISOString();
+          }
+        }
+
         // Create user
         const { data: user, error: userError } = await supabase
           .from('users')
@@ -315,6 +325,7 @@ export async function POST(request) {
             membership_code: membershipCode,
             membership_status: membershipStatus,
             membership_type: membershipType,
+            membership_expiry_date: membershipExpiryDate,
             profile_image: data.profile_image?.trim() || null,
             current_subscription_plan_id: subscriptionPlanId,
             current_subscription_plan_name: subscriptionPlanName
