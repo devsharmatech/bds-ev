@@ -906,7 +906,7 @@ export default function EventDetailsPage() {
                         className="w-full px-6 py-4 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg text-lg"
                       >
                         <CheckCircle className="w-6 h-6" />
-                        Register for Event
+                        {event.payment_pending ? "Complete Payment" : "Register for Event"}
                       </button>
                     ) : (
                       <div className="space-y-4">

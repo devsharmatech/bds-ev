@@ -32,8 +32,7 @@ import {
 
 const VALID_ROLES = [
   { value: "admin", label: "Admin", color: "bg-[#b8352d]", icon: Shield },
-  { value: "doctor", label: "Doctor", color: "bg-[#9cc2ed]", icon: UserCheck },
-  { value: "user", label: "User", color: "bg-[#AE9B66]", icon: Users },
+  { value: "member", label: "Member", color: "bg-[#9cc2ed]", icon: Users },
 ];
 
 export default function ManageUsersPage() {
@@ -67,7 +66,7 @@ export default function ManageUsersPage() {
     full_name: "",
     email: "",
     phone: "",
-    role: "user",
+    role: "member",
     password: "",
     is_active: true,
   };
@@ -79,10 +78,12 @@ export default function ManageUsersPage() {
     full_name: "",
     email: "",
     phone: "",
-    role: "user",
+    role: "member",
+    password: "",
     is_active: true,
   };
   const [editForm, setEditForm] = useState(emptyEditForm);
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   // Picture upload
   const [selectedFile, setSelectedFile] = useState(null);
@@ -135,7 +136,8 @@ export default function ManageUsersPage() {
 
   // Validators
   const emailIsValid = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const phoneIsValid = (phone) => /^[0-9]{10,15}$/.test(phone);
+  
+  const phoneIsValid = (phone) => /^[+\d\s\-()]{10,15}$/.test(phone);
 
   // Create user
   const handleCreateSubmit = async (e) => {
@@ -197,8 +199,9 @@ export default function ManageUsersPage() {
       full_name: user.full_name || "",
       email: user.email || "",
       phone: user.phone || "",
-      role: user.role || "user",
-      is_active: !!user.is_active,
+      role: user.role || "member",
+      password: "",
+      is_active: typeof user.is_active === "boolean" ? user.is_active : true,
     });
     setShowEditModal(true);
   };
@@ -217,6 +220,10 @@ export default function ManageUsersPage() {
     }
     if (!editForm.phone || !phoneIsValid(editForm.phone)) {
       toast.error("Phone must be 10-15 digits");
+      return;
+    }
+    if (editForm.password && editForm.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
       return;
     }
     if (!VALID_ROLES.some(r => r.value === editForm.role)) {
@@ -354,9 +361,9 @@ export default function ManageUsersPage() {
   }, [previewUrl]);
 
   // Stats
-  const activeCount = users.filter(u => u.is_active).length;
+  const activeCount = users.length;
   const adminCount = users.filter(u => u.role === "admin").length;
-  const doctorCount = users.filter(u => u.role === "doctor").length;
+  
 
   // Loading skeleton
   const renderSkeleton = () => (
@@ -494,7 +501,7 @@ export default function ManageUsersPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-[#9cc2ed] rounded-lg">
@@ -531,17 +538,7 @@ export default function ManageUsersPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-[#03215F] rounded-lg">
-                  <UserCheck className="w-6 h-6 text-[#03215F]" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Doctors</p>
-                  <p className="text-2xl font-bold mt-1">{doctorCount}</p>
-                </div>
-              </div>
-            </div>
+           
           </div>
         </div>
 
@@ -584,12 +581,12 @@ export default function ManageUsersPage() {
                 className="bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
               >
                 <div className="p-5">
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
                     <div className="relative">
                       <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-[#9cc2ed] to-[#03215F]">
-                        {user.profile_picture ? (
+                        {user.profile_image ? (
                           <img 
-                            src={user.profile_picture} 
+                            src={user.profile_image} 
                             alt={user.full_name}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           />
@@ -621,17 +618,10 @@ export default function ManageUsersPage() {
                         </div>
                         <div className="flex flex-col items-end gap-1">
                           <RoleBadge role={user.role} />
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            user.is_active
-                              ? "bg-[#AE9B66] text-white"
-                              : "bg-gray-100 text-gray-600"
-                          }`}>
-                            {user.is_active ? "Active" : "Inactive"}
-                          </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mb-4">
                         <Phone className="w-4 h-4" />
                         <span>{user.phone}</span>
                         <span className="mx-2">•</span>
@@ -639,12 +629,12 @@ export default function ManageUsersPage() {
                         <span>{new Date(user.created_at).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })}</span>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full">
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => openEdit(user)}
-                          className="flex-1 px-3 py-2 rounded-lg bg-[#9cc2ed] text-[#03215F] flex items-center justify-center gap-2 font-medium hover:bg-[#9cc2ed] transition-colors"
+                          className="w-full sm:flex-1 px-3 py-2 rounded-lg bg-[#9cc2ed] text-[#03215F] flex items-center justify-center gap-2 font-medium hover:bg-[#9cc2ed] transition-colors"
                         >
                           <Edit3 className="w-4 h-4" />
                           Edit
@@ -653,7 +643,7 @@ export default function ManageUsersPage() {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => setShowPictureModal(true) || setPictureUser(user)}
-                          className="flex-1 px-3 py-2 rounded-lg bg-[#ECCF0F] text-[#03215F] flex items-center justify-center gap-2 font-medium hover:bg-[#ECCF0F] transition-colors"
+                          className="w-full sm:flex-1 px-3 py-2 rounded-lg bg-[#ECCF0F] text-[#03215F] flex items-center justify-center gap-2 font-medium hover:bg-[#ECCF0F] transition-colors"
                         >
                           <ImageIcon className="w-4 h-4" />
                           Photo
@@ -662,7 +652,7 @@ export default function ManageUsersPage() {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => askDelete(user)}
-                          className="flex-1 px-3 py-2 rounded-lg bg-[#b8352d] text-white flex items-center justify-center gap-2 font-medium hover:bg-[#b8352d] transition-colors"
+                          className="w-full sm:flex-1 px-3 py-2 rounded-lg bg-[#b8352d] text-white flex items-center justify-center gap-2 font-medium hover:bg-[#b8352d] transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                           Delete
@@ -703,9 +693,9 @@ export default function ManageUsersPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-[#9cc2ed] to-[#03215F]">
-                            {user.profile_picture ? (
+                            {user.profile_image ? (
                               <img 
-                                src={user.profile_picture} 
+                                src={user.profile_image} 
                                 alt={user.full_name}
                                 className="w-full h-full object-cover"
                               />
@@ -736,16 +726,7 @@ export default function ManageUsersPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="space-y-2">
-                          <RoleBadge role={user.role} />
-                          <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            user.is_active
-                              ? "bg-[#AE9B66] text-white"
-                              : "bg-gray-100 text-gray-600"
-                          }`}>
-                            {user.is_active ? "Active" : "Inactive"}
-                          </div>
-                        </div>
+                        <RoleBadge role={user.role} />
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
@@ -958,7 +939,7 @@ export default function ManageUsersPage() {
 
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${createForm.is_active ? 'bg-[#AE9B66]' : 'bg-gray-200'}`}>
+              <div className={`p-2 rounded-full ${createForm.is_active ? 'bg-[#AE9B66]/20' : 'bg-gray-200'}`}>
                 {createForm.is_active ? (
                   <UserCheck className="w-5 h-5 text-[#AE9B66]" />
                 ) : (
@@ -1087,9 +1068,32 @@ export default function ManageUsersPage() {
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              New Password (optional)
+            </label>
+            <div className="relative">
+              <input
+                type={showEditPassword ? "text" : "password"}
+                value={editForm.password}
+                onChange={(e) => setEditForm(f => ({ ...f, password: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-[#9cc2ed] focus:border-transparent outline-none pr-10"
+                placeholder="Leave blank to keep current password"
+                disabled={submitting}
+              />
+              <button
+                type="button"
+                onClick={() => setShowEditPassword(!showEditPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showEditPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${editForm.is_active ? 'bg-[#AE9B66]' : 'bg-gray-200'}`}>
+              <div className={`p-2 rounded-full ${editForm.is_active ? 'bg-[#AE9B66]/20' : 'bg-gray-200'}`}>
                 {editForm.is_active ? (
                   <UserCheck className="w-5 h-5 text-[#AE9B66]" />
                 ) : (
@@ -1155,7 +1159,7 @@ export default function ManageUsersPage() {
       >
         <form onSubmit={handleUploadPicture} className="space-y-6">
           <div className="flex flex-col items-center gap-6">
-            <div className="relative w-48 h-48 rounded-2xl overflow-hidden border-4 border-gray-200">
+            <div className="relative w-36 h-36 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border-4 border-gray-200">
               {previewUrl || pictureUser?.profile_picture ? (
                 <img
                   src={previewUrl || pictureUser?.profile_picture}
@@ -1192,14 +1196,14 @@ export default function ManageUsersPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col sm:flex-row justify-end gap-3">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               type="button"
               onClick={() => setShowPictureModal(false)}
               disabled={uploadingPicture}
-              className="px-6 py-3 rounded-xl border border-gray-300 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl border border-gray-300 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </motion.button>
@@ -1208,7 +1212,7 @@ export default function ManageUsersPage() {
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={uploadingPicture || !selectedFile}
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#03215F] to-[#03215F] text-white font-medium flex items-center gap-2 disabled:opacity-50"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-[#03215F] to-[#03215F] text-white font-medium flex items-center gap-2 disabled:opacity-50"
             >
               {uploadingPicture ? (
                 <>
@@ -1232,7 +1236,7 @@ export default function ManageUsersPage() {
       >
         <div className="text-center py-4">
           <div className="mx-auto w-16 h-16 rounded-full bg-[#b8352d] flex items-center justify-center mb-4">
-            <Trash2 className="w-8 h-8 text-[#b8352d]" />
+            <Trash2 className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-xl font-bold mb-2">
             Delete User
@@ -1293,15 +1297,15 @@ function Modal({ isOpen, onClose, title, children, size = "md" }) {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className={`relative bg-white w-full ${sizeClasses[size]} rounded-2xl shadow-2xl border border-gray-200 max-h-[90vh] flex flex-col overflow-hidden`}
+            className={`relative bg-white w-full ${sizeClasses[size]} rounded-2xl shadow-2xl border border-gray-200 max-h-[90vh] flex flex-col`}
           >
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">{title}</h2>
+            <div className="flex-shrink-0 p-4 sm:p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold break-words">{title}</h2>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1309,7 +1313,7 @@ function Modal({ isOpen, onClose, title, children, size = "md" }) {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6">{children}</div>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</div>
           </motion.div>
         </motion.div>
       )}

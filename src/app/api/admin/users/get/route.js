@@ -6,13 +6,24 @@ export async function GET(req) {
     const page = Number(searchParams.get("page") || 1);
     const limit = Number(searchParams.get("limit") || 10);
     const search = searchParams.get("search") || "";
+    const status = (searchParams.get("status") || "").trim();
 
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    let query = supabase.from("users").select("*", { count: "exact" });
+    // Manage admin accounts only
+    let query = supabase
+      .from("users")
+      .select("*", { count: "exact" })
+      .eq("role", "admin");
 
-    if (search) query = query.ilike("full_name", `%${search}%`);
+    if (search) {
+      query = query.or(
+        `full_name.ilike.%${search}%,email.ilike.%${search}%`
+      );
+    }
+
+    // status filter removed since users table does not include is_active
 
     const { data, count, error } = await query.range(from, to);
 

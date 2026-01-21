@@ -199,7 +199,7 @@ h2{
 <div class="footer">
   This is an official receipt issued by Bahrain Dental Society.<br/>
   This document is computer-generated and does not require a signature.<br/>
-  Bahrain.ds94@gmail.com | Tel: +973 3799 0963<br/>
+  info@bds-bh.org | Tel: +973 3799 0963<br/>
   Receipt ID: ${receipt.reference}
 </div>
 
@@ -393,7 +393,7 @@ window.onload=()=>{window.print();setTimeout(()=>window.close(),500);}
                 <div className="space-y-1">
                   <p className="text-sm">
                     <span className="font-medium text-gray-700">Email: </span>
-                    <span className="text-[#03215F] font-semibold">Bahrain.ds94@gmail.com</span>
+                    <span className="text-[#03215F] font-semibold">info@bds-bh.org</span>
                   </p>
                   <p className="text-sm">
                     <span className="font-medium text-gray-700">Phone: </span>

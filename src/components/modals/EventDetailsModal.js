@@ -1079,7 +1079,7 @@ export default function EventDetailsModal({
                               Email
                             </div>
                             <div className="font-medium text-sm md:text-base text-gray-900 truncate">
-                              Bahrain.ds94@gmail.com
+                              info@bds-bh.org
                             </div>
                           </div>
                         </div>
@@ -1289,7 +1289,7 @@ export default function EventDetailsModal({
             <div className="border-t border-gray-200 p-2 sm:p-3 md:p-4 lg:p-6 bg-white">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div className="text-xs md:text-sm text-gray-600 text-center md:text-left">
-                  Need help? Contact us at Bahrain.ds94@gmail.com
+                  Need help? Contact us at info@bds-bh.org
                 </div>
                 <div className="flex items-center justify-center md:justify-end gap-2 md:gap-3">
                   <button

@@ -220,6 +220,11 @@ export default function DashboardPage() {
 
   const handleDownloadMembershipCard = async () => {
     try {
+      if (!user || user.membership_type === 'free') {
+        toast.error('Membership card is available for paid members only');
+        return;
+      }
+
       toast.loading('Generating membership card...')
       
       const res = await fetch('/api/dashboard/membership-card', {
@@ -348,7 +353,13 @@ export default function DashboardPage() {
     { label: 'Specialty', value: user?.specialty, icon: BriefcaseMedical },
     { label: 'Employer', value: user?.employer, icon: Building2 },
     { label: 'Position', value: user?.position, icon: GraduationCap },
-    { label: 'Member Since', value: user?.membership_date ? formatDate(user.membership_date) : 'N/A', icon: CalendarDays },
+    {
+      label: 'Member Since',
+      value: (user?.membership_date || user?.created_at)
+        ? formatDate(user.membership_date || user.created_at)
+        : 'N/A',
+      icon: CalendarDays
+    },
     // Only show Membership ID for paid members
     ...(isPremiumMember ? [{ label: 'Membership ID', value: user?.membership_code, icon: BadgeCheck }] : []),
     { label: 'Membership Type', value: planName || (isPremiumMember ? 'Paid' : 'Free'), icon: Crown }

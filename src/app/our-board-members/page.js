@@ -51,7 +51,7 @@ export default function TeamPage() {
       name: "Dr. Abbas Alfardan",
       position: "President",
       category: "executive",
-      email: "bahrain.ds94@gmail.com",
+      email: "info@bds-bh.org",
       phone: "+973 37990963",
       image: "/im1.jpg",
       instagram: "https://www.instagram.com/drabbasalfardan/",
@@ -71,7 +71,7 @@ export default function TeamPage() {
       name: "Dr. Talal Alalawi",
       position: "General Secretary",
       category: "executive",
-      email: "bahrain.ds94@gmail.com",
+      email: "info@bds-bh.org",
       phone: "+973 37990963",
       image: "/im3.jpg",
       instagram: "https://www.instagram.com/alawidental",
@@ -81,7 +81,7 @@ export default function TeamPage() {
       name: "Dr. Taghreed Ajoor",
       position: "Treasurer",
       category: "executive",
-      email: "bahrain.ds94@gmail.com",
+      email: "info@bds-bh.org",
       phone: "+973 37990963",
       image: "/im4.jpg",
       instagram: "https://www.instagram.com/ajoordentist",
@@ -104,7 +104,7 @@ export default function TeamPage() {
       name: "Dr. Taha Al Dairiy",
       position: "Board Member",
       category: "board",
-      email: "bahrain.ds94@gmail.com",
+      email: "info@bds-bh.org",
       phone: "+973 37990963",
       image: "/im6.jpg",
       instagram: "https://www.instagram.com/dairy80",
@@ -114,7 +114,7 @@ export default function TeamPage() {
       name: "Dr. Maysoon Al Alawi",
       position: "Board Member and Head of the Scientific Committee",
       category: "board",
-      email: "bahrain.ds94@gmail.com",
+      email: "info@bds-bh.org",
       phone: "+973 37990963",
       image: "/im7.jpg",
       instagram: "https://www.instagram.com/dr.maysoonalalawi",
@@ -328,7 +328,7 @@ export default function TeamPage() {
               </p>
             </div>
             <a
-              href="mailto:Bahrain.ds94@gmail.com"
+              href="mailto:info@bds-bh.org"
               className="px-8 py-3 bg-white text-[#03215F] rounded-lg hover:bg-gray-100 transition-colors font-semibold whitespace-nowrap"
             >
               Contact Our Board

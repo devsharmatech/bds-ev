@@ -39,6 +39,7 @@ import {
   ArrowRight,
   Crown,
   Star,
+  CreditCard,
 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import Link from "next/link";
@@ -321,6 +322,15 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
     event?.end_datetime
   );
 
+  // Determine if the attendee is allowed to access/download the ticket
+  // - Free events: always allowed (no payment required)
+  // - Paid events: only after successful payment (price_paid > 0 and not payment_pending)
+  const canAccessTicket = !event?.is_paid || (
+    !!event?.price_paid &&
+    Number(event.price_paid) > 0 &&
+    !event?.payment_pending
+  );
+
   // QR Code value
   const qrValue = JSON.stringify({
     type: "EVENT_CHECKIN",
@@ -490,28 +500,46 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                 </div>
 
                 <div className="flex items-center justify-between md:justify-end gap-2 md:gap-3">
-                  {/* Price Display */}
+                  {/* Price / Payment Status */}
                   <div className="text-right">
-                    <div className="text-xs md:text-sm text-gray-600">
-                      You Paid
-                    </div>
-                    <div className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-1">
-                      <BahrainFlag />
-                      <span className="truncate">
-                        {formatBHD(event?.price_paid)}
-                      </span>
-                    </div>
+                    {event?.is_paid ? (
+                      <>
+                        <div className="text-xs md:text-sm text-gray-600">
+                          {canAccessTicket ? "You Paid" : "Amount Due"}
+                        </div>
+                        <div className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-1">
+                          <BahrainFlag />
+                          <span className="truncate">
+                            {canAccessTicket
+                              ? formatBHD(event?.price_paid)
+                              : formatBHD(event?.member_price ?? event?.regular_price)}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-xs md:text-sm text-gray-600">
+                          Ticket Price
+                        </div>
+                        <div className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-1">
+                          <BahrainFlag />
+                          <span className="truncate">FREE</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  {/* Ticket ID */}
-                  <div className="hidden md:block text-right">
-                    <div className="text-xs md:text-sm text-gray-600">
-                      Token ID
+                  {/* Ticket ID - only show when ticket is accessible */}
+                  {canAccessTicket && (
+                    <div className="hidden md:block text-right">
+                      <div className="text-xs md:text-sm text-gray-600">
+                        Token ID
+                      </div>
+                      <div className="font-mono font-bold text-sm md:text-base text-gray-900 truncate">
+                        {event?.token || event?.id?.toUpperCase()}
+                      </div>
                     </div>
-                    <div className="font-mono font-bold text-sm md:text-base text-gray-900 truncate">
-                      {event?.token || event?.id?.toUpperCase()}
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -592,7 +620,7 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs md:text-sm text-gray-600">
-                          Date
+                         Start Date
                         </div>
                         <div className="font-semibold text-sm md:text-base text-gray-900 truncate">
                           {formatDate(event?.start_datetime)}
@@ -601,8 +629,27 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                     </div>
                     <div className="text-xs md:text-sm text-gray-500 pl-10 md:pl-11 truncate">
                       {formatTime(event?.start_datetime)}
+                      
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 md:p-4">
+                    <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                      <div className="p-1.5 md:p-2 bg-[#9cc2ed] rounded-lg">
+                        <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs md:text-sm text-gray-600">
+                          End Date
+                        </div>
+                        <div className="font-semibold text-sm md:text-base text-gray-900 truncate">
+                          {formatDate(event?.end_datetime)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs md:text-sm text-gray-500 pl-10 md:pl-11 truncate">
+                      
                       {event?.end_datetime &&
-                        ` - ${formatTime(event.end_datetime)}`}
+                        `${formatTime(event.end_datetime)}`}
                     </div>
                   </div>
 
@@ -626,30 +673,7 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 md:p-4">
-                    <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
-                      <div className="p-1.5 md:p-2 bg-[#03215F] rounded-lg">
-                        <Users className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs md:text-sm text-gray-600">
-                          Attendance
-                        </div>
-                        <div className="font-semibold text-sm md:text-base text-gray-900 truncate">
-                          {event?.registered_count || 0} /{" "}
-                          {event?.capacity || "∞"} registered
-                        </div>
-                      </div>
-                    </div>
-                    <div className="pl-10 md:pl-11">
-                      <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
-                        <div
-                          className="bg-gradient-to-r from-[#03215F] to-[#03215F] h-1.5 md:h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${progress}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
+                 
                 </div>
 
                 {/* Description */}
@@ -936,7 +960,7 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
                             Email
                           </div>
                           <div className="font-medium text-sm md:text-base text-gray-900 truncate">
-                           Bahrain.ds94@gmail.com
+                           info@bds-bh.org
                           </div>
                         </div>
                       </div>
@@ -973,171 +997,194 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
             {/* My Ticket Tab */}
             {activeTab === "myticket" && (
               <div className="space-y-4 md:space-y-6">
-                <div className="text-center">
-                  <h3 className="text-lg font-bold text-gray-900 mb-1 md:mb-2">
-                    Your Event Ticket
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Show this at the event registration desk
-                  </p>
-                </div>
+                {canAccessTicket ? (
+                  <>
+                    <div className="text-center">
+                      <h3 className="text-lg font-bold text-gray-900 mb-1 md:mb-2">
+                        Your Event Ticket
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Show this at the event registration desk
+                      </p>
+                    </div>
 
-                {/* Ticket Card */}
-                <div className="bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-2xl p-4 md:p-6 text-white relative overflow-hidden">
-                  {/* Background Pattern */}
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-0 right-0 w-16 h-16 md:w-32 md:h-32 bg-white rounded-full -translate-y-8 md:-translate-y-16 translate-x-8 md:translate-x-16"></div>
-                    <div className="absolute bottom-0 left-0 w-24 h-24 md:w-48 md:h-48 bg-white rounded-full -translate-x-12 md:-translate-x-24 translate-y-12 md:translate-y-24"></div>
-                  </div>
-
-                  <div className="relative">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 gap-2">
-                      <div>
-                        <div className="text-xs md:text-sm opacity-90">
-                          BDS
-                        </div>
-                        <div className="text-lg md:text-xl font-bold">
-                          EVENT TICKET
-                        </div>
+                    {/* Ticket Card */}
+                    <div className="bg-gradient-to-r from-[#03215F] to-[#03215F] rounded-2xl p-4 md:p-6 text-white relative overflow-hidden">
+                      {/* Background Pattern */}
+                      <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-0 right-0 w-16 h-16 md:w-32 md:h-32 bg-white rounded-full -translate-y-8 md:-translate-y-16 translate-x-8 md:translate-x-16"></div>
+                        <div className="absolute bottom-0 left-0 w-24 h-24 md:w-48 md:h-48 bg-white rounded-full -translate-x-12 md:-translate-x-24 translate-y-12 md:translate-y-24"></div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs md:text-sm opacity-90">
-                          Token ID
+
+                      <div className="relative">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 gap-2">
+                          <div>
+                            <div className="text-xs md:text-sm opacity-90">
+                              BDS
+                            </div>
+                            <div className="text-lg md:text-xl font-bold">
+                              EVENT TICKET
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs md:text-sm opacity-90">
+                              Token ID
+                            </div>
+                            <div className="font-mono font-bold text-sm md:text-base">
+                              {event?.token || event?.id?.toUpperCase()}
+                            </div>
+                          </div>
                         </div>
-                        <div className="font-mono font-bold text-sm md:text-base">
-                          {event?.token || event?.id?.toUpperCase()}
+
+                        <div className="mb-4 md:mb-6">
+                          <div className="text-xs md:text-sm opacity-90 mb-1">
+                            EVENT
+                          </div>
+                          <div className="text-base md:text-lg font-bold truncate capitalize">
+                            {event?.title}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 md:gap-4 mb-4 md:mb-6">
+                          <div>
+                            <div className="text-xs md:text-sm opacity-90 mb-1">
+                              DATE
+                            </div>
+                            <div className="font-semibold text-sm md:text-base">
+                              {formatDate(event?.start_datetime)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs md:text-sm opacity-90 mb-1">
+                              TIME
+                            </div>
+                            <div className="font-semibold text-sm md:text-base">
+                              {formatTime(event?.start_datetime)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs md:text-sm opacity-90 mb-1">
+                              VENUE
+                            </div>
+                            <div className="font-semibold text-sm md:text-base truncate">
+                              {event?.venue_name || "Online"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs md:text-sm opacity-90 mb-1">
+                              STATUS
+                            </div>
+                            <div className="font-semibold text-sm md:text-base truncate">
+                              {status.label.toUpperCase()}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 md:pt-6 border-t border-white/20 gap-3">
+                          <div className="text-xs md:text-sm opacity-90">
+                            Check-in: Show QR at registration
+                          </div>
+                          <button
+                            onClick={() => setShowQR(!showQR)}
+                            className="px-3 py-2 md:px-4 md:py-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors active:scale-95 flex items-center justify-center gap-2 text-sm"
+                          >
+                            <QrCode className="w-3 h-3 md:w-4 md:h-4" />
+                            {showQR ? "Hide QR" : "Show QR Code"}
+                          </button>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mb-4 md:mb-6">
-                      <div className="text-xs md:text-sm opacity-90 mb-1">
-                        EVENT
-                      </div>
-                      <div className="text-base md:text-lg font-bold truncate capitalize">
-                        {event?.title}
-                      </div>
-                    </div>
+                    {/* QR Code Section */}
+                    {showQR && (
+                      <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 md:p-6 text-center">
+                        <div className="mb-3 md:mb-4">
+                          <div className="font-semibold text-sm md:text-base text-gray-900 mb-1 md:mb-2">
+                            Check-in QR Code
+                          </div>
+                          <div className="text-xs md:text-sm text-gray-600">
+                            Show this QR code at the registration desk
+                          </div>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-2 md:gap-4 mb-4 md:mb-6">
-                      <div>
-                        <div className="text-xs md:text-sm opacity-90 mb-1">
-                          DATE
+                        {/* QR CODE */}
+                        <div
+                          ref={qrRef}
+                          className="bg-white p-3 md:p-6 rounded-lg inline-block shadow mx-auto"
+                        >
+                          <QRCodeCanvas
+                            value={qrValue}
+                            size={isMobile ? 180 : 220}
+                            bgColor="#ffffff"
+                            fgColor="#000000"
+                            level="H"
+                            includeMargin
+                          />
                         </div>
-                        <div className="font-semibold text-sm md:text-base">
-                          {formatDate(event?.start_datetime)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs md:text-sm opacity-90 mb-1">
-                          TIME
-                        </div>
-                        <div className="font-semibold text-sm md:text-base">
-                          {formatTime(event?.start_datetime)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs md:text-sm opacity-90 mb-1">
-                          VENUE
-                        </div>
-                        <div className="font-semibold text-sm md:text-base truncate">
-                          {event?.venue_name || "Online"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs md:text-sm opacity-90 mb-1">
-                          STATUS
-                        </div>
-                        <div className="font-semibold text-sm md:text-base truncate">
-                          {status.label.toUpperCase()}
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="flex flex-col md:flex-row md:items-center justify-between pt-4 md:pt-6 border-t border-white/20 gap-3">
-                      <div className="text-xs md:text-sm opacity-90">
-                        Check-in: Show QR at registration
+                        {/* ACTIONS */}
+                        <div className="mt-3 md:mt-4 flex flex-col sm:flex-row justify-center gap-2">
+                          <button
+                            onClick={downloadQRCode}
+                            className="px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity active:scale-95 flex items-center justify-center gap-2"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download QR
+                          </button>
+                        </div>
+
+                        <div className="mt-2 md:mt-3 text-xs text-gray-500">
+                          Valid for: {formatDate(event?.start_datetime)}
+                        </div>
                       </div>
-                      <button
-                        onClick={() => setShowQR(!showQR)}
-                        className="px-3 py-2 md:px-4 md:py-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors active:scale-95 flex items-center justify-center gap-2 text-sm"
+                    )}
+
+                    {/* Ticket Instructions */}
+                    <div className="bg-gradient-to-r from-[#9cc2ed] to-[#9cc2ed] rounded-xl p-3 md:p-5">
+                      <h4 className="font-semibold text-sm md:text-base text-gray-900 mb-2 md:mb-3 flex items-center gap-2">
+                        <InfoIcon className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
+                        Ticket Instructions
+                      </h4>
+                      <ul className="space-y-1 md:space-y-2 text-xs md:text-sm text-gray-700">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
+                          <span>Bring your ID that matches the ticket name</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
+                          <span>Check in 30 minutes before event starts</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
+                          <span>Digital or printed ticket accepted</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
+                          <span>Contact support if you have issues</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-4 md:space-y-6 text-center">
+                    <h3 className="text-lg font-bold text-gray-900 mb-1 md:mb-2">
+                      Ticket Available After Payment
+                    </h3>
+                    <p className="text-sm text-gray-600 max-w-md mx-auto">
+                      This is a paid event. Please complete your payment to
+                      generate and download your event ticket.
+                    </p>
+                    <div className="flex justify-center">
+                      <a
+                        href={event?.slug ? `/events/${event.slug}` : undefined}
+                        className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl font-semibold hover:opacity-90 transition-opacity gap-2"
                       >
-                        <QrCode className="w-3 h-3 md:w-4 md:h-4" />
-                        {showQR ? "Hide QR" : "Show QR Code"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* QR Code Section */}
-                {showQR && (
-                  <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 md:p-6 text-center">
-                    <div className="mb-3 md:mb-4">
-                      <div className="font-semibold text-sm md:text-base text-gray-900 mb-1 md:mb-2">
-                        Check-in QR Code
-                      </div>
-                      <div className="text-xs md:text-sm text-gray-600">
-                        Show this QR code at the registration desk
-                      </div>
-                    </div>
-
-                    {/* QR CODE */}
-                    <div
-                      ref={qrRef}
-                      className="bg-white p-3 md:p-6 rounded-lg inline-block shadow mx-auto"
-                    >
-                      <QRCodeCanvas
-                        value={qrValue}
-                        size={isMobile ? 180 : 220}
-                        bgColor="#ffffff"
-                        fgColor="#000000"
-                        level="H"
-                        includeMargin
-                      />
-                    </div>
-
-                    {/* ACTIONS */}
-                    <div className="mt-3 md:mt-4 flex flex-col sm:flex-row justify-center gap-2">
-                      <button
-                        onClick={downloadQRCode}
-                        className="px-4 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity active:scale-95 flex items-center justify-center gap-2"
-                      >
-                        <Download className="w-4 h-4" />
-                        Download QR
-                      </button>
-                    </div>
-
-                    <div className="mt-2 md:mt-3 text-xs text-gray-500">
-                      Valid for: {formatDate(event?.start_datetime)}
+                        <CreditCard className="w-5 h-5" />
+                        Complete Payment
+                      </a>
                     </div>
                   </div>
                 )}
-
-                {/* Ticket Instructions */}
-                <div className="bg-gradient-to-r from-[#9cc2ed] to-[#9cc2ed] rounded-xl p-3 md:p-5">
-                  <h4 className="font-semibold text-sm md:text-base text-gray-900 mb-2 md:mb-3 flex items-center gap-2">
-                    <InfoIcon className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
-                    Ticket Instructions
-                  </h4>
-                  <ul className="space-y-1 md:space-y-2 text-xs md:text-sm text-gray-700">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
-                      <span>Bring your ID that matches the ticket name</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
-                      <span>Check in 30 minutes before event starts</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
-                      <span>Digital or printed ticket accepted</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-[#AE9B66] mt-0.5 flex-shrink-0" />
-                      <span>Contact support if you have issues</span>
-                    </li>
-                  </ul>
-                </div>
               </div>
             )}
           </div>
@@ -1146,7 +1193,7 @@ export default function EventDetailsModal({ event, isOpen, onClose }) {
             <div className="border-t border-gray-200 p-3 md:p-6 bg-white">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="text-xs md:text-sm text-gray-600 text-center md:text-left">
-                Need help? Contact us at Bahrain.ds94@gmail.com
+                Need help? Contact us at info@bds-bh.org
               </div>
               <div className="flex items-center justify-center md:justify-end gap-2 md:gap-3">
                 <button

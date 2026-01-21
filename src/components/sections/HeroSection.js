@@ -787,7 +787,7 @@ export default function HeroSection() {
                               Contact Information
                             </p>
                             <p className="text-sm">
-                              Bahrain.ds94@gmail.com
+                              info@bds-bh.org
                             </p>
                           </div>
                         </div>

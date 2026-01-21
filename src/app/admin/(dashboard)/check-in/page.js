@@ -962,7 +962,7 @@ export default function CheckInPage() {
               </div>
 
               {/* Validation Result */}
-              {validationResult && (
+                  {validationResult && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1030,6 +1030,27 @@ export default function CheckInPage() {
                             Token:{" "}
                             <span className="font-mono font-semibold">
                               {validationResult.token}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-3 h-3 md:w-4 md:h-4 text-gray-500" />
+                          <span className="text-xs md:text-sm text-gray-700">
+                            Payment: {" "}
+                            <span
+                              className={
+                                validationResult.payment_status === "paid"
+                                  ? "text-[#AE9B66] font-medium"
+                                  : validationResult.payment_status === "pending"
+                                  ? "text-orange-600 font-medium"
+                                  : "text-gray-700"
+                              }
+                            >
+                              {validationResult.payment_status === "paid"
+                                ? "Paid"
+                                : validationResult.payment_status === "pending"
+                                ? "Payment Pending"
+                                : "Free"}
                             </span>
                           </span>
                         </div>
@@ -1219,7 +1240,12 @@ export default function CheckInPage() {
                     {!validationResult.checkedIn ? (
                       <button
                         onClick={() => handleCheckIn()}
-                        disabled={loading}
+                        disabled={
+                          loading ||
+                          (validationResult.is_paid_event &&
+                            (!validationResult.price_paid ||
+                              validationResult.price_paid <= 0))
+                        }
                         className="w-full py-2.5 md:py-3 bg-gradient-to-r  from-[#AE9B66] to-[#AE9B66] text-white rounded-xl font-medium hover:from-[#AE9B66] hover:to-[#AE9B66] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 text-sm md:text-base"
                       >
                         <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
@@ -1341,7 +1367,12 @@ export default function CheckInPage() {
                                   {!isCheckedIn && isToday && !isPast && (
                                     <button
                                       onClick={() => handleCheckIn(agenda.id)}
-                                      disabled={loading}
+                                      disabled={
+                                        loading ||
+                                        (validationResult.is_paid_event &&
+                                          (!validationResult.price_paid ||
+                                            validationResult.price_paid <= 0))
+                                      }
                                       className="mt-2 w-full py-1.5 bg-gradient-to-r from-[#9cc2ed] to-[#03215F] text-white rounded-lg text-xs font-medium hover:from-[#03215F] hover:to-[#03215F] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-1"
                                     >
                                       <CheckCircle className="w-3 h-3" />

@@ -151,6 +151,12 @@ ADD COLUMN IF NOT EXISTS device_token_updated_at TIMESTAMP WITH TIME ZONE;
 CREATE INDEX IF NOT EXISTS idx_users_device_token ON users(device_token) WHERE device_token IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_users_membership_type ON users(membership_type) WHERE role = 'member';
 
+-- Add is_active flag for admin accounts on users table
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+
+CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
+
 -- Create notifications table (for user notifications)
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

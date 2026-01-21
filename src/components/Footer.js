@@ -122,7 +122,7 @@ export default function Footer() {
           </ContactCard>
 
           <ContactCard icon={Mail} title="Email">
-            <a href="mailto:Bahrain.ds94@gmail.com">Bahrain.ds94@gmail.com</a>
+            <a href="mailto:info@bds-bh.org">info@bds-bh.org</a>
           </ContactCard>
         </div>
 

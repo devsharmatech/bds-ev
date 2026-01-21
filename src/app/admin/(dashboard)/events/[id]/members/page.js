@@ -282,6 +282,11 @@ export default function EventMembersPage() {
 
   // Handle check-in/out
   const handleCheckInOut = (member) => {
+    if (event?.is_paid && (!member.price_paid || member.price_paid <= 0)) {
+      toast.error("Cannot check in unpaid attendee. Payment pending.");
+      return;
+    }
+
     setSelectedMember(member);
     setShowCheckInModal(true);
   };
@@ -456,6 +461,11 @@ export default function EventMembersPage() {
   const handlePrintBadge = (member) => {
     if (!event) {
       toast.error('Event information not found');
+      return;
+    }
+
+    if (event.is_paid && (!member.price_paid || member.price_paid <= 0)) {
+      toast.error("Cannot print badge for unpaid attendee. Payment pending.");
       return;
     }
 

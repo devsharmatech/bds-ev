@@ -34,7 +34,7 @@ export async function POST(req) {
     }
 
     // -----------------------------------
-    // STATUS CHECK
+    // STATUS CHECK (membership)
     // -----------------------------------
     if (user.membership_status !== "active") {
       if (user.membership_status === "pending") {
@@ -62,6 +62,16 @@ export async function POST(req) {
       }
       return NextResponse.json(
         { success: false, message: "Account is not active" },
+        { status: 403 }
+      );
+    }
+
+    // -----------------------------------
+    // ADMIN ACTIVE FLAG CHECK (is_active)
+    // -----------------------------------
+    if (user.role === "admin" && user.is_active === false) {
+      return NextResponse.json(
+        { success: false, message: "Admin account is inactive. Please contact support." },
         { status: 403 }
       );
     }

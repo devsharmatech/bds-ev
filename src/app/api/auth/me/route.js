@@ -36,7 +36,9 @@ export async function GET() {
         member_profiles!member_profiles_user_id_fkey(
           category,
           position,
-          specialty
+          specialty,
+          nationality,
+          work_sector
         )
       `
       )
@@ -63,6 +65,8 @@ export async function GET() {
         category: memberProfile.category || null,
         position: memberProfile.position || null,
         specialty: memberProfile.specialty || null,
+        nationality: memberProfile.nationality || null,
+        work_sector: memberProfile.work_sector || null,
       },
     });
   } catch (err) {

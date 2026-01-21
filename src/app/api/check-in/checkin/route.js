@@ -85,6 +85,14 @@ export async function POST(req) {
         );
       }
 
+      const isPaidEvent = !!eventMember.events?.is_paid;
+      if (isPaidEvent && (!eventMember.price_paid || eventMember.price_paid <= 0)) {
+        return NextResponse.json(
+          { success: false, message: "Payment pending: attendee has not completed payment for this paid event" },
+          { status: 400 }
+        );
+      }
+
       // For multi-day events, allow daily check-ins
       // Check if event is multi-day
       const eventStart = new Date(eventMember.events.start_datetime);

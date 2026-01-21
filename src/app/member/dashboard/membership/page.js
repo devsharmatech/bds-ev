@@ -1173,7 +1173,9 @@ export default function MembershipCardPage() {
 
 
   const handleCopyId = () => {
-    if (user?.membership_code) {
+    if (!user || user.membership_type === "free") return;
+
+    if (user.membership_code) {
       navigator.clipboard.writeText(user.membership_code);
       setCopied(true);
       toast.success("Membership ID copied!");
@@ -1352,20 +1354,21 @@ export default function MembershipCardPage() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-
-              <button
-                onClick={handleCopyId}
-                className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center hover:scale-105 active:scale-95"
-              >
-                {copied ? (
-                  <CheckCircle className="w-5 h-5 mr-2 text-[#AE9B66]" />
-                ) : (
-                  <Copy className="w-5 h-5 mr-2" />
-                )}
-                <span className="text-sm font-medium">
-                  {copied ? "Copied!" : "Copy ID"}
-                </span>
-              </button>
+              {!isFreeMember && (
+                <button
+                  onClick={handleCopyId}
+                  className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center hover:scale-105 active:scale-95"
+                >
+                  {copied ? (
+                    <CheckCircle className="w-5 h-5 mr-2 text-[#AE9B66]" />
+                  ) : (
+                    <Copy className="w-5 h-5 mr-2" />
+                  )}
+                  <span className="text-sm font-medium">
+                    {copied ? "Copied!" : "Copy ID"}
+                  </span>
+                </button>
+              )}
               <button
                 onClick={handlePrint}
                 className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center hover:scale-105 active:scale-95"

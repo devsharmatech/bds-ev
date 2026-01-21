@@ -1,8 +1,9 @@
+import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabaseAdmin";
 
 export async function PUT(req) {
   try {
-    const { id, full_name, email, phone, role, is_active } = await req.json();
+    const { id, full_name, email, phone, role, password, is_active } = await req.json();
 
     // -----------------------------
     // BASIC REQUIRED VALIDATION
@@ -64,8 +65,9 @@ export async function PUT(req) {
         { status: 422 }
       );
     }
-
-    const phoneRegex = /^[0-9]{10}$/;
+    //  we can have various phone formats, so let's allow +, -, spaces, and parentheses
+    const phoneRegex = /^[+\d\s\-()]{10,15}$/;
+    
 
     if (!phoneRegex.test(phone)) {
       return Response.json(
@@ -92,7 +94,7 @@ export async function PUT(req) {
     // -----------------------------
     // ROLE VALIDATION
     // -----------------------------
-    const validRoles = ["user", "doctor", "admin"];
+    const validRoles = ["user", "member", "admin"];
 
     if (role && !validRoles.includes(role)) {
       return Response.json(
@@ -102,28 +104,51 @@ export async function PUT(req) {
     }
 
     // -----------------------------
-    // ACTIVE STATUS VALIDATION
+    // ACTIVE FLAG VALIDATION (for admin usage)
     // -----------------------------
-    if (typeof is_active !== "boolean") {
+    if (is_active !== undefined && typeof is_active !== "boolean") {
       return Response.json(
-        { success: false, error: "is_active must be a boolean value" },
+        { success: false, error: "is_active must be a boolean" },
         { status: 422 }
       );
     }
 
     // -----------------------------
+    // OPTIONAL PASSWORD UPDATE
+    // -----------------------------
+    let password_hash;
+    if (password !== undefined && password !== null && password !== "") {
+      if (password.length < 6) {
+        return Response.json(
+          { success: false, error: "Password must be at least 6 characters" },
+          { status: 422 }
+        );
+      }
+      password_hash = await bcrypt.hash(password, 10);
+    }
+
+    // -----------------------------
     // UPDATE USER
     // -----------------------------
+    const updatePayload = {
+      full_name,
+      email,
+      phone,
+      role,
+      updated_at: new Date(),
+    };
+
+    if (password_hash) {
+      updatePayload.password_hash = password_hash;
+    }
+
+    if (typeof is_active === "boolean") {
+      updatePayload.is_active = is_active;
+    }
+
     const { data, error } = await supabase
       .from("users")
-      .update({
-        full_name,
-        email,
-        phone,
-        role,
-        is_active,
-        updated_at: new Date(),
-      })
+      .update(updatePayload)
       .eq("id", id)
       .select()
       .single();

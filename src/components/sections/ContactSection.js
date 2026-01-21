@@ -68,8 +68,8 @@ export default function ContactSection() {
       icon: <Mail className="w-5 h-5" />,
       title: "Email Address",
       details: [
-        { label: "General Inquiry", value: "Bahrain.ds94@gmail.com" },
-        { label: "Membership", value: "Bahrain.ds94@gmail.com" }
+        { label: "General Inquiry", value: "info@bds-bh.org" },
+        { label: "Membership", value: "info@bds-bh.org" }
       ]
     },
     {

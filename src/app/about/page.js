@@ -85,7 +85,7 @@ const staticBoardMembers = [
   {
     name: "Dr. Abbas Alfardan",
     position: "President",
-    email: "bahrain.ds94@gmail.com",
+    email: "info@bds-bh.org",
     phone: "+973 37990963",
     image: "/im1.jpg",
     instagram: "https://www.instagram.com/drabbasalfardan/",
@@ -103,7 +103,7 @@ const staticBoardMembers = [
   {
     name: "Dr. Talal Alalawi",
     position: "General Secretary",
-    email: "bahrain.ds94@gmail.com",
+    email: "info@bds-bh.org",
     phone: "+973 37990963",
     image: "/im3.jpg",
     instagram: "https://instagram.com/https://www.instagram.com/alawidental?igsh=OWZzamNtamFiOGQz",
@@ -112,7 +112,7 @@ const staticBoardMembers = [
   {
     name: "Dr. Taghreed Ajoor",
     position: "Treasurer",
-    email: "bahrain.ds94@gmail.com",
+    email: "info@bds-bh.org",
     phone: "+973 37990963",
     image: "/im4.jpg",
     instagram: "https://www.instagram.com/ajoordentist?igsh=dGR4YzYzcGNoeHh4",
@@ -130,7 +130,7 @@ const staticBoardMembers = [
   {
     name: "Dr. Taha Al Dairiy",
     position: "Board Member",
-    email: "bahrain.ds94@gmail.com",
+    email: "info@bds-bh.org",
     phone: "+973 37990963",
     image: "/im6.jpg",
     instagram: "https://www.instagram.com/dairy80?igsh=MXIyeTY2eW1sZ3c1MA==",
@@ -139,7 +139,7 @@ const staticBoardMembers = [
   {
     name: "Dr. Maysoon Al Alawi",
     position: "Board Member and Head of the Scientific Committee",
-    email: "bahrain.ds94@gmail.com",
+    email: "info@bds-bh.org",
     phone: "+973 37990963",
     image: "/im7.jpg",
     instagram: "https://www.instagram.com/dr.maysoonalalawi?igsh=b2lnbXY3b3Rham0y",

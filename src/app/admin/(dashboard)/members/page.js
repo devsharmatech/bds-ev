@@ -1208,6 +1208,13 @@ export default function MembersPage() {
             {member.member_profile?.category || "-"}
           </div>
         </td>
+        <td className="p-3 sm:p-4 hidden lg:table-cell">
+          <div className="text-xs sm:text-sm text-gray-700">
+            {member.membership_expiry_date
+              ? formatDateISO(member.membership_expiry_date)
+              : "-"}
+          </div>
+        </td>
         <td className="p-3 sm:p-4">
           <div className="flex flex-row items-center gap-1">
             <span
@@ -1575,6 +1582,9 @@ export default function MembersPage() {
                   <th className="p-3 sm:p-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">
                     Category
                   </th>
+                  <th className="p-3 sm:p-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">
+                    Expiry
+                  </th>
                   <th className="p-3 sm:p-4 text-left text-xs sm:text-sm font-semibold text-white">
                     Status
                   </th>
@@ -1586,7 +1596,7 @@ export default function MembersPage() {
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center">
+                    <td colSpan={8} className="p-8 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <Loader2 className="w-8 h-8 animate-spin text-[#03215F]" />
                         <p className="text-gray-600">
@@ -1599,7 +1609,7 @@ export default function MembersPage() {
                   members.map((member, index) => renderMemberRow(member, index))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center">
+                    <td colSpan={8} className="p-8 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <Users className="w-12 h-12 text-gray-400" />
                         <p className="text-gray-600">

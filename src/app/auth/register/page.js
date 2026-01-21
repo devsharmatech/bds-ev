@@ -740,8 +740,8 @@ function RegisterPageContent() {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#03215F]"
           >
             <option value="">Select gender</option>
-            <option value="M">Male</option>
-            <option value="F">Female</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
           </select>
         </div>
 
@@ -1105,10 +1105,23 @@ function RegisterPageContent() {
               .filter((plan) => {
                 const planName = (plan.name || '').toLowerCase();
                 const isBahraini = formData.nationality === 'Bahrain';
+                const categoryLower = (formData.category || '').toLowerCase();
+                const workSectorLower = (formData.workSector || '').toLowerCase();
+                const positionLower = (formData.position || '').toLowerCase();
+
+                const isStudentCategory = categoryLower.includes('student');
+                const isStudentWorkSector = workSectorLower.includes('student');
+                const isStudentPosition = positionLower === 'student';
+                const isStudent = isStudentCategory || isStudentWorkSector || isStudentPosition;
                 
                 if (isBahraini) {
-                  // Bahrain users can only join Active and Student plans (NOT Associate)
-                  return planName !== 'associate';
+                  // For Bahrain nationals:
+                  // - If student (by category / sector / position): ONLY show student plan
+                  // - If not student: show non-student, non-associate plans (e.g. Active, Honorary)
+                  if (isStudent) {
+                    return planName === 'student';
+                  }
+                  return planName !== 'associate' && planName !== 'student';
                 } else if (formData.nationality && formData.nationality !== 'Bahrain') {
                   // Non-Bahrain users can only join Associate plan
                   return planName === 'associate';
@@ -1552,7 +1565,7 @@ function RegisterPageContent() {
               </p>
               <p className="text-sm text-gray-500 mt-2">
                 Need help? Contact BDS Secretariat at
-                Bahrain.ds94@gmail.com
+                info@bds-bh.org
               </p>
             </div>
           </div>

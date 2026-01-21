@@ -30,17 +30,17 @@ export async function PUT(req) {
       );
     }
 
-    let newUrl = user.profile_picture;
+    let newUrl = user.profile_image;
 
     // -----------------------------
     // VALIDATE IMAGE FILE
     // -----------------------------
     if (newImage && newImage.name) {
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
       if (!allowedTypes.includes(newImage.type)) {
         return Response.json(
-          { success: false, error: "Only JPG, PNG, WEBP images allowed" },
+          { success: false, error: "Only JPG, PNG, WEBP, GIF images allowed" },
           { status: 422 }
         );
       }
@@ -57,13 +57,13 @@ export async function PUT(req) {
       // -----------------------------
       // DELETE OLD IMAGE
       // -----------------------------
-      if (user.profile_picture) {
-        const path = user.profile_picture.split(
-          "/storage/v1/object/public/profile/"
+      if (user.profile_image) {
+        const path = user.profile_image.split(
+          "/storage/v1/object/public/profile_pictures/"
         )[1];
 
         if (path) {
-          await supabase.storage.from("profile").remove([path]);
+          await supabase.storage.from("profile_pictures").remove([path]);
         }
       }
 
@@ -75,7 +75,7 @@ export async function PUT(req) {
       const fileBuffer = Buffer.from(await newImage.arrayBuffer());
 
       const { error: uploadErr } = await supabase.storage
-        .from("profile")
+        .from("profile_pictures")
         .upload(fileName, fileBuffer, { contentType: newImage.type });
 
       if (uploadErr) {
@@ -86,7 +86,7 @@ export async function PUT(req) {
       }
 
       const { data: urlData } = supabase.storage
-        .from("profile")
+        .from("profile_pictures")
         .getPublicUrl(fileName);
 
       newUrl = urlData.publicUrl;
@@ -98,7 +98,7 @@ export async function PUT(req) {
     const { data, error } = await supabase
       .from("users")
       .update({
-        profile_picture: newUrl,
+        profile_image: newUrl,
         updated_at: new Date(),
       })
       .eq("id", user_id)

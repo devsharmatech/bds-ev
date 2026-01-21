@@ -80,6 +80,7 @@ export default function Sidebar({
     { name: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard", badge: null },
     { name: "Events", icon: Calendar, href: "/admin/events", badge: null },
     { name: "Members", icon: Users, href: "/admin/members", badge: null },
+    { name: "Users", icon: Shield, href: "/admin/users", badge: null },
     { name: "CheckIn", icon: Users, href: "/admin/check-in", badge: null },
     { name: "Speaker Requests", icon: Mic, href: "/admin/speaker-requests", badge: null },
     { name: "Hero Settings", icon: Video, href: "/admin/hero-settings", badge: null },

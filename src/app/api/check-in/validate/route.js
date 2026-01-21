@@ -133,14 +133,22 @@ export async function POST(req) {
           log => !log.agenda_id && (log.scan_time || '').slice(0, 10) === today
         );
 
+        const isPaidEvent = !!eventMember.events.is_paid;
+        const hasPaid = !!(eventMember.price_paid && eventMember.price_paid > 0);
+
         let validationMessage = "Event validation successful";
-        if (hasMainEventCheckinToday || hasCheckedTodayAgenda) {
+        if (isPaidEvent && !hasPaid) {
+          validationMessage = "Payment pending: attendee has not completed payment for this paid event";
+        } else if (hasMainEventCheckinToday || hasCheckedTodayAgenda) {
           validationMessage = "You already checked in for today's event";
         } else if (hasCheckedFutureAgenda) {
           validationMessage = "You have already checked in for this upcoming agenda";
         } else if (eventMember.checked_in) {
           validationMessage = "You are already checked in to this event";
         }
+
+        const paymentStatus = isPaidEvent ? (hasPaid ? "paid" : "pending") : "free";
+        const canCheckIn = (!isPaidEvent || hasPaid) && (!eventMember.checked_in || todayAgendas.length > 0);
 
         validationData = {
           type: "event",
@@ -157,7 +165,9 @@ export async function POST(req) {
           event: eventMember.events,
           today_agendas: todayAgendas,
           agenda_checked_in: checkedInAgendas,
-          can_check_in: !eventMember.checked_in || todayAgendas.length > 0,
+          is_paid_event: isPaidEvent,
+          payment_status: paymentStatus,
+          can_check_in: canCheckIn,
           validation_message: validationMessage
         };
       }

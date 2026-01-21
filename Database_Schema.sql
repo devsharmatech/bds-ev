@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   membership_status TEXT CHECK (membership_status IN ('active', 'inactive', 'blocked', 'pending')) DEFAULT 'inactive',
   membership_expiry_date TIMESTAMP WITH TIME ZONE,
   role TEXT CHECK (role IN ('admin', 'member')) DEFAULT 'member',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
   is_member_verified BOOLEAN DEFAULT FALSE,
   current_subscription_plan_id UUID REFERENCES subscription_plans(id) ON DELETE SET NULL,
   current_subscription_plan_name TEXT,
@@ -40,6 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_membership_type ON users(membership_type) WHERE role = 'member';
 CREATE INDEX IF NOT EXISTS idx_users_membership_status ON users(membership_status);
+CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 CREATE INDEX IF NOT EXISTS idx_users_device_token ON users(device_token) WHERE device_token IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_users_current_subscription_plan_id ON users(current_subscription_plan_id);
 
