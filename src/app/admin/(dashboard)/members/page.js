@@ -400,6 +400,9 @@ export default function MembersPage() {
     role: "member",
     membership_code: "",
     membership_status: "active",
+    membership_type: "free",
+    subscription_plan: "",
+    membership_expiry_date: "",
     gender: "",
     dob: "",
     address: "",
@@ -753,6 +756,20 @@ export default function MembersPage() {
       role: member.role || "member",
       membership_code: member.membership_code || "",
       membership_status: member.membership_status || "active",
+      membership_type: member.membership_type || "free",
+      subscription_plan:
+        (member.current_subscription_plan_name || "").toLowerCase().includes("active")
+          ? "active"
+          : (member.current_subscription_plan_name || "").toLowerCase().includes("associate")
+          ? "associate"
+          : (member.current_subscription_plan_name || "").toLowerCase().includes("honorary")
+          ? "honorary"
+          : (member.current_subscription_plan_name || "").toLowerCase().includes("student")
+          ? "student"
+          : "",
+      membership_expiry_date: member.membership_expiry_date
+        ? formatDateISO(member.membership_expiry_date)
+        : "",
       gender: p.gender || "",
       dob: p.dob || "",
       address: p.address || "",
@@ -935,6 +952,9 @@ export default function MembersPage() {
       if (form.membership_code)
         fd.append("membership_code", form.membership_code);
       fd.append("membership_status", form.membership_status);
+      fd.append("membership_type", form.membership_type || "free");
+      fd.append("subscription_plan", form.subscription_plan || "");
+      fd.append("membership_expiry_date", form.membership_expiry_date || "");
 
       const profileKeys = [
         "gender",
@@ -1025,6 +1045,15 @@ export default function MembersPage() {
       if (form.phone) fd.append("phone", form.phone);
       if (form.mobile) fd.append("mobile", form.mobile);
       fd.append("membership_status", form.membership_status);
+      if (form.membership_type !== undefined) {
+        fd.append("membership_type", form.membership_type || "free");
+      }
+      if (form.subscription_plan !== undefined) {
+        fd.append("subscription_plan", form.subscription_plan || "");
+      }
+      if (form.membership_expiry_date !== undefined) {
+        fd.append("membership_expiry_date", form.membership_expiry_date || "");
+      }
       fd.append("role", form.role);
       if (form.membership_code)
         fd.append("membership_code", form.membership_code);
@@ -1206,6 +1235,11 @@ export default function MembersPage() {
         <td className="p-3 sm:p-4 hidden lg:table-cell">
           <div className="text-xs sm:text-sm text-gray-700">
             {member.member_profile?.category || "-"}
+          </div>
+        </td>
+        <td className="p-3 sm:p-4 hidden lg:table-cell">
+          <div className="text-xs sm:text-sm text-gray-700">
+            {member.membership_type === "paid" ? "Paid" : "Free"}
           </div>
         </td>
         <td className="p-3 sm:p-4 hidden lg:table-cell">
@@ -1583,6 +1617,9 @@ export default function MembersPage() {
                     Category
                   </th>
                   <th className="p-3 sm:p-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">
+                    Type
+                  </th>
+                  <th className="p-3 sm:p-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">
                     Expiry
                   </th>
                   <th className="p-3 sm:p-4 text-left text-xs sm:text-sm font-semibold text-white">
@@ -1596,7 +1633,7 @@ export default function MembersPage() {
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center">
+                    <td colSpan={9} className="p-8 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <Loader2 className="w-8 h-8 animate-spin text-[#03215F]" />
                         <p className="text-gray-600">
@@ -1609,7 +1646,7 @@ export default function MembersPage() {
                   members.map((member, index) => renderMemberRow(member, index))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center">
+                    <td colSpan={9} className="p-8 text-center">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <Users className="w-12 h-12 text-gray-400" />
                         <p className="text-gray-600">
@@ -1858,6 +1895,42 @@ export default function MembersPage() {
                     />
                   </div>
 
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Membership Type *
+                    </label>
+                    <select
+                      value={form.membership_type}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, membership_type: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    >
+                      <option value="free">Free</option>
+                      <option value="paid">Paid</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subscription Plan
+                    </label>
+                    <select
+                      value={form.subscription_plan}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, subscription_plan: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    >
+                      <option value="">None</option>
+                      <option value="active">Active</option>
+                      <option value="associate">Associate</option>
+                      <option value="honorary">Honorary</option>
+                      <option value="student">Student</option>
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Membership Status *
@@ -1877,6 +1950,23 @@ export default function MembersPage() {
                       <option value="blocked">Blocked</option>
                       <option value="pending">Pending</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Membership Expiry Date
+                    </label>
+                    <input
+                      type="date"
+                      value={form.membership_expiry_date}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          membership_expiry_date: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    />
                   </div>
 
                   <div>
@@ -3193,6 +3283,41 @@ export default function MembersPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Membership Type *
+                    </label>
+                    <select
+                      value={form.membership_type}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, membership_type: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    >
+                      <option value="free">Free</option>
+                      <option value="paid">Paid</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subscription Plan
+                    </label>
+                    <select
+                      value={form.subscription_plan}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, subscription_plan: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    >
+                      <option value="">None</option>
+                      <option value="active">Active</option>
+                      <option value="associate">Associate</option>
+                      <option value="honorary">Honorary</option>
+                      <option value="student">Student</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Membership Status *
                     </label>
                     <select
@@ -3210,6 +3335,23 @@ export default function MembersPage() {
                       <option value="blocked">Blocked</option>
                       <option value="pending">Pending</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Membership Expiry Date
+                    </label>
+                    <input
+                      type="date"
+                      value={form.membership_expiry_date}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          membership_expiry_date: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
+                    />
                   </div>
 
                   <div>

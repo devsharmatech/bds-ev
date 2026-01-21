@@ -231,24 +231,47 @@ export async function POST(request) {
       }
 
       try {
-        const email = data.email.trim().toLowerCase();
+        let email = data.email.trim().toLowerCase();
         const membershipCode = data.membership_code.trim();
 
-        // Check if email already exists
+        // If email already exists, generate a new unique email by adding a number before '@'
         const { data: existingUser } = await supabase
           .from('users')
-          .select('id, email, membership_code')
+          .select('id, email')
           .eq('email', email)
-          .single();
+          .maybeSingle();
 
         if (existingUser) {
-          results.failed.push({
-            row: rowNumber,
-            data,
-            errors: [`Email ${email} already exists`]
-          });
-          results.failedCount++;
-          continue;
+          const atIndex = email.indexOf('@');
+          if (atIndex === -1) {
+            throw new Error(`Invalid email format: ${email}`);
+          }
+
+          const localPart = email.slice(0, atIndex);
+          const domainPart = email.slice(atIndex + 1);
+
+          let suffix = 1;
+          let newEmail = email;
+          // Try a series of suffixed emails until one is unique in DB
+          while (suffix < 1000) {
+            newEmail = `${localPart}${suffix}@${domainPart}`;
+
+            const { data: conflict } = await supabase
+              .from('users')
+              .select('id')
+              .eq('email', newEmail)
+              .maybeSingle();
+
+            if (!conflict) {
+              email = newEmail;
+              break;
+            }
+            suffix++;
+          }
+
+          if (email === data.email.trim().toLowerCase()) {
+            throw new Error(`Could not generate unique email for ${email}`);
+          }
         }
 
         // Check if membership code already exists
@@ -292,8 +315,15 @@ export async function POST(request) {
 
         // Normalize membership type and status to match database constraints
         const rawMembershipType = (data.membership_type || '').trim().toLowerCase();
-        // Only 'paid' or 'free' are allowed; default to 'free' if invalid/empty
-        const membershipType = rawMembershipType === 'paid' ? 'paid' : 'free';
+        // Only 'paid' or 'free' are allowed.
+        // If membership_type is missing but a subscription plan is provided, treat as 'paid'.
+        let membershipType = 'free';
+        if (rawMembershipType === 'paid' || rawMembershipType === 'free') {
+          membershipType = rawMembershipType;
+        } else if (!rawMembershipType && subscriptionPlanId) {
+          // Infer paid membership when a valid subscription plan exists but membership_type is empty
+          membershipType = 'paid';
+        }
 
         const rawMembershipStatus = (data.membership_status || '').trim().toLowerCase();
         // Allowed: 'active', 'inactive', 'blocked', 'pending' (default 'active')

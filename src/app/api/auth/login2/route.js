@@ -89,30 +89,22 @@ export async function POST(req) {
     }
 
     // -----------------------------------
-    // MEMBERSHIP EXPIRY CHECK
+    // MEMBERSHIP EXPIRY CHECK (no auto-downgrade)
     // -----------------------------------
     let membershipType = user.membership_type;
     let expiryDate = user.membership_expiry_date;
 
-    const today = new Date();
-
-    if (
-      membershipType === "paid" &&
-      expiryDate &&
-      new Date(expiryDate) < today
-    ) {
-      // Auto downgrade expired membership
-      await supabase
-        .from("users")
-        .update({
-          membership_type: "free",
-          membership_expiry_date: null,
-        })
-        .eq("id", user.id);
-
-      membershipType = "free";
-      expiryDate = null;
-    }
+    // NOTE:
+    // Previously, logging in would automatically change a paid
+    // member to free in the database if their expiry date was
+    // before "today". This caused membership_type to "change"
+    // right after login, which is confusing for admins and users.
+    //
+    // We now avoid modifying membership_type or expiry here.
+    // Expiry enforcement (e.g. blocking benefits for expired
+    // members) should be handled explicitly in the parts of the
+    // system that need it, without silently rewriting the user
+    // record on login.
 
     // -----------------------------------
     // JWT TOKEN

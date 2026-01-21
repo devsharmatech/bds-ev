@@ -195,7 +195,44 @@ export async function PUT(request, { params }) {
       if (formData.get('phone') !== null) updateUser.phone = formData.get('phone') || null;
       if (formData.get('mobile') !== null) updateUser.mobile = formData.get('mobile') || null;
       if (formData.get('membership_status') !== null) updateUser.membership_status = formData.get('membership_status') || null;
+      if (formData.get('membership_type') !== null) {
+        const rawType = String(formData.get('membership_type') || '').trim().toLowerCase();
+        if (rawType === 'paid' || rawType === 'free') {
+          updateUser.membership_type = rawType;
+        }
+      }
+      if (formData.get('membership_expiry_date') !== null) {
+        const rawExpiry = formData.get('membership_expiry_date');
+        if (rawExpiry && typeof rawExpiry === 'string' && rawExpiry.trim()) {
+          // Store as end-of-day UTC for the selected date
+          const date = new Date(rawExpiry.trim());
+          if (!Number.isNaN(date.getTime())) {
+            date.setUTCHours(23, 59, 59, 999);
+            updateUser.membership_expiry_date = date.toISOString();
+          }
+        } else {
+          // Allow clearing expiry date
+          updateUser.membership_expiry_date = null;
+        }
+      }
       if (formData.get('role') !== null) updateUser.role = formData.get('role') || null;
+      if (formData.get('subscription_plan') !== null) {
+        const rawPlan = String(formData.get('subscription_plan') || '').trim().toLowerCase();
+        if (!rawPlan) {
+          updateUser.current_subscription_plan_id = null;
+          updateUser.current_subscription_plan_name = null;
+        } else {
+          const { data: plan } = await supabase
+            .from('subscription_plans')
+            .select('id, display_name')
+            .eq('name', rawPlan)
+            .maybeSingle();
+          if (plan) {
+            updateUser.current_subscription_plan_id = plan.id;
+            updateUser.current_subscription_plan_name = plan.display_name;
+          }
+        }
+      }
       if (formData.get('membership_code') !== null) updateUser.membership_code = formData.get('membership_code') || null;
       if (formData.get('is_member_verified') !== null) updateUser.is_member_verified = formData.get('is_member_verified') === 'true';
       if (formData.get('set_personal_as_profile') !== null) setPersonalAsProfile = formData.get('set_personal_as_profile') === 'true';
@@ -265,10 +302,34 @@ export async function PUT(request, { params }) {
       if (body.phone !== undefined) updateUser.phone = body.phone;
       if (body.mobile !== undefined) updateUser.mobile = body.mobile;
       if (body.membership_status !== undefined) updateUser.membership_status = body.membership_status;
+      if (body.membership_type !== undefined) {
+        const rawType = String(body.membership_type || '').trim().toLowerCase();
+        if (rawType === 'paid' || rawType === 'free') {
+          updateUser.membership_type = rawType;
+        }
+      }
       if (body.role !== undefined) updateUser.role = body.role;
       if (body.membership_code !== undefined) updateUser.membership_code = body.membership_code;
 
       profileData = body.member_profile || {};
+
+      if (body.subscription_plan !== undefined) {
+        const rawPlan = String(body.subscription_plan || '').trim().toLowerCase();
+        if (!rawPlan) {
+          updateUser.current_subscription_plan_id = null;
+          updateUser.current_subscription_plan_name = null;
+        } else {
+          const { data: plan } = await supabase
+            .from('subscription_plans')
+            .select('id, display_name')
+            .eq('name', rawPlan)
+            .maybeSingle();
+          if (plan) {
+            updateUser.current_subscription_plan_id = plan.id;
+            updateUser.current_subscription_plan_name = plan.display_name;
+          }
+        }
+      }
 
       // payments
       if (typeof body.membership_fee_registration === 'number') {

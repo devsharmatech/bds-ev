@@ -31,6 +31,8 @@ export async function GET(request) {
         membership_type,
         membership_status,
         membership_expiry_date,
+        current_subscription_plan_id,
+        current_subscription_plan_name,
         is_member_verified,
         role,
         created_at,
@@ -147,6 +149,9 @@ export async function POST(request) {
       body.role = formData.get('role') || 'member';
       body.membership_code = formData.get('membership_code') || null;
       body.membership_status = formData.get('membership_status') || 'active';
+      body.membership_type = formData.get('membership_type') || 'free';
+      body.membership_expiry_date = formData.get('membership_expiry_date') || null;
+      body.subscription_plan = formData.get('subscription_plan') || null;
       body.is_verified = formData.get('is_verified') === 'true';
 
       body.member_profile = {
@@ -193,6 +198,43 @@ export async function POST(request) {
     // Hash password using bcrypt (same as register-lite)
     const password_hash = await bcrypt.hash(body.password.trim(), 10);
 
+    // Handle subscription plan (optional)
+    let subscriptionPlanId = null;
+    let subscriptionPlanName = null;
+    if (body.subscription_plan && typeof body.subscription_plan === 'string') {
+      const planName = body.subscription_plan.trim().toLowerCase();
+      if (planName) {
+        const { data: plan } = await supabase
+          .from('subscription_plans')
+          .select('id, display_name')
+          .eq('name', planName)
+          .single();
+        if (plan) {
+          subscriptionPlanId = plan.id;
+          subscriptionPlanName = plan.display_name;
+        }
+      }
+    }
+
+    // Normalize membership_type and expiry
+    const rawMembershipType = (body.membership_type || '').trim().toLowerCase();
+    let membershipType = 'free';
+    if (rawMembershipType === 'paid' || rawMembershipType === 'free') {
+      membershipType = rawMembershipType;
+    } else if (!rawMembershipType && subscriptionPlanId) {
+      membershipType = 'paid';
+    }
+
+    let membershipExpiryDate = null;
+    if (body.membership_expiry_date && typeof body.membership_expiry_date === 'string' && body.membership_expiry_date.trim()) {
+      const raw = body.membership_expiry_date.trim();
+      const d = new Date(raw);
+      if (!Number.isNaN(d.getTime())) {
+        d.setUTCHours(23, 59, 59, 999);
+        membershipExpiryDate = d.toISOString();
+      }
+    }
+
     // create user
     const { data: user, error: insertError } = await supabase
       .from('users')
@@ -205,6 +247,10 @@ export async function POST(request) {
         role: body.role || 'member',
         membership_code: body.membership_code || null,
         membership_status: body.membership_status || 'active',
+        membership_type: membershipType,
+        membership_expiry_date: membershipExpiryDate,
+        current_subscription_plan_id: subscriptionPlanId,
+        current_subscription_plan_name: subscriptionPlanName,
         is_member_verified: body.is_verified || false
       })
       .select()
