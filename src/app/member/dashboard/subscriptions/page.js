@@ -102,6 +102,7 @@ const formatDate = (dateString) => {
 export default function SubscriptionsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const [plans, setPlans] = useState([]);
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [subscriptionHistory, setSubscriptionHistory] = useState([]);
@@ -140,8 +141,24 @@ export default function SubscriptionsPage() {
       window.history.replaceState({}, '', window.location.pathname);
     } else {
       fetchSubscriptions();
+      fetchUser();
     }
   }, []);
+
+  const fetchUser = async () => {
+    try {
+      const response = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user || null);
+      }
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    }
+  };
 
   const fetchSubscriptions = async () => {
     try {
@@ -296,6 +313,94 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const handleUpgrade = async (plan) => {
+    if (!user) {
+      toast.error("Please login to upgrade your subscription");
+      router.push("/auth/login?redirect=/member/dashboard/subscriptions");
+      return;
+    }
+
+    if (processing || !plan?.id || !plan?.name) return;
+
+    setProcessing(true);
+    try {
+      const response = await fetch("/api/dashboard/subscriptions/upgrade", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          plan_id: plan.id,
+          plan_name: plan.name,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        toast.error(data.message || "Failed to upgrade subscription");
+        return;
+      }
+
+      if (data.payment) {
+        await initiatePaymentFlow(
+          data.subscription.id,
+          {
+            total_amount: data.payment.total_amount,
+            registration_fee: data.payment.registration_fee,
+            annual_fee: data.payment.annual_fee,
+            registration_payment_id: data.payment.registration_payment_id,
+            annual_payment_id: data.payment.annual_payment_id,
+            subscription_id: data.payment.subscription_id,
+          },
+          "upgrade"
+        );
+      } else {
+        toast.success("Subscription upgraded successfully");
+        fetchSubscriptions();
+      }
+    } catch (error) {
+      console.error("Error upgrading subscription:", error);
+      toast.error("Failed to upgrade subscription");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const getEligibleUpgradePlans = () => {
+    const paidPlans = plans.filter((plan) => (plan.name || "").toLowerCase() !== "free");
+
+    if (!user) return [];
+
+    const membershipType = (user.membership_type || "").toLowerCase();
+    if (membershipType !== "free") return [];
+
+    const nationality = (user.nationality || "").trim();
+    const isBahraini = nationality === "Bahrain";
+    const categoryLower = (user.category || "").toLowerCase();
+    const workSectorLower = (user.work_sector || "").toLowerCase();
+    const positionLower = (user.position || "").toLowerCase();
+
+    const isStudentCategory = categoryLower.includes("student");
+    const isStudentWorkSector = workSectorLower.includes("student");
+    const isStudentPosition = positionLower === "student";
+    const isStudent = isStudentCategory || isStudentWorkSector || isStudentPosition;
+
+    let targetPlanName;
+    if (isBahraini) {
+      targetPlanName = isStudent ? "student" : "active";
+    } else {
+      targetPlanName = "associate";
+    }
+
+    const eligiblePlan = paidPlans.find(
+      (plan) => (plan.name || "").toLowerCase() === targetPlanName
+    );
+
+    return eligiblePlan ? [eligiblePlan] : [];
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[80vh] bg-gradient-to-br from-gray-50 to-gray-100">
@@ -338,6 +443,8 @@ export default function SubscriptionsPage() {
       );
     }
   }
+
+  const isFreeMember = (user?.membership_type || "").toLowerCase() === "free";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
@@ -485,7 +592,7 @@ export default function SubscriptionsPage() {
 
         {/* Available Plans Section */}
         {currentPlan ? (
-          // User has a plan - only show their current plan
+          // User has a plan - show their current plan
           <div>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
               <div className="space-y-1 sm:space-y-2">
@@ -617,19 +724,134 @@ export default function SubscriptionsPage() {
                 );
               })()}
             </div>
+            {/* Info or upgrade options based on membership type */}
+            {isFreeMember ? (
+              <>
+                <div className="mt-6 sm:mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6 max-w-2xl mx-auto">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-blue-900 mb-1 sm:mb-2 text-sm sm:text-base">Upgrade from Free Membership</h3>
+                      <p className="text-xs sm:text-sm text-blue-800">
+                        As a free member, you can upgrade your plan online. Select the available paid plan below to continue.
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Info message */}
-            <div className="mt-6 sm:mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6 max-w-2xl mx-auto">
-              <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-blue-900 mb-1 sm:mb-2 text-sm sm:text-base">Need to change your plan?</h3>
-                  <p className="text-xs sm:text-sm text-blue-800">
-                    Plan upgrades or downgrades are not available online. Please contact the admin if you need to change your membership plan.
-                  </p>
+                <div className="mt-6 sm:mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
+                  {getEligibleUpgradePlans().map((plan) => {
+                    const Icon = planIcons[plan.name] || CreditCard;
+
+                    return (
+                      <div
+                        key={plan.id}
+                        className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 hover:shadow-xl transition-all h-full flex flex-col p-4 sm:p-5"
+                      >
+                        <div className="mb-4">
+                          <div className={`inline-flex items-center px-3 py-1 rounded-full mb-3 text-xs ${
+                            plan.name === "active"
+                              ? "bg-[#9cc2ed] text-[#03215F]"
+                              : plan.name === "associate"
+                              ? "bg-[#ECCF0F] text-[#03215F]"
+                              : plan.name === "honorary"
+                              ? "bg-[#AE9B66] text-white"
+                              : "bg-purple-100 text-purple-700"
+                          }`}>
+                            <Icon className="w-3 h-3 mr-1" />
+                            <span className="font-medium">{plan.subtitle || plan.display_name}</span>
+                          </div>
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+                            {plan.display_name}
+                          </h3>
+                          <div className="text-2xl sm:text-3xl font-bold text-[#03215F] mb-1">
+                            {plan.registration_waived && plan.annual_waived
+                              ? "FREE"
+                              : formatBHD((plan.registration_fee || 0) + (plan.annual_fee || 0))}
+                          </div>
+                          {plan.description && (
+                            <p className="text-xs sm:text-sm text-gray-600">{plan.description}</p>
+                          )}
+                        </div>
+
+                        {(plan.registration_fee > 0 || plan.annual_fee > 0) && (
+                          <div className="bg-gray-50 rounded-lg p-3 mb-4 text-xs">
+                            {!plan.registration_waived && plan.registration_fee > 0 && (
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-gray-600">Registration:</span>
+                                <span className="font-semibold text-[#03215F]">
+                                  {formatBHD(plan.registration_fee)}
+                                </span>
+                              </div>
+                            )}
+                            {!plan.annual_waived && plan.annual_fee > 0 && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-gray-600">Annual Fee:</span>
+                                <span className="font-semibold text-[#03215F]">
+                                  {formatBHD(plan.annual_fee)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {plan.core_benefits && plan.core_benefits.length > 0 && (
+                          <div className="mb-4 flex-grow">
+                            <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                              Core Benefits
+                            </h4>
+                            <div className="space-y-1">
+                              {plan.core_benefits.slice(0, 4).map((benefit, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-center gap-2 text-xs sm:text-sm text-gray-700"
+                                >
+                                  <CheckCircle className="w-4 h-4 text-[#03215F]" />
+                                  <span className="line-clamp-1">{benefit}</span>
+                                </div>
+                              ))}
+                              {plan.core_benefits.length > 4 && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  +{plan.core_benefits.length - 4} more
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="mt-auto">
+                          <button
+                            type="button"
+                            onClick={() => handleUpgrade(plan)}
+                            disabled={processing}
+                            className="w-full py-2.5 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all text-center font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                          >
+                            {processing ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <ArrowRight className="w-4 h-4" />
+                            )}
+                            <span>Upgrade to {plan.display_name}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="mt-6 sm:mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6 max-w-2xl mx-auto">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-blue-900 mb-1 sm:mb-2 text-sm sm:text-base">Need to change your plan?</h3>
+                    <p className="text-xs sm:text-sm text-blue-800">
+                      Plan upgrades or downgrades are not available online. Please contact the admin if you need to change your membership plan.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         ) : (
           // No current plan - show message to contact admin

@@ -54,27 +54,24 @@ export default function MembershipPage() {
     const isStudentPosition = positionLower === "student";
     const isStudent = isStudentCategory || isStudentWorkSector || isStudentPosition;
 
-    return paidPlans.filter((plan) => {
-      const planName = (plan.name || "").toLowerCase();
+    // Business rule: for free members we should expose ONLY one
+    // eligible paid plan based on nationality and student status:
+    // - Bahrain + non-student  -> Active membership
+    // - Bahrain + student      -> Student membership
+    // - Other nationality      -> Associate membership
 
-      if (isBahraini) {
-        // For Bahrain nationals:
-        // - If student: only show student plan
-        // - If not student: show non-student, non-associate plans (Active, Honorary, etc.)
-        if (isStudent) {
-          return planName === "student";
-        }
-        return planName !== "associate" && planName !== "student";
-      }
+    let targetPlanName;
+    if (isBahraini) {
+      targetPlanName = isStudent ? "student" : "active";
+    } else {
+      targetPlanName = "associate";
+    }
 
-      if (nationality && nationality !== "Bahrain") {
-        // Non-Bahrain users can only join Associate plan
-        return planName === "associate";
-      }
+    const eligiblePlan = paidPlans.find(
+      (plan) => (plan.name || "").toLowerCase() === targetPlanName
+    );
 
-      // Fallback: just use paid plans list
-      return true;
-    });
+    return eligiblePlan ? [eligiblePlan] : [];
   };
 
   useEffect(() => {
