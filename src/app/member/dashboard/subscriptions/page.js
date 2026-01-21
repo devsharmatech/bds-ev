@@ -127,6 +127,7 @@ export default function SubscriptionsPage() {
       window.history.replaceState({}, '', window.location.pathname);
       setTimeout(() => {
         fetchSubscriptions();
+        fetchUser();
       }, 1000);
     } else if (error) {
       const errorMessages = {
@@ -141,8 +142,8 @@ export default function SubscriptionsPage() {
       window.history.replaceState({}, '', window.location.pathname);
     } else {
       fetchSubscriptions();
-      fetchUser();
     }
+    fetchUser();
   }, []);
 
   const fetchUser = async () => {
@@ -200,15 +201,23 @@ export default function SubscriptionsPage() {
       let paymentType;
       let amount;
 
-      if (payment.registration_fee > 0) {
+      if (actionType === 'upgrade' && payment.registration_fee > 0 && payment.annual_fee > 0) {
+        // Upgrade from free (or first-time paid): pay registration + annual together
+        paymentId = payment.registration_payment_id || payment.annual_payment_id || payment.subscription_id;
+        paymentType = 'subscription_combined';
+        amount = payment.total_amount || (payment.registration_fee + payment.annual_fee);
+      } else if (payment.registration_fee > 0) {
+        // Only registration fee needed
         paymentId = payment.registration_payment_id || payment.subscription_id;
         paymentType = 'subscription_registration';
         amount = payment.registration_fee;
       } else if (payment.annual_fee > 0) {
+        // Only annual fee needed (renewal or registration already handled)
         paymentId = payment.annual_payment_id || payment.subscription_id;
         paymentType = actionType === 'renew' ? 'subscription_renewal' : 'subscription_annual';
         amount = payment.annual_fee;
       } else {
+        // Fallback: use total amount
         paymentId = payment.annual_payment_id || payment.registration_payment_id || payment.subscription_id;
         paymentType = actionType === 'renew' ? 'subscription_renewal' : 'subscription_annual';
         amount = payment.total_amount;
@@ -854,25 +863,141 @@ export default function SubscriptionsPage() {
             )}
           </div>
         ) : (
-          // No current plan - show message to contact admin
-          <div className="text-center py-12">
-            <div className="max-w-md mx-auto">
-              <div className="p-4 rounded-full bg-gray-100 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-                <AlertCircle className="w-10 h-10 text-gray-400" />
+          // No current plan
+          isFreeMember ? (
+            <div className="mt-6 sm:mt-8">
+              <div className="max-w-2xl mx-auto mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-blue-900 mb-1 sm:mb-2 text-sm sm:text-base">Upgrade from Free Membership</h3>
+                    <p className="text-xs sm:text-sm text-blue-800">
+                      As a free member, you can upgrade your plan online. Select the available paid plan below to continue.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">No Active Plan</h2>
-              <p className="text-gray-600 mb-6">
-                You do not have an active membership plan. Please contact the admin to get started with a membership.
-              </p>
-              <a 
-                href="/contact" 
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#03215F] text-white rounded-xl font-medium hover:bg-[#03215F]/90 transition-colors"
-              >
-                Contact Admin
-                <ArrowRight className="w-4 h-4" />
-              </a>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
+                {getEligibleUpgradePlans().map((plan) => {
+                  const Icon = planIcons[plan.name] || CreditCard;
+
+                  return (
+                    <div
+                      key={plan.id}
+                      className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 hover:shadow-xl transition-all h-full flex flex-col p-4 sm:p-5"
+                    >
+                      <div className="mb-4">
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full mb-3 text-xs ${
+                          plan.name === "active"
+                            ? "bg-[#9cc2ed] text-[#03215F]"
+                            : plan.name === "associate"
+                            ? "bg-[#ECCF0F] text-[#03215F]"
+                            : plan.name === "honorary"
+                            ? "bg-[#AE9B66] text-white"
+                            : "bg-purple-100 text-purple-700"
+                        }`}>
+                          <Icon className="w-3 h-3 mr-1" />
+                          <span className="font-medium">{plan.subtitle || plan.display_name}</span>
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
+                          {plan.display_name}
+                        </h3>
+                        <div className="text-2xl sm:text-3xl font-bold text-[#03215F] mb-1">
+                          {plan.registration_waived && plan.annual_waived
+                            ? "FREE"
+                            : formatBHD((plan.registration_fee || 0) + (plan.annual_fee || 0))}
+                        </div>
+                        {plan.description && (
+                          <p className="text-xs sm:text-sm text-gray-600">{plan.description}</p>
+                        )}
+                      </div>
+
+                      {(plan.registration_fee > 0 || plan.annual_fee > 0) && (
+                        <div className="bg-gray-50 rounded-lg p-3 mb-4 text-xs">
+                          {!plan.registration_waived && plan.registration_fee > 0 && (
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-gray-600">Registration:</span>
+                              <span className="font-semibold text-[#03215F]">
+                                {formatBHD(plan.registration_fee)}
+                              </span>
+                            </div>
+                          )}
+                          {!plan.annual_waived && plan.annual_fee > 0 && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-600">Annual Fee:</span>
+                              <span className="font-semibold text-[#03215F]">
+                                {formatBHD(plan.annual_fee)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {plan.core_benefits && plan.core_benefits.length > 0 && (
+                        <div className="mb-4 flex-grow">
+                          <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                            Core Benefits
+                          </h4>
+                          <div className="space-y-1">
+                            {plan.core_benefits.slice(0, 4).map((benefit, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-2 text-xs sm:text-sm text-gray-700"
+                              >
+                                <CheckCircle className="w-4 h-4 text-[#03215F]" />
+                                <span className="line-clamp-1">{benefit}</span>
+                              </div>
+                            ))}
+                            {plan.core_benefits.length > 4 && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                +{plan.core_benefits.length - 4} more
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-auto">
+                        <button
+                          type="button"
+                          onClick={() => handleUpgrade(plan)}
+                          disabled={processing}
+                          className="w-full py-2.5 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all text-center font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                        >
+                          {processing ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <ArrowRight className="w-4 h-4" />
+                          )}
+                          <span>Upgrade to {plan.display_name}</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="max-w-md mx-auto">
+                <div className="p-4 rounded-full bg-gray-100 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                  <AlertCircle className="w-10 h-10 text-gray-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">No Active Plan</h2>
+                <p className="text-gray-600 mb-6">
+                  You do not have an active membership plan. Please contact the admin to get started with a membership.
+                </p>
+                <a 
+                  href="/contact" 
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#03215F] text-white rounded-xl font-medium hover:bg-[#03215F]/90 transition-colors"
+                >
+                  Contact Admin
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          )
         )}
 
         {/* Subscription History */}

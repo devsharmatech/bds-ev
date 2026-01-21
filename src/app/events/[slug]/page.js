@@ -1067,7 +1067,12 @@ export default function EventDetailsPage() {
             setIsJoinModalOpen(false);
             setSelectedEvent(null);
           }}
-          onSuccess={() => {
+          user={user}
+          onLoginRequired={() => {
+            setIsJoinModalOpen(false);
+            setIsQuickSignupOpen(true);
+          }}
+          onJoinSuccess={() => {
             setIsJoinModalOpen(false);
             setSelectedEvent(null);
             fetchEvent();

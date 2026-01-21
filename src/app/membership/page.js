@@ -146,12 +146,11 @@ export default function MembershipPage() {
     try {
       let paymentId, paymentType, amount;
 
-      if (payment.registration_fee > 0 && payment.annual_fee > 0) {
-        // User needs to pay both registration and annual fees
-        // Start with registration fee
-        paymentId = payment.registration_payment_id || payment.subscription_id;
-        paymentType = 'subscription_registration';
-        amount = payment.registration_fee;
+      if (actionType === 'upgrade' && payment.registration_fee > 0 && payment.annual_fee > 0) {
+        // Upgrade from free (or first-time paid): pay registration + annual together
+        paymentId = payment.registration_payment_id || payment.annual_payment_id || payment.subscription_id;
+        paymentType = 'subscription_combined';
+        amount = payment.total_amount || (payment.registration_fee + payment.annual_fee);
       } else if (payment.registration_fee > 0) {
         // User only needs to pay registration fee
         paymentId = payment.registration_payment_id || payment.subscription_id;
@@ -358,7 +357,8 @@ export default function MembershipPage() {
 
   const currentPlan = plans.find(p => isCurrentPlan(p));
   const isFreeCurrentPlan =
-    !!currentPlan && (currentPlan.name || "").toLowerCase() === "free";
+    (!!currentPlan && (currentPlan.name || "").toLowerCase() === "free") ||
+    (!currentPlan && (user?.membership_type || "").toLowerCase() === "free");
 
   return (
     <MainLayout>
@@ -435,7 +435,7 @@ export default function MembershipPage() {
 
       {/* Subscription Plans */}
       <div className="container mx-auto px-4 py-12">
-        {user && currentSubscription ? (
+        {user && (currentSubscription || isFreeCurrentPlan) ? (
           <>
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-3">
@@ -449,6 +449,7 @@ export default function MembershipPage() {
               </p>
             </div>
 
+            {currentPlan && (
             <div className="max-w-md mx-auto mb-12">
               {(() => {
                 const plan = plans.find(p => isCurrentPlan(p));
@@ -539,6 +540,7 @@ export default function MembershipPage() {
                 );
               })()}
             </div>
+            )}
 
             {/* Info and upgrade options for logged-in users with subscription */}
             {isFreeCurrentPlan ? (
@@ -671,7 +673,7 @@ export default function MembershipPage() {
             )}
           </>
         ) : (
-          // Not logged in OR no subscription - show all plans
+          // Not logged in OR no subscription - show plans
           <>
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-3">
@@ -679,14 +681,122 @@ export default function MembershipPage() {
               </h2>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
                 {user 
-                  ? "Choose a plan that best fits your professional needs"
+                  ? (isFreeCurrentPlan
+                      ? "As a free member, you can upgrade to the eligible paid plan below."
+                      : "Choose a plan that best fits your professional needs")
                   : "Select a plan and sign up to get started"
                 }
               </p>
             </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mb-12">
-          {plans.map((plan) => {
+          {(isFreeCurrentPlan && user)
+            ? getEligibleUpgradePlans().map((plan) => {
+                const Icon = planIcons[plan.name] || Shield;
+                const isCurrent = isCurrentPlan(plan);
+                const isFree = plan.name === 'free';
+
+                return (
+                  <div
+                    key={plan.id}
+                    className={`bg-white rounded-xl shadow-lg p-6 border-2 ${
+                      isCurrent
+                        ? "border-[#03215F] shadow-xl"
+                        : "border-gray-200 hover:shadow-xl"
+                    } transition-all h-full flex flex-col`}
+                  >
+                    {isCurrent && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1 bg-[#03215F] text-white rounded-full text-sm font-semibold">
+                        Current Plan
+                      </div>
+                    )}
+
+                    <div className="mb-4">
+                      <div className={`inline-flex items-center px-3 py-1 rounded-full mb-3 text-xs ${
+                        plan.name === 'free' ? 'bg-gray-100 text-gray-700' :
+                        plan.name === 'active' ? 'bg-[#9cc2ed] text-[#03215F]' :
+                        plan.name === 'associate' ? 'bg-[#ECCF0F] text-[#03215F]' :
+                        plan.name === 'honorary' ? 'bg-[#AE9B66] text-white' :
+                        'bg-purple-100 text-purple-700'
+                      }`}>
+                        <Icon className="w-3 h-3 mr-1" />
+                        <span className="font-medium">{plan.subtitle || plan.display_name}</span>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {plan.display_name}
+                      </h3>
+                      <div className="text-3xl font-bold text-[#03215F] mb-1">
+                        {plan.registration_waived && plan.annual_waived 
+                          ? "FREE"
+                          : formatBHD((plan.registration_fee || 0) + (plan.annual_fee || 0))
+                        }
+                      </div>
+                      {plan.description && (
+                        <p className="text-sm text-gray-600">{plan.description}</p>
+                      )}
+                    </div>
+
+                    {(plan.registration_fee > 0 || plan.annual_fee > 0) && (
+                      <div className="bg-gray-50 rounded-lg p-3 mb-4 text-xs">
+                        {!plan.registration_waived && plan.registration_fee > 0 && (
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-gray-600">Registration:</span>
+                            <span className="font-semibold text-[#03215F]">
+                              {formatBHD(plan.registration_fee)}
+                            </span>
+                          </div>
+                        )}
+                        {!plan.annual_waived && plan.annual_fee > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Annual Fee:</span>
+                            <span className="font-semibold text-[#03215F]">
+                              {formatBHD(plan.annual_fee)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {plan.core_benefits && plan.core_benefits.length > 0 && (
+                      <div className="mb-6 flex-grow">
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                          Core Benefits
+                        </h4>
+                        <div className="space-y-1">
+                          {plan.core_benefits.slice(0, 4).map((benefit, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-sm text-gray-700">
+                              <Check className="w-4 h-4 text-[#03215F]" />
+                              <span className="line-clamp-1">{benefit}</span>
+                            </div>
+                          ))}
+                          {plan.core_benefits.length > 4 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              +{plan.core_benefits.length - 4} more
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-auto">
+                      <button
+                        type="button"
+                        onClick={() => handleUpgrade(plan)}
+                        disabled={processing}
+                        className="w-full py-2.5 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all text-center font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                      >
+                        {processing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <ArrowRight className="w-4 h-4" />
+                        )}
+                        <span>Upgrade to {plan.display_name}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            : plans.map((plan) => {
             const Icon = planIcons[plan.name] || Shield;
             const isCurrent = isCurrentPlan(plan);
             const isFree = plan.name === 'free';
