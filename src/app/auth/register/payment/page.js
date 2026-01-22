@@ -16,6 +16,7 @@ function RegistrationPaymentPageContent() {
   const [paymentData, setPaymentData] = useState(null);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [selectedMethod, setSelectedMethod] = useState(null);
+  const [invoicePaymentId, setInvoicePaymentId] = useState(null);
   const [error, setError] = useState(null);
   const [step, setStep] = useState(1); // 1: payment summary, 2: select method, 3: processing
 
@@ -88,6 +89,8 @@ function RegistrationPaymentPageContent() {
 
       if (invoiceData.success && invoiceData.paymentMethods) {
         setPaymentMethods(invoiceData.paymentMethods);
+        // store the payment id returned by the server (may be a newly-created combined payment)
+        setInvoicePaymentId(invoiceData.payment_id || null);
         setStep(2); // Move to payment method selection
         toast.success("Please select a payment method");
       } else {
@@ -129,7 +132,7 @@ function RegistrationPaymentPageContent() {
         },
         body: JSON.stringify({
           subscription_id: paymentData.subscription.id,
-          payment_id: paymentToProcess.id,
+          payment_id: invoicePaymentId || paymentToProcess.id,
           payment_method_id: selectedMethod.id,
           amount: paymentData.totals.total_amount, // Pass total amount for combined payment
           redirect_to: "/auth/login", // Redirect to login after payment completion

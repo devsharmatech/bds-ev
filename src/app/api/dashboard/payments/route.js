@@ -46,7 +46,16 @@ export async function GET(req) {
     if (eventError) throw eventError;
 
     // Format membership payments
-    const formattedMembershipPayments = (membershipPayments || []).map(payment => ({
+    const formattedMembershipPayments = (membershipPayments || [])
+      // Exclude payments that were explicitly marked as merged into a combined payment
+      .filter(p => {
+        const notes = (p.notes || '').toString().toLowerCase();
+        if (!notes) return true;
+        if (notes.includes('merged into combined payment')) return false;
+        if (notes.includes('marked paid as part of combined payment')) return false;
+        return true;
+      })
+      .map(payment => ({
       id: payment.id,
       payment_type: 'membership',
       amount: payment.amount,

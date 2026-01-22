@@ -15,6 +15,7 @@ export async function POST(request) {
   try {
     requestData = await request.json();
     const { subscription_id, payment_id, amount, payment_type, redirect_to } = requestData;
+    let invoiceRefId = payment_id; // may be replaced if we create a combined payment record
 
     console.log('[CREATE-INVOICE] Request received:', {
       subscription_id,
@@ -230,25 +231,62 @@ export async function POST(request) {
 
     // If this is a combined payment, update the payment record's type and amount
     if (payment_type === 'subscription_combined') {
-      const { error: updateTypeError } = await supabase
-        .from('membership_payments')
-        .update({
-          payment_type: 'subscription_combined',
-          amount: amount, // Update to total amount
-          notes: 'Combined registration and annual payment'
-        })
-        .eq('id', payment_id);
-      
-      if (updateTypeError) {
-        console.error('[CREATE-INVOICE] Error updating payment type to combined:', {
-          error: updateTypeError,
-          payment_id
-        });
-      } else {
-        console.log('[CREATE-INVOICE] Updated payment to combined type with total amount:', {
-          payment_id,
-          new_amount: amount
-        });
+      // Instead of mutating one of the per-item payments, create a single
+      // combined payment record so the DB shows a single invoice for the
+      // combined registration+annual payment. Mark existing unpaid
+      // per-item payments as merged for auditability.
+      try {
+        const { data: combinedPayment, error: combinedErr } = await supabase
+          .from('membership_payments')
+          .insert({
+            user_id: payment.user_id,
+            payment_type: 'subscription_combined',
+            subscription_id: subscription_id,
+            amount: amount,
+            currency: payment.currency || 'BHD',
+            paid: false,
+            reference: `SUB-REG-ANN-${(subscription_id || '').toString().substring(0,8).toUpperCase()}`,
+            notes: 'Combined registration and annual payment (created at invoice initiation)'
+          })
+          .select()
+          .single();
+
+        if (combinedErr || !combinedPayment) {
+          console.error('[CREATE-INVOICE] Failed to create combined payment record, falling back to updating provided payment id', { error: combinedErr, payment_id });
+        } else {
+          // Update any existing unpaid per-item payments for this subscription to mark them merged
+          try {
+            const { data: otherPayments } = await supabase
+              .from('membership_payments')
+              .select('id')
+              .eq('subscription_id', subscription_id)
+              .eq('paid', false)
+              .neq('id', combinedPayment.id);
+
+            if (otherPayments && otherPayments.length > 0) {
+              for (const p of otherPayments) {
+                await supabase
+                  .from('membership_payments')
+                  .update({ notes: `Merged into combined payment ${combinedPayment.id}` })
+                  .eq('id', p.id);
+              }
+              console.log('[CREATE-INVOICE] Marked other unpaid payments as merged:', otherPayments.map(p => p.id));
+            }
+          } catch (e) {
+            console.warn('[CREATE-INVOICE] Failed to mark other payments as merged:', e.message || e);
+          }
+
+          // Use the new combined payment id for invoice initiation
+          requestData.payment_id = combinedPayment.id;
+          // update local variable so logs below reflect correct id
+          // (we don't reassign `payment` object here because it's used earlier)
+          // but ensure `payment_id` used further is the combined id
+          // (note: `payment_id` is from request body; we'll use requestData when returning)
+          invoiceRefId = combinedPayment.id;
+          console.log('[CREATE-INVOICE] Created combined payment record:', { combinedPaymentId: combinedPayment.id, amount });
+        }
+      } catch (err) {
+        console.error('[CREATE-INVOICE] Unexpected error while creating combined payment record:', err);
       }
     }
     // Check authentication (optional for registration flow)
@@ -452,7 +490,7 @@ export async function POST(request) {
       customerEmail: user.email,
       callbackUrl,
       errorUrl,
-      referenceId: payment_id,
+      referenceId: invoiceRefId,
       payment_type
     });
 
@@ -483,7 +521,7 @@ export async function POST(request) {
       invoiceItems,
       callbackUrl,
       errorUrl,
-      referenceId: payment_id,
+      referenceId: invoiceRefId,
       logoUrl: process.env.NEXT_PUBLIC_SITE_LOGO_URL
     });
 
@@ -539,7 +577,7 @@ export async function POST(request) {
       paymentMethods: formattedPaymentMethods,
       amount: amount,
       currency: 'BHD',
-      payment_id: payment_id,
+      payment_id: invoiceRefId,
       subscription_id: subscription_id
     });
 

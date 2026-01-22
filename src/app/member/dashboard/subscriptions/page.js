@@ -244,7 +244,7 @@ export default function SubscriptionsPage() {
         setPaymentMethods(invoiceData.paymentMethods);
         setPaymentData({
           subscription_id: subscriptionId,
-          payment_id: paymentId,
+          payment_id: invoiceData.payment_id || paymentId,
           amount: amount,
           payment_type: paymentType,
           redirect_to: "/member/dashboard/subscriptions",
