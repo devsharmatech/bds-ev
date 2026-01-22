@@ -34,6 +34,20 @@ export default function LoginModal({
       toast.success("Login successful 🎉");
 
       onLoginSuccess();
+      try {
+        if (typeof window !== "undefined") {
+          // ensure the expiry modal can run after reload (avoid race with Set-Cookie)
+          sessionStorage.setItem("bds:show-expiry-on-load", "1");
+        }
+      } catch (e) {}
+      // Notify other components that a user has just logged in
+      try {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("bds:user-logged-in"));
+        }
+      } catch (e) {
+        // ignore
+      }
       onClose();
       setTimeout(() => {
         window.location.reload();

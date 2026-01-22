@@ -132,7 +132,7 @@ function MembershipCard({ user, qrRef }) {
         <div className="flex-1">
           <p className="text-[10px] text-slate-300 uppercase">Member Name</p>
           <div className="flex items-center gap-2">
-            <h2 className="font-bold leading-tight text-[clamp(14px,4vw,18px)] truncate uppercase">
+            <h2 className="font-bold leading-tight text-[clamp(14px,4vw,18px)] uppercase break-words whitespace-normal">
               {user.full_name}
             </h2>
           </div>
@@ -140,7 +140,7 @@ function MembershipCard({ user, qrRef }) {
           <div className="grid grid-cols-2 gap-3 mt-3">
             <div>
               <p className="text-[10px] text-slate-300 uppercase">Member ID</p>
-              <p className="text-xs sm:text-sm font-mono truncate">
+              <p className="text-xs sm:text-sm font-mono truncate max-w-[140px]">
                 {user.membership_code || "N/A"}
               </p>
             </div>

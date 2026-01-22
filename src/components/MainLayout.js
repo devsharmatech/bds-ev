@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ExpiryModal from "@/components/membership/ExpiryModal";
 
 export default function MainLayout({ children }) {
   // Force light mode - remove dark class if exists (only on client)
@@ -14,6 +15,7 @@ export default function MainLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">
       <Navbar />
+      <ExpiryModal />
       <main className="flex-1">{children}</main>
       <Footer />
     </div>
