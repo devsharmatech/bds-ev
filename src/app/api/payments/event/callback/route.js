@@ -48,8 +48,8 @@ export async function GET(request) {
           student_price, student_standard_price, student_onsite_price,
           hygienist_price, hygienist_standard_price, hygienist_onsite_price
         ),
-        user:users (
-          id, full_name, email, membership_type,
+            user:users (
+          id, full_name, email, membership_type, membership_status, membership_expiry_date,
           member_profiles!member_profiles_user_id_fkey(category, position, specialty)
         )
       `)
@@ -168,7 +168,9 @@ export async function GET(request) {
           user.specialty = user.member_profiles.specialty;
         }
         
-        const isMember = user.membership_type === 'paid';
+        const now = new Date();
+        const membershipValid = user && user.membership_type === 'paid' && user.membership_status === 'active' && (!user.membership_expiry_date || new Date(user.membership_expiry_date) > now);
+        const isMember = membershipValid;
         const eventMemberToken = `EVT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
         
         // Create event member record

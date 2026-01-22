@@ -144,7 +144,10 @@ export function getUserPricingCategory(user) {
     position.includes('faculty') ||
     position.includes('lecturer');
   
-  if (isDentist && user.membership_type === 'paid') {
+  // Ensure membership is active and not expired before granting member category
+  const now = new Date();
+  const membershipValid = user.membership_type === 'paid' && user.membership_status === 'active' && (!user.membership_expiry_date || new Date(user.membership_expiry_date) > now);
+  if (isDentist && membershipValid) {
     return 'member';
   }
   

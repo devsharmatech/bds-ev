@@ -72,8 +72,8 @@ export async function GET(request) {
       console.error('Error fetching user:', userError);
     }
 
-    // Get user's active subscription
-    const { data: activeSubscription } = await supabase
+    // Get user's active subscription (auto-expire if needed)
+    let { data: activeSubscription } = await supabase
       .from('user_subscriptions')
       .select(`
         *,
@@ -84,6 +84,49 @@ export async function GET(request) {
       .order('started_at', { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    // If the subscription is expired, update its status and return the most recent subscription
+    if (activeSubscription && activeSubscription.expires_at) {
+      const now = new Date();
+      const expiry = new Date(activeSubscription.expires_at);
+      if (expiry < now) {
+        // Mark the found active subscription as expired in DB
+        await supabase
+          .from('user_subscriptions')
+          .update({ status: 'expired' })
+          .eq('id', activeSubscription.id);
+
+        // Fetch the most recent subscription (any status) as fallback/currentSubscription
+        const { data: lastSubscription } = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            subscription_plan:subscription_plans (*)
+          `)
+          .eq('user_id', userId)
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        activeSubscription = lastSubscription || null;
+      }
+    }
+
+    // If there was no active subscription (e.g., all are expired), return the most recent subscription so UI can display dates
+    if (!activeSubscription) {
+      const { data: lastSubscription } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          subscription_plan:subscription_plans (*)
+        `)
+        .eq('user_id', userId)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      activeSubscription = lastSubscription || null;
+    }
 
     // Get user's subscription history
     const { data: subscriptionHistory } = await supabase

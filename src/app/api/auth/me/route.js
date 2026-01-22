@@ -32,6 +32,7 @@ export async function GET() {
         email,
         role,
         membership_type,
+        membership_status,
         membership_expiry_date,
         member_profiles!member_profiles_user_id_fkey(
           category,
@@ -61,6 +62,7 @@ export async function GET() {
         email: user.email,
         role: user.role,
         membership_type: user.membership_type,
+        membership_status: user.membership_status || null,
         membership_expiry_date: user.membership_expiry_date,
         category: memberProfile.category || null,
         position: memberProfile.position || null,

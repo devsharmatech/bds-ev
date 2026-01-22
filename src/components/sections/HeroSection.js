@@ -1,6 +1,21 @@
 "use client";
 
-import { ArrowRight, Calendar, Shield, Sparkles, QrCode, LogIn, UserPlus, BadgeCheck, Printer, X, Clock, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import {
+  ArrowRight,
+  Calendar,
+  Shield,
+  Sparkles,
+  QrCode,
+  LogIn,
+  UserPlus,
+  BadgeCheck,
+  Printer,
+  X,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
@@ -15,19 +30,35 @@ function MembershipCard({ user, qrRef }) {
   const formatDate = (date) =>
     date
       ? new Date(date).toLocaleDateString("en-BH", {
-        month: "numeric",
-        year: "numeric",
-        timeZone: "Asia/Bahrain",
-      })
+          month: "numeric",
+          year: "numeric",
+          timeZone: "Asia/Bahrain",
+        })
       : "N/A";
 
-  const qrValue = JSON.stringify({
+  // Determine if membership is expired
+  const isExpired =
+    user.membership_expiry_date &&
+    new Date(user.membership_expiry_date) < new Date();
+  // Dummy barcode data
+  const dummyBarcode = {
     type: "MEMBERSHIP_VERIFICATION",
-    membership_id: user.membership_code=="BDS-XXXXX" ? "DEMO-XXXXX" : user.membership_code,
-    member_name: user.full_name=="DR Ahmed Ahmed" ? "DEMO MEMBER" : user.full_name,
-    member_type: user.membership_type,
-    expiry_date: user.membership_expiry_date,
-  });
+    membership_id: "DEMO-XXXXX",
+    member_name: "DEMO MEMBER",
+    member_type: user.membership_type || "N/A",
+    expiry_date: user.membership_expiry_date || "N/A",
+  };
+  const qrValue = JSON.stringify(
+    isExpired
+      ? dummyBarcode
+      : {
+          type: "MEMBERSHIP_VERIFICATION",
+          membership_id: user.membership_code,
+          member_name: user.full_name,
+          member_type: user.membership_type,
+          expiry_date: user.membership_expiry_date,
+        },
+  );
 
   return (
     <div
@@ -62,7 +93,7 @@ function MembershipCard({ user, qrRef }) {
               Bahrain Dental Society
             </h3>
             <p className="text-[10px] text-[#9cc2ed] tracking-widest uppercase mt-2">
-              Official Member  
+              Official Member
               {user.is_member_verified && (
                 <span className="inline-flex ml-2 items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-semibold bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30">
                   <Shield className="w-2.5 h-2.5" />
@@ -75,18 +106,24 @@ function MembershipCard({ user, qrRef }) {
 
         <span
           className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase
-          rounded-full ${user.membership_status === "active"
+          rounded-full ${
+            !isExpired && user.membership_status === "active"
               ? "bg-green-600/20 border border-green-600/30 text-green-600"
               : "bg-[#b8352d]/20 border border-[#b8352d]/30 text-[#b8352d]"
-            }`}
+          }`}
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full ${user.membership_status === "active"
+            className={`w-1.5 h-1.5 rounded-full ${
+              !isExpired && user.membership_status === "active"
                 ? "bg-green-600 animate-pulse"
-                : "bg-[#b8352d]"
-              }`}
+                : "bg-[#ff2b20]"
+            }`}
           />
-          {user.membership_status || "Active"}
+          {!isExpired && user.membership_status === "active" ? (
+            "Active"
+          ) : (
+            <span style={{ color: "#ff2b20" }}>Inactive</span>
+          )}
         </span>
       </div>
 
@@ -98,7 +135,6 @@ function MembershipCard({ user, qrRef }) {
             <h2 className="font-bold leading-tight text-[clamp(14px,4vw,18px)] truncate uppercase">
               {user.full_name}
             </h2>
-
           </div>
 
           <div className="grid grid-cols-2 gap-3 mt-3">
@@ -130,16 +166,23 @@ function MembershipCard({ user, qrRef }) {
           </div>
         </div>
 
-        {/* QR Code */}
-        <div ref={qrRef} className="bg-white rounded-lg p-1 shrink-0">
-          <QRCodeCanvas value={qrValue} size={95} level="H" includeMargin />
+        {/* QR / Dummy Barcode */}
+        <div className="bg-white rounded-lg p-1 shrink-0">
+          {isExpired ? (
+            <img
+              src="https://placehold.co/95x95?text=EXPIRED"
+              alt="Dummy Barcode"
+              className="rounded"
+            />
+          ) : (
+            <QRCodeCanvas value={qrValue} size={95} level="H" includeMargin />
+          )}
         </div>
       </div>
     </div>
   );
 }
-const CARD_HEIGHT =
-  "min-h-[240px] sm:min-h-[260px] md:min-h-[280px]";
+const CARD_HEIGHT = "min-h-[240px] sm:min-h-[260px] md:min-h-[280px]";
 
 export default function HeroSection() {
   const router = useRouter();
@@ -154,14 +197,17 @@ export default function HeroSection() {
   const [showJoinChoice, setShowJoinChoice] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
-  const [badgeFormData, setBadgeFormData] = useState({ event_id: '', email: '' });
+  const [badgeFormData, setBadgeFormData] = useState({
+    event_id: "",
+    email: "",
+  });
   const [badgeVerifying, setBadgeVerifying] = useState(false);
   const [badgeData, setBadgeData] = useState(null);
   const [badgeStatus, setBadgeStatus] = useState(null);
   const [badgeEvents, setBadgeEvents] = useState([]);
   const [heroSettings, setHeroSettings] = useState({
-    video_url: '/file.mp4',
-    poster_url: '/bgn.png',
+    video_url: "/file.mp4",
+    poster_url: "/bgn.png",
   });
 
   // Dummy member data for non-logged-in or non-paid members
@@ -171,7 +217,7 @@ export default function HeroSection() {
     membership_expiry_date: "12/31/2030",
     membership_type: "paid",
     membership_status: "active",
-    current_subscription_plan_name: "Active Membership"
+    current_subscription_plan_name: "Active Membership",
   };
 
   // Prevent hydration mismatch by only rendering client-side content after mount
@@ -183,18 +229,18 @@ export default function HeroSection() {
   useEffect(() => {
     const fetchHeroSettings = async () => {
       try {
-        const res = await fetch('/api/site-settings/hero');
+        const res = await fetch("/api/site-settings/hero");
         if (res.ok) {
           const data = await res.json();
           if (data.success) {
             setHeroSettings({
-              video_url: data.video_url || '/file.mp4',
-              poster_url: data.poster_url || '/bgn.png',
+              video_url: data.video_url || "/file.mp4",
+              poster_url: data.poster_url || "/bgn.png",
             });
           }
         }
       } catch (error) {
-        console.error('Error fetching hero settings:', error);
+        console.error("Error fetching hero settings:", error);
       }
     };
     fetchHeroSettings();
@@ -214,9 +260,12 @@ export default function HeroSection() {
           const data = await res.json();
           if (data.user && data.user.membership_type === "paid") {
             // Fetch full membership data
-            const membershipRes = await fetch("/api/dashboard/membership-info", {
-              credentials: "include",
-            });
+            const membershipRes = await fetch(
+              "/api/dashboard/membership-info",
+              {
+                credentials: "include",
+              },
+            );
 
             if (membershipRes.ok) {
               const membershipData = await membershipRes.json();
@@ -263,13 +312,13 @@ export default function HeroSection() {
   // Fetch events for badge modal
   const fetchBadgeEvents = async () => {
     try {
-      const res = await fetch('/api/event/public');
+      const res = await fetch("/api/event/public");
       if (res.ok) {
         const data = await res.json();
         setBadgeEvents(data.events || []);
       }
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error("Error fetching events:", error);
     }
   };
 
@@ -284,30 +333,34 @@ export default function HeroSection() {
 
     try {
       // First try to get approved speaker badge
-      const badgeRes = await fetch(`/api/speaker-badge/verify?event_id=${badgeFormData.event_id}&email=${encodeURIComponent(badgeFormData.email)}`);
+      const badgeRes = await fetch(
+        `/api/speaker-badge/verify?event_id=${badgeFormData.event_id}&email=${encodeURIComponent(badgeFormData.email)}`,
+      );
 
       if (badgeRes.ok) {
         const data = await badgeRes.json();
         setBadgeData(data);
-        setBadgeStatus('approved');
+        setBadgeStatus("approved");
       } else {
         // Check if there's a pending/rejected request
-        const checkRes = await fetch(`/api/events/speaker-request/check?event_id=${badgeFormData.event_id}&email=${encodeURIComponent(badgeFormData.email)}`);
+        const checkRes = await fetch(
+          `/api/events/speaker-request/check?event_id=${badgeFormData.event_id}&email=${encodeURIComponent(badgeFormData.email)}`,
+        );
 
         if (checkRes.ok) {
           const checkData = await checkRes.json();
           if (checkData.exists) {
             setBadgeStatus(checkData.status);
           } else {
-            setBadgeStatus('not_found');
+            setBadgeStatus("not_found");
           }
         } else {
-          setBadgeStatus('not_found');
+          setBadgeStatus("not_found");
         }
       }
     } catch (error) {
-      console.error('Error verifying badge:', error);
-      setBadgeStatus('error');
+      console.error("Error verifying badge:", error);
+      setBadgeStatus("error");
     } finally {
       setBadgeVerifying(false);
     }
@@ -315,11 +368,11 @@ export default function HeroSection() {
 
   // Handle badge print
   const handleBadgePrint = () => {
-    const printContent = document.getElementById('speaker-badge-print');
+    const printContent = document.getElementById("speaker-badge-print");
     if (!printContent) return;
 
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    
+    const printWindow = window.open("", "_blank", "width=800,height=600");
+
     const badgeHTML = `
       <!DOCTYPE html>
       <html>
@@ -524,34 +577,46 @@ export default function HeroSection() {
             
             <div class="speaker-title">
               
-              <div class="category">${(badgeData?.speaker?.category || 'SPEAKER').toUpperCase()}</div>
+              <div class="category">${(badgeData?.speaker?.category || "SPEAKER").toUpperCase()}</div>
             </div>
             
             <div class="speaker-info">
               <div class="speaker-name">${badgeData?.speaker?.full_name?.toUpperCase()}</div>
-              <div class="speaker-title-text">${badgeData?.speaker?.speaker_title || 'Professional Speaker'}</div>
-              <div class="speaker-designation">${badgeData?.speaker?.designation || ''}</div>
+              <div class="speaker-title-text">${badgeData?.speaker?.speaker_title || "Professional Speaker"}</div>
+              <div class="speaker-designation">${badgeData?.speaker?.designation || ""}</div>
             </div>
             
             <div class="event-info">
               <div class="event-title">${badgeData?.event?.title}</div>
               <div class="event-details">
-                <div class="event-date">Start: ${badgeData?.event?.start_datetime ? new Date(badgeData.event.start_datetime).toLocaleDateString('en-BH', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  timeZone: 'Asia/Bahrain'
-                }) : ''}</div>
-                ${badgeData?.event?.end_datetime ? `<div class="event-end-date">End: ${new Date(badgeData.event.end_datetime).toLocaleDateString('en-BH', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  timeZone: 'Asia/Bahrain'
-                })}</div>` : ''}
-                ${badgeData?.event?.event_agendas && badgeData.event.event_agendas.length > 0 ? `<div class="event-agendas">Total Agendas: ${badgeData.event.event_agendas.length}</div>` : ''}
-                ${badgeData?.event?.venue_name ? `<div class="event-venue">${badgeData.event.venue_name}</div>` : ''}
+                <div class="event-date">Start: ${
+                  badgeData?.event?.start_datetime
+                    ? new Date(
+                        badgeData.event.start_datetime,
+                      ).toLocaleDateString("en-BH", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        timeZone: "Asia/Bahrain",
+                      })
+                    : ""
+                }</div>
+                ${
+                  badgeData?.event?.end_datetime
+                    ? `<div class="event-end-date">End: ${new Date(
+                        badgeData.event.end_datetime,
+                      ).toLocaleDateString("en-BH", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        timeZone: "Asia/Bahrain",
+                      })}</div>`
+                    : ""
+                }
+                ${badgeData?.event?.event_agendas && badgeData.event.event_agendas.length > 0 ? `<div class="event-agendas">Total Agendas: ${badgeData.event.event_agendas.length}</div>` : ""}
+                ${badgeData?.event?.venue_name ? `<div class="event-venue">${badgeData.event.venue_name}</div>` : ""}
               </div>
             </div>
             
@@ -571,7 +636,7 @@ export default function HeroSection() {
               speaker_name: '${badgeData?.speaker?.full_name}',
               event_id: '${badgeData?.event?.id}',
               event_title: '${badgeData?.event?.title}',
-              category: '${(badgeData?.speaker?.category || 'SPEAKER').toUpperCase()}'
+              category: '${(badgeData?.speaker?.category || "SPEAKER").toUpperCase()}'
             });
             
             const qr = qrcode(0, 'M');
@@ -589,7 +654,7 @@ export default function HeroSection() {
         </body>
       </html>
     `;
-    
+
     printWindow.document.write(badgeHTML);
     printWindow.document.close();
   };
@@ -623,17 +688,17 @@ export default function HeroSection() {
             <div className="absolute inset-0">
               {particles.length > 0
                 ? particles.map((particle) => (
-                  <div
-                    key={particle.id}
-                    className="absolute w-1 h-1 bg-[#AE9B66]/20 rounded-full animate-float"
-                    style={{
-                      left: `${particle.left}%`,
-                      top: `${particle.top}%`,
-                      animationDelay: `${particle.animationDelay}s`,
-                      animationDuration: `${particle.animationDuration}s`,
-                    }}
-                  />
-                ))
+                    <div
+                      key={particle.id}
+                      className="absolute w-1 h-1 bg-[#AE9B66]/20 rounded-full animate-float"
+                      style={{
+                        left: `${particle.left}%`,
+                        top: `${particle.top}%`,
+                        animationDelay: `${particle.animationDelay}s`,
+                        animationDuration: `${particle.animationDuration}s`,
+                      }}
+                    />
+                  ))
                 : null}
             </div>
           )}
@@ -657,8 +722,9 @@ export default function HeroSection() {
             </h1>
 
             <p className="text-lg md:text-xl text-gray-700 leading-relaxed">
-              Join Bahrain &apos; s premier dental community. Access exclusive events,
-              continuous education, and professional networking opportunities.
+              Join Bahrain &apos; s premier dental community. Access exclusive
+              events, continuous education, and professional networking
+              opportunities.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -677,34 +743,24 @@ export default function HeroSection() {
                 <Calendar className="mr-2 w-5 h-5" />
                 View Events
               </button>
-
-             
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
               <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                 <div className="text-2xl font-bold text-[#AE9B66]">350+</div>
-                <div className="text-sm text-gray-600">
-                  Members
-                </div>
+                <div className="text-sm text-gray-600">Members</div>
               </div>
               <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                 <div className="text-2xl font-bold text-[#AE9B66]">50+</div>
-                <div className="text-sm text-gray-600">
-                  Events
-                </div>
+                <div className="text-sm text-gray-600">Events</div>
               </div>
               <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                 <div className="text-2xl font-bold text-[#AE9B66]">100+</div>
-                <div className="text-sm text-gray-600">
-                  CME Certificate
-                </div>
+                <div className="text-sm text-gray-600">CME Certificate</div>
               </div>
               <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                 <div className="text-2xl font-bold text-[#AE9B66]">30+</div>
-                <div className="text-sm text-gray-600">
-                  Years
-                </div>
+                <div className="text-sm text-gray-600">Years</div>
               </div>
             </div>
           </div>
@@ -715,8 +771,9 @@ export default function HeroSection() {
               {/* Flippable Card Container */}
               <div className="relative w-full max-w-md sm:max-w-md perspective-1000">
                 <div
-                  className={`relative w-full transition-transform duration-700  ${CARD_HEIGHT} ${isFlipped ? "rotate-y-180" : ""
-                    }`}
+                  className={`relative w-full transition-transform duration-700  ${CARD_HEIGHT} ${
+                    isFlipped ? "rotate-y-180" : ""
+                  }`}
                   onClick={() => setIsFlipped(!isFlipped)}
                   style={{ transformStyle: "preserve-3d" }}
                 >
@@ -726,7 +783,11 @@ export default function HeroSection() {
                     style={{ backfaceVisibility: "hidden" }}
                   >
                     <MembershipCard
-                      user={!loading && user && user.membership_type === "paid" ? user : dummyMemberData}
+                      user={
+                        !loading && user && user.membership_type === "paid"
+                          ? user
+                          : dummyMemberData
+                      }
                       qrRef={qrRef}
                     />
                   </div>
@@ -750,18 +811,30 @@ export default function HeroSection() {
                               <QRCodeCanvas
                                 value={JSON.stringify({
                                   type: "MEMBERSHIP_VERIFICATION",
-                                  membership_id: (!loading && user && user.membership_type === "paid")
-                                    ? user.membership_code
-                                    : dummyMemberData.membership_code,
-                                  member_name: (!loading && user && user.membership_type === "paid")
-                                    ? user.full_name
-                                    : dummyMemberData.full_name,
-                                  member_type: (!loading && user && user.membership_type === "paid")
-                                    ? user.membership_type
-                                    : dummyMemberData.membership_type,
-                                  expiry_date: (!loading && user && user.membership_type === "paid")
-                                    ? user.membership_expiry_date
-                                    : dummyMemberData.membership_expiry_date,
+                                  membership_id:
+                                    !loading &&
+                                    user &&
+                                    user.membership_type === "paid"
+                                      ? user.membership_code
+                                      : dummyMemberData.membership_code,
+                                  member_name:
+                                    !loading &&
+                                    user &&
+                                    user.membership_type === "paid"
+                                      ? user.full_name
+                                      : dummyMemberData.full_name,
+                                  member_type:
+                                    !loading &&
+                                    user &&
+                                    user.membership_type === "paid"
+                                      ? user.membership_type
+                                      : dummyMemberData.membership_type,
+                                  expiry_date:
+                                    !loading &&
+                                    user &&
+                                    user.membership_type === "paid"
+                                      ? user.membership_expiry_date
+                                      : dummyMemberData.membership_expiry_date,
                                 })}
                                 size={80}
                                 level="H"
@@ -786,9 +859,7 @@ export default function HeroSection() {
                             <p className="text-xs text-gray-400 uppercase mb-1">
                               Contact Information
                             </p>
-                            <p className="text-sm">
-                              info@bds-bh.org
-                            </p>
+                            <p className="text-sm">info@bds-bh.org</p>
                           </div>
                         </div>
                       </div>
@@ -882,7 +953,6 @@ export default function HeroSection() {
         }
       `}</style>
 
-
       {/* Join choice modal */}
       <Modal
         open={showJoinChoice}
@@ -892,7 +962,8 @@ export default function HeroSection() {
       >
         <div className="space-y-6">
           <p className="text-gray-700">
-            Do you already have an account, or would you like to register as a new member?
+            Do you already have an account, or would you like to register as a
+            new member?
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
@@ -950,7 +1021,7 @@ export default function HeroSection() {
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: "spring", duration: 0.5 }}
               className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
               <div className="bg-gradient-to-r from-[#03215F] to-[#1a3a7f] p-6 rounded-t-2xl">
@@ -960,8 +1031,12 @@ export default function HeroSection() {
                       <BadgeCheck className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-white">Speaker Badge</h2>
-                      <p className="text-white/70 text-sm">Verify your speaker status</p>
+                      <h2 className="text-xl font-bold text-white">
+                        Speaker Badge
+                      </h2>
+                      <p className="text-white/70 text-sm">
+                        Verify your speaker status
+                      </p>
                     </div>
                   </div>
                   <button
@@ -978,25 +1053,41 @@ export default function HeroSection() {
                 {!badgeStatus ? (
                   <form onSubmit={handleBadgeVerify} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Select Event</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Event
+                      </label>
                       <select
                         value={badgeFormData.event_id}
-                        onChange={e => setBadgeFormData(prev => ({ ...prev, event_id: e.target.value }))}
+                        onChange={(e) =>
+                          setBadgeFormData((prev) => ({
+                            ...prev,
+                            event_id: e.target.value,
+                          }))
+                        }
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
                         required
                       >
                         <option value="">Choose an event...</option>
-                        {badgeEvents.map(event => (
-                          <option key={event.id} value={event.id}>{event.title}</option>
+                        {badgeEvents.map((event) => (
+                          <option key={event.id} value={event.id}>
+                            {event.title}
+                          </option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address
+                      </label>
                       <input
                         type="email"
                         value={badgeFormData.email}
-                        onChange={e => setBadgeFormData(prev => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) =>
+                          setBadgeFormData((prev) => ({
+                            ...prev,
+                            email: e.target.value,
+                          }))
+                        }
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
                         placeholder="Enter your registered email"
                         required
@@ -1020,83 +1111,128 @@ export default function HeroSection() {
                       )}
                     </button>
                   </form>
-                ) : badgeStatus === 'approved' && badgeData ? (
+                ) : badgeStatus === "approved" && badgeData ? (
                   <div className="space-y-6">
                     {/* Enhanced Badge Preview - Matching Admin Design */}
-                    <div id="speaker-badge-print" className="w-full flex justify-center">
+                    <div
+                      id="speaker-badge-print"
+                      className="w-full flex justify-center"
+                    >
                       <div className="w-[320px] h-[500px] bg-gradient-to-br from-[#03215F] to-[#1a3a7f] rounded-2xl p-5 text-white relative overflow-hidden shadow-2xl">
                         {/* Background decorations */}
                         <div className="absolute top-[-80px] right-[-80px] w-48 h-48 bg-white/5 rounded-full"></div>
                         <div className="absolute bottom-[-100px] left-[-100px] w-64 h-64 bg-white/[0.03] rounded-full"></div>
-                        
+
                         {/* Content */}
                         <div className="relative z-10 h-full flex flex-col">
                           {/* Header with logo */}
                           <div className="flex items-center gap-3 mb-4">
                             <div className="w-10 h-10 bg-white rounded-xl p-1.5 flex items-center justify-center">
-                              <img src="/logo.png" alt="BDS" className="w-full h-full object-contain" onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<span class="text-[#03215F] font-bold text-xs">BDS</span>'; }} />
+                              <img
+                                src="/logo.png"
+                                alt="BDS"
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  e.target.parentElement.innerHTML =
+                                    '<span class="text-[#03215F] font-bold text-xs">BDS</span>';
+                                }}
+                              />
                             </div>
                             <div>
-                              <h3 className="text-xs font-bold tracking-wide">BAHRAIN DENTAL SOCIETY</h3>
-                              <p className="text-[10px] opacity-80 tracking-wider">OFFICIAL SPEAKER</p>
+                              <h3 className="text-xs font-bold tracking-wide">
+                                BAHRAIN DENTAL SOCIETY
+                              </h3>
+                              <p className="text-[10px] opacity-80 tracking-wider">
+                                OFFICIAL SPEAKER
+                              </p>
                             </div>
                           </div>
-                          
+
                           {/* BIG Speaker title and category */}
                           <div className="text-center mb-4 mt-0">
-                           
                             <div className="inline-block bg-white/20 px-5 py-2 rounded-full">
                               <span className="text-lg font-bold tracking-widest uppercase">
-                                {badgeData.speaker?.category || 'SPEAKER'}
+                                {badgeData.speaker?.category || "SPEAKER"}
                               </span>
                             </div>
                           </div>
-                          
+
                           {/* Speaker info */}
                           <div className="text-center mb-2">
-                            <h4 className="text-xl font-bold mb-1 uppercase tracking-wide">{badgeData.speaker?.full_name}</h4>
-                            <p className="text-sm opacity-90 mb-0.5">{badgeData.speaker?.speaker_title || 'Professional Speaker'}</p>
-                            <p className="text-xs opacity-80">{badgeData.speaker?.designation || ''}</p>
+                            <h4 className="text-xl font-bold mb-1 uppercase tracking-wide">
+                              {badgeData.speaker?.full_name}
+                            </h4>
+                            <p className="text-sm opacity-90 mb-0.5">
+                              {badgeData.speaker?.speaker_title ||
+                                "Professional Speaker"}
+                            </p>
+                            <p className="text-xs opacity-80">
+                              {badgeData.speaker?.designation || ""}
+                            </p>
                           </div>
-                          
+
                           {/* Event info */}
                           <div className="bg-white/10 rounded-xl p-3 mb-3 border border-white/20">
-                            <p className="font-semibold text-center capitalize text-sm mb-2 leading-tight">{badgeData.event?.title}</p>
+                            <p className="font-semibold text-center capitalize text-sm mb-2 leading-tight">
+                              {badgeData.event?.title}
+                            </p>
                             <div className="text-[11px] space-y-1">
                               <p className="font-medium">
-                                Start: {badgeData.event?.start_datetime && new Date(badgeData.event.start_datetime).toLocaleDateString('en-BH', {
-                                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bahrain'
-                                })}
+                                Start:{" "}
+                                {badgeData.event?.start_datetime &&
+                                  new Date(
+                                    badgeData.event.start_datetime,
+                                  ).toLocaleDateString("en-BH", {
+                                    weekday: "long",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                    timeZone: "Asia/Bahrain",
+                                  })}
                               </p>
                               {badgeData.event?.end_datetime && (
                                 <p className="opacity-80">
-                                  End: {new Date(badgeData.event.end_datetime).toLocaleDateString('en-BH', {
-                                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Bahrain'
+                                  End:{" "}
+                                  {new Date(
+                                    badgeData.event.end_datetime,
+                                  ).toLocaleDateString("en-BH", {
+                                    weekday: "long",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                    timeZone: "Asia/Bahrain",
                                   })}
                                 </p>
                               )}
-                              {badgeData.event?.event_agendas && badgeData.event.event_agendas.length > 0 && (
-                                <p className="opacity-90 font-medium">
-                                  Total Agendas: {badgeData.event.event_agendas.length}
-                                </p>
-                              )}
+                              {badgeData.event?.event_agendas &&
+                                badgeData.event.event_agendas.length > 0 && (
+                                  <p className="opacity-90 font-medium">
+                                    Total Agendas:{" "}
+                                    {badgeData.event.event_agendas.length}
+                                  </p>
+                                )}
                               {badgeData.event?.venue_name && (
-                                <p className="opacity-80">{badgeData.event.venue_name}</p>
+                                <p className="opacity-80">
+                                  {badgeData.event.venue_name}
+                                </p>
                               )}
                             </div>
                           </div>
-                          
+
                           {/* QR Code */}
                           <div className="flex justify-center mt-auto">
                             <div className="bg-white p-1.5 rounded-lg shadow-lg">
                               <QRCodeCanvas
                                 value={JSON.stringify({
-                                  type: 'SPEAKER_VERIFICATION',
+                                  type: "SPEAKER_VERIFICATION",
                                   speaker_id: badgeData.speaker?.id,
                                   speaker_name: badgeData.speaker?.full_name,
                                   event_id: badgeData.event?.id,
                                   event_title: badgeData.event?.title,
-                                  category: (badgeData.speaker?.category || 'SPEAKER').toUpperCase()
+                                  category: (
+                                    badgeData.speaker?.category || "SPEAKER"
+                                  ).toUpperCase(),
                                 })}
                                 size={100}
                                 level="M"
@@ -1120,7 +1256,7 @@ export default function HeroSection() {
                         onClick={() => {
                           setBadgeStatus(null);
                           setBadgeData(null);
-                          setBadgeFormData({ event_id: '', email: '' });
+                          setBadgeFormData({ event_id: "", email: "" });
                         }}
                         className="px-6 py-3 border-2 border-gray-300 rounded-xl font-semibold hover:bg-gray-50 transition-all"
                       >
@@ -1130,38 +1266,54 @@ export default function HeroSection() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    {badgeStatus === 'pending' && (
+                    {badgeStatus === "pending" && (
                       <div className="space-y-4">
                         <div className="w-16 h-16 bg-yellow-100 rounded-full mx-auto flex items-center justify-center">
                           <Clock className="w-8 h-8 text-yellow-600" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900">Application Pending</h3>
-                        <p className="text-gray-600">Your speaker application is currently under review. You will receive an email once it&apos;s approved.</p>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          Application Pending
+                        </h3>
+                        <p className="text-gray-600">
+                          Your speaker application is currently under review.
+                          You will receive an email once it&apos;s approved.
+                        </p>
                       </div>
                     )}
-                    {badgeStatus === 'rejected' && (
+                    {badgeStatus === "rejected" && (
                       <div className="space-y-4">
                         <div className="w-16 h-16 bg-red-100 rounded-full mx-auto flex items-center justify-center">
                           <AlertCircle className="w-8 h-8 text-red-600" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900">Application Rejected</h3>
-                        <p className="text-gray-600">Unfortunately, your speaker application was not approved. Please contact us for more information.</p>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          Application Rejected
+                        </h3>
+                        <p className="text-gray-600">
+                          Unfortunately, your speaker application was not
+                          approved. Please contact us for more information.
+                        </p>
                       </div>
                     )}
-                    {(badgeStatus === 'not_found' || badgeStatus === 'error') && (
+                    {(badgeStatus === "not_found" ||
+                      badgeStatus === "error") && (
                       <div className="space-y-4">
                         <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto flex items-center justify-center">
                           <AlertCircle className="w-8 h-8 text-gray-600" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900">No Application Found</h3>
-                        <p className="text-gray-600">We couldn&apos;t find a speaker application with this email for the selected event.</p>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          No Application Found
+                        </h3>
+                        <p className="text-gray-600">
+                          We couldn&apos;t find a speaker application with this
+                          email for the selected event.
+                        </p>
                       </div>
                     )}
                     <button
                       onClick={() => {
                         setBadgeStatus(null);
                         setBadgeData(null);
-                        setBadgeFormData({ event_id: '', email: '' });
+                        setBadgeFormData({ event_id: "", email: "" });
                       }}
                       className="mt-6 px-6 py-3 bg-[#03215F] text-white rounded-xl font-semibold hover:bg-[#03215F]/90 transition-all"
                     >

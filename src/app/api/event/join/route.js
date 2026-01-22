@@ -28,7 +28,7 @@ export async function POST(req) {
         
         const { data: user, error } = await supabase
           .from("users")
-          .select("id, membership_type")
+          .select("id, membership_type, membership_status, membership_expiry_date")
           .eq("id", decoded.user_id)
           .single();
         
@@ -92,7 +92,9 @@ export async function POST(req) {
     }
 
     /* ---------- PRICE CALCULATION ---------- */
-    const isMember = loggedInUser.membership_type === "paid";
+    const now = new Date();
+    const membershipValid = loggedInUser && loggedInUser.membership_type === "paid" && loggedInUser.membership_status === "active" && (!loggedInUser.membership_expiry_date || new Date(loggedInUser.membership_expiry_date) > now);
+    const isMember = membershipValid;
     let price_paid = 0;
 
     if (event.is_paid) {

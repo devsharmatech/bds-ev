@@ -414,9 +414,12 @@ export async function POST(request) {
         // Create subscription record if subscription plan is provided
         if (subscriptionPlanId && subscriptionPlanName) {
           // Calculate expiry date (1 year from now)
-          const expiresAt = new Date();
-          expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-
+          const startedAt = data.membership_date && parseDate(data.membership_date)
+            ? new Date(parseDate(data.membership_date)).toISOString()
+            : new Date().toISOString();
+          const expiresAt = data.membership_expiry_date && parseDate(data.membership_expiry_date)
+            ? new Date(parseDate(data.membership_expiry_date)).toISOString()
+            : (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString(); })();
           const { error: subscriptionError } = await supabase
             .from('user_subscriptions')
             .insert({
@@ -424,8 +427,8 @@ export async function POST(request) {
               subscription_plan_id: subscriptionPlanId,
               subscription_plan_name: subscriptionPlanName,
               status: 'active',
-              started_at: new Date().toISOString(),
-              expires_at: expiresAt.toISOString(),
+              started_at: startedAt,
+              expires_at: expiresAt,
               registration_paid: true,
               annual_paid: true
             });

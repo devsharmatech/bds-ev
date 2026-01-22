@@ -108,7 +108,7 @@ export async function POST(request) {
     const { data: user, error: userError } = await supabase
       .from('users')
       .select(`
-        id, full_name, email, phone, mobile, membership_type,
+        id, full_name, email, phone, mobile, membership_type, membership_status, membership_expiry_date,
         member_profiles!member_profiles_user_id_fkey(category, position, specialty)
       `)
       .eq('id', user_id)
@@ -155,8 +155,10 @@ export async function POST(request) {
     const priceInfo = getUserEventPrice(event, user);
     const amount = priceInfo.price;
     
-    // Determine if user is a BDS member based on pricing category
-    const isMember = priceInfo.category === 'member' || user.membership_type === 'paid';
+    // Determine if user is a BDS member based on pricing category and active membership
+    const now = new Date();
+    const membershipValid = user && user.membership_type === 'paid' && user.membership_status === 'active' && (!user.membership_expiry_date || new Date(user.membership_expiry_date) > now);
+    const isMember = priceInfo.category === 'member' || membershipValid;
 
     console.log('[EVENT-EXECUTE-PAYMENT] Price calculated:', {
       user_category: priceInfo.category,

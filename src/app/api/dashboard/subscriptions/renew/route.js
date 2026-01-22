@@ -22,8 +22,8 @@ export async function POST(request) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.user_id;
 
-    // Get user's current active subscription
-    const { data: currentSubscription, error: subError } = await supabase
+    // Get user's current active subscription; if none, fall back to most recent subscription
+    let { data: currentSubscription, error: subError } = await supabase
       .from('user_subscriptions')
       .select(`
         *,
@@ -35,11 +35,44 @@ export async function POST(request) {
       .limit(1)
       .maybeSingle();
 
-    if (subError || !currentSubscription) {
+    if (subError) {
+      console.error('Error fetching active subscription:', subError);
       return NextResponse.json(
-        { success: false, message: 'No active subscription found. Please upgrade instead.' },
-        { status: 404 }
+        { success: false, message: 'Failed to fetch subscription' },
+        { status: 500 }
       );
+    }
+
+    if (!currentSubscription) {
+      // No active subscription found, try to fetch the most recent subscription regardless of status
+      const { data: lastSub, error: lastErr } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          subscription_plan:subscription_plans (*)
+        `)
+        .eq('user_id', userId)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lastErr) {
+        console.error('Error fetching last subscription:', lastErr);
+        return NextResponse.json(
+          { success: false, message: 'Failed to fetch subscription' },
+          { status: 500 }
+        );
+      }
+
+      if (!lastSub) {
+        return NextResponse.json(
+          { success: false, message: 'No subscription found. Please upgrade instead.' },
+          { status: 404 }
+        );
+      }
+
+      // Use the last subscription as the target for renewal
+      currentSubscription = lastSub;
     }
 
     const plan = currentSubscription.subscription_plan;

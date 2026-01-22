@@ -50,7 +50,8 @@ import PaymentMethodModal from "@/components/modals/PaymentMethodModal";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 
 // Membership Card Component
-function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, planName }) {
+function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, planName, isExpired = false }) {
+  
   if (!user) return null;
 
   const containerRef = useRef(null);
@@ -179,17 +180,17 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, pla
             fontWeight: 700,
             textTransform: 'uppercase',
             borderRadius: 9999,
-            backgroundColor: user.membership_status === 'active' ? 'rgba(22,163,74,0.18)' : 'rgba(184,53,45,0.18)',
-            border: `1px solid ${user.membership_status === 'active' ? 'rgba(22,163,74,0.3)' : 'rgba(184,53,45,0.3)'}`,
-            color: user.membership_status === 'active' ? '#16a34a' : '#b8352d',
+            backgroundColor: !isExpired && user.membership_status === 'active' ? 'rgba(22,163,74,0.18)' : 'rgba(184,53,45,0.18)',
+            border: `1px solid ${!isExpired && user.membership_status === 'active' ? 'rgba(22,163,74,0.3)' : 'rgba(184,53,45,0.3)'}`,
+            color: !isExpired && user.membership_status === 'active' ? '#16a34a' : '#b8352d',
             marginTop: "7px"
           }}
         >
           <span style={{
             width: 8, height: 8, borderRadius: '50%',
-            backgroundColor: user.membership_status === 'active' ? '#16a34a' : '#b8352d'
+            backgroundColor: !isExpired && user.membership_status === 'active' ? '#16a34a' : '#b8352d'
           }} />
-          {user.membership_status || 'Active'}
+          {isExpired ? 'Inactive' : (user.membership_status || 'Active')}
         </span>
       </div>
 
@@ -223,16 +224,17 @@ function MembershipCard({ user, qrRef, isFreeMember = false, onUpgradeClick, pla
           </div>
 
           <div style={{ marginTop: 14 }}>
+            
             <p style={{ fontSize: 'clamp(9px, 2.6vw, 11px)', color: '#C7D7F2', textTransform: 'uppercase', margin: 0, letterSpacing: '0.1em' }}>Type</p>
             <p style={{ fontSize: 'clamp(13px, 3.8vw, 14px)', color: 'gold', fontWeight: 700, margin: '4px 0 0 0', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-              {((planName || (user.membership_type === 'paid' ? 'Premium' : 'Standard')) + '').toUpperCase()}
+              {((planName || (user.membership_type == 'paid' ? planName : 'Free Membership')) + '').toUpperCase()}
             </p>
           </div>
         </div>
 
         {/* QR Code */}
         <div ref={qrRef} style={{ backgroundColor: '#ffffff', borderRadius: 14, padding: 6, flexShrink: 0, boxShadow: '0 6px 20px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.06)', alignSelf: isNarrow ? 'flex-start' : 'auto', marginTop: isNarrow ? 10 : 0 }}>
-          {isFreeMember ? (
+          {(isFreeMember || isExpired) ? (
             <div style={{
               width: 80, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center',
               backgroundColor: '#E5E7EB', borderRadius: 12
@@ -326,10 +328,12 @@ export default function MembershipCardPage() {
         const data = await res.json();
         if (data.success) {
           setUser(data.user);
+          
           const derived =
             data?.user?.current_subscription_plan_display_name ||
             data?.user?.current_subscription_plan_name ||
             (data?.user?.membership_type === "paid" ? "Premium" : "Standard");
+          
           setPlanName(derived || "");
         }
       }
@@ -358,6 +362,7 @@ export default function MembershipCardPage() {
             user?.current_subscription_plan_display_name ||
             user?.current_subscription_plan_name ||
             (user?.membership_type === "paid" ? "Premium" : "Standard");
+            console.log("Derived plan name:", display);
           if (display) setPlanName(display);
         }
       }
@@ -455,7 +460,16 @@ export default function MembershipCardPage() {
   };
 
   const handleRenew = async () => {
-    if (processing || !currentSubscription) return;
+    if (processing) return;
+
+    // If we have an active/current subscription locally, ensure it's expired before attempting renew.
+    if (currentSubscription) {
+      const expired = currentSubscription?.expires_at && new Date(currentSubscription.expires_at) < new Date();
+      if (!expired) {
+        toast.error("Your membership is not expired yet.");
+        return;
+      }
+    }
 
     setProcessing(true);
     setLoadingPaymentMethods(true);
@@ -1436,6 +1450,7 @@ export default function MembershipCardPage() {
                     isFreeMember={isFreeMember}
                     onUpgradeClick={handleUpgradeClick}
                     planName={planName}
+                    isExpired={isExpired}
                   />
                 </div>
 
@@ -1688,7 +1703,7 @@ export default function MembershipCardPage() {
                       : "text-[#03215F]"
                       }`}
                   >
-                    {planName || (!isFreeMember ? "Premium" : "Standard")}
+                    {planName || (!isFreeMember ? planName : "Free Membership")}
                   </span>
                 </div>
 
@@ -1699,16 +1714,14 @@ export default function MembershipCardPage() {
                       Status
                     </span>
                   </div>
-                  <span
-                    className={`font-semibold ${user?.membership_status === "active"
-                      ? "text-[#AE9B66]"
-                      : "text-[#b8352d]"
-                      }`}
-                  >
-                    {user?.membership_status === "active"
-                      ? "Active"
-                      : "Inactive"}
-                  </span>
+                  {(() => {
+                    const displayIsActive = !isExpired && user?.membership_status === "active";
+                    return (
+                      <span className={`font-semibold ${displayIsActive ? "text-[#AE9B66]" : "text-[#b8352d]"}`}>
+                        {displayIsActive ? "Active" : "Inactive"}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg">
@@ -1785,7 +1798,7 @@ export default function MembershipCardPage() {
                   <button
                     onClick={handleUpgradeDowngradeClick}
                     disabled={processing}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full hidden px-4 py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     <ArrowRight className="w-5 h-5" />
                     Upgrade/Downgrade Plan

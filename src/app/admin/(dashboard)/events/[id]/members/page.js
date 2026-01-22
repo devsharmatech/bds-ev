@@ -1281,30 +1281,38 @@ export default function EventMembersPage() {
                             >
                               <Eye className="w-4 h-4 text-[#03215F]" />
                             </button>
-                            <button
-                              onClick={() => handlePrintBadge(member)}
-                              className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors hover:scale-110 active:scale-95"
-                              title="Print Badge"
-                            >
-                              <Printer className="w-4 h-4 text-white" />
-                            </button>
-                            <button
-                              onClick={() => handleCheckInOut(member)}
-                              className={`p-2 rounded-lg transition-colors hover:scale-110 active:scale-95 ${
-                                member.checked_in
-                                  ? "bg-[#b8352d] text-white hover:bg-[#b8352d]/90"
-                                  : "bg-[#AE9B66] text-white hover:bg-[#AE9B66]/90"
-                              }`}
-                              title={
-                                member.checked_in ? "Check Out" : "Check In"
-                              }
-                            >
-                              {member.checked_in ? (
-                                <UserX className="w-4 h-4 text-white" />
-                              ) : (
-                                <UserCheck className="w-4 h-4 text-white" />
-                              )}
-                            </button>
+                            {(!event?.is_paid || (Number(member.price_paid) > 0)) && (
+                              <button
+                                onClick={() => handlePrintBadge(member)}
+                                className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors hover:scale-110 active:scale-95"
+                                title="Print Badge"
+                              >
+                                <Printer className="w-4 h-4 text-white" />
+                              </button>
+                            )}
+                            {(() => {
+                              const paymentPending = event?.is_paid && (!member.price_paid || member.price_paid <= 0);
+                              const checkInClass = member.checked_in
+                                ? "p-2 rounded-lg bg-[#b8352d] text-white hover:bg-[#b8352d]/90 transition-colors hover:scale-110 active:scale-95"
+                                : paymentPending
+                                ? "p-2 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed"
+                                : "p-2 rounded-lg bg-[#AE9B66] text-white hover:bg-[#AE9B66]/90 transition-colors hover:scale-110 active:scale-95";
+
+                              return (
+                                <button
+                                  onClick={() => handleCheckInOut(member)}
+                                  className={checkInClass}
+                                  title={member.checked_in ? "Check Out" : paymentPending ? "Payment Pending" : "Check In"}
+                                  disabled={paymentPending}
+                                >
+                                  {member.checked_in ? (
+                                    <UserX className="w-4 h-4 text-white" />
+                                  ) : (
+                                    <UserCheck className={`w-4 h-4 ${paymentPending ? "text-gray-500" : "text-white"}`} />
+                                  )}
+                                </button>
+                              );
+                            })()}
                             <button
                               onClick={() => handleDeleteClick(member)}
                               className="p-2 rounded-lg bg-[#b8352d] text-white hover:bg-[#b8352d]/90 transition-colors hover:scale-110 active:scale-95"

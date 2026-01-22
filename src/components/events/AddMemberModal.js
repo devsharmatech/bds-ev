@@ -73,10 +73,12 @@ export default function AddMemberModal({ eventId, event, onClose, onSuccess }) {
     setSearchQuery("");
     setSearchResults([]);
     
-    // Set default values based on user and event
+    // Set default values based on user and event, consider expiry/status
     let price = null;
+    const now = new Date();
+    const membershipValid = user.membership_type === 'paid' && user.membership_status === 'active' && (!user.membership_expiry_date || new Date(user.membership_expiry_date) > now);
     if (event?.is_paid) {
-      if (user.membership_type === 'paid' && event.member_price) {
+      if (membershipValid && event.member_price) {
         price = event.member_price;
       } else if (event.regular_price) {
         price = event.regular_price;
@@ -85,7 +87,7 @@ export default function AddMemberModal({ eventId, event, onClose, onSuccess }) {
 
     setFormData({
       price_paid: price,
-      is_member: user.membership_type === 'paid',
+      is_member: !!membershipValid,
     });
   };
 

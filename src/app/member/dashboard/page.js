@@ -84,6 +84,7 @@ export default function DashboardPage() {
   const [upcomingEvents, setUpcomingEvents] = useState([])
   const [recentActivities, setRecentActivities] = useState([])
   const [membershipDetails, setMembershipDetails] = useState(null)
+  const [currentSubscription, setCurrentSubscription] = useState(null)
   const [notifications, setNotifications] = useState([])
   const [isMobile, setIsMobile] = useState(false)
   const [planName, setPlanName] = useState('')
@@ -112,6 +113,7 @@ export default function DashboardPage() {
         })
         if (!res.ok) return
         const data = await res.json()
+        setCurrentSubscription(data.currentSubscription || null)
         const display =
           data?.currentSubscription?.subscription_plan?.display_name ||
           data?.currentSubscription?.subscription_plan_name ||
@@ -268,7 +270,8 @@ export default function DashboardPage() {
   }
 
   const isPremiumMember = user?.membership_type === 'paid'
-  const membershipExpired = user?.membership_expiry_date && new Date(user.membership_expiry_date) < new Date()
+  const membershipExpired = (!!(currentSubscription?.expires_at && new Date(currentSubscription.expires_at) < new Date())) || (user?.membership_expiry_date && new Date(user.membership_expiry_date) < new Date())
+  const displayIsActive = !membershipExpired && user?.membership_status === 'active'
   // planName is managed via state (derived from user/membership and refreshed via API)
 
   const dashboardStats = [
@@ -355,9 +358,9 @@ export default function DashboardPage() {
     { label: 'Position', value: user?.position, icon: GraduationCap },
     {
       label: 'Member Since',
-      value: (user?.membership_date || user?.created_at)
-        ? formatDate(user.membership_date || user.created_at)
-        : 'N/A',
+        value: (currentSubscription?.started_at || user?.membership_date || user?.created_at)
+          ? formatDate(currentSubscription?.started_at || user.membership_date || user.created_at)
+          : 'N/A',
       icon: CalendarDays
     },
     // Only show Membership ID for paid members
@@ -405,17 +408,17 @@ export default function DashboardPage() {
             )}
             
             <div className={`px-3 py-1.5 backdrop-blur-sm rounded-full text-xs md:text-sm flex items-center justify-center md:justify-start ${
-              user?.membership_status === 'active'
+              displayIsActive
                 ? 'bg-green-500/20 text-white'
                 : 'bg-[#b8352d]/20 text-white'
             }`}>
               <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full mr-1.5 md:mr-2 ${
-                user?.membership_status === 'active' ? 'bg-green-500' : 'bg-[#b8352d]'
+                displayIsActive ? 'bg-green-500' : 'bg-[#b8352d]'
               }`}></div>
-              {user?.membership_status === 'active' ? 'Active' : 'Inactive'}
+              {displayIsActive ? 'Active' : 'Inactive'}
             </div>
             
-            {user?.membership_expiry_date && (
+              {user?.membership_expiry_date && (
               <div className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-xs md:text-sm flex items-center justify-center md:justify-start">
                 <CalendarDays className="w-3 h-3 md:w-4 md:h-4 mr-1.5 md:mr-2" />
                 <span className="font-medium">Exp: {formatDate(user.membership_expiry_date)}</span>
@@ -555,6 +558,20 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
+          {/* Renewal Strip when expired */}
+          {membershipExpired && (
+            <div className="mt-3 p-3 rounded-lg bg-[#fff4f4] border border-[#f5c6c6] text-[#7b2121] flex items-center justify-between">
+              <div>
+                <strong>Your membership has expired.</strong>
+                <div className="text-sm">Renew now to restore access to premium features and your membership card.</div>
+              </div>
+              <div>
+                <Link href="/member/dashboard/subscriptions">
+                  <button className="px-4 py-2 bg-[#b8352d] text-white rounded-md font-semibold">Renew Membership</button>
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Upcoming Events - Mobile Optimized */}
           <div className="bg-white rounded-xl shadow-lg p-4 md:p-5 lg:p-6 border border-gray-200">
@@ -653,22 +670,22 @@ export default function DashboardPage() {
             
             <div className="space-y-3">
               <div className={`p-3 rounded-lg ${
-                user?.membership_status === 'active'
+                displayIsActive
                   ? 'bg-[#AE9B66]/20 border border-[#AE9B66]/30'
                   : 'bg-[#b8352d]/20 border border-[#b8352d]/30'
               }`}>
                 <div className="flex items-center">
                   <div className={`w-2 h-2 rounded-full mr-2 ${
-                    user?.membership_status === 'active' ? 'bg-[#AE9B66]' : 'bg-[#b8352d]'
+                    displayIsActive ? 'bg-[#AE9B66]' : 'bg-[#b8352d]'
                   }`}></div>
                   <span className="font-semibold text-sm md:text-base">
-                    {user?.membership_status === 'active' ? 'Active Membership' : 'Membership Inactive'}
+                    {displayIsActive ? 'Membership Active' : 'Membership Inactive'}
                   </span>
                 </div>
                 <p className="text-xs md:text-sm mt-1">
-                  {user?.membership_status === 'active' 
+                  {displayIsActive 
                     ? 'Your membership is currently active and valid'
-                    : 'Please contact support for assistance'}
+                    : 'Your membership has expired or is inactive. Please renew to regain benefits.'}
                 </p>
               </div>
               
