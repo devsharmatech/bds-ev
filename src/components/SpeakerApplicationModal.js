@@ -99,7 +99,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [abstractFile, setAbstractFile] = useState(null);
   const [articleFile, setArticleFile] = useState(null);
-  const [showDeclaration, setShowDeclaration] = useState(false);
+  const [showDeclaration, setShowDeclaration] = useState(true);
   const [profileImage, setProfileImage] = useState(null);
   const [profilePreview, setProfilePreview] = useState(null);
   const [bio, setBio] = useState("");
