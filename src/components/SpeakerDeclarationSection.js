@@ -18,18 +18,18 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
   const [expandedStatement, setExpandedStatement] = useState(null);
 
   return (
-    <div className="border-2 border-blue-200 rounded-xl p-6 mt-4 bg-gradient-to-b from-white to-blue-50 shadow-inner">
+    <div className="border-2 border-blue-200 rounded-xl p-4 sm:p-6 mt-4 bg-gradient-to-b from-white to-blue-50 shadow-inner">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 pb-4 border-b border-blue-100">
         <div className="flex items-center gap-3 mb-4 sm:mb-0">
           <div className="p-2 bg-blue-100 rounded-lg">
-            <FileText className="w-6 h-6 text-[#03215F]" />
+            <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-[#03215F]" />
           </div>
           <div>
-            <h4 className="font-bold text-[#03215F] text-lg">
+            <h4 className="font-bold text-[#03215F] text-base sm:text-lg">
               NHRA Speaker Declaration Form
             </h4>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               Please complete all required fields below
             </p>
           </div>
@@ -146,7 +146,7 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
             placeholder="Provide a brief summary of your presentation content, methodology, and expected outcomes..."
             required
           />
-          <div className="flex justify-between items-center mt-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 gap-1">
             <span className="text-xs text-gray-500">
               Minimum 100 characters recommended
             </span>
@@ -156,9 +156,9 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
           </div>
         </div>
 
-        {/* Declaration Statements - Mobile Responsive */}
+        {/* Declaration Statements - Enhanced Mobile Responsive */}
         <div className="mt-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
             <label className="block text-sm font-semibold text-gray-700">
               Declaration Statements <span className="text-red-500">*</span>
             </label>
@@ -174,104 +174,112 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
           
           {/* Desktop Table */}
           <div className="hidden md:block overflow-hidden rounded-lg border border-gray-300 shadow-sm">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                  <th className="border-b p-4 text-left text-sm font-semibold text-gray-700">Statement</th>
-                  <th className="border-b p-4 text-center text-sm font-semibold text-gray-700 w-24">Agree</th>
-                  <th className="border-b p-4 text-center text-sm font-semibold text-gray-700 w-24">Disagree</th>
-                </tr>
-              </thead>
-              <tbody>
-                {statements.map((statement, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                    <td className="border-b p-4 align-top">
-                      <div className="text-sm text-gray-700 leading-relaxed">
-                        <span className="font-medium text-blue-600 mr-2">{idx + 1}.</span>
-                        {statement}
-                      </div>
-                    </td>
-                    <td className="border-b p-4 text-center align-top">
-                      <div className="flex justify-center">
-                        <label className="cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`declaration_statement_${idx}`}
-                            value="agree"
-                            checked={declarationData[`declaration_statement_${idx}`] === 'agree'}
-                            onChange={onChange}
-                            className="hidden"
-                          />
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${declarationData[`declaration_statement_${idx}`] === 'agree'
-                              ? 'border-green-500 bg-green-500'
-                              : 'border-gray-300 hover:border-green-400'
-                            }`}
-                          >
-                            {declarationData[`declaration_statement_${idx}`] === 'agree' && (
-                              <CheckCircle className="w-4 h-4 text-white" />
-                            )}
-                          </div>
-                        </label>
-                      </div>
-                    </td>
-                    <td className="border-b p-4 text-center align-top">
-                      <div className="flex justify-center">
-                        <label className="cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`declaration_statement_${idx}`}
-                            value="disagree"
-                            checked={declarationData[`declaration_statement_${idx}`] === 'disagree'}
-                            onChange={onChange}
-                            className="hidden"
-                          />
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${declarationData[`declaration_statement_${idx}`] === 'disagree'
-                              ? 'border-red-500 bg-red-500'
-                              : 'border-gray-300 hover:border-red-400'
-                            }`}
-                          >
-                            {declarationData[`declaration_statement_${idx}`] === 'disagree' && (
-                              <XCircle className="w-4 h-4 text-white" />
-                            )}
-                          </div>
-                        </label>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
+                <thead>
+                  <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <th className="border-b p-4 text-left text-sm font-semibold text-gray-700 min-w-[300px]">Statement</th>
+                    <th className="border-b p-4 text-center text-sm font-semibold text-gray-700 w-32">Agree</th>
+                    <th className="border-b p-4 text-center text-sm font-semibold text-gray-700 w-32">Disagree</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {statements.map((statement, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                      <td className="border-b p-4 align-top">
+                        <div className="text-sm text-gray-700 leading-relaxed">
+                          <span className="font-medium text-blue-600 mr-2">{idx + 1}.</span>
+                          {statement}
+                        </div>
+                      </td>
+                      <td className="border-b p-4 text-center align-top">
+                        <div className="flex justify-center">
+                          <label className="cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`declaration_statement_${idx}`}
+                              value="agree"
+                              checked={declarationData[`declaration_statement_${idx}`] === 'agree'}
+                              onChange={onChange}
+                              className="hidden"
+                            />
+                            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${declarationData[`declaration_statement_${idx}`] === 'agree'
+                                ? 'border-green-500 bg-green-500'
+                                : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
+                              }`}
+                            >
+                              {declarationData[`declaration_statement_${idx}`] === 'agree' && (
+                                <CheckCircle className="w-5 h-5 text-white" />
+                              )}
+                            </div>
+                          </label>
+                        </div>
+                      </td>
+                      <td className="border-b p-4 text-center align-top">
+                        <div className="flex justify-center">
+                          <label className="cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`declaration_statement_${idx}`}
+                              value="disagree"
+                              checked={declarationData[`declaration_statement_${idx}`] === 'disagree'}
+                              onChange={onChange}
+                              className="hidden"
+                            />
+                            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${declarationData[`declaration_statement_${idx}`] === 'disagree'
+                                ? 'border-red-500 bg-red-500'
+                                : 'border-gray-300 hover:border-red-400 hover:bg-gray-50'
+                              }`}
+                            >
+                              {declarationData[`declaration_statement_${idx}`] === 'disagree' && (
+                                <XCircle className="w-5 h-5 text-white" />
+                              )}
+                            </div>
+                          </label>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          {/* Mobile Accordion */}
+          {/* Mobile Accordion - Enhanced */}
           <div className="md:hidden space-y-3">
             {statements.map((statement, idx) => (
               <div key={idx} className="border border-gray-300 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setExpandedStatement(expandedStatement === idx ? null : idx)}
-                  className="w-full p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors"
+                  className="w-full p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors active:bg-gray-200"
                 >
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-blue-600">{idx + 1}.</span>
-                      <span className="text-sm font-medium text-gray-700 truncate">
-                        {statement.substring(0, 60)}...
-                      </span>
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-start gap-2 mb-1">
+                        <span className="font-medium text-blue-600 text-sm flex-shrink-0">{idx + 1}.</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          {statement.substring(0, 50)}...
+                        </span>
+                      </div>
+                      <div className="mt-2">
+                        {declarationData[`declaration_statement_${idx}`] === 'agree' ? (
+                          <span className="inline-flex items-center gap-1 text-green-600 text-xs font-medium px-2 py-1 bg-green-50 rounded">
+                            <CheckCircle className="w-3 h-3" /> Agreed
+                          </span>
+                        ) : declarationData[`declaration_statement_${idx}`] === 'disagree' ? (
+                          <span className="inline-flex items-center gap-1 text-red-600 text-xs font-medium px-2 py-1 bg-red-50 rounded">
+                            <XCircle className="w-3 h-3" /> Disagreed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-gray-500 text-xs font-medium px-2 py-1 bg-gray-100 rounded">
+                            Not answered
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {declarationData[`declaration_statement_${idx}`] === 'agree' ? (
-                        <span className="text-green-600 text-xs font-medium flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" /> Agreed
-                        </span>
-                      ) : declarationData[`declaration_statement_${idx}`] === 'disagree' ? (
-                        <span className="text-red-600 text-xs font-medium flex items-center gap-1">
-                          <XCircle className="w-3 h-3" /> Disagreed
-                        </span>
-                      ) : (
-                        <span className="text-gray-500 text-xs">Not answered</span>
-                      )}
+                    <div className="flex-shrink-0">
                       <svg
-                        className={`w-4 h-4 transition-transform ${expandedStatement === idx ? 'rotate-180' : ''}`}
+                        className={`w-5 h-5 transition-transform ${expandedStatement === idx ? 'rotate-180' : ''}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -284,7 +292,7 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
                 {expandedStatement === idx && (
                   <div className="p-4 border-t border-gray-300 bg-white">
                     <p className="text-sm text-gray-700 mb-4 leading-relaxed">{statement}</p>
-                    <div className="flex gap-4">
+                    <div className="flex gap-3">
                       <label className="flex-1">
                         <input
                           type="radio"
@@ -294,12 +302,12 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
                           onChange={onChange}
                           className="hidden"
                         />
-                        <div className={`w-full py-2 text-center rounded-lg border-2 transition-all ${declarationData[`declaration_statement_${idx}`] === 'agree'
+                        <div className={`w-full py-3 text-center rounded-lg border-2 transition-all active:scale-95 ${declarationData[`declaration_statement_${idx}`] === 'agree'
                             ? 'border-green-500 bg-green-50 text-green-700'
-                            : 'border-gray-300 hover:border-green-400 text-gray-700'
+                            : 'border-gray-300 hover:border-green-400 hover:bg-green-50 text-gray-700'
                           }`}
                         >
-                          <span className="flex items-center justify-center gap-2">
+                          <span className="flex items-center justify-center gap-2 font-medium">
                             <CheckCircle className="w-4 h-4" />
                             Agree
                           </span>
@@ -314,12 +322,12 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
                           onChange={onChange}
                           className="hidden"
                         />
-                        <div className={`w-full py-2 text-center rounded-lg border-2 transition-all ${declarationData[`declaration_statement_${idx}`] === 'disagree'
+                        <div className={`w-full py-3 text-center rounded-lg border-2 transition-all active:scale-95 ${declarationData[`declaration_statement_${idx}`] === 'disagree'
                             ? 'border-red-500 bg-red-50 text-red-700'
-                            : 'border-gray-300 hover:border-red-400 text-gray-700'
+                            : 'border-gray-300 hover:border-red-400 hover:bg-red-50 text-gray-700'
                           }`}
                         >
-                          <span className="flex items-center justify-center gap-2">
+                          <span className="flex items-center justify-center gap-2 font-medium">
                             <XCircle className="w-4 h-4" />
                             Disagree
                           </span>
@@ -334,7 +342,7 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
         </div>
 
         {/* Final Declaration */}
-        <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+        <div className="mt-8 p-4 sm:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
           <p className="text-gray-700 text-sm mb-6 font-medium leading-relaxed">
             I have carefully read and declare that I am the above-mentioned speaker, 
             and I have filled this form to the best of my ability.
@@ -398,32 +406,7 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
           </div>
         )}
 
-        {/* Progress Indicator */}
-        <div className="mt-6 pt-4 border-t border-gray-200">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Form Completion</span>
-            <span className="font-medium text-blue-600">
-              {(() => {
-                const totalFields = 16; // All required fields
-                const filledFields = Object.values(declarationData).filter(v => v && v.trim()).length;
-                const percentage = Math.round((filledFields / totalFields) * 100);
-                return `${percentage}%`;
-              })()}
-            </span>
-          </div>
-          <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
-              style={{
-                width: `${(() => {
-                  const totalFields = 16;
-                  const filledFields = Object.values(declarationData).filter(v => v && v.trim()).length;
-                  return (filledFields / totalFields) * 100;
-                })()}%`
-              }}
-            />
-          </div>
-        </div>
+        
       </div>
     </div>
   );
