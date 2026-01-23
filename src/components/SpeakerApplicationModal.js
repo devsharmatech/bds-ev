@@ -1,97 +1,98 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import SpeakerDeclarationSection from './SpeakerDeclarationSection';
-import { X, Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useState, useEffect, useRef } from "react";
+import SpeakerDeclarationSection from "./SpeakerDeclarationSection";
+import { X, Upload, Loader2, CheckCircle, AlertCircle, User, FileText, Globe, Building, Briefcase, Tag, Check, ChevronDown } from "lucide-react";
+import toast from "react-hot-toast";
 
 // All countries list for Country of Practice dropdown
 const ALL_COUNTRIES = [
-  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", 
-  "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", 
-  "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", 
-  "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", 
-  "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", 
-  "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", 
-  "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", 
-  "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", 
-  "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", 
-  "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Korea, North", "Korea, South", "Kuwait", "Kyrgyzstan", "Laos", 
-  "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", 
-  "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", 
-  "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", 
-  "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Macedonia", "Norway", 
-  "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", 
-  "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", 
-  "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", 
-  "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", 
-  "South Africa", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", 
-  "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", 
-  "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", 
-  "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", 
-  "Zambia", "Zimbabwe"
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
+  "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+  "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
+  "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica",
+  "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt",
+  "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon",
+  "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
+  "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
+  "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Korea, North", "Korea, South", "Kuwait",
+  "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg",
+  "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico",
+  "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru",
+  "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Macedonia", "Norway", "Oman", "Pakistan",
+  "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar",
+  "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino",
+  "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
+  "Solomon Islands", "Somalia", "South Africa", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland",
+  "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia",
+  "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay",
+  "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
 ];
 
 // Phone country codes
 const PHONE_CODES = [
-  { code: '+973', country: 'Bahrain' },
-  { code: '+966', country: 'Saudi Arabia' },
-  { code: '+971', country: 'UAE' },
-  { code: '+965', country: 'Kuwait' },
-  { code: '+974', country: 'Qatar' },
-  { code: '+968', country: 'Oman' },
-  { code: '+962', country: 'Jordan' },
-  { code: '+961', country: 'Lebanon' },
-  { code: '+20', country: 'Egypt' },
-  { code: '+964', country: 'Iraq' },
-  { code: '+1', country: 'USA/Canada' },
-  { code: '+44', country: 'UK' },
-  { code: '+91', country: 'India' },
-  { code: '+92', country: 'Pakistan' },
-  { code: '+63', country: 'Philippines' },
-  { code: '+60', country: 'Malaysia' },
-  { code: '+65', country: 'Singapore' },
-  { code: '+61', country: 'Australia' },
-  { code: '+33', country: 'France' },
-  { code: '+49', country: 'Germany' },
+  { code: "+973", country: "Bahrain", flag: "🇧🇭" },
+  { code: "+966", country: "Saudi Arabia", flag: "🇸🇦" },
+  { code: "+971", country: "UAE", flag: "🇦🇪" },
+  { code: "+965", country: "Kuwait", flag: "🇰🇼" },
+  { code: "+974", country: "Qatar", flag: "🇶🇦" },
+  { code: "+968", country: "Oman", flag: "🇴🇲" },
+  { code: "+962", country: "Jordan", flag: "🇯🇴" },
+  { code: "+961", country: "Lebanon", flag: "🇱🇧" },
+  { code: "+20", country: "Egypt", flag: "🇪🇬" },
+  { code: "+964", country: "Iraq", flag: "🇮🇶" },
+  { code: "+1", country: "USA/Canada", flag: "🇺🇸" },
+  { code: "+44", country: "UK", flag: "🇬🇧" },
+  { code: "+91", country: "India", flag: "🇮🇳" },
+  { code: "+92", country: "Pakistan", flag: "🇵🇰" },
+  { code: "+63", country: "Philippines", flag: "🇵🇭" },
+  { code: "+60", country: "Malaysia", flag: "🇲🇾" },
+  { code: "+65", country: "Singapore", flag: "🇸🇬" },
+  { code: "+61", country: "Australia", flag: "🇦🇺" },
+  { code: "+33", country: "France", flag: "🇫🇷" },
+  { code: "+49", country: "Germany", flag: "🇩🇪" },
 ];
 
 // Professional Titles
 const PROFESSIONAL_TITLES = [
-  'Dental Consultant',
-  'Dental Specialist',
-  'Dental Resident',
-  'General Dentist',
-  'Dental Student'
+  "Dental Consultant",
+  "Dental Specialist",
+  "Dental Resident",
+  "General Dentist",
+  "Dental Student",
+  "Academic Professor",
+  "Clinical Director",
 ];
 
 // Participant Categories
 const PARTICIPANT_CATEGORIES = [
-  'VIP',
-  'Delegate',
-  'Speaker',
-  'Organizer',
-  'Participant',
-  'Exhibitor'
+  "VIP",
+  "Delegate",
+  "Speaker",
+  "Organizer",
+  "Participant",
+  "Exhibitor",
+  "Sponsor",
 ];
 
 // Presentation Topics (checkboxes)
 const PRESENTATION_TOPICS = [
-  'Restorative Dentistry',
-  'Endodontics',
-  'Orthodontics',
-  'Prosthodontics',
-  'Pediatric Dentistry',
-  'Periodontology',
-  'Oral Surgery',
-  'Digital Dentistry',
-  'Implantology',
-  'Public Health Dentistry',
-  'Oral Medicine'
+  "Restorative Dentistry",
+  "Endodontics",
+  "Orthodontics",
+  "Prosthodontics",
+  "Pediatric Dentistry",
+  "Periodontology",
+  "Oral Surgery",
+  "Digital Dentistry",
+  "Implantology",
+  "Public Health Dentistry",
+  "Oral Medicine",
+  "Dental Materials",
+  "Aesthetics",
 ];
 
 export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
-
   const [loading, setLoading] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -99,36 +100,63 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const [abstractFile, setAbstractFile] = useState(null);
   const [articleFile, setArticleFile] = useState(null);
   const [showDeclaration, setShowDeclaration] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const [profilePreview, setProfilePreview] = useState(null);
+  const [bio, setBio] = useState("");
   const [declarationData, setDeclarationData] = useState({
-    declaration_cpd_title: '',
-    declaration_speaker_name: '',
-    declaration_presentation_title: '',
-    declaration_presentation_date: '',
-    declaration_contact_number: '',
-    declaration_email: '',
-    declaration_abstract: '',
-    // 10 statements
-    ...Object.fromEntries(Array.from({length: 10}, (_, i) => [`declaration_statement_${i}`, ''])),
-    declaration_final_speaker_name: '',
-    declaration_final_date: '',
-    declaration_final_signature: '',
+    declaration_cpd_title: "",
+    declaration_speaker_name: "",
+    declaration_presentation_title: "",
+    declaration_presentation_date: "",
+    declaration_contact_number: "",
+    declaration_email: "",
+    declaration_abstract: "",
+    ...Object.fromEntries(
+      Array.from({ length: 10 }, (_, i) => [`declaration_statement_${i}`, ""]),
+    ),
+    declaration_final_speaker_name: "",
+    declaration_final_date: "",
+    declaration_final_signature: "",
   });
   const [declarationError, setDeclarationError] = useState("");
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    phone_code: '+973',
-    affiliation_institution: '',
-    country_of_practice: 'Bahrain',
-    professional_title: '',
-    category: '',
+    full_name: "",
+    email: "",
+    phone: "",
+    phone_code: "+973",
+    affiliation_institution: "",
+    country_of_practice: "Bahrain",
+    professional_title: "",
+    category: "",
     presentation_topics: [],
-    presentation_topic_other: '',
-    consent_for_publication: '',
+    presentation_topic_other: "",
+    consent_for_publication: "",
   });
 
   const [errors, setErrors] = useState({});
+  const modalRef = useRef(null);
+
+  // Close modal on ESC key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen && !loading) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, loading, onClose]);
+
+  // Click outside to close
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target) && isOpen && !loading) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen, loading, onClose]);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -136,40 +164,46 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       setAlreadyApplied(false);
       setSubmitSuccess(false);
       setFormData({
-        full_name: '',
-        email: '',
-        phone: '',
-        phone_code: '+973',
-        affiliation_institution: '',
-        country_of_practice: 'Bahrain',
-        professional_title: '',
-        category: '',
+        full_name: "",
+        email: "",
+        phone: "",
+        phone_code: "+973",
+        affiliation_institution: "",
+        country_of_practice: "Bahrain",
+        professional_title: "",
+        category: "",
         presentation_topics: [],
-        presentation_topic_other: '',
-        consent_for_publication: '',
+        presentation_topic_other: "",
+        consent_for_publication: "",
       });
       setAbstractFile(null);
       setArticleFile(null);
       setErrors({});
+      setShowDeclaration(false);
+      setProfileImage(null);
+      setProfilePreview(null);
+      setBio("");
     }
   }, [isOpen]);
 
-  // Check if email already applied when email changes
   const checkExistingApplication = async (email) => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
-    
+
     setCheckingEmail(true);
     try {
-      const response = await fetch(`/api/events/speaker-request/check?email=${encodeURIComponent(email)}&event_id=${event.id}`);
+      const response = await fetch(
+        `/api/events/speaker-request/check?email=${encodeURIComponent(email)}&event_id=${event.id}`,
+      );
       const data = await response.json();
-      
+
       if (data.exists) {
         setAlreadyApplied(true);
+        toast.error("You have already applied for this event");
       } else {
         setAlreadyApplied(false);
       }
     } catch (error) {
-      console.error('Error checking email:', error);
+      console.error("Error checking email:", error);
     } finally {
       setCheckingEmail(false);
     }
@@ -177,48 +211,55 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.full_name.trim()) newErrors.full_name = 'Full name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    if (!formData.full_name.trim()) newErrors.full_name = "Full name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = "Invalid email format";
     }
-    if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
-    if (!formData.affiliation_institution.trim()) newErrors.affiliation_institution = 'Affiliation/Institution is required';
-    if (!formData.country_of_practice) newErrors.country_of_practice = 'Country of practice is required';
-    if (!formData.professional_title) newErrors.professional_title = 'Professional title is required';
-    if (!formData.category) newErrors.category = 'Category is required';
+    if (!formData.phone.trim()) newErrors.phone = "Phone is required";
+    if (!/^[0-9+\-\s]+$/.test(formData.phone)) newErrors.phone = "Invalid phone number";
+    if (!formData.affiliation_institution.trim())
+      newErrors.affiliation_institution = "Affiliation/Institution is required";
+    if (!formData.country_of_practice)
+      newErrors.country_of_practice = "Country of practice is required";
+    if (!formData.professional_title)
+      newErrors.professional_title = "Professional title is required";
+    if (!formData.category) newErrors.category = "Category is required";
     if (formData.presentation_topics.length === 0) {
-      newErrors.presentation_topics = 'Please select at least one topic';
+      newErrors.presentation_topics = "Please select at least one topic";
     }
-    if (formData.presentation_topics.includes('Other') && !formData.presentation_topic_other.trim()) {
-      newErrors.presentation_topic_other = 'Please specify your topic';
+    if (
+      formData.presentation_topics.includes("Other") &&
+      !formData.presentation_topic_other.trim()
+    ) {
+      newErrors.presentation_topic_other = "Please specify your topic";
     }
-    // Abstract file is now optional for speaker applications
-    if (!formData.consent_for_publication) newErrors.consent_for_publication = 'Please select consent option';
+    if (!bio.trim() || bio.length < 50) newErrors.bio = "Bio must be at least 50 characters";
+    if (!formData.consent_for_publication)
+      newErrors.consent_for_publication = "Please select consent option";
     if (showDeclaration) {
-      // Validate all declaration fields
       const requiredFields = [
-        'declaration_cpd_title',
-        'declaration_speaker_name',
-        'declaration_presentation_title',
-        'declaration_presentation_date',
-        'declaration_contact_number',
-        'declaration_email',
-        'declaration_abstract',
-        'declaration_final_speaker_name',
-        'declaration_final_date',
-        'declaration_final_signature',
+        "declaration_cpd_title",
+        "declaration_speaker_name",
+        "declaration_presentation_title",
+        "declaration_presentation_date",
+        "declaration_contact_number",
+        "declaration_email",
+        "declaration_abstract",
+        "declaration_final_speaker_name",
+        "declaration_final_date",
+        "declaration_final_signature",
       ];
       for (const field of requiredFields) {
         if (!declarationData[field] || !declarationData[field].trim()) {
-          newErrors.declaration_form = 'All declaration fields are required';
+          newErrors.declaration_form = "All declaration fields are required";
           break;
         }
       }
-      // Validate all 10 statements (must be agree/disagree)
       for (let i = 0; i < 10; i++) {
         if (!declarationData[`declaration_statement_${i}`]) {
-          newErrors.declaration_form = 'Please answer all declaration statements';
+          newErrors.declaration_form =
+            "Please answer all declaration statements";
           break;
         }
       }
@@ -231,13 +272,19 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const handleFileChange = (e, setter, fieldName) => {
     const file = e.target.files?.[0];
     if (file) {
-      const maxSize = 10 * 1024 * 1024; // 10MB
+      const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
-        toast.error('File size must be less than 10MB');
+        toast.error("File size must be less than 10MB");
         return;
       }
       setter(file);
-      setErrors({ ...errors, [fieldName]: '' });
+      setErrors({ ...errors, [fieldName]: "" });
+      if (fieldName === 'profile_image') {
+        setProfileImage(file);
+        const reader = new FileReader();
+        reader.onloadend = () => setProfilePreview(reader.result);
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -248,7 +295,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       [name]: value,
     });
     if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
+      setErrors({ ...errors, [name]: "" });
     }
   };
 
@@ -260,23 +307,25 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   const handleTopicChange = (topic) => {
     const newTopics = formData.presentation_topics.includes(topic)
-      ? formData.presentation_topics.filter(t => t !== topic)
+      ? formData.presentation_topics.filter((t) => t !== topic)
       : [...formData.presentation_topics, topic];
-    
+
     setFormData({
       ...formData,
       presentation_topics: newTopics,
-      presentation_topic_other: newTopics.includes('Other') ? formData.presentation_topic_other : '',
+      presentation_topic_other: newTopics.includes("Other")
+        ? formData.presentation_topic_other
+        : "",
     });
 
     if (errors.presentation_topics) {
-      setErrors({ ...errors, presentation_topics: '' });
+      setErrors({ ...errors, presentation_topics: "" });
     }
   };
 
   const handleDeclarationChange = (e) => {
     const { name, value } = e.target;
-    setDeclarationData(prev => ({ ...prev, [name]: value }));
+    setDeclarationData((prev) => ({ ...prev, [name]: value }));
     if (declarationError) setDeclarationError("");
   };
 
@@ -284,12 +333,12 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     e.preventDefault();
 
     if (alreadyApplied) {
-      toast.error('You have already applied for this event');
+      toast.error("You have already applied for this event");
       return;
     }
 
     if (!validateForm()) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields correctly");
       return;
     }
 
@@ -297,26 +346,43 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('full_name', formData.full_name);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('phone', `${formData.phone_code}${formData.phone}`);
-      formDataToSend.append('affiliation_institution', formData.affiliation_institution);
-      formDataToSend.append('country_of_practice', formData.country_of_practice);
-      formDataToSend.append('professional_title', formData.professional_title);
-      formDataToSend.append('category', formData.category);
-      formDataToSend.append('presentation_topics', JSON.stringify(formData.presentation_topics));
-      formDataToSend.append('presentation_topic_other', formData.presentation_topic_other);
-      formDataToSend.append('consent_for_publication', formData.consent_for_publication);
-      formDataToSend.append('event_id', event.id);
-      if (abstractFile) formDataToSend.append('abstract_file', abstractFile);
-      if (articleFile) formDataToSend.append('article_file', articleFile);
+      formDataToSend.append("full_name", formData.full_name);
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("phone", `${formData.phone_code}${formData.phone}`);
+      formDataToSend.append(
+        "affiliation_institution",
+        formData.affiliation_institution,
+      );
+      formDataToSend.append(
+        "country_of_practice",
+        formData.country_of_practice,
+      );
+      formDataToSend.append("professional_title", formData.professional_title);
+      formDataToSend.append("category", formData.category);
+      formDataToSend.append(
+        "presentation_topics",
+        JSON.stringify(formData.presentation_topics),
+      );
+      formDataToSend.append(
+        "presentation_topic_other",
+        formData.presentation_topic_other,
+      );
+      formDataToSend.append(
+        "consent_for_publication",
+        formData.consent_for_publication,
+      );
+      formDataToSend.append("event_id", event.id);
+      if (profileImage) formDataToSend.append('profile_image', profileImage);
+      formDataToSend.append('bio', bio);
+      if (abstractFile) formDataToSend.append("abstract_file", abstractFile);
+      if (articleFile) formDataToSend.append("article_file", articleFile);
       if (showDeclaration) {
         Object.entries(declarationData).forEach(([key, value]) => {
           formDataToSend.append(key, value);
         });
       }
-      const response = await fetch('/api/events/speaker-request', {
-        method: 'POST',
+      const response = await fetch("/api/events/speaker-request", {
+        method: "POST",
         body: formDataToSend,
       });
       const data = await response.json();
@@ -325,16 +391,16 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
           setAlreadyApplied(true);
           return;
         }
-        throw new Error(data.message || 'Failed to submit application');
+        throw new Error(data.message || "Failed to submit application");
       }
       setSubmitSuccess(true);
-      toast.success('Application submitted successfully!');
+      toast.success("🎉 Application submitted successfully!");
       setTimeout(() => {
         onClose();
-      }, 2000);
+      }, 3000);
     } catch (error) {
-      console.error('Application error:', error);
-      toast.error(error.message || 'Failed to submit application');
+      console.error("Application error:", error);
+      toast.error(error.message || "Failed to submit application");
     } finally {
       setLoading(false);
     }
@@ -343,18 +409,29 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-4xl 2xl:max-w-4xl my-8 shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+      <div 
+        ref={modalRef}
+        className="bg-white rounded-2xl w-full max-w-4xl 2xl:max-w-5xl my-8 shadow-2xl animate-slideUp"
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-linear-to-r from-[#03215F] to-[#03215F] px-6 py-5 flex items-center justify-between rounded-t-2xl z-10">
-          <div>
-            <h2 className="text-xl md:text-2xl font-bold text-white">Join as Speaker</h2>
-            <p className="text-white/80 text-sm mt-1">{event.title}</p>
+        <div className="sticky top-0 bg-gradient-to-r from-[#03215F] via-[#1a3a8f] to-[#03215F] px-6 py-5 flex items-center justify-between rounded-t-2xl z-10 border-b border-white/20">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/10 rounded-lg">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold text-white">
+                Speaker Application
+              </h2>
+              <p className="text-white/90 text-sm mt-1 max-w-md truncate">{event.title}</p>
+            </div>
           </div>
           <button
             onClick={onClose}
             disabled={loading}
-            className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors disabled:opacity-50"
+            className="text-white hover:bg-white/20 p-2 rounded-lg transition-all duration-200 disabled:opacity-50 hover:scale-110"
+            aria-label="Close"
           >
             <X size={24} />
           </button>
@@ -363,343 +440,605 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         {/* Already Applied Message */}
         {alreadyApplied ? (
           <div className="p-8 text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-8 h-8 text-blue-600" />
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <AlertCircle className="w-10 h-10 text-blue-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Already Applied!</h3>
-            <p className="text-gray-600">Your request has already been sent for this event. We will review your application and get back to you soon.</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Already Applied!</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              Your request has already been sent for this event. We will review
+              your application and get back to you soon.
+            </p>
             <button
               onClick={onClose}
-              className="mt-6 px-6 py-2 bg-[#03215F] text-white rounded-lg hover:bg-[#021845] transition-colors"
+              className="px-8 py-3 bg-gradient-to-r from-[#03215F] to-[#1a3a8f] text-white rounded-lg hover:from-[#021845] hover:to-[#03215F] transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
               Close
             </button>
           </div>
         ) : submitSuccess ? (
           <div className="p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="w-20 h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Application Submitted!</h3>
-            <p className="text-gray-600">Your application has been submitted successfully. We will review your application and get back to you soon.</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Application Submitted!</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              🎉 Your application has been submitted successfully. We will review
+              your application and get back to you soon.
+            </p>
+            <div className="animate-pulse text-sm text-gray-500">
+              Redirecting in 3 seconds...
+            </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-                        {/* Speaker Declaration Checkbox */}
-                        <div>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={showDeclaration}
-                              onChange={e => setShowDeclaration(e.target.checked)}
-                              className="w-4 h-4 text-[#03215F] border-gray-300 rounded focus:ring-[#03215F]"
-                            />
-                            <span className="text-sm text-gray-700 font-medium">
-                              I need to fill the Speaker Declaration Form
-                            </span>
-                          </label>
-                        </div>
-                        {showDeclaration && (
-                          <SpeakerDeclarationSection
-                            declarationData={declarationData}
-                            onChange={handleDeclarationChange}
-                            error={declarationError}
-                          />
-                        )}
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="full_name"
-                value={formData.full_name}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent ${errors.full_name ? 'border-red-500' : 'border-gray-300'}`}
-                placeholder="Enter your full name"
-              />
-              {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name}</p>}
+          <form
+            onSubmit={handleSubmit}
+            className="p-6 space-y-8 max-h-[70vh] overflow-y-auto"
+          >
+            {/* Profile Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <User className="w-5 h-5 text-[#03215F]" />
+                </div>
+                <h3 className="text-lg font-bold text-[#03215F]">Profile Information</h3>
+              </div>
+              
+              <div className="flex flex-col lg:flex-row gap-8 items-start">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative">
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
+                      {profilePreview ? (
+                        <img 
+                          src={profilePreview} 
+                          alt="Profile Preview" 
+                          className="object-cover w-full h-full" 
+                        />
+                      ) : (
+                        <User className="w-16 h-16 text-blue-300" />
+                      )}
+                    </div>
+                    <label className="absolute bottom-0 right-0 bg-[#03215F] text-white p-2 rounded-full cursor-pointer hover:bg-[#021845] transition-colors shadow-lg">
+                      <Upload className="w-4 h-4" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={e => handleFileChange(e, setProfileImage, 'profile_image')}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 text-center">
+                    Recommended: Square image, Max 5MB
+                  </p>
+                </div>
+                
+                <div className="flex-1 w-full">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Professional Bio <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <textarea
+                      value={bio}
+                      onChange={e => setBio(e.target.value)}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all duration-200 resize-none ${errors.bio ? 'border-red-500' : 'border-gray-300 hover:border-blue-300'}`}
+                      placeholder="Write a detailed professional bio (minimum 50 characters)..."
+                      rows={5}
+                    />
+                    <div className="flex justify-between items-center mt-2">
+                      <span className={`text-xs ${errors.bio ? 'text-red-500' : bio.length < 50 ? 'text-amber-500' : 'text-green-500'}`}>
+                        {bio.length}/50 characters
+                      </span>
+                      {bio.length >= 50 && (
+                        <Check className="w-4 h-4 text-green-500" />
+                      )}
+                    </div>
+                  </div>
+                  {errors.bio && <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.bio}</p>}
+                </div>
+              </div>
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
+            {/* Personal Information Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Full Name */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Full Name <span className="text-red-500">*</span>
+                </label>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  name="full_name"
+                  value={formData.full_name}
                   onChange={handleInputChange}
-                  onBlur={handleEmailBlur}
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Enter your email"
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all duration-200 ${errors.full_name ? "border-red-500" : "border-gray-300 hover:border-blue-300"}`}
+                  placeholder="Enter your full name"
                 />
-                {checkingEmail && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                  </div>
+                {errors.full_name && (
+                  <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.full_name}</p>
                 )}
               </div>
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-            </div>
 
-            {/* Phone with Country Code */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone <span className="text-red-500">*</span>
-              </label>
-              <div className="flex gap-2">
-                <select
-                  name="phone_code"
-                  value={formData.phone_code}
-                  onChange={handleInputChange}
-                  className="w-20 px-2 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white text-center"
-                  title="Country Code"
-                >
-                  {PHONE_CODES.map((item) => (
-                    <option key={item.code} value={item.code} title={item.country}>
-                      {item.code}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className={`flex-1 px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Enter phone number"
-                />
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                  </svg>
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    onBlur={handleEmailBlur}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all duration-200 ${errors.email ? "border-red-500" : "border-gray-300 hover:border-blue-300"}`}
+                    placeholder="your.email@example.com"
+                  />
+                  {checkingEmail && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                    </div>
+                  )}
+                  {alreadyApplied && !checkingEmail && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                    </div>
+                  )}
+                </div>
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>
+                )}
               </div>
-              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+
+              {/* Phone */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <select
+                      name="phone_code"
+                      value={formData.phone_code}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none hover:border-blue-300 transition-all duration-200"
+                    >
+                      {PHONE_CODES.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.flag} {item.code} ({item.country})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className={`flex-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all duration-200 ${errors.phone ? "border-red-500" : "border-gray-300 hover:border-blue-300"}`}
+                    placeholder="123 456 789"
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.phone}</p>
+                )}
+              </div>
+
+              {/* Affiliation */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <Building className="w-4 h-4" />
+                  Affiliation / Institution <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="affiliation_institution"
+                  value={formData.affiliation_institution}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all duration-200 ${errors.affiliation_institution ? "border-red-500" : "border-gray-300 hover:border-blue-300"}`}
+                  placeholder="University, Hospital, or Organization"
+                />
+                {errors.affiliation_institution && (
+                  <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.affiliation_institution}</p>
+                )}
+              </div>
+
+              {/* Country of Practice */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  Country of Practice <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    name="country_of_practice"
+                    value={formData.country_of_practice}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none hover:border-blue-300 transition-all duration-200 ${errors.country_of_practice ? "border-red-500" : "border-gray-300"}`}
+                  >
+                    {ALL_COUNTRIES.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+                {errors.country_of_practice && (
+                  <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.country_of_practice}</p>
+                )}
+              </div>
+
+              {/* Professional Title */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4" />
+                  Professional Title <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    name="professional_title"
+                    value={formData.professional_title}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none hover:border-blue-300 transition-all duration-200 ${errors.professional_title ? "border-red-500" : "border-gray-300"}`}
+                  >
+                    <option value="">Select your title</option>
+                    {PROFESSIONAL_TITLES.map((title) => (
+                      <option key={title} value={title}>
+                        {title}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+                {errors.professional_title && (
+                  <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.professional_title}</p>
+                )}
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none hover:border-blue-300 transition-all duration-200 ${errors.category ? "border-red-500" : "border-gray-300"}`}
+                  >
+                    <option value="">Select category</option>
+                    {PARTICIPANT_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+                {errors.category && (
+                  <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.category}</p>
+                )}
+              </div>
             </div>
 
-            {/* Affiliation / Institution */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Affiliation / Institution <span className="text-red-500">*</span>
+            {/* Presentation Topics */}
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <label className="block text-sm font-semibold text-gray-700 mb-4">
+                Presentation Topics <span className="text-red-500">*</span>
+                <span className="text-gray-500 text-xs font-normal ml-2">
+                  (Select all that apply)
+                </span>
               </label>
-              <input
-                type="text"
-                name="affiliation_institution"
-                value={formData.affiliation_institution}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent ${errors.affiliation_institution ? 'border-red-500' : 'border-gray-300'}`}
-                placeholder="Enter your affiliation or institution"
-              />
-              {errors.affiliation_institution && <p className="text-red-500 text-xs mt-1">{errors.affiliation_institution}</p>}
-            </div>
-
-            {/* Country of Practice */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Country of Practice <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="country_of_practice"
-                value={formData.country_of_practice}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white ${errors.country_of_practice ? 'border-red-500' : 'border-gray-300'}`}
-              >
-                <option value="">Select country</option>
-                {ALL_COUNTRIES.map((country) => (
-                  <option key={country} value={country}>{country}</option>
-                ))}
-              </select>
-              {errors.country_of_practice && <p className="text-red-500 text-xs mt-1">{errors.country_of_practice}</p>}
-            </div>
-
-            {/* Professional Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Professional Title / Position <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="professional_title"
-                value={formData.professional_title}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white ${errors.professional_title ? 'border-red-500' : 'border-gray-300'}`}
-              >
-                <option value="">Select professional title</option>
-                {PROFESSIONAL_TITLES.map((title) => (
-                  <option key={title} value={title}>{title}</option>
-                ))}
-              </select>
-              {errors.professional_title && <p className="text-red-500 text-xs mt-1">{errors.professional_title}</p>}
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white ${errors.category ? 'border-red-500' : 'border-gray-300'}`}
-              >
-                <option value="">Select category</option>
-                {PARTICIPANT_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
-            </div>
-
-            {/* Presentation Topics (Checkboxes) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Presentation Topic <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {PRESENTATION_TOPICS.map((topic) => (
-                  <label key={topic} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50">
+                  <label
+                    key={topic}
+                    className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border transition-all duration-200 ${formData.presentation_topics.includes(topic)
+                        ? "bg-blue-50 border-blue-300 shadow-sm"
+                        : "bg-white border-gray-300 hover:border-blue-200 hover:bg-blue-50"
+                      }`}
+                  >
                     <input
                       type="checkbox"
+                      className="hidden"
                       checked={formData.presentation_topics.includes(topic)}
                       onChange={() => handleTopicChange(topic)}
-                      className="w-4 h-4 text-[#03215F] border-gray-300 rounded focus:ring-[#03215F]"
                     />
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all duration-200 ${formData.presentation_topics.includes(topic)
+                        ? "bg-[#03215F] border-[#03215F]"
+                        : "border-gray-400"
+                      }`}
+                    >
+                      {formData.presentation_topics.includes(topic) && (
+                        <Check className="w-3 h-3 text-white" />
+                      )}
+                    </div>
                     <span className="text-sm text-gray-700">{topic}</span>
                   </label>
                 ))}
-                <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-50">
+                <label className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border transition-all duration-200 ${formData.presentation_topics.includes("Other")
+                    ? "bg-blue-50 border-blue-300 shadow-sm"
+                    : "bg-white border-gray-300 hover:border-blue-200 hover:bg-blue-50"
+                  }`}
+                >
                   <input
                     type="checkbox"
-                    checked={formData.presentation_topics.includes('Other')}
-                    onChange={() => handleTopicChange('Other')}
-                    className="w-4 h-4 text-[#03215F] border-gray-300 rounded focus:ring-[#03215F]"
+                    className="hidden"
+                    checked={formData.presentation_topics.includes("Other")}
+                    onChange={() => handleTopicChange("Other")}
                   />
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all duration-200 ${formData.presentation_topics.includes("Other")
+                      ? "bg-[#03215F] border-[#03215F]"
+                      : "border-gray-400"
+                    }`}
+                  >
+                    {formData.presentation_topics.includes("Other") && (
+                      <Check className="w-3 h-3 text-white" />
+                    )}
+                  </div>
                   <span className="text-sm text-gray-700">Other</span>
                 </label>
               </div>
-              {formData.presentation_topics.includes('Other') && (
-                <div className="mt-2">
+              
+              {formData.presentation_topics.includes("Other") && (
+                <div className="mt-4">
                   <input
                     type="text"
                     name="presentation_topic_other"
                     value={formData.presentation_topic_other}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent ${errors.presentation_topic_other ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all duration-200 ${errors.presentation_topic_other ? "border-red-500" : "border-gray-300 hover:border-blue-300"}`}
                     placeholder="Please specify your topic"
                   />
-                  {errors.presentation_topic_other && <p className="text-red-500 text-xs mt-1">{errors.presentation_topic_other}</p>}
+                  {errors.presentation_topic_other && (
+                    <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.presentation_topic_other}</p>
+                  )}
                 </div>
               )}
-              {errors.presentation_topics && <p className="text-red-500 text-xs mt-1">{errors.presentation_topics}</p>}
+              
+              {errors.presentation_topics && (
+                <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.presentation_topics}</p>
+              )}
             </div>
 
-            {/* Abstract Upload (Required) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Upload the completed Abstract Submission Form
+            {/* File Uploads */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Abstract Upload */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Abstract Submission Form <span className="text-gray-400 text-xs">(Optional)</span>
                 </label>
-              <div className={`border-2 border-dashed rounded-lg p-4 text-center ${errors.abstract_file ? 'border-red-500' : 'border-gray-300'} hover:border-[#03215F] transition-colors`}>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={(e) => handleFileChange(e, setAbstractFile, 'abstract_file')}
-                  className="hidden"
-                  id="abstract-upload"
-                />
-                <label htmlFor="abstract-upload" className="cursor-pointer">
-                  {abstractFile ? (
-                    <div className="flex items-center justify-center gap-2 text-green-600">
-                      <CheckCircle size={20} />
-                      <span className="text-sm">{abstractFile.name}</span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 text-gray-500">
-                      <Upload size={24} />
-                      <span className="text-sm">Click to upload (PDF, DOC, DOCX - Max 10MB)</span>
-                    </div>
-                  )}
-                </label>
+                <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 ${abstractFile
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                  }`}
+                >
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => handleFileChange(e, setAbstractFile, "abstract_file")}
+                    className="hidden"
+                    id="abstract-upload"
+                  />
+                  <label htmlFor="abstract-upload" className="cursor-pointer">
+                    {abstractFile ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                        </div>
+                        <span className="text-sm font-medium text-green-700">{abstractFile.name}</span>
+                        <span className="text-xs text-gray-500">
+                          {(abstractFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Upload className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">
+                            Click to upload
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            PDF, DOC, DOCX (Max 10MB)
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </label>
+                </div>
+                {/* No error for abstract_file since it's optional */}
               </div>
-              {errors.abstract_file && <p className="text-red-500 text-xs mt-1">{errors.abstract_file}</p>}
-            </div>
 
-            {/* Article/Presentation Upload (Optional) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Please upload your full article or presentation
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#03215F] transition-colors">
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.ppt,.pptx"
-                  onChange={(e) => handleFileChange(e, setArticleFile, 'article_file')}
-                  className="hidden"
-                  id="article-upload"
-                />
-                <label htmlFor="article-upload" className="cursor-pointer">
-                  {articleFile ? (
-                    <div className="flex items-center justify-center gap-2 text-green-600">
-                      <CheckCircle size={20} />
-                      <span className="text-sm">{articleFile.name}</span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 text-gray-500">
-                      <Upload size={24} />
-                      <span className="text-sm">Click to upload (PDF, DOC, DOCX, PPT, PPTX - Max 10MB)</span>
-                    </div>
-                  )}
+              {/* Article Upload */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Full Article / Presentation (Optional)
                 </label>
+                <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 ${articleFile
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                  }`}
+                >
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    onChange={(e) => handleFileChange(e, setArticleFile, "article_file")}
+                    className="hidden"
+                    id="article-upload"
+                  />
+                  <label htmlFor="article-upload" className="cursor-pointer">
+                    {articleFile ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                        </div>
+                        <span className="text-sm font-medium text-green-700">{articleFile.name}</span>
+                        <span className="text-xs text-gray-500">
+                          {(articleFile.size / (1024 * 1024)).toFixed(2)} MB
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                          <Upload className="w-6 h-6 text-gray-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">
+                            Optional Upload
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            PDF, DOC, PPT (Max 10MB)
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </label>
+                </div>
               </div>
             </div>
 
             {/* Consent for Publication */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+              <label className="block text-sm font-semibold text-gray-700 mb-4">
                 Consent for Publication <span className="text-red-500">*</span>
               </label>
-              <div className="space-y-2">
-                <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className={`flex items-start gap-4 cursor-pointer p-4 rounded-xl border transition-all duration-200 ${formData.consent_for_publication === "agree"
+                    ? "bg-white border-green-300 shadow-md"
+                    : "bg-white border-gray-300 hover:border-green-200"
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-full border flex items-center justify-center mt-1 ${formData.consent_for_publication === "agree"
+                      ? "bg-green-500 border-green-500"
+                      : "border-gray-400"
+                    }`}
+                  >
+                    {formData.consent_for_publication === "agree" && (
+                      <Check className="w-3 h-3 text-white" />
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 block mb-1">
+                      I agree
+                    </span>
+                    <span className="text-xs text-gray-600">
+                      I agree that my abstract may be published in the conference materials
+                    </span>
+                  </div>
                   <input
                     type="radio"
                     name="consent_for_publication"
                     value="agree"
-                    checked={formData.consent_for_publication === 'agree'}
+                    checked={formData.consent_for_publication === "agree"}
                     onChange={handleInputChange}
-                    className="w-4 h-4 text-[#03215F] border-gray-300 focus:ring-[#03215F] mt-0.5"
+                    className="hidden"
                   />
-                  <span className="text-sm text-gray-700">I agree that my abstract may be published in the conference materials</span>
                 </label>
-                <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                <label className={`flex items-start gap-4 cursor-pointer p-4 rounded-xl border transition-all duration-200 ${formData.consent_for_publication === "disagree"
+                    ? "bg-white border-red-300 shadow-md"
+                    : "bg-white border-gray-300 hover:border-red-200"
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-full border flex items-center justify-center mt-1 ${formData.consent_for_publication === "disagree"
+                      ? "bg-red-500 border-red-500"
+                      : "border-gray-400"
+                    }`}
+                  >
+                    {formData.consent_for_publication === "disagree" && (
+                      <Check className="w-3 h-3 text-white" />
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 block mb-1">
+                      I do not agree
+                    </span>
+                    <span className="text-xs text-gray-600">
+                      I do not agree to publication of my abstract
+                    </span>
+                  </div>
                   <input
                     type="radio"
                     name="consent_for_publication"
                     value="disagree"
-                    checked={formData.consent_for_publication === 'disagree'}
+                    checked={formData.consent_for_publication === "disagree"}
                     onChange={handleInputChange}
-                    className="w-4 h-4 text-[#03215F] border-gray-300 focus:ring-[#03215F] mt-0.5"
+                    className="hidden"
                   />
-                  <span className="text-sm text-gray-700">I do not agree to publication</span>
                 </label>
               </div>
-              {errors.consent_for_publication && <p className="text-red-500 text-xs mt-1">{errors.consent_for_publication}</p>}
+              {errors.consent_for_publication && (
+                <p className="text-red-500 text-xs mt-3 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.consent_for_publication}</p>
+              )}
             </div>
 
+            {/* Speaker Declaration Checkbox */}
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div className={`w-6 h-6 rounded border flex items-center justify-center transition-all duration-200 ${showDeclaration
+                    ? "bg-[#03215F] border-[#03215F]"
+                    : "border-gray-400 bg-white"
+                  }`}
+                >
+                  {showDeclaration && <Check className="w-3 h-3 text-white" />}
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-gray-700">
+                    Speaker Declaration Form
+                  </span>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Check this box if you need to fill the NHRA Speaker Declaration Form
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={showDeclaration}
+                  onChange={(e) => setShowDeclaration(e.target.checked)}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {showDeclaration && (
+              <SpeakerDeclarationSection
+                declarationData={declarationData}
+                onChange={handleDeclarationChange}
+                error={declarationError}
+              />
+            )}
+
             {/* Submit Button */}
-            <div className="pt-4">
+            <div className="pt-6 border-t border-gray-200">
               <button
                 type="submit"
                 disabled={loading || alreadyApplied}
-                className="w-full bg-[#03215F] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#021845] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-[#03215F] via-[#1a3a8f] to-[#03215F] text-white py-4 px-6 rounded-xl font-semibold hover:from-[#021845] hover:to-[#021845] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Submitting...
+                    <span>Processing Application...</span>
                   </>
                 ) : (
-                  'Submit Application'
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    <span>Submit Application</span>
+                  </>
                 )}
               </button>
+              <p className="text-xs text-gray-500 text-center mt-3">
+                By submitting, you agree to our terms and conditions
+              </p>
             </div>
           </form>
         )}

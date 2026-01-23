@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { FileText, Calendar, Phone, Mail, Signature, AlertCircle, CheckCircle, XCircle } from "lucide-react";
 
 const statements = [
   "The content of my presentation will promote quality improvement in practice, remain evidence-based, balanced, and unbiased, and will not promote the business interests of any commercial entity.",
@@ -14,182 +15,415 @@ const statements = [
 ];
 
 export default function SpeakerDeclarationSection({ declarationData, onChange, error }) {
+  const [expandedStatement, setExpandedStatement] = useState(null);
+
   return (
-    <div className="border border-gray-200 rounded-lg p-4 mt-4">
-      <div className="flex flex-col items-center mb-4">
-        <img src="/nera-logo.png" alt="NHRA Logo" className="h-16 mb-2" style={{objectFit:'contain'}} />
-        <h4 className="font-semibold text-[#03215F] mb-2 text-center">
-          Speaker Declaration Form
-        </h4>
+    <div className="border-2 border-blue-200 rounded-xl p-6 mt-4 bg-gradient-to-b from-white to-blue-50 shadow-inner">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 pb-4 border-b border-blue-100">
+        <div className="flex items-center gap-3 mb-4 sm:mb-0">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <FileText className="w-6 h-6 text-[#03215F]" />
+          </div>
+          <div>
+            <h4 className="font-bold text-[#03215F] text-lg">
+              NHRA Speaker Declaration Form
+            </h4>
+            <p className="text-sm text-gray-600">
+              Please complete all required fields below
+            </p>
+          </div>
+        </div>
+        <div className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
+          Required for NHRA Approval
+        </div>
       </div>
-      <div className="space-y-3">
+
+      {/* Form Grid */}
+      <div className="space-y-6">
+        {/* Basic Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">CPD Activity Title</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              CPD Activity Title <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="declaration_cpd_title"
               value={declarationData.declaration_cpd_title || ''}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               placeholder="e.g. Annual Dental Conference 2026"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Speaker Name</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Speaker Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="declaration_speaker_name"
               value={declarationData.declaration_speaker_name || ''}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               placeholder="Enter speaker's full name"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Presentation Title</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Presentation Title <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="declaration_presentation_title"
               value={declarationData.declaration_presentation_title || ''}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               placeholder="e.g. Innovations in Restorative Dentistry"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Presentation Date</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Presentation Date <span className="text-red-500">*</span>
+            </label>
             <input
               type="date"
               name="declaration_presentation_date"
               value={declarationData.declaration_presentation_date || ''}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Speaker’s Contact Number</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              Contact Number <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="declaration_contact_number"
               value={declarationData.declaration_contact_number || ''}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              placeholder="e.g. +97312345678"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              placeholder="+973 1234 5678"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Speaker’s E-Mail Address</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Email Address <span className="text-red-500">*</span>
+            </label>
             <input
               type="email"
               name="declaration_email"
               value={declarationData.declaration_email || ''}
               onChange={onChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-              placeholder="e.g. speaker@email.com"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              placeholder="speaker@email.com"
               required
             />
           </div>
         </div>
+
+        {/* Abstract */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Scientific Content/Abstract of the Presentation</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Scientific Content / Abstract <span className="text-red-500">*</span>
+          </label>
           <textarea
             name="declaration_abstract"
             value={declarationData.declaration_abstract || ''}
             onChange={onChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            rows={3}
-            placeholder="Brief summary of your presentation..."
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+            rows={4}
+            placeholder="Provide a brief summary of your presentation content, methodology, and expected outcomes..."
             required
           />
+          <div className="flex justify-between items-center mt-2">
+            <span className="text-xs text-gray-500">
+              Minimum 100 characters recommended
+            </span>
+            <span className={`text-xs ${(declarationData.declaration_abstract?.length || 0) < 100 ? 'text-amber-500' : 'text-green-500'}`}>
+              {(declarationData.declaration_abstract?.length || 0)} characters
+            </span>
+          </div>
         </div>
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Declaration Statements</label>
-          <div className="overflow-x-auto">
-            <table className="min-w-full border text-xs md:text-sm">
+
+        {/* Declaration Statements - Mobile Responsive */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <label className="block text-sm font-semibold text-gray-700">
+              Declaration Statements <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-4 text-xs">
+              <span className="flex items-center gap-1 text-green-600">
+                <CheckCircle className="w-3 h-3" /> Agree
+              </span>
+              <span className="flex items-center gap-1 text-red-600">
+                <XCircle className="w-3 h-3" /> Disagree
+              </span>
+            </div>
+          </div>
+          
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-hidden rounded-lg border border-gray-300 shadow-sm">
+            <table className="w-full">
               <thead>
-                <tr className="bg-blue-100">
-                  <th className="border px-2 py-1 text-left">Statement</th>
-                  <th className="border px-2 py-1">Agree</th>
-                  <th className="border px-2 py-1">Disagree</th>
+                <tr className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <th className="border-b p-4 text-left text-sm font-semibold text-gray-700">Statement</th>
+                  <th className="border-b p-4 text-center text-sm font-semibold text-gray-700 w-24">Agree</th>
+                  <th className="border-b p-4 text-center text-sm font-semibold text-gray-700 w-24">Disagree</th>
                 </tr>
               </thead>
               <tbody>
                 {statements.map((statement, idx) => (
-                  <tr key={idx}>
-                    <td className="border px-2 py-1 align-top">{statement}</td>
-                    <td className="border px-2 py-1 text-center">
-                      <input
-                        type="radio"
-                        name={`declaration_statement_${idx}`}
-                        value="agree"
-                        checked={declarationData[`declaration_statement_${idx}`] === 'agree'}
-                        onChange={onChange}
-                        required
-                      />
+                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                    <td className="border-b p-4 align-top">
+                      <div className="text-sm text-gray-700 leading-relaxed">
+                        <span className="font-medium text-blue-600 mr-2">{idx + 1}.</span>
+                        {statement}
+                      </div>
                     </td>
-                    <td className="border px-2 py-1 text-center">
-                      <input
-                        type="radio"
-                        name={`declaration_statement_${idx}`}
-                        value="disagree"
-                        checked={declarationData[`declaration_statement_${idx}`] === 'disagree'}
-                        onChange={onChange}
-                        required
-                      />
+                    <td className="border-b p-4 text-center align-top">
+                      <div className="flex justify-center">
+                        <label className="cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`declaration_statement_${idx}`}
+                            value="agree"
+                            checked={declarationData[`declaration_statement_${idx}`] === 'agree'}
+                            onChange={onChange}
+                            className="hidden"
+                          />
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${declarationData[`declaration_statement_${idx}`] === 'agree'
+                              ? 'border-green-500 bg-green-500'
+                              : 'border-gray-300 hover:border-green-400'
+                            }`}
+                          >
+                            {declarationData[`declaration_statement_${idx}`] === 'agree' && (
+                              <CheckCircle className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                        </label>
+                      </div>
+                    </td>
+                    <td className="border-b p-4 text-center align-top">
+                      <div className="flex justify-center">
+                        <label className="cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`declaration_statement_${idx}`}
+                            value="disagree"
+                            checked={declarationData[`declaration_statement_${idx}`] === 'disagree'}
+                            onChange={onChange}
+                            className="hidden"
+                          />
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${declarationData[`declaration_statement_${idx}`] === 'disagree'
+                              ? 'border-red-500 bg-red-500'
+                              : 'border-gray-300 hover:border-red-400'
+                            }`}
+                          >
+                            {declarationData[`declaration_statement_${idx}`] === 'disagree' && (
+                              <XCircle className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                        </label>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Accordion */}
+          <div className="md:hidden space-y-3">
+            {statements.map((statement, idx) => (
+              <div key={idx} className="border border-gray-300 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setExpandedStatement(expandedStatement === idx ? null : idx)}
+                  className="w-full p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-blue-600">{idx + 1}.</span>
+                      <span className="text-sm font-medium text-gray-700 truncate">
+                        {statement.substring(0, 60)}...
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {declarationData[`declaration_statement_${idx}`] === 'agree' ? (
+                        <span className="text-green-600 text-xs font-medium flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" /> Agreed
+                        </span>
+                      ) : declarationData[`declaration_statement_${idx}`] === 'disagree' ? (
+                        <span className="text-red-600 text-xs font-medium flex items-center gap-1">
+                          <XCircle className="w-3 h-3" /> Disagreed
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 text-xs">Not answered</span>
+                      )}
+                      <svg
+                        className={`w-4 h-4 transition-transform ${expandedStatement === idx ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </button>
+                {expandedStatement === idx && (
+                  <div className="p-4 border-t border-gray-300 bg-white">
+                    <p className="text-sm text-gray-700 mb-4 leading-relaxed">{statement}</p>
+                    <div className="flex gap-4">
+                      <label className="flex-1">
+                        <input
+                          type="radio"
+                          name={`declaration_statement_${idx}`}
+                          value="agree"
+                          checked={declarationData[`declaration_statement_${idx}`] === 'agree'}
+                          onChange={onChange}
+                          className="hidden"
+                        />
+                        <div className={`w-full py-2 text-center rounded-lg border-2 transition-all ${declarationData[`declaration_statement_${idx}`] === 'agree'
+                            ? 'border-green-500 bg-green-50 text-green-700'
+                            : 'border-gray-300 hover:border-green-400 text-gray-700'
+                          }`}
+                        >
+                          <span className="flex items-center justify-center gap-2">
+                            <CheckCircle className="w-4 h-4" />
+                            Agree
+                          </span>
+                        </div>
+                      </label>
+                      <label className="flex-1">
+                        <input
+                          type="radio"
+                          name={`declaration_statement_${idx}`}
+                          value="disagree"
+                          checked={declarationData[`declaration_statement_${idx}`] === 'disagree'}
+                          onChange={onChange}
+                          className="hidden"
+                        />
+                        <div className={`w-full py-2 text-center rounded-lg border-2 transition-all ${declarationData[`declaration_statement_${idx}`] === 'disagree'
+                            ? 'border-red-500 bg-red-50 text-red-700'
+                            : 'border-gray-300 hover:border-red-400 text-gray-700'
+                          }`}
+                        >
+                          <span className="flex items-center justify-center gap-2">
+                            <XCircle className="w-4 h-4" />
+                            Disagree
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="mt-4">
-          <p className="text-gray-700 text-sm mb-2 font-medium">I have carefully read and declare that I am the above-mentioned speaker, and I have filled this form to the best of my ability.</p>
+
+        {/* Final Declaration */}
+        <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+          <p className="text-gray-700 text-sm mb-6 font-medium leading-relaxed">
+            I have carefully read and declare that I am the above-mentioned speaker, 
+            and I have filled this form to the best of my ability.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Speaker Name</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <Signature className="w-4 h-4" />
+                Speaker Name <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="declaration_final_speaker_name"
                 value={declarationData.declaration_final_speaker_name || ''}
                 onChange={onChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                placeholder="Type your name"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="Type your full name"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Date <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
                 name="declaration_final_date"
                 value={declarationData.declaration_final_date || ''}
                 onChange={onChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Signature</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Digital Signature <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="declaration_final_signature"
                 value={declarationData.declaration_final_signature || ''}
                 onChange={onChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 font-signature"
                 placeholder="Type your name as signature"
                 required
               />
+              <p className="text-xs text-gray-500 mt-2">
+                This serves as your digital signature
+              </p>
             </div>
           </div>
         </div>
-        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </p>
+          </div>
+        )}
+
+        {/* Progress Indicator */}
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Form Completion</span>
+            <span className="font-medium text-blue-600">
+              {(() => {
+                const totalFields = 16; // All required fields
+                const filledFields = Object.values(declarationData).filter(v => v && v.trim()).length;
+                const percentage = Math.round((filledFields / totalFields) * 100);
+                return `${percentage}%`;
+              })()}
+            </span>
+          </div>
+          <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
+              style={{
+                width: `${(() => {
+                  const totalFields = 16;
+                  const filledFields = Object.values(declarationData).filter(v => v && v.trim()).length;
+                  return (filledFields / totalFields) * 100;
+                })()}%`
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

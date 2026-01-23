@@ -1,14 +1,36 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-
-import { 
-  Search, Filter, Eye, Trash2, CheckCircle, XCircle, 
-  Download, RefreshCw, ChevronLeft, ChevronRight, 
-  Mail, FileText, X, Loader2, Printer
-} from 'lucide-react';
-import { QRCodeCanvas } from 'qrcode.react';
-import toast from 'react-hot-toast';
+import { useState, useEffect, useCallback } from "react";
+import {
+  Search,
+  Filter,
+  Eye,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Download,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  FileText,
+  X,
+  Loader2,
+  Printer,
+  Users,
+  Calendar,
+  Building,
+  Globe,
+  Briefcase,
+  UserCheck,
+  FileCheck,
+  Shield,
+  Check,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function SpeakerRequestsPage() {
   const [requests, setRequests] = useState([]);
@@ -16,10 +38,10 @@ export default function SpeakerRequestsPage() {
   const [events, setEvents] = useState([]);
   const [selectedRequests, setSelectedRequests] = useState([]);
   const [filters, setFilters] = useState({
-    event_id: '',
-    status: '',
-    search: '',
-    category: '',
+    event_id: "",
+    status: "",
+    search: "",
+    category: "",
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -27,20 +49,49 @@ export default function SpeakerRequestsPage() {
     total: 0,
     totalPages: 0,
   });
-  const [detailsModal, setDetailsModal] = useState({ open: false, request: null });
+  const [detailsModal, setDetailsModal] = useState({
+    open: false,
+    request: null,
+  });
   const [actionLoading, setActionLoading] = useState(false);
+  const [expandedFilters, setExpandedFilters] = useState(false);
+  
+  const PARTICIPANT_CATEGORIES = [
+    "VIP",
+    "Delegate",
+    "Speaker",
+    "Organizer",
+    "Participant",
+    "Exhibitor",
+    "Sponsor",
+  ];
+
+  const STATUS_COLORS = {
+    pending: "bg-yellow-50 border-yellow-200 text-yellow-800",
+    approved: "bg-green-50 border-green-200 text-green-800",
+    rejected: "bg-red-50 border-red-200 text-red-800",
+    confirmed: "bg-blue-50 border-blue-200 text-blue-800",
+  };
+
+  const CATEGORY_COLORS = {
+    VIP: "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border-purple-200",
+    Delegate: "bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-200",
+    Speaker: "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-200",
+    Organizer: "bg-gradient-to-r from-orange-100 to-amber-100 text-orange-800 border-orange-200",
+    Participant: "bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-200",
+    Exhibitor: "bg-gradient-to-r from-indigo-100 to-violet-100 text-indigo-800 border-indigo-200",
+    Sponsor: "bg-gradient-to-r from-rose-100 to-red-100 text-rose-800 border-rose-200",
+  };
 
   const fetchEvents = async () => {
     try {
-      console.log('[FETCH-EVENTS] Starting...');
-      const res = await fetch('/api/event/public?limit=100&isUpcoming=false');
+      const res = await fetch("/api/event/public?limit=100&isUpcoming=false");
       const data = await res.json();
-      console.log('[FETCH-EVENTS] Response:', { status: res.status, data });
       if (data.events) {
         setEvents(data.events || []);
       }
     } catch (error) {
-      console.error('[FETCH-EVENTS] Error:', error);
+      console.error("Error fetching events:", error);
     }
   };
 
@@ -56,29 +107,32 @@ export default function SpeakerRequestsPage() {
         ...(filters.search && { search: filters.search }),
       });
 
-      console.log('[FETCH-REQUESTS] Starting with params:', params.toString());
       const res = await fetch(`/api/admin/speaker-requests?${params}`);
       const data = await res.json();
-      console.log('[FETCH-REQUESTS] Response:', { status: res.status, data });
 
       if (data.success) {
         setRequests(data.requests || []);
-        setPagination(prev => ({
+        setPagination((prev) => ({
           ...prev,
           total: data.total || 0,
           totalPages: data.totalPages || 1,
         }));
       } else {
-        console.error('[FETCH-REQUESTS] API Error:', data.message, data.error);
-        toast.error(data.message || 'Failed to load speaker requests');
+        toast.error(data.message || "Failed to load speaker requests");
       }
     } catch (error) {
-      console.error('[FETCH-REQUESTS] Error:', error);
-      toast.error('Failed to load speaker requests');
+      toast.error("Failed to load speaker requests");
     } finally {
       setLoading(false);
     }
-  }, [filters.event_id, filters.status, filters.category, filters.search, pagination.page, pagination.limit]);
+  }, [
+    filters.event_id,
+    filters.status,
+    filters.category,
+    filters.search,
+    pagination.page,
+    pagination.limit,
+  ]);
 
   useEffect(() => {
     fetchEvents();
@@ -87,23 +141,21 @@ export default function SpeakerRequestsPage() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
     fetchRequests();
   };
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedRequests(requests.map(r => r.id));
+      setSelectedRequests(requests.map((r) => r.id));
     } else {
       setSelectedRequests([]);
     }
   };
 
   const handleSelectOne = (id) => {
-    setSelectedRequests(prev => 
-      prev.includes(id) 
-        ? prev.filter(i => i !== id)
-        : [...prev, id]
+    setSelectedRequests((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
@@ -111,21 +163,24 @@ export default function SpeakerRequestsPage() {
     if (!ids.length) return;
     setActionLoading(true);
     try {
-      const res = await fetch('/api/admin/speaker-requests/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin/speaker-requests/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids }),
       });
       const data = await res.json();
       if (data.success) {
-        toast.success(`${ids.length} request(s) approved`);
+        toast.success(`✅ ${ids.length} request(s) approved successfully!`, {
+          icon: '🎉',
+          duration: 3000,
+        });
         setSelectedRequests([]);
         fetchRequests();
       } else {
-        toast.error(data.message || 'Failed to approve');
+        toast.error(data.message || "Failed to approve");
       }
     } catch (error) {
-      toast.error('Failed to approve requests');
+      toast.error("Failed to approve requests");
     } finally {
       setActionLoading(false);
     }
@@ -133,24 +188,28 @@ export default function SpeakerRequestsPage() {
 
   const handleReject = async (ids) => {
     if (!ids.length) return;
-    const reason = prompt('Enter rejection reason (optional):');
+    const reason = prompt("Enter rejection reason (optional):");
+    if (reason === null) return; // User cancelled
+    
     setActionLoading(true);
     try {
-      const res = await fetch('/api/admin/speaker-requests/reject', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin/speaker-requests/reject", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids, reason }),
       });
       const data = await res.json();
       if (data.success) {
-        toast.success(`${ids.length} request(s) rejected`);
+        toast.success(`❌ ${ids.length} request(s) rejected`, {
+          duration: 3000,
+        });
         setSelectedRequests([]);
         fetchRequests();
       } else {
-        toast.error(data.message || 'Failed to reject');
+        toast.error(data.message || "Failed to reject");
       }
     } catch (error) {
-      toast.error('Failed to reject requests');
+      toast.error("Failed to reject requests");
     } finally {
       setActionLoading(false);
     }
@@ -158,47 +217,51 @@ export default function SpeakerRequestsPage() {
 
   const handleDelete = async (ids) => {
     if (!ids.length) return;
-    if (!confirm(`Are you sure you want to delete ${ids.length} request(s)?`)) return;
-    
+    if (!window.confirm(`Are you sure you want to delete ${ids.length} request(s)? This action cannot be undone.`))
+      return;
+
     setActionLoading(true);
     try {
-      const res = await fetch('/api/admin/speaker-requests/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin/speaker-requests/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids }),
       });
       const data = await res.json();
       if (data.success) {
-        toast.success(`${ids.length} request(s) deleted`);
+        toast.success(`🗑️ ${ids.length} request(s) deleted`, {
+          duration: 3000,
+        });
         setSelectedRequests([]);
         fetchRequests();
       } else {
-        toast.error(data.message || 'Failed to delete');
+        toast.error(data.message || "Failed to delete");
       }
     } catch (error) {
-      toast.error('Failed to delete requests');
+      toast.error("Failed to delete requests");
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Handle print badge for approved speakers
   const handlePrintBadge = (request) => {
-    const event = events.find(e => e.id === request.event_id);
+    const event = events.find((e) => e.id === request.event_id);
     if (!event) {
-      toast.error('Event information not found');
+      toast.error("Event information not found");
       return;
     }
 
-    // Create a new window with the badge content
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    
+    const printWindow = window.open("", "_blank", "width=800,height=600");
     const badgeHTML = `
       <!DOCTYPE html>
       <html>
         <head>
           <title>Speaker Badge - ${request.full_name}</title>
           <style>
+            @media print {
+              @page { margin: 0; }
+              body { margin: 0; }
+            }
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { 
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -208,8 +271,6 @@ export default function SpeakerRequestsPage() {
               align-items: center;
               min-height: 100vh;
               padding: 20px;
-              -webkit-print-color-adjust: exact;
-              color-adjust: exact;
             }
             .badge-container {
               width: 400px;
@@ -220,33 +281,12 @@ export default function SpeakerRequestsPage() {
               color: white;
               position: relative;
               overflow: hidden;
-              box-shadow: 0 20px 40px rgba(3, 33, 95, 0.3);
-            }
-            .badge-bg {
-              position: absolute;
-              top: -100px;
-              right: -100px;
-              width: 300px;
-              height: 300px;
-              background: rgba(255, 255, 255, 0.05);
-              border-radius: 50%;
-            }
-            .badge-bg2 {
-              position: absolute;
-              bottom: -150px;
-              left: -150px;
-              width: 400px;
-              height: 400px;
-              background: rgba(255, 255, 255, 0.03);
-              border-radius: 50%;
             }
             .header {
               display: flex;
               align-items: center;
               justify-content: space-between;
               margin-bottom: 30px;
-              position: relative;
-              z-index: 2;
             }
             .logo-section {
               display: flex;
@@ -259,9 +299,6 @@ export default function SpeakerRequestsPage() {
               background: white;
               border-radius: 12px;
               padding: 8px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
             }
             .org-info h3 {
               font-size: 14px;
@@ -277,14 +314,6 @@ export default function SpeakerRequestsPage() {
             .speaker-title {
               text-align: center;
               margin: 30px 0;
-              position: relative;
-              z-index: 2;
-            }
-            .speaker-title h1 {
-              font-size: 32px;
-              font-weight: 900;
-              letter-spacing: 2px;
-              margin-bottom: 8px;
             }
             .category {
               font-size: 18px;
@@ -299,8 +328,6 @@ export default function SpeakerRequestsPage() {
             .speaker-info {
               text-align: center;
               margin-bottom: 25px;
-              position: relative;
-              z-index: 2;
             }
             .speaker-name {
               font-size: 24px;
@@ -322,8 +349,6 @@ export default function SpeakerRequestsPage() {
               padding: 20px;
               margin-bottom: 25px;
               border: 1px solid rgba(255, 255, 255, 0.2);
-              position: relative;
-              z-index: 2;
             }
             .event-title {
               font-size: 16px;
@@ -336,53 +361,19 @@ export default function SpeakerRequestsPage() {
               opacity: 0.9;
               line-height: 1.4;
             }
-            .event-date {
-              margin-bottom: 6px;
-              font-weight: 500;
-            }
-            .event-end-date {
-              margin-bottom: 6px;
-              font-weight: 400;
-              color: rgba(255, 255, 255, 0.8);
-            }
-            .event-agendas {
-              margin-bottom: 6px;
-              font-weight: 500;
-              color: rgba(255, 255, 255, 0.9);
-            }
-            .event-venue {
-              opacity: 0.8;
-            }
             .qr-section {
               display: flex;
               justify-content: center;
-              position: relative;
-              z-index: 2;
             }
             .qr-container {
               background: white;
               padding: 8px;
               border-radius: 12px;
-              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            }
-            @media print {
-              body { margin: 0; padding: 0; }
-              .badge-container { 
-                width: 100%;
-                max-width: 400px;
-                height: auto;
-                min-height: 600px;
-                margin: 0 auto;
-                box-shadow: none;
-              }
             }
           </style>
         </head>
         <body>
           <div class="badge-container">
-            <div class="badge-bg"></div>
-            <div class="badge-bg2"></div>
-            
             <div class="header">
               <div class="logo-section">
                 <div class="logo">
@@ -394,328 +385,447 @@ export default function SpeakerRequestsPage() {
                 </div>
               </div>
             </div>
-            
             <div class="speaker-title">
-              
-              <div class="category">${(request.category || 'SPEAKER').toUpperCase()}</div>
+              <div class="category">${(request.category || "SPEAKER").toUpperCase()}</div>
             </div>
-            
             <div class="speaker-info">
               <div class="speaker-name">${request.full_name.toUpperCase()}</div>
-              <div class="speaker-title-text">${request.professional_title || 'Professional Speaker'}</div>
-              <div class="speaker-designation">${request.affiliation_institution || ''}</div>
+              <div class="speaker-title-text">${request.professional_title || "Professional Speaker"}</div>
+              <div class="speaker-designation">${request.affiliation_institution || ""}</div>
             </div>
-            
             <div class="event-info">
               <div class="event-title">${event.title}</div>
               <div class="event-details">
-                <div class="event-date">Start: ${new Date(event.start_datetime).toLocaleDateString('en-BH', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  timeZone: 'Asia/Bahrain'
+                <div>${new Date(event.start_datetime).toLocaleDateString("en-BH", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
                 })}</div>
-                ${event.end_datetime ? `<div class="event-end-date">End: ${new Date(event.end_datetime).toLocaleDateString('en-BH', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  timeZone: 'Asia/Bahrain'
-                })}</div>` : ''}
-                ${event.event_agendas && event.event_agendas.length > 0 ? `<div class="event-agendas">Total Agendas: ${event.event_agendas.length}</div>` : ''}
-                ${event.venue_name ? `<div class="event-venue">${event.venue_name}</div>` : ''}
+                ${event.venue_name ? `<div>${event.venue_name}</div>` : ""}
               </div>
             </div>
-            
             <div class="qr-section">
-              <div class="qr-container" id="qr-container">
-                <!-- QR Code will be inserted here -->
-              </div>
+              <div class="qr-container" id="qr-container"></div>
             </div>
           </div>
-          
           <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
           <script>
-            // Generate QR code
             const qrData = JSON.stringify({
               type: 'SPEAKER_VERIFICATION',
               speaker_id: '${request.id}',
               speaker_name: '${request.full_name}',
               event_id: '${event.id}',
-              event_title: '${event.title}',
-              category: '${(request.category || 'SPEAKER').toUpperCase()}'
+              event_title: '${event.title}'
             });
             
             const qr = qrcode(0, 'M');
             qr.addData(qrData);
             qr.make();
             
-            const qrContainer = document.getElementById('qr-container');
-            qrContainer.innerHTML = qr.createImgTag(3, 4);
+            document.getElementById('qr-container').innerHTML = qr.createImgTag(3, 4);
             
-            // Auto print after a short delay
             setTimeout(() => {
               window.print();
+              setTimeout(() => window.close(), 1000);
             }, 1000);
           </script>
         </body>
       </html>
     `;
-    
+
     printWindow.document.write(badgeHTML);
     printWindow.document.close();
-    
-    toast.success('Speaker badge generated for printing');
+    toast.success("📄 Speaker badge generated for printing");
   };
 
   const getStatusBadge = (status) => {
-    const styles = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      approved: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800',
-      confirmed: 'bg-blue-100 text-blue-800',
-    };
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
+      <span style={{width:"fit-content"}} className={`px-3 py-1.5 text-xs font-semibold rounded-full border ${STATUS_COLORS[status] || "bg-gray-100 text-gray-800 border-gray-200"} flex items-center gap-1.5`}>
+        {status === "approved" && <CheckCircle className="w-3 h-3" />}
+        {status === "rejected" && <XCircle className="w-3 h-3" />}
+        {status === "pending" && <Loader2 className="w-3 h-3 animate-spin" />}
         {status?.charAt(0).toUpperCase() + status?.slice(1)}
       </span>
     );
   };
 
+  const getCategoryBadge = (category) => {
+    return (
+      <span className={`px-3 py-1.5 text-xs font-semibold rounded-full border ${CATEGORY_COLORS[category] || "bg-gray-100 text-gray-800"} uppercase tracking-wide`}>
+        {category || "N/A"}
+      </span>
+    );
+  };
+
+  const StatsCard = ({ title, value, icon: Icon, color }) => (
+    <div className="bg-white rounded-xl shadow-sm border p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-600">{title}</p>
+          <p className="text-2xl font-bold mt-1">{value}</p>
+        </div>
+        <div className={`p-3 rounded-lg ${color}`}>
+          <Icon className="w-6 h-6" />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 md:p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Speaker Requests</h1>
-        <p className="text-gray-600 mt-1">Manage speaker applications for events</p>
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 bg-gradient-to-r from-[#03215F] to-[#1a3a8f] bg-clip-text text-transparent">
+              Speaker Requests
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Manage and review speaker applications for events
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchRequests}
+              className="px-4 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 text-gray-700"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatsCard
+            title="Total Requests"
+            value={pagination.total}
+            icon={Users}
+            color="bg-blue-100 text-blue-600"
+          />
+          <StatsCard
+            title="Pending"
+            value={requests.filter(r => r.status === "pending").length}
+            icon={Loader2}
+            color="bg-yellow-100 text-yellow-600"
+          />
+          <StatsCard
+            title="Approved"
+            value={requests.filter(r => r.status === "approved").length}
+            icon={CheckCircle}
+            color="bg-green-100 text-green-600"
+          />
+          <StatsCard
+            title="Rejected"
+            value={requests.filter(r => r.status === "rejected").length}
+            icon={XCircle}
+            color="bg-red-100 text-red-600"
+          />
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border p-4 mb-6">
-        <form onSubmit={handleSearch} className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[200px]">
+      <div className="bg-white rounded-2xl shadow-lg border mb-6 overflow-hidden">
+        <div className="p-6 border-b">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Filter className="w-5 h-5" />
+              Filters
+            </h2>
+            <button
+              onClick={() => setExpandedFilters(!expandedFilters)}
+              className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+            >
+              {expandedFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {expandedFilters ? "Collapse" : "Expand"}
+            </button>
+          </div>
+        </div>
+        
+        <div className={`p-6 ${expandedFilters ? 'block' : 'hidden md:block'}`}>
+          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Search by name or email..."
+                placeholder="Search by name, email..."
                 value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all"
               />
             </div>
-          </div>
 
-          <select
-            value={filters.event_id}
-            onChange={(e) => {
-              setFilters(prev => ({ ...prev, event_id: e.target.value }));
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#03215F] bg-white min-w-[180px]"
-          >
-            <option value="">All Events</option>
-            {events.map(event => (
-              <option key={event.id} value={event.id}>{event.title}</option>
-            ))}
-          </select>
+            <div>
+              <select
+                value={filters.event_id}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, event_id: e.target.value }));
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none"
+              >
+                <option value="">All Events</option>
+                {events.map((event) => (
+                  <option key={event.id} value={event.id}>
+                    {event.title}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <select
-            value={filters.status}
-            onChange={(e) => {
-              setFilters(prev => ({ ...prev, status: e.target.value }));
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#03215F] bg-white"
-          >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
+            <div>
+              <select
+                value={filters.status}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, status: e.target.value }));
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none"
+              >
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
 
-          <select
-            value={filters.category}
-            onChange={(e) => {
-              setFilters(prev => ({ ...prev, category: e.target.value }));
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#03215F] bg-white"
-          >
-            <option value="">All Categories</option>
-            <option value="VIP">VIP</option>
-            <option value="Delegate">Delegate</option>
-            <option value="Speaker">Speaker</option>
-            <option value="Organizer">Organizer</option>
-            <option value="Participant">Participant</option>
-            <option value="Exhibitor">Exhibitor</option>
-          </select>
+            <div>
+              <select
+                value={filters.category}
+                onChange={(e) => {
+                  setFilters((prev) => ({ ...prev, category: e.target.value }));
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none"
+              >
+                <option value="">All Categories</option>
+                {PARTICIPANT_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <button
-            type="submit"
-            className="px-4 py-2 bg-[#03215F] text-white rounded-lg hover:bg-[#021845] flex items-center gap-2"
-          >
-            <Filter size={18} />
-            Filter
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setFilters({ event_id: '', status: '', search: '', category: '' });
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-          >
-            <RefreshCw size={18} />
-            Reset
-          </button>
-        </form>
+            <div className="md:col-span-2 lg:col-span-4 flex gap-3">
+              <button
+                type="submit"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#1a3a8f] text-white rounded-xl hover:from-[#021845] hover:to-[#03215F] transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 font-medium"
+              >
+                <Filter className="w-4 h-4" />
+                Apply Filters
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFilters({
+                    event_id: "",
+                    status: "",
+                    search: "",
+                    category: "",
+                  });
+                  setPagination((prev) => ({ ...prev, page: 1 }));
+                }}
+                className="px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2 font-medium"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Reset
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       {/* Bulk Actions */}
       {selectedRequests.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex items-center justify-between">
-          <span className="text-blue-800 font-medium">
-            {selectedRequests.length} request(s) selected
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleApprove(selectedRequests)}
-              disabled={actionLoading}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
-            >
-              <CheckCircle size={18} />
-              Approve
-            </button>
-            <button
-              onClick={() => handleReject(selectedRequests)}
-              disabled={actionLoading}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center gap-2 disabled:opacity-50"
-            >
-              <XCircle size={18} />
-              Reject
-            </button>
-            <button
-              onClick={() => handleDelete(selectedRequests)}
-              disabled={actionLoading}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 disabled:opacity-50"
-            >
-              <Trash2 size={18} />
-              Delete
-            </button>
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 mb-6 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <UserCheck className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-blue-800">
+                  {selectedRequests.length} request(s) selected
+                </p>
+                <p className="text-sm text-blue-600">
+                  Choose an action to perform on selected requests
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => handleApprove(selectedRequests)}
+                disabled={actionLoading}
+                className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-sm hover:shadow flex items-center gap-2 disabled:opacity-50"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Approve
+              </button>
+              <button
+                onClick={() => handleReject(selectedRequests)}
+                disabled={actionLoading}
+                className="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:from-orange-600 hover:to-red-700 transition-all shadow-sm hover:shadow flex items-center gap-2 disabled:opacity-50"
+              >
+                <XCircle className="w-4 h-4" />
+                Reject
+              </button>
+              <button
+                onClick={() => handleDelete(selectedRequests)}
+                disabled={actionLoading}
+                className="px-4 py-2.5 bg-gradient-to-r from-gray-500 to-slate-600 text-white rounded-lg hover:from-gray-600 hover:to-slate-700 transition-all shadow-sm hover:shadow flex items-center gap-2 disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-lg border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-gradient-to-r from-gray-50 to-slate-50 border-b">
               <tr>
-                <th className="px-4 py-3 text-left">
+                <th className="px-6 py-4 text-left">
                   <input
                     type="checkbox"
                     checked={selectedRequests.length === requests.length && requests.length > 0}
                     onChange={handleSelectAll}
-                    className="rounded border-gray-300"
+                    className="w-4 h-4 rounded border-gray-300 text-[#03215F] focus:ring-[#03215F]"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Email</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Event</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Category</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Speaker
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Event & Contact
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Category & Status
+                </th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="px-4 py-12 text-center">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-gray-400" />
-                    <p className="text-gray-500 mt-2">Loading...</p>
+                  <td colSpan="5" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="w-10 h-10 animate-spin text-[#03215F]" />
+                      <p className="text-gray-600">Loading speaker requests...</p>
+                    </div>
                   </td>
                 </tr>
               ) : requests.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-4 py-12 text-center text-gray-500">
-                    No speaker requests found
+                  <td colSpan="5" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3 text-gray-500">
+                      <Users className="w-12 h-12 opacity-50" />
+                      <p className="text-lg">No speaker requests found</p>
+                      <p className="text-sm">Try adjusting your filters</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 requests.map((request) => (
-                  <tr key={request.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
+                  <tr key={request.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
                       <input
                         type="checkbox"
                         checked={selectedRequests.includes(request.id)}
                         onChange={() => handleSelectOne(request.id)}
-                        className="rounded border-gray-300"
+                        className="w-4 h-4 rounded border-gray-300 text-[#03215F] focus:ring-[#03215F]"
                       />
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{request.full_name}</div>
-                      <div className="text-sm text-gray-500">{request.professional_title}</div>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 flex items-center justify-center">
+                          <span className="font-bold text-[#03215F] text-sm">
+                            {request.full_name.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{request.full_name}</p>
+                          <p className="text-sm text-gray-600 flex items-center gap-1">
+                            <Briefcase className="w-3 h-3" />
+                            {request.professional_title}
+                          </p>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{request.email}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-[200px] truncate">
-                      {request.events?.title || 'N/A'}
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-gray-900 truncate max-w-[200px]" title={request.events?.title}>
+                        {request.events?.title || "N/A"}
+                      </p>
+                      <div className="flex flex-col gap-1 mt-1">
+                        <p className="text-sm text-gray-600 flex items-center gap-1.5">
+                          <Mail className="w-3 h-3" />
+                          {request.email}
+                        </p>
+                        <p className="text-sm text-gray-600 flex items-center gap-1.5">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(request.created_at).toLocaleDateString("en-BH", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 uppercase">
-                        {request.category || 'N/A'}
-                      </span>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-2">
+                        <div>{getCategoryBadge(request.category)}</div>
+                        <div>{getStatusBadge(request.status)}</div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3">{getStatusBadge(request.status)}</td>
-                    <td className="px-4 py-3 text-gray-500 text-sm">
-                      {new Date(request.created_at).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' })}
-                    </td>
-                    <td className="px-4 py-3">
+                    <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => setDetailsModal({ open: true, request })}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="View Details"
                         >
-                          <Eye size={18} />
+                          <Eye className="w-5 h-5" />
                         </button>
-                        {request.status === 'pending' && (
+                        {request.status === "pending" && (
                           <>
                             <button
                               onClick={() => handleApprove([request.id])}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                               title="Approve"
                             >
-                              <CheckCircle size={18} />
+                              <CheckCircle className="w-5 h-5" />
                             </button>
                             <button
                               onClick={() => handleReject([request.id])}
-                              className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg"
+                              className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
                               title="Reject"
                             >
-                              <XCircle size={18} />
+                              <XCircle className="w-5 h-5" />
                             </button>
                           </>
                         )}
-                        {request.status === 'approved' && (
+                        {request.status === "approved" && (
                           <button
                             onClick={() => handlePrintBadge(request)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                            title="Print Speaker Badge"
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Print Badge"
                           >
-                            <Printer size={18} />
+                            <Printer className="w-5 h-5" />
                           </button>
                         )}
                         <button
                           onClick={() => handleDelete([request.id])}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </td>
@@ -728,249 +838,446 @@ export default function SpeakerRequestsPage() {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="px-4 py-3 border-t flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} results
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                disabled={pagination.page === 1}
-                className="px-3 py-1 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <span className="px-3 py-1 text-gray-600">
-                Page {pagination.page} of {pagination.totalPages}
-              </span>
-              <button
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                disabled={pagination.page === pagination.totalPages}
-                className="px-3 py-1 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronRight size={18} />
-              </button>
+          <div className="px-6 py-4 border-t bg-gray-50">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-gray-600">
+                Showing <span className="font-semibold">{(pagination.page - 1) * pagination.limit + 1}</span> to{" "}
+                <span className="font-semibold">
+                  {Math.min(pagination.page * pagination.limit, pagination.total)}
+                </span>{" "}
+                of <span className="font-semibold">{pagination.total}</span> results
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                  disabled={pagination.page === 1}
+                  className="p-2 border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (pagination.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (pagination.page <= 3) {
+                      pageNum = i + 1;
+                    } else if (pagination.page >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i;
+                    } else {
+                      pageNum = pagination.page - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPagination((prev) => ({ ...prev, page: pageNum }))}
+                        className={`w-10 h-10 rounded-lg transition-colors ${pagination.page === pageNum
+                            ? "bg-[#03215F] text-white"
+                            : "border border-gray-300 hover:bg-gray-50"
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="p-2 border border-gray-300 rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Details Modal */}
+      {/* Details Modal (3xl) */}
       {detailsModal.open && detailsModal.request && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-            <div className="bg-[#03215F] px-6 py-4 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">Request Details</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-3xl w-full max-w-7xl my-8 shadow-2xl max-h-[90vh] overflow-hidden animate-slideUp">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-[#03215F] via-[#1a3a8f] to-[#03215F] px-8 py-6 flex items-center justify-between z-10">
+              <div className="flex items-center gap-4">
+                <div className="p-2 bg-white/10 rounded-lg">
+                  <UserCheck className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Speaker Request Details</h3>
+                  <p className="text-white/90 text-sm mt-1">
+                    Review and manage this speaker application
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => setDetailsModal({ open: false, request: null })}
-                className="text-white hover:bg-white/20 p-2 rounded-lg"
+                className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
               >
-                <X size={24} />
+                <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-gray-500">Full Name</label>
-                  <p className="font-medium">{detailsModal.request.full_name}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Email</label>
-                  <p className="font-medium">{detailsModal.request.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Phone</label>
-                  <p className="font-medium">{detailsModal.request.phone}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Category</label>
-                  <p className="font-medium">{detailsModal.request.category || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Professional Title</label>
-                  <p className="font-medium">{detailsModal.request.professional_title}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Status</label>
-                  <p>{getStatusBadge(detailsModal.request.status)}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Affiliation/Institution</label>
-                  <p className="font-medium">{detailsModal.request.affiliation_institution || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-500">Country of Practice</label>
-                  <p className="font-medium">{detailsModal.request.country_of_practice || 'N/A'}</p>
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm text-gray-500">Presentation Topics</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {detailsModal.request.presentation_topics?.map((topic, i) => (
-                      <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                        {topic}
-                      </span>
-                    ))}
+
+            {/* Modal Content */}
+            <div className="p-8 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {/* Main Info Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left Column */}
+                <div className="space-y-6">
+                  {/* Personal Info */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+                    <h4 className="text-lg font-bold text-[#03215F] mb-4 flex items-center gap-2">
+                      <UserCheck className="w-5 h-5" />
+                      Personal Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm text-gray-600">Full Name</label>
+                        <p className="font-semibold text-gray-900 text-lg">
+                          {detailsModal.request.full_name}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Email</label>
+                        <p className="font-semibold text-gray-900">{detailsModal.request.email}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Phone</label>
+                        <p className="font-semibold text-gray-900">{detailsModal.request.phone}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Category</label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="font-semibold text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                            value={detailsModal.request.category || ""}
+                            onChange={async (e) => {
+                              const newCategory = e.target.value;
+                              const originalCategory = detailsModal.request.category;
+                              
+                              setDetailsModal((modal) => ({
+                                ...modal,
+                                request: { ...modal.request, category: newCategory },
+                              }));
+                              
+                              try {
+                                const res = await fetch(
+                                  `/api/admin/speaker-requests/update-category`,
+                                  {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      id: detailsModal.request.id,
+                                      category: newCategory,
+                                    }),
+                                  },
+                                );
+                                
+                                const data = await res.json();
+                                if (data.success) {
+                                  toast.success(`✅ Category updated from "${originalCategory}" to "${newCategory}"`, {
+                                    duration: 3000,
+                                    icon: '🎯',
+                                    style: {
+                                      background: '#10B981',
+                                      color: 'white',
+                                    },
+                                  });
+                                  fetchRequests(); // Refresh the list
+                                } else {
+                                  toast.error(data.message || "Failed to update category");
+                                  // Revert on error
+                                  setDetailsModal((modal) => ({
+                                    ...modal,
+                                    request: { ...modal.request, category: originalCategory },
+                                  }));
+                                }
+                              } catch (err) {
+                                toast.error("Failed to update category");
+                                setDetailsModal((modal) => ({
+                                  ...modal,
+                                  request: { ...modal.request, category: originalCategory },
+                                }));
+                              }
+                            }}
+                          >
+                            <option value="">Select Category</option>
+                            {PARTICIPANT_CATEGORIES.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
+                          {getCategoryBadge(detailsModal.request.category)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  {detailsModal.request.presentation_topic_other && (
-                    <p className="mt-2 text-sm text-gray-600">Other: {detailsModal.request.presentation_topic_other}</p>
+
+                  {/* Professional Info */}
+                  <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-6 border border-emerald-100">
+                    <h4 className="text-lg font-bold text-[#03215F] mb-4 flex items-center gap-2">
+                      <Briefcase className="w-5 h-5" />
+                      Professional Information
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm text-gray-600">Professional Title</label>
+                        <p className="font-semibold text-gray-900">
+                          {detailsModal.request.professional_title}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Status</label>
+                        <div className="mt-1">{getStatusBadge(detailsModal.request.status)}</div>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Affiliation/Institution</label>
+                        <p className="font-semibold text-gray-900">
+                          {detailsModal.request.affiliation_institution || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Country of Practice</label>
+                        <p className="font-semibold text-gray-900">
+                          {detailsModal.request.country_of_practice || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Files */}
+                  {(detailsModal.request.abstract_form_url || detailsModal.request.article_presentation_url) && (
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-100">
+                      <h4 className="text-lg font-bold text-[#03215F] mb-4 flex items-center gap-2">
+                        <FileText className="w-5 h-5" />
+                        Attached Files
+                      </h4>
+                      <div className="space-y-3">
+                        {detailsModal.request.abstract_form_url && (
+                          <a
+                            href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/speaker-documents/${detailsModal.request.abstract_form_url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-3 bg-white rounded-lg border hover:border-amber-300 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileText className="w-5 h-5 text-amber-600" />
+                              <div>
+                                <p className="font-medium">Abstract Form</p>
+                                <p className="text-sm text-gray-500">Click to download</p>
+                              </div>
+                            </div>
+                            <Download className="w-4 h-4 text-gray-400" />
+                          </a>
+                        )}
+                        {detailsModal.request.article_presentation_url && (
+                          <a
+                            href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/speaker-documents/${detailsModal.request.article_presentation_url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between p-3 bg-white rounded-lg border hover:border-amber-300 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileCheck className="w-5 h-5 text-amber-600" />
+                              <div>
+                                <p className="font-medium">Article/Presentation</p>
+                                <p className="text-sm text-gray-500">Click to download</p>
+                              </div>
+                            </div>
+                            <Download className="w-4 h-4 text-gray-400" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-                <div>
-                  <label className="text-sm text-gray-500">Consent for Publication</label>
-                  <p className="font-medium capitalize">{detailsModal.request.consent_for_publication || 'N/A'}</p>
+
+                {/* Right Column */}
+                <div className="space-y-6">
+                  {/* Profile Image & Bio */}
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
+                    <h4 className="text-lg font-bold text-[#03215F] mb-4 flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Speaker Profile
+                    </h4>
+                    <div className="flex flex-col md:flex-row gap-6">
+                      {detailsModal.request.profile_image_url && (
+                        <div className="flex-shrink-0">
+                          <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden">
+                            <img
+                              src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/speaker-documents/${detailsModal.request.profile_image_url}`}
+                              alt="Speaker Profile"
+                              className="object-cover w-full h-full"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {detailsModal.request.bio && (
+                        <div className="flex-1">
+                          <label className="text-sm text-gray-600">Professional Bio</label>
+                          <p className="font-medium text-gray-700 mt-2 whitespace-pre-line leading-relaxed">
+                            {detailsModal.request.bio}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Topics & Consent */}
+                  <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-6 border border-cyan-100">
+                    <h4 className="text-lg font-bold text-[#03215F] mb-4 flex items-center gap-2">
+                      <FileCheck className="w-5 h-5" />
+                      Presentation Details
+                    </h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm text-gray-600">Presentation Topics</label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {detailsModal.request.presentation_topics?.map((topic, i) => (
+                            <span
+                              key={i}
+                              className="px-3 py-1.5 bg-white text-blue-800 text-sm font-medium rounded-full border border-blue-200 shadow-sm"
+                            >
+                              {topic}
+                            </span>
+                          ))}
+                        </div>
+                        {detailsModal.request.presentation_topic_other && (
+                          <p className="mt-3 text-sm text-gray-700">
+                            <span className="font-medium">Other:</span> {detailsModal.request.presentation_topic_other}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Consent for Publication</label>
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg mt-2 ${detailsModal.request.consent_for_publication === "agree"
+                            ? "bg-green-100 text-green-800 border border-green-200"
+                            : "bg-red-100 text-red-800 border border-red-200"
+                          }`}>
+                          {detailsModal.request.consent_for_publication === "agree" ? (
+                            <CheckCircle className="w-4 h-4" />
+                          ) : (
+                            <XCircle className="w-4 h-4" />
+                          )}
+                          <span className="font-medium capitalize">
+                            {detailsModal.request.consent_for_publication || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-2xl p-6 border border-gray-100">
+                    <h4 className="text-lg font-bold text-[#03215F] mb-4 flex items-center gap-2">
+                      <Calendar className="w-5 h-5" />
+                      Application Timeline
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Applied On</span>
+                        <span className="font-medium text-gray-900">
+                          {new Date(detailsModal.request.created_at).toLocaleString("en-BH", {
+                            timeZone: "Asia/Bahrain",
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </span>
+                      </div>
+                      {detailsModal.request.rejection_reason && (
+                        <div>
+                          <label className="text-sm text-gray-600">Rejection Reason</label>
+                          <p className="font-medium text-red-600 mt-1 bg-red-50 p-3 rounded-lg">
+                            {detailsModal.request.rejection_reason}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm text-gray-500">Applied On</label>
-                  <p className="font-medium">{new Date(detailsModal.request.created_at).toLocaleString('en-BH', { timeZone: 'Asia/Bahrain' })}</p>
-                </div>
-                {detailsModal.request.abstract_form_url && (
-                  <div>
-                    <label className="text-sm text-gray-500">Abstract Form</label>
-                    <a
-                      href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/speaker-documents/${detailsModal.request.abstract_form_url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-600 hover:underline"
-                    >
-                      <FileText size={16} />
-                      Download
-                    </a>
-                  </div>
-                )}
-                {detailsModal.request.article_presentation_url && (
-                  <div>
-                    <label className="text-sm text-gray-500">Article/Presentation</label>
-                    <a
-                      href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/speaker-documents/${detailsModal.request.article_presentation_url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-600 hover:underline"
-                    >
-                      <FileText size={16} />
-                      Download
-                    </a>
-                  </div>
-                )}
-                {detailsModal.request.rejection_reason && (
-                  <div className="col-span-2">
-                    <label className="text-sm text-gray-500">Rejection Reason</label>
-                    <p className="font-medium text-red-600">{detailsModal.request.rejection_reason}</p>
-                  </div>
-                )}
               </div>
 
-              {/* Speaker Declaration Form Data */}
-              {(detailsModal.request.declaration_cpd_title || detailsModal.request.declaration_speaker_name) && (
-                <div className="mt-8 border-t pt-6">
-                  <h4 className="text-lg font-bold text-[#03215F] mb-4">Speaker Declaration Form</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-gray-500">CPD Activity Title</label>
-                      <p className="font-medium">{detailsModal.request.declaration_cpd_title || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Speaker Name</label>
-                      <p className="font-medium">{detailsModal.request.declaration_speaker_name || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Presentation Title</label>
-                      <p className="font-medium">{detailsModal.request.declaration_presentation_title || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Presentation Date</label>
-                      <p className="font-medium">{detailsModal.request.declaration_presentation_date || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Speaker’s Contact Number</label>
-                      <p className="font-medium">{detailsModal.request.declaration_contact_number || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Speaker’s E-Mail Address</label>
-                      <p className="font-medium">{detailsModal.request.declaration_email || '-'}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-sm text-gray-500">Scientific Content/Abstract</label>
-                      <p className="font-medium whitespace-pre-line">{detailsModal.request.declaration_abstract || '-'}</p>
-                    </div>
+              {/* Speaker Declaration Form (if exists) */}
+              {(detailsModal.request.declaration_cpd_title ||
+                detailsModal.request.declaration_speaker_name) && (
+                <div className="mt-8 border-t pt-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h4 className="text-xl font-bold text-[#03215F] flex items-center gap-2">
+                      <Shield className="w-6 h-6" />
+                      Speaker Declaration Form
+                    </h4>
+                    <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
+                      NHRA Certified
+                    </span>
                   </div>
-                  <div className="mt-6">
-                    <label className="text-sm text-gray-500 font-semibold mb-2 block">Declaration Statements</label>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full border text-xs md:text-sm">
-                        <thead>
-                          <tr className="bg-blue-100">
-                            <th className="border px-2 py-1 text-left">Statement</th>
-                            <th className="border px-2 py-1">Agree</th>
-                            <th className="border px-2 py-1">Disagree</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[
-                            "The content of my presentation will promote quality improvement in practice, remain evidence-based, balanced, and unbiased, and will not promote the business interests of any commercial entity.",
-                            "I confirm that no material used in my presentation infringes copyright. Where copyrighted material is included, I have obtained the necessary permissions. NHRA will not be held responsible for any misrepresentation in this regard.",
-                            "I understand that the NHRA approval process may require review of my credentials, presentation, and content in advance, and I will provide all requested materials accordingly.",
-                            "For live events, I acknowledge that NHRA CPD Committee members may attend to ensure the presentation is educational and not promotional.",
-                            "When referring to products or services, I will use generic names whenever possible. If trade names are used, they will represent more than one company where available.",
-                            "If I have been trained or engaged by a commercial entity, I confirm that no promotional aspects will be included in my presentation.",
-                            "If my research is funded by a commercial entity, I confirm it will be presented in line with accepted scientific principles and without promoting the funding company.",
-                            "My lecture content will remain purely scientific or clinical, and any reference to drugs, products, treatments, or services will be for teaching purposes only and in generic form.",
-                            "In line with NHRA regulations, I will not endorse any commercial products, materials, or services in my presentation.",
-                            "An Ethical Confederation declaration will be included as part of my presentation."
-                          ].map((statement, idx) => (
-                            <tr key={idx}>
-                              <td className="border px-2 py-1 align-top">{statement}</td>
-                              <td className="border px-2 py-1 text-center">
-                                {detailsModal.request[`declaration_statement_${idx}`] === 'agree' ? '✔️' : ''}
-                              </td>
-                              <td className="border px-2 py-1 text-center">
-                                {detailsModal.request[`declaration_statement_${idx}`] === 'disagree' ? '✔️' : ''}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm text-gray-600">CPD Activity Title</label>
+                        <p className="font-medium">{detailsModal.request.declaration_cpd_title || "-"}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Presentation Title</label>
+                        <p className="font-medium">
+                          {detailsModal.request.declaration_presentation_title || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Presentation Date</label>
+                        <p className="font-medium">
+                          {detailsModal.request.declaration_presentation_date || "-"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 mt-6">
-                    <div>
-                      <label className="text-sm text-gray-500">Speaker Name (Final Declaration)</label>
-                      <p className="font-medium">{detailsModal.request.declaration_final_speaker_name || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Date</label>
-                      <p className="font-medium">{detailsModal.request.declaration_final_date || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Signature</label>
-                      <p className="font-medium">{detailsModal.request.declaration_final_signature || '-'}</p>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm text-gray-600">Speaker Name</label>
+                        <p className="font-medium">
+                          {detailsModal.request.declaration_speaker_name || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Contact Number</label>
+                        <p className="font-medium">
+                          {detailsModal.request.declaration_contact_number || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Email Address</label>
+                        <p className="font-medium">{detailsModal.request.declaration_email || "-"}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Action Buttons */}
-              {detailsModal.request.status === 'pending' && (
-                <div className="flex gap-3 mt-6 pt-6 border-t">
-                  <button
-                    onClick={() => {
-                      handleApprove([detailsModal.request.id]);
-                      setDetailsModal({ open: false, request: null });
-                    }}
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle size={18} />
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleReject([detailsModal.request.id]);
-                      setDetailsModal({ open: false, request: null });
-                    }}
-                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center justify-center gap-2"
-                  >
-                    <XCircle size={18} />
-                    Reject
-                  </button>
+              {detailsModal.request.status === "pending" && (
+                <div className="mt-8 pt-6 border-t">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button
+                      onClick={() => {
+                        handleApprove([detailsModal.request.id]);
+                        setDetailsModal({ open: false, request: null });
+                      }}
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 font-semibold"
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                      Approve Request
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleReject([detailsModal.request.id]);
+                        setDetailsModal({ open: false, request: null });
+                      }}
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl hover:from-orange-600 hover:to-red-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 font-semibold"
+                    >
+                      <XCircle className="w-5 h-5" />
+                      Reject Request
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

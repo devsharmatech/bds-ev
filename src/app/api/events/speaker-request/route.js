@@ -39,6 +39,9 @@ export async function POST(request) {
     for (let i = 0; i < 10; i++) {
       declaration_statements.push(formData.get(`declaration_statement_${i}`));
     }
+    // Profile image and bio
+    const profileImage = formData.get('profile_image');
+    const bio = formData.get('bio');
 
     // Validate required fields
     if (!event_id || !full_name || !email || !phone || !affiliation_institution || 
@@ -83,9 +86,10 @@ export async function POST(request) {
     const abstractFile = formData.get('abstract_file');
     const articleFile = formData.get('article_file');
 
-    if (!abstractFile) {
+    // Profile image is optional, bio is required
+    if (!bio || !bio.trim()) {
       return NextResponse.json(
-        { success: false, message: 'Abstract submission form is required' },
+        { success: false, message: 'Bio is required' },
         { status: 400 }
       );
     }
@@ -101,8 +105,18 @@ export async function POST(request) {
     // Upload files to Supabase Storage
     let abstractFormUrl = null;
     let articlePresentationUrl = null;
+    let profileImageUrl = null;
 
     try {
+      // Upload Profile Image (Optional)
+      if (profileImage && typeof profileImage.name === 'string') {
+        const profileFileName = `${event_id}/${email}/profile_${Date.now()}_${profileImage.name}`;
+        const { error: profileError, data: profileData } = await supabase.storage
+          .from('speaker-documents')
+          .upload(profileFileName, profileImage, { upsert: true });
+        if (profileError) throw new Error(`Profile image upload failed: ${profileError.message}`);
+        profileImageUrl = profileData?.path;
+      }
       // Upload Abstract Form (Required)
       if (abstractFile) {
         const abstractFileName = `${event_id}/${email}/abstract_${Date.now()}_${abstractFile.name}`;
@@ -113,7 +127,6 @@ export async function POST(request) {
         if (abstractError) throw new Error(`Abstract upload failed: ${abstractError.message}`);
         abstractFormUrl = abstractData?.path;
       }
-
       // Upload Article/Presentation (Optional)
       if (articleFile) {
         const articleFileName = `${event_id}/${email}/article_${Date.now()}_${articleFile.name}`;
@@ -151,6 +164,9 @@ export async function POST(request) {
           article_presentation_url: articlePresentationUrl,
           consent_for_publication: consent_for_publication || 'agree',
           status: 'pending',
+          // New fields
+          profile_image_url: profileImageUrl,
+          bio,
           // Declaration fields
           declaration_cpd_title,
           declaration_speaker_name,
