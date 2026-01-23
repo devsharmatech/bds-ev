@@ -1235,7 +1235,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                 <button
                   type="submit"
                   disabled={loading || alreadyApplied}
-                  className="w-full bg-gradient-to-r from-[#03215F] via-[#1a3a8f] to-[#03215F] text-white py-3 md:py-4 px-6 rounded-lg md:rounded-xl font-semibold hover:from-[#021845] hover:to-[#021845] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 md:gap-3 shadow-lg hover:shadow-xl"
+                  className="w-full bg-gradient-to-r from-[#03215F] via-[#1a3a8f] to-[#03215F] text-white py-3 md:py-4 px-6 rounded-lg md:rounded-xl font-semibold hover:from-[#021845] hover:to-[#021845] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 md:gap-3 shadow-lg hover:shadow-xl !bg-gradient-to-r !from-[#03215F] !to-[#1a3a8f]"
                 >
                   {loading ? (
                     <>

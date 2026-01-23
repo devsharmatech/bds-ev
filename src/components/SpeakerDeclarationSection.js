@@ -250,6 +250,7 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
             {statements.map((statement, idx) => (
               <div key={idx} className="border border-gray-300 rounded-lg overflow-hidden">
                 <button
+                  type="button"
                   onClick={() => setExpandedStatement(expandedStatement === idx ? null : idx)}
                   className="w-full p-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors active:bg-gray-200"
                 >
