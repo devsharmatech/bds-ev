@@ -23,6 +23,22 @@ export async function POST(request) {
     const presentation_topics = formData.get('presentation_topics'); // JSON string
     const presentation_topic_other = formData.get('presentation_topic_other');
     const consent_for_publication = formData.get('consent_for_publication'); // 'agree' or 'disagree'
+    // Declaration form fields
+    const declaration_cpd_title = formData.get('declaration_cpd_title');
+    const declaration_speaker_name = formData.get('declaration_speaker_name');
+    const declaration_presentation_title = formData.get('declaration_presentation_title');
+    const declaration_presentation_date = formData.get('declaration_presentation_date');
+    const declaration_contact_number = formData.get('declaration_contact_number');
+    const declaration_email = formData.get('declaration_email');
+    const declaration_abstract = formData.get('declaration_abstract');
+    const declaration_final_speaker_name = formData.get('declaration_final_speaker_name');
+    const declaration_final_date = formData.get('declaration_final_date');
+    const declaration_final_signature = formData.get('declaration_final_signature');
+    // 10 statements
+    const declaration_statements = [];
+    for (let i = 0; i < 10; i++) {
+      declaration_statements.push(formData.get(`declaration_statement_${i}`));
+    }
 
     // Validate required fields
     if (!event_id || !full_name || !email || !phone || !affiliation_institution || 
@@ -135,6 +151,27 @@ export async function POST(request) {
           article_presentation_url: articlePresentationUrl,
           consent_for_publication: consent_for_publication || 'agree',
           status: 'pending',
+          // Declaration fields
+          declaration_cpd_title,
+          declaration_speaker_name,
+          declaration_presentation_title,
+          declaration_presentation_date,
+          declaration_contact_number,
+          declaration_email,
+          declaration_abstract,
+          declaration_statement_0: declaration_statements[0],
+          declaration_statement_1: declaration_statements[1],
+          declaration_statement_2: declaration_statements[2],
+          declaration_statement_3: declaration_statements[3],
+          declaration_statement_4: declaration_statements[4],
+          declaration_statement_5: declaration_statements[5],
+          declaration_statement_6: declaration_statements[6],
+          declaration_statement_7: declaration_statements[7],
+          declaration_statement_8: declaration_statements[8],
+          declaration_statement_9: declaration_statements[9],
+          declaration_final_speaker_name,
+          declaration_final_date,
+          declaration_final_signature,
         })
         .select()
         .single();

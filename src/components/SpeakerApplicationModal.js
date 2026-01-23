@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import SpeakerDeclarationSection from './SpeakerDeclarationSection';
 import { X, Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -90,13 +91,29 @@ const PRESENTATION_TOPICS = [
 ];
 
 export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
+
   const [loading, setLoading] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [abstractFile, setAbstractFile] = useState(null);
   const [articleFile, setArticleFile] = useState(null);
-
+  const [showDeclaration, setShowDeclaration] = useState(false);
+  const [declarationData, setDeclarationData] = useState({
+    declaration_cpd_title: '',
+    declaration_speaker_name: '',
+    declaration_presentation_title: '',
+    declaration_presentation_date: '',
+    declaration_contact_number: '',
+    declaration_email: '',
+    declaration_abstract: '',
+    // 10 statements
+    ...Object.fromEntries(Array.from({length: 10}, (_, i) => [`declaration_statement_${i}`, ''])),
+    declaration_final_speaker_name: '',
+    declaration_final_date: '',
+    declaration_final_signature: '',
+  });
+  const [declarationError, setDeclarationError] = useState("");
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -160,7 +177,6 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.full_name.trim()) newErrors.full_name = 'Full name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -177,10 +193,38 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     if (formData.presentation_topics.includes('Other') && !formData.presentation_topic_other.trim()) {
       newErrors.presentation_topic_other = 'Please specify your topic';
     }
-    if (!abstractFile) newErrors.abstract_file = 'Abstract submission form is required';
+    // Abstract file is now optional for speaker applications
     if (!formData.consent_for_publication) newErrors.consent_for_publication = 'Please select consent option';
-
+    if (showDeclaration) {
+      // Validate all declaration fields
+      const requiredFields = [
+        'declaration_cpd_title',
+        'declaration_speaker_name',
+        'declaration_presentation_title',
+        'declaration_presentation_date',
+        'declaration_contact_number',
+        'declaration_email',
+        'declaration_abstract',
+        'declaration_final_speaker_name',
+        'declaration_final_date',
+        'declaration_final_signature',
+      ];
+      for (const field of requiredFields) {
+        if (!declarationData[field] || !declarationData[field].trim()) {
+          newErrors.declaration_form = 'All declaration fields are required';
+          break;
+        }
+      }
+      // Validate all 10 statements (must be agree/disagree)
+      for (let i = 0; i < 10; i++) {
+        if (!declarationData[`declaration_statement_${i}`]) {
+          newErrors.declaration_form = 'Please answer all declaration statements';
+          break;
+        }
+      }
+    }
     setErrors(newErrors);
+    setDeclarationError(newErrors.declaration_form || "");
     return Object.keys(newErrors).length === 0;
   };
 
@@ -230,6 +274,12 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     }
   };
 
+  const handleDeclarationChange = (e) => {
+    const { name, value } = e.target;
+    setDeclarationData(prev => ({ ...prev, [name]: value }));
+    if (declarationError) setDeclarationError("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -247,7 +297,6 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
     try {
       const formDataToSend = new FormData();
-
       formDataToSend.append('full_name', formData.full_name);
       formDataToSend.append('email', formData.email);
       formDataToSend.append('phone', `${formData.phone_code}${formData.phone}`);
@@ -259,17 +308,18 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       formDataToSend.append('presentation_topic_other', formData.presentation_topic_other);
       formDataToSend.append('consent_for_publication', formData.consent_for_publication);
       formDataToSend.append('event_id', event.id);
-
       if (abstractFile) formDataToSend.append('abstract_file', abstractFile);
       if (articleFile) formDataToSend.append('article_file', articleFile);
-
+      if (showDeclaration) {
+        Object.entries(declarationData).forEach(([key, value]) => {
+          formDataToSend.append(key, value);
+        });
+      }
       const response = await fetch('/api/events/speaker-request', {
         method: 'POST',
         body: formDataToSend,
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         if (data.alreadyApplied) {
           setAlreadyApplied(true);
@@ -277,10 +327,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         }
         throw new Error(data.message || 'Failed to submit application');
       }
-
       setSubmitSuccess(true);
       toast.success('Application submitted successfully!');
-
       setTimeout(() => {
         onClose();
       }, 2000);
@@ -296,9 +344,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-2xl my-8 shadow-2xl">
+      <div className="bg-white rounded-2xl w-full max-w-4xl 2xl:max-w-4xl my-8 shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-[#03215F] to-[#03215F] px-6 py-5 flex items-center justify-between rounded-t-2xl z-10">
+        <div className="sticky top-0 bg-linear-to-r from-[#03215F] to-[#03215F] px-6 py-5 flex items-center justify-between rounded-t-2xl z-10">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-white">Join as Speaker</h2>
             <p className="text-white/80 text-sm mt-1">{event.title}</p>
@@ -337,6 +385,27 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+                        {/* Speaker Declaration Checkbox */}
+                        <div>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={showDeclaration}
+                              onChange={e => setShowDeclaration(e.target.checked)}
+                              className="w-4 h-4 text-[#03215F] border-gray-300 rounded focus:ring-[#03215F]"
+                            />
+                            <span className="text-sm text-gray-700 font-medium">
+                              I need to fill the Speaker Declaration Form
+                            </span>
+                          </label>
+                        </div>
+                        {showDeclaration && (
+                          <SpeakerDeclarationSection
+                            declarationData={declarationData}
+                            onChange={handleDeclarationChange}
+                            error={declarationError}
+                          />
+                        )}
             {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -527,8 +596,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             {/* Abstract Upload (Required) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Upload the completed Abstract Submission Form <span className="text-red-500">*</span>
-              </label>
+                  Upload the completed Abstract Submission Form
+                </label>
               <div className={`border-2 border-dashed rounded-lg p-4 text-center ${errors.abstract_file ? 'border-red-500' : 'border-gray-300'} hover:border-[#03215F] transition-colors`}>
                 <input
                   type="file"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+
 import { 
   Search, Filter, Eye, Trash2, CheckCircle, XCircle, 
   Download, RefreshCw, ChevronLeft, ChevronRight, 
@@ -857,6 +858,95 @@ export default function SpeakerRequestsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Speaker Declaration Form Data */}
+              {(detailsModal.request.declaration_cpd_title || detailsModal.request.declaration_speaker_name) && (
+                <div className="mt-8 border-t pt-6">
+                  <h4 className="text-lg font-bold text-[#03215F] mb-4">Speaker Declaration Form</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-gray-500">CPD Activity Title</label>
+                      <p className="font-medium">{detailsModal.request.declaration_cpd_title || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Speaker Name</label>
+                      <p className="font-medium">{detailsModal.request.declaration_speaker_name || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Presentation Title</label>
+                      <p className="font-medium">{detailsModal.request.declaration_presentation_title || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Presentation Date</label>
+                      <p className="font-medium">{detailsModal.request.declaration_presentation_date || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Speaker’s Contact Number</label>
+                      <p className="font-medium">{detailsModal.request.declaration_contact_number || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Speaker’s E-Mail Address</label>
+                      <p className="font-medium">{detailsModal.request.declaration_email || '-'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-sm text-gray-500">Scientific Content/Abstract</label>
+                      <p className="font-medium whitespace-pre-line">{detailsModal.request.declaration_abstract || '-'}</p>
+                    </div>
+                  </div>
+                  <div className="mt-6">
+                    <label className="text-sm text-gray-500 font-semibold mb-2 block">Declaration Statements</label>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border text-xs md:text-sm">
+                        <thead>
+                          <tr className="bg-blue-100">
+                            <th className="border px-2 py-1 text-left">Statement</th>
+                            <th className="border px-2 py-1">Agree</th>
+                            <th className="border px-2 py-1">Disagree</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            "The content of my presentation will promote quality improvement in practice, remain evidence-based, balanced, and unbiased, and will not promote the business interests of any commercial entity.",
+                            "I confirm that no material used in my presentation infringes copyright. Where copyrighted material is included, I have obtained the necessary permissions. NHRA will not be held responsible for any misrepresentation in this regard.",
+                            "I understand that the NHRA approval process may require review of my credentials, presentation, and content in advance, and I will provide all requested materials accordingly.",
+                            "For live events, I acknowledge that NHRA CPD Committee members may attend to ensure the presentation is educational and not promotional.",
+                            "When referring to products or services, I will use generic names whenever possible. If trade names are used, they will represent more than one company where available.",
+                            "If I have been trained or engaged by a commercial entity, I confirm that no promotional aspects will be included in my presentation.",
+                            "If my research is funded by a commercial entity, I confirm it will be presented in line with accepted scientific principles and without promoting the funding company.",
+                            "My lecture content will remain purely scientific or clinical, and any reference to drugs, products, treatments, or services will be for teaching purposes only and in generic form.",
+                            "In line with NHRA regulations, I will not endorse any commercial products, materials, or services in my presentation.",
+                            "An Ethical Confederation declaration will be included as part of my presentation."
+                          ].map((statement, idx) => (
+                            <tr key={idx}>
+                              <td className="border px-2 py-1 align-top">{statement}</td>
+                              <td className="border px-2 py-1 text-center">
+                                {detailsModal.request[`declaration_statement_${idx}`] === 'agree' ? '✔️' : ''}
+                              </td>
+                              <td className="border px-2 py-1 text-center">
+                                {detailsModal.request[`declaration_statement_${idx}`] === 'disagree' ? '✔️' : ''}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 mt-6">
+                    <div>
+                      <label className="text-sm text-gray-500">Speaker Name (Final Declaration)</label>
+                      <p className="font-medium">{detailsModal.request.declaration_final_speaker_name || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Date</label>
+                      <p className="font-medium">{detailsModal.request.declaration_final_date || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Signature</label>
+                      <p className="font-medium">{detailsModal.request.declaration_final_signature || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               {detailsModal.request.status === 'pending' && (
