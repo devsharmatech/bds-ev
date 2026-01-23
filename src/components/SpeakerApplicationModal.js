@@ -2,57 +2,227 @@
 
 import { useState, useEffect, useRef } from "react";
 import SpeakerDeclarationSection from "./SpeakerDeclarationSection";
-import { 
-  X, Upload, Loader2, CheckCircle, AlertCircle, 
-  User, FileText, Globe, Building, Briefcase, 
-  Tag, Check, ChevronDown, Phone, Mail, 
-  ChevronRight, ChevronLeft, Menu, XCircle,
-  ArrowLeft, ArrowRight
+import {
+  X,
+  Upload,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  User,
+  FileText,
+  Globe,
+  Building,
+  Briefcase,
+  Tag,
+  Check,
+  ChevronDown,
+  Phone,
+  Mail,
+  ChevronRight,
+  ChevronLeft,
+  Menu,
+  XCircle,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 // All countries list for Country of Practice dropdown
 const ALL_COUNTRIES = [
-  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", 
-  "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
-  "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", 
-  "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
-  "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", 
-  "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
-  "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", 
-  "China", "Colombia", "Comoros", "Congo", "Costa Rica",
-  "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", 
-  "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt",
-  "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", 
-  "Ethiopia", "Fiji", "Finland", "France", "Gabon",
-  "Gambia", "Georgia", "Germany", "Ghana", "Greece", 
-  "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
-  "Haiti", "Honduras", "Hungary", "Iceland", "India", 
-  "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
-  "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", 
-  "Kenya", "Kiribati", "Korea, North", "Korea, South", "Kuwait",
-  "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", 
-  "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg",
-  "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", 
-  "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico",
-  "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", 
-  "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru",
-  "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", 
-  "Nigeria", "North Macedonia", "Norway", "Oman", "Pakistan",
-  "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", 
-  "Peru", "Philippines", "Poland", "Portugal", "Qatar",
-  "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", 
-  "Saint Vincent and the Grenadines", "Samoa", "San Marino",
-  "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", 
-  "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
-  "Solomon Islands", "Somalia", "South Africa", "South Sudan", 
-  "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland",
-  "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", 
-  "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia",
-  "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", 
-  "United Arab Emirates", "United Kingdom", "United States", "Uruguay",
-  "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", 
-  "Vietnam", "Yemen", "Zambia", "Zimbabwe",
+  "Afghanistan",
+  "Albania",
+  "Algeria",
+  "Andorra",
+  "Angola",
+  "Antigua and Barbuda",
+  "Argentina",
+  "Armenia",
+  "Australia",
+  "Austria",
+  "Azerbaijan",
+  "Bahamas",
+  "Bahrain",
+  "Bangladesh",
+  "Barbados",
+  "Belarus",
+  "Belgium",
+  "Belize",
+  "Benin",
+  "Bhutan",
+  "Bolivia",
+  "Bosnia and Herzegovina",
+  "Botswana",
+  "Brazil",
+  "Brunei",
+  "Bulgaria",
+  "Burkina Faso",
+  "Burundi",
+  "Cabo Verde",
+  "Cambodia",
+  "Cameroon",
+  "Canada",
+  "Central African Republic",
+  "Chad",
+  "Chile",
+  "China",
+  "Colombia",
+  "Comoros",
+  "Congo",
+  "Costa Rica",
+  "Croatia",
+  "Cuba",
+  "Cyprus",
+  "Czech Republic",
+  "Denmark",
+  "Djibouti",
+  "Dominica",
+  "Dominican Republic",
+  "Ecuador",
+  "Egypt",
+  "El Salvador",
+  "Equatorial Guinea",
+  "Eritrea",
+  "Estonia",
+  "Eswatini",
+  "Ethiopia",
+  "Fiji",
+  "Finland",
+  "France",
+  "Gabon",
+  "Gambia",
+  "Georgia",
+  "Germany",
+  "Ghana",
+  "Greece",
+  "Grenada",
+  "Guatemala",
+  "Guinea",
+  "Guinea-Bissau",
+  "Guyana",
+  "Haiti",
+  "Honduras",
+  "Hungary",
+  "Iceland",
+  "India",
+  "Indonesia",
+  "Iran",
+  "Iraq",
+  "Ireland",
+  "Israel",
+  "Italy",
+  "Jamaica",
+  "Japan",
+  "Jordan",
+  "Kazakhstan",
+  "Kenya",
+  "Kiribati",
+  "Korea, North",
+  "Korea, South",
+  "Kuwait",
+  "Kyrgyzstan",
+  "Laos",
+  "Latvia",
+  "Lebanon",
+  "Lesotho",
+  "Liberia",
+  "Libya",
+  "Liechtenstein",
+  "Lithuania",
+  "Luxembourg",
+  "Madagascar",
+  "Malawi",
+  "Malaysia",
+  "Maldives",
+  "Mali",
+  "Malta",
+  "Marshall Islands",
+  "Mauritania",
+  "Mauritius",
+  "Mexico",
+  "Micronesia",
+  "Moldova",
+  "Monaco",
+  "Mongolia",
+  "Montenegro",
+  "Morocco",
+  "Mozambique",
+  "Myanmar",
+  "Namibia",
+  "Nauru",
+  "Nepal",
+  "Netherlands",
+  "New Zealand",
+  "Nicaragua",
+  "Niger",
+  "Nigeria",
+  "North Macedonia",
+  "Norway",
+  "Oman",
+  "Pakistan",
+  "Palau",
+  "Palestine",
+  "Panama",
+  "Papua New Guinea",
+  "Paraguay",
+  "Peru",
+  "Philippines",
+  "Poland",
+  "Portugal",
+  "Qatar",
+  "Romania",
+  "Russia",
+  "Rwanda",
+  "Saint Kitts and Nevis",
+  "Saint Lucia",
+  "Saint Vincent and the Grenadines",
+  "Samoa",
+  "San Marino",
+  "Sao Tome and Principe",
+  "Saudi Arabia",
+  "Senegal",
+  "Serbia",
+  "Seychelles",
+  "Sierra Leone",
+  "Singapore",
+  "Slovakia",
+  "Slovenia",
+  "Solomon Islands",
+  "Somalia",
+  "South Africa",
+  "South Sudan",
+  "Spain",
+  "Sri Lanka",
+  "Sudan",
+  "Suriname",
+  "Sweden",
+  "Switzerland",
+  "Syria",
+  "Taiwan",
+  "Tajikistan",
+  "Tanzania",
+  "Thailand",
+  "Timor-Leste",
+  "Togo",
+  "Tonga",
+  "Trinidad and Tobago",
+  "Tunisia",
+  "Turkey",
+  "Turkmenistan",
+  "Tuvalu",
+  "Uganda",
+  "Ukraine",
+  "United Arab Emirates",
+  "United Kingdom",
+  "United States",
+  "Uruguay",
+  "Uzbekistan",
+  "Vanuatu",
+  "Vatican City",
+  "Venezuela",
+  "Vietnam",
+  "Yemen",
+  "Zambia",
+  "Zimbabwe",
 ];
 
 // Phone country codes
@@ -179,39 +349,44 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Auto scroll to top on step change
   useEffect(() => {
     if (formRef.current) {
-      formRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      formRef.current.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [currentStep]);
 
   // Close modal on ESC key
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen && !loading) {
+      if (e.key === "Escape" && isOpen && !loading) {
         onClose();
       }
     };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, loading, onClose]);
 
   // Click outside to close
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target) && isOpen && !loading) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(e.target) &&
+        isOpen &&
+        !loading
+      ) {
         onClose();
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, loading, onClose]);
 
   // Reset state when modal opens
@@ -268,29 +443,33 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   const validateCurrentStep = () => {
     const newErrors = {};
-    
+
     if (currentStep === 1) {
       if (!profileImage) newErrors.profile_image = "Profile image is required";
-      if (!bio.trim() || bio.length < 50) newErrors.bio = "Bio must be at least 50 characters";
+      if (!bio.trim() || bio.length < 50)
+        newErrors.bio = "Bio must be at least 50 characters";
     }
-    
+
     if (currentStep === 2) {
-      if (!formData.full_name.trim()) newErrors.full_name = "Full name is required";
+      if (!formData.full_name.trim())
+        newErrors.full_name = "Full name is required";
       if (!formData.email.trim()) newErrors.email = "Email is required";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
         newErrors.email = "Invalid email format";
       }
       if (!formData.phone.trim()) newErrors.phone = "Phone is required";
-      if (!/^[0-9+\-\s]+$/.test(formData.phone)) newErrors.phone = "Invalid phone number";
+      if (!/^[0-9+\-\s]+$/.test(formData.phone))
+        newErrors.phone = "Invalid phone number";
       if (!formData.affiliation_institution.trim())
-        newErrors.affiliation_institution = "Affiliation/Institution is required";
+        newErrors.affiliation_institution =
+          "Affiliation/Institution is required";
       if (!formData.country_of_practice)
         newErrors.country_of_practice = "Country of practice is required";
       if (!formData.professional_title)
         newErrors.professional_title = "Professional title is required";
       if (!formData.category) newErrors.category = "Category is required";
     }
-    
+
     if (currentStep === 3) {
       if (formData.presentation_topics.length === 0) {
         newErrors.presentation_topics = "Please select at least one topic";
@@ -302,12 +481,12 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         newErrors.presentation_topic_other = "Please specify your topic";
       }
     }
-    
+
     if (currentStep === 4) {
       if (!formData.consent_for_publication)
         newErrors.consent_for_publication = "Please select consent option";
     }
-    
+
     if (currentStep === 5 && showDeclaration) {
       const requiredFields = [
         "declaration_cpd_title",
@@ -335,7 +514,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         }
       }
     }
-    
+
     setErrors(newErrors);
     setDeclarationError(newErrors.declaration_form || "");
     return Object.keys(newErrors).length === 0;
@@ -343,13 +522,15 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.full_name.trim()) newErrors.full_name = "Full name is required";
+    if (!formData.full_name.trim())
+      newErrors.full_name = "Full name is required";
     if (!formData.email.trim()) newErrors.email = "Email is required";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Invalid email format";
     }
     if (!formData.phone.trim()) newErrors.phone = "Phone is required";
-    if (!/^[0-9+\-\s]+$/.test(formData.phone)) newErrors.phone = "Invalid phone number";
+    if (!/^[0-9+\-\s]+$/.test(formData.phone))
+      newErrors.phone = "Invalid phone number";
     if (!formData.affiliation_institution.trim())
       newErrors.affiliation_institution = "Affiliation/Institution is required";
     if (!formData.country_of_practice)
@@ -366,7 +547,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     ) {
       newErrors.presentation_topic_other = "Please specify your topic";
     }
-    if (!bio.trim() || bio.length < 50) newErrors.bio = "Bio must be at least 50 characters";
+    if (!bio.trim() || bio.length < 50)
+      newErrors.bio = "Bio must be at least 50 characters";
     if (!profileImage) newErrors.profile_image = "Profile image is required";
     if (!formData.consent_for_publication)
       newErrors.consent_for_publication = "Please select consent option";
@@ -414,7 +596,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       }
       setter(file);
       setErrors({ ...errors, [fieldName]: "" });
-      if (fieldName === 'profile_image') {
+      if (fieldName === "profile_image") {
         setProfileImage(file);
         const reader = new FileReader();
         reader.onloadend = () => setProfilePreview(reader.result);
@@ -466,14 +648,14 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   const handleNextStep = () => {
     if (validateCurrentStep()) {
-      setCurrentStep(prev => Math.min(prev + 1, 5));
+      setCurrentStep((prev) => Math.min(prev + 1, 5));
     } else {
       toast.error("Please fill in all required fields for this step");
     }
   };
 
   const handlePrevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
   const handleSubmit = async (e) => {
@@ -519,8 +701,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         formData.consent_for_publication,
       );
       formDataToSend.append("event_id", event.id);
-      if (profileImage) formDataToSend.append('profile_image', profileImage);
-      formDataToSend.append('bio', bio);
+      if (profileImage) formDataToSend.append("profile_image", profileImage);
+      formDataToSend.append("bio", bio);
       if (abstractFile) formDataToSend.append("abstract_file", abstractFile);
       if (articleFile) formDataToSend.append("article_file", articleFile);
       if (showDeclaration) {
@@ -557,7 +739,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4 overflow-y-auto animate-fadeIn">
-      <div 
+      <div
         ref={modalRef}
         className="bg-white rounded-lg md:rounded-2xl w-full max-w-full md:max-w-4xl 2xl:max-w-5xl my-2 md:my-8 shadow-2xl animate-slideUp"
       >
@@ -571,7 +753,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
               <h2 className="text-base md:text-xl lg:text-2xl font-bold text-white truncate">
                 Speaker Application
               </h2>
-              <p className="text-white/90 text-xs md:text-sm mt-0.5 truncate">{event.title}</p>
+              <p className="text-white/90 text-xs md:text-sm mt-0.5 truncate">
+                {event.title}
+              </p>
             </div>
           </div>
           <button
@@ -591,23 +775,23 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
               <button
                 onClick={handlePrevStep}
                 disabled={currentStep === 1}
-                className={`p-1.5 rounded-lg ${currentStep === 1 ? 'text-gray-400' : 'text-[#03215F] hover:bg-gray-100'}`}
+                className={`p-1.5 rounded-lg ${currentStep === 1 ? "text-gray-400" : "text-[#03215F] hover:bg-gray-100"}`}
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              
+
               <div className="flex items-center gap-1">
                 {FORM_STEPS.map((step) => (
                   <div
                     key={step.id}
-                    className={`w-8 h-1.5 rounded-full ${currentStep >= step.id ? 'bg-[#03215F]' : 'bg-gray-300'}`}
+                    className={`w-8 h-1.5 rounded-full ${currentStep >= step.id ? "bg-[#03215F]" : "bg-gray-300"}`}
                   />
                 ))}
               </div>
-              
+
               <button
                 onClick={currentStep === 5 ? handleSubmit : handleNextStep}
-                className="p-1.5 text-[#03215F] hover:bg-gray-100 rounded-lg text-sm font-medium"
+                className={`p-1.5  ${currentStep===5 ?'bg-gradient-to-r from-[#03215F] via-[#1a3a8f] to-[#03215F] text-white':'hover:bg-gray-100 text-[#03215F]'}  rounded-lg text-sm font-medium`}
               >
                 {currentStep === 5 ? (
                   <span className="flex items-center gap-1">
@@ -621,7 +805,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             </div>
             <div className="mt-2 text-center">
               <span className="text-xs font-medium text-gray-700">
-                Step {currentStep} of 5: {FORM_STEPS.find(s => s.id === currentStep)?.title}
+                Step {currentStep} of 5:{" "}
+                {FORM_STEPS.find((s) => s.id === currentStep)?.title}
               </span>
             </div>
           </div>
@@ -633,7 +818,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             <div className="w-16 h-16 md:w-20 md:h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 animate-pulse">
               <AlertCircle className="w-8 h-8 md:w-10 md:h-10 text-blue-600" />
             </div>
-            <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Already Applied!</h3>
+            <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">
+              Already Applied!
+            </h3>
             <p className="text-gray-600 mb-4 md:mb-6 text-sm md:text-base px-4">
               Your request has already been sent for this event. We will review
               your application and get back to you soon.
@@ -650,10 +837,12 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 animate-bounce">
               <CheckCircle className="w-8 h-8 md:w-10 md:h-10 text-green-600" />
             </div>
-            <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">Application Submitted!</h3>
+            <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 md:mb-3">
+              Application Submitted!
+            </h3>
             <p className="text-gray-600 mb-4 md:mb-6 text-sm md:text-base px-4">
-              🎉 Your application has been submitted successfully. We will review
-              your application and get back to you soon.
+              🎉 Your application has been submitted successfully. We will
+              review your application and get back to you soon.
             </p>
             <div className="animate-pulse text-sm text-gray-500">
               Redirecting in 3 seconds...
@@ -672,18 +861,20 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                   <div className="p-1.5 md:p-2 bg-blue-100 rounded-lg">
                     <User className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
                   </div>
-                  <h3 className="text-base md:text-lg font-bold text-[#03215F]">Profile Information</h3>
+                  <h3 className="text-base md:text-lg font-bold text-[#03215F]">
+                    Profile Information
+                  </h3>
                 </div>
-                
+
                 <div className="flex flex-col md:flex-row gap-4 md:gap-8 items-start">
                   <div className="flex flex-col items-center gap-3 md:gap-4 w-full md:w-auto">
                     <div className="relative">
                       <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
                         {profilePreview ? (
-                          <img 
-                            src={profilePreview} 
-                            alt="Profile Preview" 
-                            className="object-cover w-full h-full" 
+                          <img
+                            src={profilePreview}
+                            alt="Profile Preview"
+                            className="object-cover w-full h-full"
                           />
                         ) : (
                           <User className="w-12 h-12 md:w-16 md:h-16 text-blue-300" />
@@ -694,7 +885,13 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={e => handleFileChange(e, setProfileImage, 'profile_image')}
+                          onChange={(e) =>
+                            handleFileChange(
+                              e,
+                              setProfileImage,
+                              "profile_image",
+                            )
+                          }
                           className="hidden"
                         />
                       </label>
@@ -703,10 +900,13 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                       Square image, Max 5MB
                     </p>
                     {errors.profile_image && (
-                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.profile_image}</p>
+                      <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />{" "}
+                        {errors.profile_image}
+                      </p>
                     )}
                   </div>
-                  
+
                   <div className="flex-1 w-full">
                     <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <FileText className="w-4 h-4" />
@@ -715,13 +915,15 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                     <div className="relative">
                       <textarea
                         value={bio}
-                        onChange={e => setBio(e.target.value)}
-                        className={`w-full px-3 md:px-4 py-2.5 md:py-3 border rounded-lg md:rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all duration-200 resize-none ${errors.bio ? 'border-red-500' : 'border-gray-300 hover:border-blue-300'}`}
+                        onChange={(e) => setBio(e.target.value)}
+                        className={`w-full px-3 md:px-4 py-2.5 md:py-3 border rounded-lg md:rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all duration-200 resize-none ${errors.bio ? "border-red-500" : "border-gray-300 hover:border-blue-300"}`}
                         placeholder="Write a detailed professional bio (minimum 50 characters)..."
                         rows={isMobile ? 4 : 5}
                       />
                       <div className="flex justify-between items-center mt-2">
-                        <span className={`text-xs ${errors.bio ? 'text-red-500' : bio.length < 50 ? 'text-amber-500' : 'text-green-500'}`}>
+                        <span
+                          className={`text-xs ${errors.bio ? "text-red-500" : bio.length < 50 ? "text-amber-500" : "text-green-500"}`}
+                        >
                           {bio.length}/50 characters
                         </span>
                         {bio.length >= 50 && (
@@ -729,7 +931,11 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                         )}
                       </div>
                     </div>
-                    {errors.bio && <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.bio}</p>}
+                    {errors.bio && (
+                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {errors.bio}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -754,7 +960,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                       placeholder="Enter your full name"
                     />
                     {errors.full_name && (
-                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.full_name}</p>
+                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {errors.full_name}
+                      </p>
                     )}
                   </div>
 
@@ -786,7 +994,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                       )}
                     </div>
                     {errors.email && (
-                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>
+                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {errors.email}
+                      </p>
                     )}
                   </div>
 
@@ -821,7 +1031,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                       />
                     </div>
                     {errors.phone && (
-                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.phone}</p>
+                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {errors.phone}
+                      </p>
                     )}
                   </div>
 
@@ -829,7 +1041,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <Building className="w-4 h-4" />
-                      Affiliation / Institution <span className="text-red-500">*</span>
+                      Affiliation / Institution{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -840,7 +1053,10 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                       placeholder="University, Hospital, or Organization"
                     />
                     {errors.affiliation_institution && (
-                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.affiliation_institution}</p>
+                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />{" "}
+                        {errors.affiliation_institution}
+                      </p>
                     )}
                   </div>
 
@@ -850,7 +1066,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                         <Globe className="w-4 h-4" />
-                        Country of Practice <span className="text-red-500">*</span>
+                        Country of Practice{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <select
@@ -860,16 +1077,21 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                           className={`w-full px-3 md:px-4 py-2.5 md:py-3 border rounded-lg md:rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none hover:border-blue-300 transition-all duration-200 ${errors.country_of_practice ? "border-red-500" : "border-gray-300"}`}
                         >
                           <option value="Bahrain">Bahrain</option>
-                          {ALL_COUNTRIES.filter(c => c !== "Bahrain").map((country) => (
-                            <option key={country} value={country}>
-                              {country}
-                            </option>
-                          ))}
+                          {ALL_COUNTRIES.filter((c) => c !== "Bahrain").map(
+                            (country) => (
+                              <option key={country} value={country}>
+                                {country}
+                              </option>
+                            ),
+                          )}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 md:w-4 md:h-4 text-gray-400 pointer-events-none" />
                       </div>
                       {errors.country_of_practice && (
-                        <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.country_of_practice}</p>
+                        <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />{" "}
+                          {errors.country_of_practice}
+                        </p>
                       )}
                     </div>
 
@@ -877,7 +1099,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                         <Briefcase className="w-4 h-4" />
-                        Professional Title <span className="text-red-500">*</span>
+                        Professional Title{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <select
@@ -896,7 +1119,10 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 md:w-4 md:h-4 text-gray-400 pointer-events-none" />
                       </div>
                       {errors.professional_title && (
-                        <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.professional_title}</p>
+                        <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />{" "}
+                          {errors.professional_title}
+                        </p>
                       )}
                     </div>
 
@@ -923,7 +1149,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 md:w-4 md:h-4 text-gray-400 pointer-events-none" />
                       </div>
                       {errors.category && (
-                        <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.category}</p>
+                        <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {errors.category}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -944,10 +1172,11 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                   {PRESENTATION_TOPICS.map((topic) => (
                     <label
                       key={topic}
-                      className={`flex items-center gap-2 md:gap-3 cursor-pointer p-2 md:p-3 rounded-lg border transition-all duration-200 ${formData.presentation_topics.includes(topic)
+                      className={`flex items-center gap-2 md:gap-3 cursor-pointer p-2 md:p-3 rounded-lg border transition-all duration-200 ${
+                        formData.presentation_topics.includes(topic)
                           ? "bg-blue-50 border-blue-300 shadow-sm"
                           : "bg-white border-gray-300 hover:border-blue-200 hover:bg-blue-50"
-                        }`}
+                      }`}
                     >
                       <input
                         type="checkbox"
@@ -955,21 +1184,27 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                         checked={formData.presentation_topics.includes(topic)}
                         onChange={() => handleTopicChange(topic)}
                       />
-                      <div className={`w-4 h-4 md:w-5 md:h-5 rounded border flex items-center justify-center transition-all duration-200 flex-shrink-0 ${formData.presentation_topics.includes(topic)
-                          ? "bg-[#03215F] border-[#03215F]"
-                          : "border-gray-400"
+                      <div
+                        className={`w-4 h-4 md:w-5 md:h-5 rounded border flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                          formData.presentation_topics.includes(topic)
+                            ? "bg-[#03215F] border-[#03215F]"
+                            : "border-gray-400"
                         }`}
                       >
                         {formData.presentation_topics.includes(topic) && (
                           <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
                         )}
                       </div>
-                      <span className="text-xs md:text-sm text-gray-700 truncate">{topic}</span>
+                      <span className="text-xs md:text-sm text-gray-700 truncate">
+                        {topic}
+                      </span>
                     </label>
                   ))}
-                  <label className={`flex items-center gap-2 md:gap-3 cursor-pointer p-2 md:p-3 rounded-lg border transition-all duration-200 col-span-2 sm:col-span-1 ${formData.presentation_topics.includes("Other")
-                      ? "bg-blue-50 border-blue-300 shadow-sm"
-                      : "bg-white border-gray-300 hover:border-blue-200 hover:bg-blue-50"
+                  <label
+                    className={`flex items-center gap-2 md:gap-3 cursor-pointer p-2 md:p-3 rounded-lg border transition-all duration-200 col-span-2 sm:col-span-1 ${
+                      formData.presentation_topics.includes("Other")
+                        ? "bg-blue-50 border-blue-300 shadow-sm"
+                        : "bg-white border-gray-300 hover:border-blue-200 hover:bg-blue-50"
                     }`}
                   >
                     <input
@@ -978,19 +1213,23 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                       checked={formData.presentation_topics.includes("Other")}
                       onChange={() => handleTopicChange("Other")}
                     />
-                    <div className={`w-4 h-4 md:w-5 md:h-5 rounded border flex items-center justify-center transition-all duration-200 flex-shrink-0 ${formData.presentation_topics.includes("Other")
-                        ? "bg-[#03215F] border-[#03215F]"
-                        : "border-gray-400"
+                    <div
+                      className={`w-4 h-4 md:w-5 md:h-5 rounded border flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                        formData.presentation_topics.includes("Other")
+                          ? "bg-[#03215F] border-[#03215F]"
+                          : "border-gray-400"
                       }`}
                     >
                       {formData.presentation_topics.includes("Other") && (
                         <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
                       )}
                     </div>
-                    <span className="text-xs md:text-sm text-gray-700">Other</span>
+                    <span className="text-xs md:text-sm text-gray-700">
+                      Other
+                    </span>
                   </label>
                 </div>
-                
+
                 {formData.presentation_topics.includes("Other") && (
                   <div className="mt-3 md:mt-4">
                     <input
@@ -1002,13 +1241,19 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                       placeholder="Please specify your topic"
                     />
                     {errors.presentation_topic_other && (
-                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.presentation_topic_other}</p>
+                      <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />{" "}
+                        {errors.presentation_topic_other}
+                      </p>
                     )}
                   </div>
                 )}
-                
+
                 {errors.presentation_topics && (
-                  <p className="text-red-500 text-xs mt-2 md:mt-3 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.presentation_topics}</p>
+                  <p className="text-red-500 text-xs mt-2 md:mt-3 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />{" "}
+                    {errors.presentation_topics}
+                  </p>
                 )}
               </div>
             )}
@@ -1021,29 +1266,40 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                   {/* Abstract Upload */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Abstract Submission Form <span className="text-gray-400 text-xs">(Optional)</span>
+                      Abstract Submission Form{" "}
+                      <span className="text-gray-400 text-xs">(Optional)</span>
                     </label>
-                    <div className={`border-2 border-dashed rounded-lg md:rounded-xl p-4 md:p-6 text-center transition-all duration-300 ${abstractFile
-                        ? "border-green-500 bg-green-50"
-                        : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                    <div
+                      className={`border-2 border-dashed rounded-lg md:rounded-xl p-4 md:p-6 text-center transition-all duration-300 ${
+                        abstractFile
+                          ? "border-green-500 bg-green-50"
+                          : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
                       }`}
                     >
                       <input
                         type="file"
                         accept=".pdf,.doc,.docx"
-                        onChange={(e) => handleFileChange(e, setAbstractFile, "abstract_file")}
+                        onChange={(e) =>
+                          handleFileChange(e, setAbstractFile, "abstract_file")
+                        }
                         className="hidden"
                         id="abstract-upload"
                       />
-                      <label htmlFor="abstract-upload" className="cursor-pointer">
+                      <label
+                        htmlFor="abstract-upload"
+                        className="cursor-pointer"
+                      >
                         {abstractFile ? (
                           <div className="flex flex-col items-center gap-2">
                             <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center">
                               <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
                             </div>
-                            <span className="text-xs md:text-sm font-medium text-green-700 truncate max-w-full">{abstractFile.name}</span>
+                            <span className="text-xs md:text-sm font-medium text-green-700 truncate max-w-full">
+                              {abstractFile.name}
+                            </span>
                             <span className="text-xs text-gray-500">
-                              {(abstractFile.size / (1024 * 1024)).toFixed(2)} MB
+                              {(abstractFile.size / (1024 * 1024)).toFixed(2)}{" "}
+                              MB
                             </span>
                           </div>
                         ) : (
@@ -1070,25 +1326,34 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Full Article / Presentation (Optional)
                     </label>
-                    <div className={`border-2 border-dashed rounded-lg md:rounded-xl p-4 md:p-6 text-center transition-all duration-300 ${articleFile
-                        ? "border-green-500 bg-green-50"
-                        : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                    <div
+                      className={`border-2 border-dashed rounded-lg md:rounded-xl p-4 md:p-6 text-center transition-all duration-300 ${
+                        articleFile
+                          ? "border-green-500 bg-green-50"
+                          : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
                       }`}
                     >
                       <input
                         type="file"
                         accept=".pdf,.doc,.docx,.ppt,.pptx"
-                        onChange={(e) => handleFileChange(e, setArticleFile, "article_file")}
+                        onChange={(e) =>
+                          handleFileChange(e, setArticleFile, "article_file")
+                        }
                         className="hidden"
                         id="article-upload"
                       />
-                      <label htmlFor="article-upload" className="cursor-pointer">
+                      <label
+                        htmlFor="article-upload"
+                        className="cursor-pointer"
+                      >
                         {articleFile ? (
                           <div className="flex flex-col items-center gap-2">
                             <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center">
                               <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
                             </div>
-                            <span className="text-xs md:text-sm font-medium text-green-700 truncate max-w-full">{articleFile.name}</span>
+                            <span className="text-xs md:text-sm font-medium text-green-700 truncate max-w-full">
+                              {articleFile.name}
+                            </span>
                             <span className="text-xs text-gray-500">
                               {(articleFile.size / (1024 * 1024)).toFixed(2)} MB
                             </span>
@@ -1116,17 +1381,22 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                 {/* Consent for Publication */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-blue-100">
                   <label className="block text-sm font-semibold text-gray-700 mb-3 md:mb-4">
-                    Consent for Publication <span className="text-red-500">*</span>
+                    Consent for Publication{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                    <label className={`flex items-start gap-3 md:gap-4 cursor-pointer p-3 md:p-4 rounded-lg md:rounded-xl border transition-all duration-200 ${formData.consent_for_publication === "agree"
-                        ? "bg-white border-green-300 shadow-md"
-                        : "bg-white border-gray-300 hover:border-green-200"
+                    <label
+                      className={`flex items-start gap-3 md:gap-4 cursor-pointer p-3 md:p-4 rounded-lg md:rounded-xl border transition-all duration-200 ${
+                        formData.consent_for_publication === "agree"
+                          ? "bg-white border-green-300 shadow-md"
+                          : "bg-white border-gray-300 hover:border-green-200"
                       }`}
                     >
-                      <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border flex items-center justify-center mt-0.5 md:mt-1 flex-shrink-0 ${formData.consent_for_publication === "agree"
-                          ? "bg-green-500 border-green-500"
-                          : "border-gray-400"
+                      <div
+                        className={`w-5 h-5 md:w-6 md:h-6 rounded-full border flex items-center justify-center mt-0.5 md:mt-1 flex-shrink-0 ${
+                          formData.consent_for_publication === "agree"
+                            ? "bg-green-500 border-green-500"
+                            : "border-gray-400"
                         }`}
                       >
                         {formData.consent_for_publication === "agree" && (
@@ -1138,7 +1408,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                           I agree
                         </span>
                         <span className="text-xs text-gray-600">
-                          I agree that my abstract may be published in the conference materials
+                          I agree that my abstract may be published in the
+                          conference materials
                         </span>
                       </div>
                       <input
@@ -1150,14 +1421,18 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                         className="hidden"
                       />
                     </label>
-                    <label className={`flex items-start gap-3 md:gap-4 cursor-pointer p-3 md:p-4 rounded-lg md:rounded-xl border transition-all duration-200 ${formData.consent_for_publication === "disagree"
-                        ? "bg-white border-red-300 shadow-md"
-                        : "bg-white border-gray-300 hover:border-red-200"
+                    <label
+                      className={`flex items-start gap-3 md:gap-4 cursor-pointer p-3 md:p-4 rounded-lg md:rounded-xl border transition-all duration-200 ${
+                        formData.consent_for_publication === "disagree"
+                          ? "bg-white border-red-300 shadow-md"
+                          : "bg-white border-gray-300 hover:border-red-200"
                       }`}
                     >
-                      <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border flex items-center justify-center mt-0.5 md:mt-1 flex-shrink-0 ${formData.consent_for_publication === "disagree"
-                          ? "bg-red-500 border-red-500"
-                          : "border-gray-400"
+                      <div
+                        className={`w-5 h-5 md:w-6 md:h-6 rounded-full border flex items-center justify-center mt-0.5 md:mt-1 flex-shrink-0 ${
+                          formData.consent_for_publication === "disagree"
+                            ? "bg-red-500 border-red-500"
+                            : "border-gray-400"
                         }`}
                       >
                         {formData.consent_for_publication === "disagree" && (
@@ -1176,30 +1451,45 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                         type="radio"
                         name="consent_for_publication"
                         value="disagree"
-                        checked={formData.consent_for_publication === "disagree"}
+                        checked={
+                          formData.consent_for_publication === "disagree"
+                        }
                         onChange={handleInputChange}
                         className="hidden"
                       />
                     </label>
                   </div>
                   {errors.consent_for_publication && (
-                    <p className="text-red-500 text-xs mt-2 md:mt-3 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.consent_for_publication}</p>
+                    <p className="text-red-500 text-xs mt-2 md:mt-3 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />{" "}
+                      {errors.consent_for_publication}
+                    </p>
                   )}
                 </div>
+              </>
+            )}
 
+            {/* Step 5: Declaration Form - Conditional on mobile */}
+            {(!isMobile || currentStep === 5) && showDeclaration && (
+              <>
                 {/* Speaker Declaration Checkbox */}
                 <div className="bg-amber-50 border border-amber-200 rounded-lg md:rounded-xl p-3 md:p-4">
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <div className={`w-5 h-5 md:w-6 md:h-6 rounded border flex items-center justify-center transition-all duration-200 flex-shrink-0 ${showDeclaration
-                        ? "bg-[#03215F] border-[#03215F]"
-                        : "border-gray-400 bg-white"
+                    <div
+                      className={`w-5 h-5 md:w-6 md:h-6 rounded border flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                        showDeclaration
+                          ? "bg-[#03215F] border-[#03215F]"
+                          : "border-gray-400 bg-white"
                       }`}
                     >
-                      {showDeclaration && <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />}
+                      {showDeclaration && (
+                        <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
+                      )}
                     </div>
                     <div>
                       <span className="text-sm font-semibold text-gray-700">
-                        Speaker Declaration Form <span className="text-red-500">*</span>
+                        Speaker Declaration Form{" "}
+                        <span className="text-red-500">*</span>
                       </span>
                       <p className="text-xs text-gray-600 mt-1">
                         This form is required for all speaker applications
@@ -1214,19 +1504,18 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                     />
                   </label>
                   {errors.declaration_form && (
-                    <p className="text-red-500 text-xs mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.declaration_form}</p>
+                    <p className="text-red-500 text-xs mt-2 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />{" "}
+                      {errors.declaration_form}
+                    </p>
                   )}
                 </div>
+                <SpeakerDeclarationSection
+                  declarationData={declarationData}
+                  onChange={handleDeclarationChange}
+                  error={declarationError}
+                />
               </>
-            )}
-
-            {/* Step 5: Declaration Form - Conditional on mobile */}
-            {(!isMobile || currentStep === 5) && showDeclaration && (
-              <SpeakerDeclarationSection
-                declarationData={declarationData}
-                onChange={handleDeclarationChange}
-                error={declarationError}
-              />
             )}
 
             {/* Submit Button - Desktop Only */}
