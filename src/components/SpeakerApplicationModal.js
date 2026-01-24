@@ -310,35 +310,46 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const [bio, setBio] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const [formData, setFormData] = useState({
+    consent_for_publication: "",
+    presentation_topic_other: "",
+    presentation_topics: [],
+    category: "",
+    professional_title: "",
+    country_of_practice: "Bahrain",
+    affiliation_institution: "",
+    phone_code: "+973",
+    phone: "",
+    email: "",
+    full_name: "",
+  });
   const [declarationData, setDeclarationData] = useState({
-    declaration_cpd_title: "",
-    declaration_speaker_name: "",
-    declaration_presentation_title: "",
-    declaration_presentation_date: "",
-    declaration_contact_number: "",
-    declaration_email: "",
-    declaration_abstract: "",
+    declaration_final_signature: "",
+    declaration_final_date: "",
+    declaration_final_speaker_name: "",
     ...Object.fromEntries(
       Array.from({ length: 10 }, (_, i) => [`declaration_statement_${i}`, ""]),
     ),
-    declaration_final_speaker_name: "",
-    declaration_final_date: "",
-    declaration_final_signature: "",
+    declaration_abstract: "",
+    declaration_email: "",
+    declaration_contact_number: "",
+    declaration_presentation_date: "",
+    declaration_presentation_title: "",
+    declaration_speaker_name: "",
+    declaration_cpd_title: "",
   });
+  // Keep declarationData in sync with formData for key fields
+  useEffect(() => {
+    setDeclarationData((prev) => ({
+      ...prev,
+      declaration_speaker_name: formData.full_name || "",
+      declaration_contact_number: formData.phone_code + formData.phone || "",
+      declaration_email: formData.email || "",
+      declaration_final_speaker_name: formData.full_name || "",
+      declaration_final_signature: formData.full_name || "",
+    }));
+  }, [formData.full_name, formData.phone, formData.phone_code, formData.email]);
   const [declarationError, setDeclarationError] = useState("");
-  const [formData, setFormData] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    phone_code: "+973",
-    affiliation_institution: "",
-    country_of_practice: "Bahrain",
-    professional_title: "",
-    category: "",
-    presentation_topics: [],
-    presentation_topic_other: "",
-    consent_for_publication: "",
-  });
 
   const [errors, setErrors] = useState({});
   const modalRef = useRef(null);

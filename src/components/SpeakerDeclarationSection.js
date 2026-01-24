@@ -20,6 +20,9 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
   return (
     <div className="border-2 border-blue-200 rounded-xl p-4 sm:p-6 mt-4 bg-gradient-to-b from-white to-blue-50 shadow-inner">
       {/* Header */}
+      <div className="flex justify-center">
+         <img src="/nera-logo.png" alt="NHRA Logo" className="h-20"/>
+      </div>
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 pb-4 border-b border-blue-100">
         <div className="flex items-center gap-3 mb-4 sm:mb-0">
           <div className="p-2 bg-blue-100 rounded-lg">
@@ -35,7 +38,7 @@ export default function SpeakerDeclarationSection({ declarationData, onChange, e
           </div>
         </div>
         <div className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
-          Required for NHRA Approval
+          Required for NHRA Declaration
         </div>
       </div>
 
