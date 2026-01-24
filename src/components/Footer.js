@@ -29,7 +29,7 @@ export default function Footer() {
       { name: "About Us", href: "/about" },
       { name: "Events", href: "/events" },
       { name: "Our Board Members", href: "/our-board-members" },
-      { name: "Committees", href: "/committees" },
+      // { name: "Committees", href: "/committees" },
     ],
     Resources: [
       { name: "Membership", href: "/membership" },
