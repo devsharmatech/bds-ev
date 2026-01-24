@@ -61,14 +61,14 @@ const achievements = [
     icon: <Shield className="w-6 h-6" />,
   },
   {
-    year: "2000s",
+    year: "2000",
     title: "National Recognition",
     description:
       "Became the official voice for dental professionals in Bahrain",
     icon: <Award className="w-6 h-6" />,
   },
   {
-    year: "2010s",
+    year: "2010",
     title: "International Partnerships",
     description: "Established collaborations with global dental associations",
     icon: <Globe className="w-6 h-6" />,
@@ -197,7 +197,7 @@ export default function AboutPage() {
               </p>
 
               <div className="flex flex-wrap gap-6">
-                <Link href="/committees">
+                <Link className="hidden" href="/committees">
                   <button className="px-8 py-3 bg-white text-[#03215F] rounded-lg hover:bg-gray-100 transition-colors font-semibold flex items-center">
                     Join Our Community
                     <ChevronRight className="ml-2 w-5 h-5" />
