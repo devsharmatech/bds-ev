@@ -32,6 +32,20 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+// NHRA Declaration Statements
+const NHRA_STATEMENTS = [
+  "The content of my presentation will promote quality improvement in practice, remain evidence-based, balanced, and unbiased, and will not promote the business interests of any commercial entity.",
+  "I confirm that no material used in my presentation infringes copyright. Where copyrighted material is included, I have obtained the necessary permissions. NHRA will not be held responsible for any misrepresentation in this regard.",
+  "I understand that the NHRA approval process may require review of my credentials, presentation, and content in advance, and I will provide all requested materials accordingly.",
+  "For live events, I acknowledge that NHRA CPD Committee members may attend to ensure the presentation is educational and not promotional.",
+  "When referring to products or services, I will use generic names whenever possible. If trade names are used, they will represent more than one company where available.",
+  "If I have been trained or engaged by a commercial entity, I confirm that no promotional aspects will be included in my presentation.",
+  "If my research is funded by a commercial entity, I confirm it will be presented in line with accepted scientific principles and without promoting the funding company.",
+  "My lecture content will remain purely scientific or clinical, and any reference to drugs, products, treatments, or services will be for teaching purposes only and in generic form.",
+  "In line with NHRA regulations, I will not endorse any commercial products, materials, or services in my presentation.",
+  "An Ethical Confederation declaration will be included as part of my presentation."
+];
+
 export default function SpeakerRequestsPage() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -243,6 +257,578 @@ export default function SpeakerRequestsPage() {
       setActionLoading(false);
     }
   };
+
+  // Function to print the full application form
+  const handlePrintApplication = (request) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Please allow popups to print the form");
+      return;
+    }
+
+    // Get the event
+    const event = events.find((e) => e.id === request.event_id) || {};
+    
+    // Format topics
+    const topics = Array.isArray(request.presentation_topics) 
+      ? [...request.presentation_topics]
+      : request.presentation_topics 
+        ? JSON.parse(request.presentation_topics) 
+        : [];
+    
+    if (request.presentation_topic_other && topics.includes("Other")) {
+      const otherIndex = topics.indexOf("Other");
+      topics[otherIndex] = `Other: ${request.presentation_topic_other}`;
+    }
+
+    // Format consent
+    const consentText = request.consent_for_publication === "agree" 
+      ? "✓ Yes, I agree to publication" 
+      : "✗ No, I do not agree to publication";
+
+    // Get current date
+    const currentDate = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    // Generate application ID
+    const generateApplicationId = () => {
+      const timestamp = Date.now().toString(36).toUpperCase();
+      const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+      return `APP-${timestamp.slice(-6)}-${random}`;
+    };
+    
+    const applicationId = generateApplicationId();
+
+    // Parse declaration statements
+    const declarationStatements = [];
+    for (let i = 0; i < NHRA_STATEMENTS.length; i++) {
+      const statementKey = `declaration_statement_${i}`;
+      const response = request[statementKey];
+      if (response) {
+        declarationStatements.push({
+          number: i + 1,
+          statement: NHRA_STATEMENTS[i],
+          response: response === "agree" ? "✓ Agree" : "✗ Disagree",
+          responseColor: response === "agree" ? "#065F46" : "#991B1B",
+          responseBg: response === "agree" ? "#D1FAE5" : "#FEE2E2"
+        });
+      }
+    }
+
+    // Create HTML content for printing
+    const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Speaker Application Form - ${request.full_name}</title>
+      <style>
+        @media print {
+          @page {
+            margin: 8mm 6mm;
+            size: A4;
+          }
+          @page :first {
+            margin-top: 8mm;
+          }
+          body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            line-height: 1.3;
+            color: #000;
+            font-size: 10pt;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+          }
+          .page-break {
+            page-break-before: always;
+          }
+          .no-break {
+            page-break-inside: avoid;
+          }
+          .keep-with-next {
+            page-break-after: avoid;
+          }
+        }
+        
+        body {
+          font-family: 'Arial', 'Helvetica', sans-serif;
+          line-height: 1.3;
+          color: #000;
+          font-size: 10pt;
+          margin: 0;
+          padding: 0;
+        }
+        
+        .container {
+          max-width: 190mm;
+          margin: 0 auto;
+        }
+        
+        /* Header */
+        .print-header {
+          text-align: center;
+          padding-bottom: 4mm;
+          margin-bottom: 4mm;
+          border-bottom: 2px solid #03215F;
+        }
+        
+        .title-section h1 {
+          color: #03215F;
+          margin: 0 0 1mm 0;
+          font-size: 16pt;
+          font-weight: bold;
+        }
+        
+        .title-section h2 {
+          color: #444;
+          margin: 0;
+          font-size: 11pt;
+          font-weight: normal;
+        }
+        
+        .application-info {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 3mm;
+          padding: 2mm;
+          background: #F8F9FA;
+          border-radius: 3px;
+          font-size: 9pt;
+        }
+        
+        .info-left {
+          font-weight: 500;
+        }
+        
+        .info-right {
+          color: #03215F;
+          font-weight: bold;
+        }
+        
+        /* Compact Table */
+        .compact-section {
+          margin-bottom: 5mm;
+        }
+        
+        .section-title {
+          background: #03215F;
+          color: white;
+          padding: 2mm 3mm;
+          margin: 0 0 2mm 0;
+          font-size: 11pt;
+          font-weight: bold;
+          border-radius: 2px;
+        }
+        
+        .compact-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 9.5pt;
+        }
+        
+        .compact-table th {
+          background: #E9ECEF;
+          border: 1px solid #DEE2E6;
+          padding: 2mm;
+          text-align: left;
+          font-weight: 600;
+          width: 30%;
+        }
+        
+        .compact-table td {
+          border: 1px solid #DEE2E6;
+          padding: 2mm;
+          width: 70%;
+        }
+        
+        .compact-table tr:nth-child(even) {
+          background: #F8F9FA;
+        }
+        
+        /* Two Column Layout for Personal Info */
+        .two-column-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 9.5pt;
+        }
+        
+        .two-column-table td {
+          border: 1px solid #DEE2E6;
+          padding: 2mm;
+          vertical-align: top;
+          width: 50%;
+        }
+        
+        .two-column-table .field-label {
+          font-weight: 600;
+          color: #03215F;
+          margin-bottom: 0.5mm;
+          display: block;
+        }
+        
+        .two-column-table .field-value {
+          color: #000;
+          min-height: 6mm;
+        }
+        
+        /* Statements Grid */
+        .statements-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1.5mm;
+          margin-bottom: 4mm;
+        }
+        
+        .statement-item {
+          border: 1px solid #E2E8F0;
+          padding: 2mm;
+          font-size: 8.5pt;
+          line-height: 1.4;
+          background: #FAFBFC;
+        }
+        
+        .statement-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1mm;
+          padding-bottom: 1mm;
+          border-bottom: 1px solid #E2E8F0;
+        }
+        
+        .statement-number {
+          background: #03215F;
+          color: white;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          font-size: 8pt;
+        }
+        
+        .statement-response {
+          font-weight: 600;
+          font-size: 8.5pt;
+          padding: 0.5mm 1mm;
+          border-radius: 2px;
+        }
+        
+        /* Bio and Abstract */
+        .text-content {
+          background: #F8F9FA;
+          border: 1px solid #DEE2E6;
+          border-radius: 3px;
+          padding: 2mm;
+          font-size: 9.5pt;
+          line-height: 1.4;
+          margin-bottom: 3mm;
+          max-height: 40mm;
+          overflow: hidden;
+        }
+        
+        /* Signature Section */
+        .signature-section {
+          margin-top: 5mm;
+          padding-top: 3mm;
+          border-top: 2px dashed #DEE2E6;
+        }
+        
+        .signature-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 4mm;
+        }
+        
+        .signature-table td {
+          border: 1px solid #DEE2E6;
+          padding: 2mm;
+          vertical-align: top;
+        }
+        
+        .signature-line {
+          margin-top: 8mm;
+          border-top: 1px solid #000;
+          width: 80mm;
+          text-align: center;
+          padding-top: 1mm;
+          font-size: 9pt;
+        }
+        
+        /* Footer */
+        .footer {
+          margin-top: 5mm;
+          padding-top: 2mm;
+          border-top: 1px solid #E2E8F0;
+          text-align: center;
+          font-size: 8pt;
+          color: #666;
+        }
+        
+        /* Print Button */
+        .print-button {
+          display: none;
+        }
+        
+        @media print {
+          .print-button {
+            display: none !important;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <!-- Page 1 -->
+        <div class="print-header no-break">
+          <div class="title-section">
+            <h1>SPEAKER APPLICATION FORM</h1>
+            <h2>${event.title || "Event"}</h2>
+          </div>
+          
+          <div class="application-info">
+            <div class="info-left">
+              
+              <strong>Submission Date:</strong> ${new Date(request.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+              })}
+            </div>
+            <div class="info-right">
+              CONFIDENTIAL
+            </div>
+          </div>
+        </div>
+        
+        <!-- Section 1: Personal Information -->
+        <div class="compact-section no-break keep-with-next">
+          <div class="section-title">1. PERSONAL INFORMATION</div>
+          
+          <table class="two-column-table">
+            <tbody>
+              <tr>
+                <td>
+                  <span class="field-label">Full Name</span>
+                  <div class="field-value">${request.full_name || ""}</div>
+                </td>
+                <td>
+                  <span class="field-label">Email Address</span>
+                  <div class="field-value">${request.email || ""}</div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="field-label">Phone Number</span>
+                  <div class="field-value">${request.phone || ""}</div>
+                </td>
+                <td>
+                  <span class="field-label">Country of Practice</span>
+                  <div class="field-value">${request.country_of_practice || ""}</div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="field-label">Affiliation / Institution</span>
+                  <div class="field-value">${request.affiliation_institution || ""}</div>
+                </td>
+                <td>
+                  <span class="field-label">Professional Title</span>
+                  <div class="field-value">${request.professional_title || ""}</div>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <span class="field-label">Category</span>
+                  <div class="field-value">${request.category || ""}</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Section 2: Presentation Details -->
+        <div class="compact-section no-break">
+          <div class="section-title">2. PRESENTATION DETAILS</div>
+          
+          <table class="compact-table">
+            <tbody>
+              <tr>
+                <th>Presentation Topics</th>
+                <td>${topics.length > 0 ? topics.join(", ") : ""}</td>
+              </tr>
+              <tr>
+                <th>Consent for Publication</th>
+                <td>${consentText}</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div style="margin-top: 2mm;">
+            <div style="font-weight: 600; margin-bottom: 1mm; color: #03215F;">Professional Bio</div>
+            <div class="text-content">${request.bio || ""}</div>
+          </div>
+        </div>
+        
+        <!-- Page Break for Page 2 -->
+        <div class="page-break">
+          <!-- NHRA Header for Page 2 -->
+          <div style="text-align: center; margin-bottom: 3mm; padding-bottom: 2mm; border-bottom: 1px solid #03215F;">
+            <div style="display: inline-block; padding: 1mm 3mm; background: #03215F; color: white; font-weight: bold; font-size: 10pt; border-radius: 2px;">
+              NHRA SPEAKER DECLARATION
+            </div>
+            <div style="font-size: 9pt; color: #666; margin-top: 1mm;">
+              Application ID: ${applicationId} | Page 2 of 2
+            </div>
+          </div>
+          
+          <!-- Section 3: NHRA Declaration -->
+          <div class="compact-section no-break">
+            <div class="section-title">3. NHRA DECLARATION DETAILS</div>
+            
+            <table class="compact-table">
+              <tbody>
+                <tr>
+                  <th>CPD Activity Title</th>
+                  <td>${request.declaration_cpd_title || ""}</td>
+                </tr>
+                <tr>
+                  <th>Speaker Name</th>
+                  <td>${request.declaration_speaker_name || ""}</td>
+                </tr>
+                <tr>
+                  <th>Presentation Title</th>
+                  <td>${request.declaration_presentation_title || ""}</td>
+                </tr>
+                <tr>
+                  <th>Presentation Date</th>
+                  <td>${request.declaration_presentation_date || ""}</td>
+                </tr>
+                <tr>
+                  <th>Contact Number</th>
+                  <td>${request.declaration_contact_number || ""}</td>
+                </tr>
+                <tr>
+                  <th>Email Address</th>
+                  <td>${request.declaration_email || ""}</td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <div style="margin-top: 3mm;">
+              <div style="font-weight: 600; margin-bottom: 1mm; color: #03215F;">Scientific Content / Abstract</div>
+              <div class="text-content">${request.declaration_abstract || ""}</div>
+            </div>
+          </div>
+          
+          <!-- Section 4: Declaration Statements -->
+          <div class="compact-section no-break">
+            <div class="section-title">4. DECLARATION STATEMENTS</div>
+            
+            <div class="statements-grid">
+              ${declarationStatements.map(item => `
+                <div class="statement-item">
+                  <div class="statement-header">
+                    <div class="statement-number">${item.number}</div>
+                    <div class="statement-response" style="color: ${item.responseColor}; background: ${item.responseBg};">
+                      ${item.response}
+                    </div>
+                  </div>
+                  <div class="statement-content">${item.statement}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <!-- Section 5: Final Declaration & Signature -->
+          <div class="compact-section">
+            <div class="section-title">5. FINAL DECLARATION & SIGNATURE</div>
+            
+            <table class="signature-table">
+              <tbody>
+                <tr>
+                  <td width="40%">
+                    <div style="font-weight: 600; margin-bottom: 1mm;">Speaker Name</div>
+                    <div style="font-size: 10.5pt; min-height: 6mm;">${request.declaration_final_speaker_name || ""}</div>
+                  </td>
+                  <td width="30%">
+                    <div style="font-weight: 600; margin-bottom: 1mm;">Date</div>
+                    <div style="font-size: 10.5pt;">${request.declaration_final_date || ""}</div>
+                  </td>
+                  <td width="30%">
+                    <div style="font-weight: 600; margin-bottom: 1mm;">Digital Signature</div>
+                    <div style="font-size: 10.5pt; font-style: italic; color: #03215F;">${request.declaration_final_signature || ""}</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <div style="margin-top: 4mm; font-size: 9.5pt; line-height: 1.4;">
+              <p><strong>Declaration:</strong> I have carefully read and declare that I am the above-mentioned speaker, and I have filled this form to the best of my ability.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 8mm;">
+              
+              <div style="font-size: 10pt; margin-top: 1mm;">
+                ${request.full_name || ""}
+              </div>
+              <div style="font-size: 9pt; color: #666; margin-top: 0.5mm;">
+                ${currentDate}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div class="footer">
+            <p><strong>NHRA Speaker Application System</strong></p>
+            <p>${event.title || "Event"} | Application ID: ${applicationId} | Printed: ${currentDate}</p>
+            <div class="print-button">
+              <button onclick="window.print()" style="
+                background: #03215F;
+                color: white;
+                border: none;
+                padding: 6px 16px;
+                border-radius: 3px;
+                cursor: pointer;
+                margin: 10px 0;
+                font-size: 10pt;
+                font-weight: 600;
+              ">
+                Print This Form
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <script>
+        // Auto-print when the print window loads
+        window.onload = function() {
+          setTimeout(() => {
+            window.print();
+            setTimeout(() => {
+              window.close();
+            }, 500);
+          }, 300);
+        };
+      </script>
+    </body>
+    </html>
+    `;
+
+    // Write content to print window
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    toast.success("📄 Application form generated for printing");
+  };
+
+  // ... (keep all other existing functions: handlePrintBadge, getStatusBadge, getCategoryBadge, StatsCard)
 
   const handlePrintBadge = (request) => {
     const event = events.find((e) => e.id === request.event_id);
@@ -921,6 +1507,17 @@ export default function SpeakerRequestsPage() {
 
             {/* Modal Content */}
             <div className="p-8 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {/* Print Button */}
+              <div className="mb-6 flex justify-end">
+                <button
+                  onClick={() => handlePrintApplication(detailsModal.request)}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center gap-3 font-semibold"
+                >
+                  <Printer className="w-5 h-5" />
+                  Print Full Application
+                </button>
+              </div>
+
               {/* Main Info Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Left Column */}
@@ -1135,14 +1732,26 @@ export default function SpeakerRequestsPage() {
                       <div>
                         <label className="text-sm text-gray-600">Presentation Topics</label>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {detailsModal.request.presentation_topics?.map((topic, i) => (
-                            <span
-                              key={i}
-                              className="px-3 py-1.5 bg-white text-blue-800 text-sm font-medium rounded-full border border-blue-200 shadow-sm"
-                            >
-                              {topic}
-                            </span>
-                          ))}
+                          {Array.isArray(detailsModal.request.presentation_topics) 
+                            ? detailsModal.request.presentation_topics.map((topic, i) => (
+                                <span
+                                  key={i}
+                                  className="px-3 py-1.5 bg-white text-blue-800 text-sm font-medium rounded-full border border-blue-200 shadow-sm"
+                                >
+                                  {topic}
+                                </span>
+                              ))
+                            : detailsModal.request.presentation_topics 
+                              ? JSON.parse(detailsModal.request.presentation_topics).map((topic, i) => (
+                                  <span
+                                    key={i}
+                                    className="px-3 py-1.5 bg-white text-blue-800 text-sm font-medium rounded-full border border-blue-200 shadow-sm"
+                                  >
+                                    {topic}
+                                  </span>
+                                ))
+                              : null
+                          }
                         </div>
                         {detailsModal.request.presentation_topic_other && (
                           <p className="mt-3 text-sm text-gray-700">
@@ -1206,7 +1815,7 @@ export default function SpeakerRequestsPage() {
                   <div className="flex items-center justify-between mb-6">
                     <h4 className="text-xl font-bold text-[#03215F] flex items-center gap-2">
                       <Shield className="w-6 h-6" />
-                      Speaker Declaration Form
+                      Speaker Declaration Form (NHRA)
                     </h4>
                     <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
                       NHRA Certified
@@ -1248,6 +1857,78 @@ export default function SpeakerRequestsPage() {
                         <label className="text-sm text-gray-600">Email Address</label>
                         <p className="font-medium">{detailsModal.request.declaration_email || "-"}</p>
                       </div>
+                    </div>
+                  </div>
+                  
+                  {/* Abstract */}
+                  {detailsModal.request.declaration_abstract && (
+                    <div className="mt-6">
+                      <label className="text-sm font-medium text-gray-700">Scientific Content / Abstract</label>
+                      <div className="mt-2 p-4 bg-gray-50 rounded-lg border">
+                        <p className="text-gray-700 whitespace-pre-line">{detailsModal.request.declaration_abstract}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* NHRA Declaration Statements */}
+                  <div className="mt-8">
+                    <h5 className="text-lg font-semibold text-gray-800 mb-4">NHRA Declaration Statements</h5>
+                    <div className="space-y-3">
+                      {NHRA_STATEMENTS.map((statement, index) => {
+                        const response = detailsModal.request[`declaration_statement_${index}`];
+                        return (
+                          <div key={index} className="border border-gray-200 rounded-lg p-4 bg-white">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="w-6 h-6 bg-blue-100 text-blue-800 rounded-full text-sm font-medium flex items-center justify-center">
+                                  {index + 1}
+                                </span>
+                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                  response === 'agree' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : response === 'disagree'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {response === 'agree' ? '✓ Agree' : response === 'disagree' ? '✗ Disagree' : 'Not Answered'}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-gray-700 text-sm">{statement}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  {/* Final Declaration */}
+                  <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+                    <h5 className="text-lg font-semibold text-gray-800 mb-4">Final Declaration</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-sm text-gray-600">Speaker Name</label>
+                        <p className="font-semibold text-gray-900">
+                          {detailsModal.request.declaration_final_speaker_name || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Date</label>
+                        <p className="font-semibold text-gray-900">
+                          {detailsModal.request.declaration_final_date || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm text-gray-600">Digital Signature</label>
+                        <p className="font-semibold text-gray-900 italic">
+                          {detailsModal.request.declaration_final_signature || "-"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-6 p-4 bg-white rounded-lg border">
+                      <p className="text-gray-700">
+                        <strong>Declaration:</strong> I have carefully read and declare that I am the above-mentioned speaker, 
+                        and I have filled this form to the best of my ability.
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FileText, Calendar, Phone, Mail, Signature, AlertCircle, CheckCircle, XCircle } from "lucide-react";
 
-const statements = [
+export const statements = [
   "The content of my presentation will promote quality improvement in practice, remain evidence-based, balanced, and unbiased, and will not promote the business interests of any commercial entity.",
   "I confirm that no material used in my presentation infringes copyright. Where copyrighted material is included, I have obtained the necessary permissions. NHRA will not be held responsible for any misrepresentation in this regard.",
   "I understand that the NHRA approval process may require review of my credentials, presentation, and content in advance, and I will provide all requested materials accordingly.",

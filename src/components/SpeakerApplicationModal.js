@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import SpeakerDeclarationSection from "./SpeakerDeclarationSection";
+import SpeakerDeclarationSection, { statements as declarationStatementsList } from "./SpeakerDeclarationSection";
 import {
   X,
   Upload,
@@ -24,6 +24,7 @@ import {
   XCircle,
   ArrowLeft,
   ArrowRight,
+  Printer,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -354,6 +355,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const [errors, setErrors] = useState({});
   const modalRef = useRef(null);
   const formRef = useRef(null);
+  const [printLoading, setPrintLoading] = useState(false);
 
   // Check if mobile
   useEffect(() => {
@@ -735,9 +737,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       }
       setSubmitSuccess(true);
       toast.success("🎉 Application submitted successfully!");
-      setTimeout(() => {
-        onClose();
-      }, 3000);
+      // Removed the auto-close timeout to allow printing
     } catch (error) {
       console.error("Application error:", error);
       toast.error(error.message || "Failed to submit application");
@@ -745,6 +745,592 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       setLoading(false);
     }
   };
+
+// Function to print the form
+const handlePrint = () => {
+  setPrintLoading(true);
+
+  // Create a new window for printing
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    toast.error("Please allow popups to print the form");
+    setPrintLoading(false);
+    return;
+  }
+
+  // Get the current date and generate a proper application ID
+  const currentDate = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  
+  // Generate a proper application ID (combination of timestamp and random string)
+  const generateApplicationId = () => {
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `APP-${timestamp.slice(-6)}-${random}`;
+  };
+  
+  const applicationId = generateApplicationId();
+
+  // Format topics
+  const topics = [...formData.presentation_topics];
+  if (formData.presentation_topic_other && topics.includes("Other")) {
+    const otherIndex = topics.indexOf("Other");
+    topics[otherIndex] = `Other: ${formData.presentation_topic_other}`;
+  }
+
+  // Format consent
+  const consentText =
+    formData.consent_for_publication === "agree"
+      ? "✓ Yes, I agree to publication"
+      : "✗ No, I do not agree to publication";
+
+  // Format declaration statements (shorter for printing)
+  const declarationStatements = [];
+  for (let i = 0; i < declarationStatementsList.length; i++) {
+    const value = declarationData[`declaration_statement_${i}`];
+    if (value) {
+      // Shorten statement for printing
+      const originalStatement = declarationStatementsList[i];
+      const shortStatement = originalStatement.length > 120 
+        ? originalStatement.substring(0, 120) + "..."
+        : originalStatement;
+      
+      declarationStatements.push({
+        number: i + 1,
+        statement: shortStatement,
+        response: value === "agree" ? "✓ Agree" : "✗ Disagree",
+        responseColor: value === "agree" ? "#065F46" : "#991B1B",
+        responseBg: value === "agree" ? "#D1FAE5" : "#FEE2E2"
+      });
+    }
+  }
+
+  // Create HTML content for printing
+  const printContent = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>Speaker Application Form - ${formData.full_name}</title>
+    <style>
+      @media print {
+        @page {
+          margin: 8mm 6mm;
+          size: A4;
+        }
+        @page :first {
+          margin-top: 8mm;
+        }
+        body {
+          font-family: 'Arial', 'Helvetica', sans-serif;
+          line-height: 1.3;
+          color: #000;
+          font-size: 10pt;
+          margin: 0;
+          padding: 0;
+          -webkit-print-color-adjust: exact;
+        }
+        .page-break {
+          page-break-before: always;
+        }
+        .no-break {
+          page-break-inside: avoid;
+        }
+        .keep-with-next {
+          page-break-after: avoid;
+        }
+      }
+      
+      body {
+        font-family: 'Arial', 'Helvetica', sans-serif;
+        line-height: 1.3;
+        color: #000;
+        font-size: 10pt;
+        margin: 0;
+        padding: 0;
+      }
+      
+      .container {
+        max-width: 190mm;
+        margin: 0 auto;
+      }
+      
+      /* Header */
+      .print-header {
+        text-align: center;
+        padding-bottom: 4mm;
+        margin-bottom: 4mm;
+        border-bottom: 2px solid #03215F;
+      }
+      
+      .logo-section {
+        margin-bottom: 3mm;
+      }
+      
+      .logo-img {
+        height: 25mm;
+        max-width: 100%;
+      }
+      
+      .title-section h1 {
+        color: #03215F;
+        margin: 0 0 1mm 0;
+        font-size: 16pt;
+        font-weight: bold;
+      }
+      
+      .title-section h2 {
+        color: #444;
+        margin: 0;
+        font-size: 11pt;
+        font-weight: normal;
+      }
+      
+      .application-info {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 3mm;
+        padding: 2mm;
+        background: #F8F9FA;
+        border-radius: 3px;
+        font-size: 9pt;
+      }
+      
+      .info-left {
+        font-weight: 500;
+      }
+      
+      .info-right {
+        color: #03215F;
+        font-weight: bold;
+      }
+      
+      /* Compact Table */
+      .compact-section {
+        margin-bottom: 5mm;
+      }
+      
+      .section-title {
+        background: #03215F;
+        color: white;
+        padding: 2mm 3mm;
+        margin: 0 0 2mm 0;
+        font-size: 11pt;
+        font-weight: bold;
+        border-radius: 2px;
+      }
+      
+      .compact-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9.5pt;
+      }
+      
+      .compact-table th {
+        background: #E9ECEF;
+        border: 1px solid #DEE2E6;
+        padding: 2mm;
+        text-align: left;
+        font-weight: 600;
+        width: 30%;
+      }
+      
+      .compact-table td {
+        border: 1px solid #DEE2E6;
+        padding: 2mm;
+        width: 70%;
+      }
+      
+      .compact-table tr:nth-child(even) {
+        background: #F8F9FA;
+      }
+      
+      /* Two Column Layout for Personal Info */
+      .two-column-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9.5pt;
+      }
+      
+      .two-column-table td {
+        border: 1px solid #DEE2E6;
+        padding: 2mm;
+        vertical-align: top;
+        width: 50%;
+      }
+      
+      .two-column-table .field-label {
+        font-weight: 600;
+        color: #03215F;
+        margin-bottom: 0.5mm;
+        display: block;
+      }
+      
+      .two-column-table .field-value {
+        color: #000;
+        min-height: 6mm;
+      }
+      
+      /* Statements Grid */
+      .statements-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5mm;
+        margin-bottom: 4mm;
+      }
+      
+      .statement-item {
+        border: 1px solid #E2E8F0;
+        padding: 2mm;
+        font-size: 8.5pt;
+        line-height: 1.4;
+        background: #FAFBFC;
+      }
+      
+      .statement-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1mm;
+        padding-bottom: 1mm;
+        border-bottom: 1px solid #E2E8F0;
+      }
+      
+      .statement-number {
+        background: #03215F;
+        color: white;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 8pt;
+      }
+      
+      .statement-response {
+        font-weight: 600;
+        font-size: 8.5pt;
+        padding: 0.5mm 1mm;
+        border-radius: 2px;
+      }
+      
+      /* Bio and Abstract */
+      .text-content {
+        background: #F8F9FA;
+        border: 1px solid #DEE2E6;
+        border-radius: 3px;
+        padding: 2mm;
+        font-size: 9.5pt;
+        line-height: 1.4;
+        margin-bottom: 3mm;
+        max-height: 40mm;
+        overflow: hidden;
+      }
+      
+      /* Signature Section */
+      .signature-section {
+        margin-top: 5mm;
+        padding-top: 3mm;
+        border-top: 2px dashed #DEE2E6;
+      }
+      
+      .signature-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 4mm;
+      }
+      
+      .signature-table td {
+        border: 1px solid #DEE2E6;
+        padding: 2mm;
+        vertical-align: top;
+      }
+      
+      .signature-line {
+        margin-top: 8mm;
+        border-top: 1px solid #000;
+        width: 80mm;
+        text-align: center;
+        padding-top: 1mm;
+        font-size: 9pt;
+      }
+      
+      /* Footer */
+      .footer {
+        margin-top: 5mm;
+        padding-top: 2mm;
+        border-top: 1px solid #E2E8F0;
+        text-align: center;
+        font-size: 8pt;
+        color: #666;
+      }
+      
+      /* Print Button */
+      .print-button {
+        display: none;
+      }
+      
+      @media print {
+        .print-button {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Page 1 -->
+      <div class="print-header no-break">
+        <div class="logo-section">
+          <!-- NHRA Logo - You can replace this with actual logo URL -->
+          <div style="text-align: center; margin-bottom: 2mm;">
+            <div style="display: inline-block; padding: 2mm 4mm; background: #03215F; color: white; font-weight: bold; font-size: 12pt; border-radius: 3px;">
+              NHRA
+            </div>
+          </div>
+        </div>
+        
+        <div class="title-section">
+          <h1>SPEAKER APPLICATION FORM</h1>
+          <h2>${event.title}</h2>
+        </div>
+        
+        <div class="application-info">
+          <div class="info-left">
+            
+            <strong>Submission Date:</strong> ${currentDate}
+          </div>
+          <div class="info-right">
+            CONFIDENTIAL
+          </div>
+        </div>
+      </div>
+      
+      <!-- Section 1: Personal Information -->
+      <div class="compact-section no-break keep-with-next">
+        <div class="section-title">1. PERSONAL INFORMATION</div>
+        
+        <table class="two-column-table">
+          <tbody>
+            <tr>
+              <td>
+                <span class="field-label">Full Name</span>
+                <div class="field-value">${formData.full_name || ""}</div>
+              </td>
+              <td>
+                <span class="field-label">Email Address</span>
+                <div class="field-value">${formData.email || ""}</div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span class="field-label">Phone Number</span>
+                <div class="field-value">${formData.phone_code} ${formData.phone || ""}</div>
+              </td>
+              <td>
+                <span class="field-label">Country of Practice</span>
+                <div class="field-value">${formData.country_of_practice || ""}</div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <span class="field-label">Affiliation / Institution</span>
+                <div class="field-value">${formData.affiliation_institution || ""}</div>
+              </td>
+              <td>
+                <span class="field-label">Professional Title</span>
+                <div class="field-value">${formData.professional_title || ""}</div>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2">
+                <span class="field-label">Category</span>
+                <div class="field-value">${formData.category || ""}</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Section 2: Presentation Details -->
+      <div class="compact-section no-break">
+        <div class="section-title">2. PRESENTATION DETAILS</div>
+        
+        <table class="compact-table">
+          <tbody>
+            <tr>
+              <th>Presentation Topics</th>
+              <td>${topics.length > 0 ? topics.join(", ") : ""}</td>
+            </tr>
+            <tr>
+              <th>Consent for Publication</th>
+              <td>${consentText}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 2mm;">
+          <div style="font-weight: 600; margin-bottom: 1mm; color: #03215F;">Professional Bio</div>
+          <div class="text-content">${bio || ""}</div>
+        </div>
+      </div>
+      
+      <!-- Page Break for Page 2 -->
+      <div class="page-break">
+        <!-- NHRA Header for Page 2 -->
+        <div style="text-align: center; margin-bottom: 3mm; padding-bottom: 2mm; border-bottom: 1px solid #03215F;">
+          <div style="display: inline-block; padding: 1mm 3mm; background: #03215F; color: white; font-weight: bold; font-size: 10pt; border-radius: 2px;">
+            NHRA SPEAKER DECLARATION
+          </div>
+          <div style="font-size: 9pt; color: #666; margin-top: 1mm;">
+            Application ID: ${applicationId} | Page 2 of 2
+          </div>
+        </div>
+        
+        <!-- Section 3: NHRA Declaration -->
+        <div class="compact-section no-break">
+          <div class="section-title">3. NHRA DECLARATION DETAILS</div>
+          
+          <table class="compact-table">
+            <tbody>
+              <tr>
+                <th>CPD Activity Title</th>
+                <td>${declarationData.declaration_cpd_title || ""}</td>
+              </tr>
+              <tr>
+                <th>Speaker Name</th>
+                <td>${declarationData.declaration_speaker_name || ""}</td>
+              </tr>
+              <tr>
+                <th>Presentation Title</th>
+                <td>${declarationData.declaration_presentation_title || ""}</td>
+              </tr>
+              <tr>
+                <th>Presentation Date</th>
+                <td>${declarationData.declaration_presentation_date || ""}</td>
+              </tr>
+              <tr>
+                <th>Contact Number</th>
+                <td>${declarationData.declaration_contact_number || ""}</td>
+              </tr>
+              <tr>
+                <th>Email Address</th>
+                <td>${declarationData.declaration_email || ""}</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div style="margin-top: 3mm;">
+            <div style="font-weight: 600; margin-bottom: 1mm; color: #03215F;">Scientific Content / Abstract</div>
+            <div class="text-content">${declarationData.declaration_abstract || ""}</div>
+          </div>
+        </div>
+        
+        <!-- Section 4: Declaration Statements -->
+        <div class="compact-section no-break">
+          <div class="section-title">4. DECLARATION STATEMENTS</div>
+          
+          <div class="statements-grid">
+            ${declarationStatements.map(item => `
+              <div class="statement-item">
+                <div class="statement-header">
+                  <div class="statement-number">${item.number}</div>
+                  <div class="statement-response" style="color: ${item.responseColor}; background: ${item.responseBg};">
+                    ${item.response}
+                  </div>
+                </div>
+                <div class="statement-content">${item.statement}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <!-- Section 5: Final Declaration & Signature -->
+        <div class="compact-section">
+          <div class="section-title">5. FINAL DECLARATION & SIGNATURE</div>
+          
+          <table class="signature-table">
+            <tbody>
+              <tr>
+                <td width="40%">
+                  <div style="font-weight: 600; margin-bottom: 1mm;">Speaker Name</div>
+                  <div style="font-size: 10.5pt; min-height: 6mm;">${declarationData.declaration_final_speaker_name || ""}</div>
+                </td>
+                <td width="30%">
+                  <div style="font-weight: 600; margin-bottom: 1mm;">Date</div>
+                  <div style="font-size: 10.5pt;">${declarationData.declaration_final_date || ""}</div>
+                </td>
+                <td width="30%">
+                  <div style="font-weight: 600; margin-bottom: 1mm;">Digital Signature</div>
+                  <div style="font-size: 10.5pt; font-style: italic; color: #03215F;">${declarationData.declaration_final_signature || ""}</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div style="margin-top: 4mm; font-size: 9.5pt; line-height: 1.4;">
+            <p><strong>Declaration:</strong> I have carefully read and declare that I am the above-mentioned speaker, and I have filled this form to the best of my ability.</p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 8mm;">
+            
+            <div style="font-size: 10pt; margin-top: 1mm;">
+              ${formData.full_name || ""}
+            </div>
+            <div style="font-size: 9pt; color: #666; margin-top: 0.5mm;">
+              ${currentDate}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+          <p><strong>NHRA Speaker Application System</strong></p>
+          <p>${event.title} | Printed: ${currentDate}</p>
+          <div class="print-button">
+            <button onclick="window.print()" style="
+              background: #03215F;
+              color: white;
+              border: none;
+              padding: 6px 16px;
+              border-radius: 3px;
+              cursor: pointer;
+              margin: 10px 0;
+              font-size: 10pt;
+              font-weight: 600;
+            ">
+              Print This Form
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      // Auto-print when the print window loads
+      window.onload = function() {
+        setTimeout(() => {
+          window.print();
+          setTimeout(() => {
+            window.close();
+          }, 500);
+        }, 300);
+      };
+    </script>
+  </body>
+  </html>
+  `;
+
+  // Write content to print window
+  printWindow.document.write(printContent);
+  printWindow.document.close();
+
+  setPrintLoading(false);
+};
 
   if (!isOpen) return null;
 
@@ -802,7 +1388,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
               <button
                 onClick={currentStep === 5 ? handleSubmit : handleNextStep}
-                className={`p-1.5  ${currentStep===5 ?'bg-gradient-to-r from-[#03215F] via-[#1a3a8f] to-[#03215F] text-white':'hover:bg-gray-100 text-[#03215F]'}  rounded-lg text-sm font-medium`}
+                className={`p-1.5  ${currentStep === 5 ? "bg-gradient-to-r from-[#03215F] via-[#1a3a8f] to-[#03215F] text-white" : "hover:bg-gray-100 text-[#03215F]"}  rounded-lg text-sm font-medium`}
               >
                 {currentStep === 5 ? (
                   <span className="flex items-center gap-1">
@@ -855,8 +1441,37 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
               🎉 Your application has been submitted successfully. We will
               review your application and get back to you soon.
             </p>
-            <div className="animate-pulse text-sm text-gray-500">
-              Redirecting in 3 seconds...
+
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-center mt-6 md:mt-8">
+              <button
+                onClick={handlePrint}
+                disabled={printLoading}
+                className="px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center gap-2 md:gap-3"
+              >
+                {printLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
+                    <span>Preparing Print...</span>
+                  </>
+                ) : (
+                  <>
+                    <Printer className="w-4 h-4 md:w-5 md:h-5" />
+                    <span>Print Application</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={onClose}
+                className="px-6 md:px-8 py-2.5 md:py-3 bg-gradient-to-r from-[#03215F] to-[#1a3a8f] text-white rounded-lg hover:from-[#021845] hover:to-[#03215F] transition-all duration-300 flex items-center justify-center gap-2 md:gap-3"
+              >
+                <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
+                <span>Close Window</span>
+              </button>
+            </div>
+
+            <div className="mt-4 text-xs text-gray-500">
+              You can print this application for your records
             </div>
           </div>
         ) : (
@@ -1118,7 +1733,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                           name="professional_title"
                           value={formData.professional_title}
                           onChange={handleInputChange}
-                          className={`w-full px-3 md:px-4 py-2.5 md:py-3 border rounded-lg md:rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none hover:border-blue-300 transition-all duration-200 ${errors.professional_title ? "border-red-500" : "border-gray-300"}`}
+                          className={`w-full px-3 md:px-4 py-2.5 md:py-3 border rounded-lg md:rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none hover:border-blue-300 transition-all duration-200 ${errors.professional_title ? "border-red-500" : "border-gray-300 hover:border-blue-300"}`}
                         >
                           <option value="">Select your title</option>
                           {PROFESSIONAL_TITLES.map((title) => (
@@ -1148,7 +1763,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                           name="category"
                           value={formData.category}
                           onChange={handleInputChange}
-                          className={`w-full px-3 md:px-4 py-2.5 md:py-3 border rounded-lg md:rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none hover:border-blue-300 transition-all duration-200 ${errors.category ? "border-red-500" : "border-gray-300"}`}
+                          className={`w-full px-3 md:px-4 py-2.5 md:py-3 border rounded-lg md:rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent bg-white appearance-none hover:border-blue-300 transition-all duration-200 ${errors.category ? "border-red-500" : "border-gray-300 hover:border-blue-300"}`}
                         >
                           <option value="">Select category</option>
                           {PARTICIPANT_CATEGORIES.map((cat) => (
@@ -1309,8 +1924,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                               {abstractFile.name}
                             </span>
                             <span className="text-xs text-gray-500">
-                              {(abstractFile.size / (1024 * 1024)).toFixed(2)}{" "}
-                              MB
+                              {(abstractFile.size / (1024 * 1024)).toFixed(2)} MB
                             </span>
                           </div>
                         ) : (

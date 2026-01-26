@@ -201,6 +201,54 @@ export async function POST(request) {
         duration: Date.now() - startTime,
       });
 
+      // Send confirmation email to applicant
+      try {
+        const { sendEmail } = await import('@/lib/email');
+        const subject = 'Your Speaker Application Submission - Bahrain Dental Society';
+        const html = `
+          <h2>Thank you for your speaker application!</h2>
+          <p>Dear ${full_name},</p>
+          <p>Your application for <b>${event_id}</b> has been received. Here are your submitted details:</p>
+          <h3>Profile Information</h3>
+          <ul>
+            <li><b>Name:</b> ${full_name}</li>
+            <li><b>Email:</b> ${email}</li>
+            <li><b>Phone:</b> ${phone}</li>
+            <li><b>Affiliation/Institution:</b> ${affiliation_institution}</li>
+            <li><b>Country of Practice:</b> ${country_of_practice}</li>
+            <li><b>Professional Title:</b> ${professional_title}</li>
+            <li><b>Category:</b> ${category}</li>
+            <li><b>Bio:</b> ${bio}</li>
+          </ul>
+          <h3>Presentation Topics</h3>
+          <div>${parsedTopics && parsedTopics.length > 0 ? parsedTopics.join(', ') : 'N/A'}</div>
+          ${presentation_topic_other ? `<div><b>Other Topic:</b> ${presentation_topic_other}</div>` : ''}
+          <h3>Consent for Publication</h3>
+          <div>${consent_for_publication === 'agree' ? 'Agreed' : 'Not Agreed'}</div>
+          <h3>NHRA Speaker Declaration</h3>
+          <ul>
+            <li><b>CPD Activity Title:</b> ${declaration_cpd_title}</li>
+            <li><b>Speaker Name:</b> ${declaration_speaker_name}</li>
+            <li><b>Presentation Title:</b> ${declaration_presentation_title}</li>
+            <li><b>Presentation Date:</b> ${declaration_presentation_date}</li>
+            <li><b>Contact Number:</b> ${declaration_contact_number}</li>
+            <li><b>Email:</b> ${declaration_email}</li>
+            <li><b>Abstract:</b> ${declaration_abstract}</li>
+          </ul>
+          <div><b>Declaration Statements:</b><ol>
+            ${declaration_statements.map((s, i) => `<li>${s ? s : 'Not answered'}</li>`).join('')}
+          </ol></div>
+          <ul>
+            <li><b>Final Speaker Name:</b> ${declaration_final_speaker_name}</li>
+            <li><b>Final Date:</b> ${declaration_final_date}</li>
+            <li><b>Digital Signature:</b> ${declaration_final_signature}</li>
+          </ul>
+          <p>Thank you for your submission.<br>Bahrain Dental Society Team</p>
+        `;
+        await sendEmail(email, subject, '', html);
+      } catch (mailErr) {
+        console.error('[SPEAKER-REQUEST] Error sending confirmation email:', mailErr);
+      }
       return NextResponse.json({
         success: true,
         message: 'Speaker application submitted successfully',
