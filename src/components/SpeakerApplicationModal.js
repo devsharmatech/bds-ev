@@ -990,32 +990,53 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       <style>
         @media print {
           @page {
-            margin: 8mm 6mm;
-            size: A4;
-          }
-          @page :first {
-            margin-top: 8mm;
+            margin: 4mm 2mm;
+            size: A4 portrait;
           }
           body {
             font-family: 'Arial', 'Helvetica', sans-serif;
-            line-height: 1.3;
+            line-height: 1.1;
             color: #000;
-            font-size: 10pt;
+            font-size: 9pt;
             margin: 0;
             padding: 0;
             -webkit-print-color-adjust: exact;
           }
-          .page-break {
-            page-break-before: always;
+          .container {
+            max-width: 100vw;
+            padding: 0;
+            margin: 0;
           }
-          .no-break {
-            page-break-inside: avoid;
+          .section-title {
+            font-size: 10pt;
+            padding: 1.5mm 2mm;
           }
-          .keep-with-next {
-            page-break-after: avoid;
+          .compact-table th, .compact-table td {
+            font-size: 8pt;
+            padding: 2px 3px;
           }
         }
-        
+
+        @media (max-width: 600px), print and (max-width: 600px) {
+          body {
+            font-size: 8pt !important;
+            line-height: 1.05 !important;
+          }
+          .container {
+            max-width: 100vw !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .section-title {
+            font-size: 9pt !important;
+            padding: 1mm 1.5mm !important;
+          }
+          .compact-table th, .compact-table td {
+            font-size: 7pt !important;
+            padding: 1px 2px !important;
+          }
+        }
+
         body {
           font-family: 'Arial', 'Helvetica', sans-serif;
           line-height: 1.3;
