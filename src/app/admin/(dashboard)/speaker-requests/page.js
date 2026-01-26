@@ -683,7 +683,7 @@ export default function SpeakerRequestsPage() {
               NHRA SPEAKER DECLARATION
             </div>
             <div style="font-size: 9pt; color: #666; margin-top: 1mm;">
-              Application ID: ${applicationId} | Page 2 of 2
+               Page 2 of 2
             </div>
           </div>
           
