@@ -88,13 +88,24 @@ export async function POST(request) {
 
     // Profile image is optional, bio is required
     if (!bio || !bio.trim()) {
-      return NextResponse.json(
-        { success: false, message: 'Bio is required' },
+      import { supabase } from '@/lib/supabaseAdmin';
+      import { NextResponse } from 'next/server';
+
+      // CORS headers for global access
+      const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      };
         { status: 400 }
       );
     }
 
     console.log('[SPEAKER-REQUEST] Application received:', {
+      // Handle CORS preflight
+      export async function OPTIONS() {
+        return NextResponse.json({}, { headers: corsHeaders });
+      }
       event_id,
       email,
       full_name,
