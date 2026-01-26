@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import SpeakerDeclarationSection, { statements as declarationStatementsList } from "./SpeakerDeclarationSection";
+import SpeakerDeclarationSection, {
+  statements as declarationStatementsList,
+} from "./SpeakerDeclarationSection";
 import {
   X,
   Upload,
@@ -303,7 +305,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [alreadyApplied, setAlreadyApplied] = useState(false);
-  
+
   // File states with additional metadata
   const [abstractFile, setAbstractFile] = useState(null);
   const [abstractFileKey, setAbstractFileKey] = useState(Date.now()); // Key for file input reset
@@ -312,12 +314,12 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const [profileImage, setProfileImage] = useState(null);
   const [profileImageKey, setProfileImageKey] = useState(Date.now());
   const [profilePreview, setProfilePreview] = useState(null);
-  
+
   const [showDeclaration, setShowDeclaration] = useState(true);
   const [bio, setBio] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Form data
   const [formData, setFormData] = useState({
     consent_for_publication: "",
@@ -332,7 +334,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     email: "",
     full_name: "",
   });
-  
+
   const [declarationData, setDeclarationData] = useState({
     declaration_final_signature: "",
     declaration_final_date: "",
@@ -348,7 +350,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     declaration_speaker_name: "",
     declaration_cpd_title: "",
   });
-  
+
   // Keep declarationData in sync with formData
   useEffect(() => {
     setDeclarationData((prev) => ({
@@ -360,14 +362,14 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       declaration_final_signature: formData.full_name || "",
     }));
   }, [formData.full_name, formData.phone, formData.phone_code, formData.email]);
-  
+
   const [declarationError, setDeclarationError] = useState("");
   const [errors, setErrors] = useState({});
-  
+
   const modalRef = useRef(null);
   const formRef = useRef(null);
   const [printLoading, setPrintLoading] = useState(false);
-  
+
   // File input refs
   const profileInputRef = useRef(null);
   const abstractInputRef = useRef(null);
@@ -436,18 +438,18 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         presentation_topic_other: "",
         consent_for_publication: "",
       });
-      
+
       // Clear files and reset file input keys
       setAbstractFile(null);
       setArticleFile(null);
       setProfileImage(null);
       setProfilePreview(null);
-      
+
       // Reset file input keys to force re-render of file inputs
       setAbstractFileKey(Date.now());
       setArticleFileKey(Date.now());
       setProfileImageKey(Date.now());
-      
+
       setErrors({});
       setShowDeclaration(true);
       setBio("");
@@ -559,7 +561,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     // Validate all required fields
     if (!formData.full_name.trim())
       newErrors.full_name = "Full name is required";
@@ -591,7 +593,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     if (!profileImage) newErrors.profile_image = "Profile image is required";
     if (!formData.consent_for_publication)
       newErrors.consent_for_publication = "Please select consent option";
-    
+
     // Validate declaration
     if (showDeclaration) {
       const requiredFields = [
@@ -620,80 +622,44 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         }
       }
     }
-    
+
     setErrors(newErrors);
     setDeclarationError(newErrors.declaration_form || "");
     return Object.keys(newErrors).length === 0;
   };
 
   // Enhanced file handling function
-  const handleFileChange = (e, setter, setterKey, fieldName) => {
+  const handleFileChange = (e, setter, fieldName) => {
     const file = e.target.files?.[0];
-    
-    if (!file) {
-      setter(null);
-      if (fieldName === "profile_image") {
-        setProfilePreview(null);
-      }
-      return;
-    }
-    
-    // Validate file size
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (!file) return;
+
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error("File size must be less than 10MB");
-      
-      // Clear the file input
-      if (e.target) {
-        e.target.value = '';
-      }
-      
-      // Update the key to force re-render
-      if (setterKey) {
-        setterKey(Date.now());
-      }
-      
+      e.target.value = "";
       return;
     }
-    
-    // Validate file type for images
+
+    // Validate image type
     if (fieldName === "profile_image") {
-      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validImageTypes.includes(file.type)) {
-        toast.error("Please upload a valid image file (JPEG, PNG, GIF, WebP)");
-        
-        if (e.target) {
-          e.target.value = '';
-        }
-        
-        if (setterKey) {
-          setterKey(Date.now());
-        }
-        
+      const valid = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+      if (!valid.includes(file.type)) {
+        toast.error("Invalid image type");
+        e.target.value = "";
         return;
       }
     }
-    
-    // Set the file
+
+    // Save File safely
     setter(file);
-    
-    // Clear any errors for this field
-    setErrors({ ...errors, [fieldName]: "" });
-    
-    // Create preview for profile images
+
+    // Preview image
     if (fieldName === "profile_image") {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePreview(reader.result);
-      };
-      reader.onerror = () => {
-        toast.error("Failed to load image preview");
-        setProfilePreview(null);
-      };
-      reader.readAsDataURL(file);
+      const url = URL.createObjectURL(file);
+      setProfilePreview(url);
     }
-    
-    // Don't update the key here - keep the same key to maintain file reference
+
+    setErrors((prev) => ({ ...prev, [fieldName]: "" }));
   };
 
   const handleInputChange = (e) => {
@@ -768,7 +734,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     try {
       // Create FormData object
       const formDataToSend = new FormData();
-      
+
       // Add form fields
       formDataToSend.append("full_name", formData.full_name);
       formDataToSend.append("email", formData.email);
@@ -797,20 +763,20 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       );
       formDataToSend.append("event_id", event.id);
       formDataToSend.append("bio", bio);
-      
+
       // Add files only if they exist and are valid
       if (profileImage && profileImage instanceof File) {
         formDataToSend.append("profile_image", profileImage);
       }
-      
+
       if (abstractFile && abstractFile instanceof File) {
         formDataToSend.append("abstract_file", abstractFile);
       }
-      
+
       if (articleFile && articleFile instanceof File) {
         formDataToSend.append("article_file", articleFile);
       }
-      
+
       // Add declaration data
       if (showDeclaration) {
         Object.entries(declarationData).forEach(([key, value]) => {
@@ -835,48 +801,58 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         body: formDataToSend,
         // Don't set Content-Type header for FormData - let browser set it
       });
-      
+
       const responseText = await response.text();
       let data;
-      
+
       try {
         data = JSON.parse(responseText);
       } catch (e) {
         console.error("Failed to parse response:", responseText);
         throw new Error("Invalid response from server");
       }
-      
+
       if (!response.ok) {
         if (data.alreadyApplied) {
           setAlreadyApplied(true);
           toast.error("You have already applied for this event");
           return;
         }
-        throw new Error(data.message || `Failed to submit application (${response.status})`);
+        throw new Error(
+          data.message || `Failed to submit application (${response.status})`,
+        );
       }
-      
+
       setSubmitSuccess(true);
       toast.success("🎉 Application submitted successfully!");
-      
     } catch (error) {
       console.error("Application error:", error);
-      
+
       // More specific error messages
-      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-        toast.error("Network error. Please check your connection and try again.");
-      } else if (error.message.includes('UPLOAD_FILE_CHANGED')) {
-        toast.error("File upload error. Please re-select your files and try again.");
-        
+      if (
+        error.name === "TypeError" &&
+        error.message.includes("Failed to fetch")
+      ) {
+        toast.error(
+          "Network error. Please check your connection and try again.",
+        );
+      } else if (error.message.includes("UPLOAD_FILE_CHANGED")) {
+        toast.error(
+          "File upload error. Please re-select your files and try again.",
+        );
+
         // Reset file states
         setAbstractFile(null);
         setArticleFile(null);
         setProfileImage(null);
         setProfilePreview(null);
-        
+
         // Reset file input keys
         setAbstractFileKey(Date.now());
         setArticleFileKey(Date.now());
-        setProfileImageKey(Date.now());
+        setProfileImage(null);
+        setProfilePreview(null);
+        if (profileInputRef.current) profileInputRef.current.value = "";
       } else {
         toast.error(error.message || "Failed to submit application");
       }
@@ -903,14 +879,14 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       month: "long",
       day: "numeric",
     });
-    
+
     // Generate a proper application ID (combination of timestamp and random string)
     const generateApplicationId = () => {
       const timestamp = Date.now().toString(36).toUpperCase();
       const random = Math.random().toString(36).substring(2, 6).toUpperCase();
       return `APP-${timestamp.slice(-6)}-${random}`;
     };
-    
+
     const applicationId = generateApplicationId();
 
     // Format topics
@@ -933,16 +909,17 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       if (value) {
         // Shorten statement for printing
         const originalStatement = declarationStatementsList[i];
-        const shortStatement = originalStatement.length > 120 
-          ? originalStatement.substring(0, 120) + "..."
-          : originalStatement;
-        
+        const shortStatement =
+          originalStatement.length > 120
+            ? originalStatement.substring(0, 120) + "..."
+            : originalStatement;
+
         declarationStatements.push({
           number: i + 1,
           statement: shortStatement,
           response: value === "agree" ? "✓ Agree" : "✗ Disagree",
           responseColor: value === "agree" ? "#065F46" : "#991B1B",
-          responseBg: value === "agree" ? "#D1FAE5" : "#FEE2E2"
+          responseBg: value === "agree" ? "#D1FAE5" : "#FEE2E2",
         });
       }
     }
@@ -1372,7 +1349,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             <div class="section-title">4. DECLARATION STATEMENTS</div>
             
             <div class="statements-grid">
-              ${declarationStatements.map(item => `
+              ${declarationStatements
+                .map(
+                  (item) => `
                 <div class="statement-item">
                   <div class="statement-header">
                     <div class="statement-number">${item.number}</div>
@@ -1382,7 +1361,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                   </div>
                   <div class="statement-content">${item.statement}</div>
                 </div>
-              `).join('')}
+              `,
+                )
+                .join("")}
             </div>
           </div>
           
@@ -1646,7 +1627,6 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                       <label className="absolute bottom-0 right-0 bg-[#03215F] text-white p-1.5 md:p-2 rounded-full cursor-pointer hover:bg-[#021845] transition-colors shadow-lg">
                         <Upload className="w-3 h-3 md:w-4 md:h-4" />
                         <input
-                          key={profileImageKey}
                           ref={profileInputRef}
                           type="file"
                           accept="image/*"
@@ -1654,7 +1634,6 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                             handleFileChange(
                               e,
                               setProfileImage,
-                              setProfileImageKey,
                               "profile_image",
                             )
                           }
@@ -2043,12 +2022,16 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                       }`}
                     >
                       <input
-                        key={abstractFileKey}
                         ref={abstractInputRef}
                         type="file"
                         accept=".pdf,.doc,.docx"
                         onChange={(e) =>
-                          handleFileChange(e, setAbstractFile, setAbstractFileKey, "abstract_file")
+                          handleFileChange(
+                            e,
+                            setAbstractFile,
+
+                            "abstract_file",
+                          )
                         }
                         className="hidden"
                         id="abstract-upload"
@@ -2066,7 +2049,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                               {abstractFile.name}
                             </span>
                             <span className="text-xs text-gray-500">
-                              {(abstractFile.size / (1024 * 1024)).toFixed(2)} MB
+                              {(abstractFile.size / (1024 * 1024)).toFixed(2)}{" "}
+                              MB
                             </span>
                           </div>
                         ) : (
@@ -2101,12 +2085,11 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                       }`}
                     >
                       <input
-                        key={articleFileKey}
                         ref={articleInputRef}
                         type="file"
                         accept=".pdf,.doc,.docx,.ppt,.pptx"
                         onChange={(e) =>
-                          handleFileChange(e, setArticleFile, setArticleFileKey, "article_file")
+                          handleFileChange(e, setArticleFile, "article_file")
                         }
                         className="hidden"
                         id="article-upload"
