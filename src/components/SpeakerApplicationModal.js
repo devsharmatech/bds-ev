@@ -253,15 +253,7 @@ const PHONE_CODES = [
 ];
 
 // Professional Titles
-const PROFESSIONAL_TITLES = [
-  "Dental Consultant",
-  "Dental Specialist",
-  "Dental Resident",
-  "General Dentist",
-  "Dental Student",
-  "Academic Professor",
-  "Clinical Director",
-];
+const PROFESSIONAL_TITLES = [ "Dental Consultant", "Dental Specialist", "Dental Resident", "General Dentist", "Dental Student", "Academic Professor", "Clinical Director", ];
 
 // Participant Categories
 const PARTICIPANT_CATEGORIES = [
