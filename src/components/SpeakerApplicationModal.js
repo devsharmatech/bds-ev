@@ -253,7 +253,15 @@ const PHONE_CODES = [
 ];
 
 // Professional Titles
-const PROFESSIONAL_TITLES = [ "Dental Consultant", "Dental Specialist", "Dental Resident", "General Dentist", "Dental Student", "Academic Professor", "Clinical Director", ];
+const PROFESSIONAL_TITLES = [
+  "Dental Consultant",
+  "Dental Specialist",
+  "Dental Resident",
+  "General Dentist",
+  "Dental Student",
+  "Academic Professor",
+  "Clinical Director",
+];
 
 // Participant Categories
 const PARTICIPANT_CATEGORIES = [
@@ -295,17 +303,17 @@ const FORM_STEPS = [
 // Helper function to create a safe clone of a File object
 const cloneFile = async (file) => {
   if (!file) return null;
-  
+
   try {
     // Read the file as ArrayBuffer to create a stable copy
     const arrayBuffer = await file.arrayBuffer();
-    
+
     // Create a new File object with the same properties
     const clonedFile = new File([arrayBuffer], file.name, {
       type: file.type,
       lastModified: file.lastModified,
     });
-    
+
     return clonedFile;
   } catch (error) {
     console.error("Error cloning file:", error);
@@ -325,11 +333,11 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   // File references - store CLONED files here for upload stability
   const filesRef = useRef({
-    profile: null,      // Cloned profile image file
-    abstract: null,     // Cloned abstract file  
-    article: null,      // Cloned article file
+    profile: null, // Cloned profile image file
+    abstract: null, // Cloned abstract file
+    article: null, // Cloned article file
   });
-  
+
   // UI state for file display (these are just for preview, NOT for upload)
   const [abstractFile, setAbstractFile] = useState(null);
   const [articleFile, setArticleFile] = useState(null);
@@ -451,7 +459,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       setArticleFile(null);
       setProfileImage(null);
       setProfilePreview(null);
-      
+
       // Clear the cloned files in ref
       filesRef.current = {
         profile: null,
@@ -498,7 +506,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     const newErrors = {};
 
     if (currentStep === 1) {
-      if (!filesRef.current.profile) newErrors.profile_image = "Profile image is required";
+      if (!filesRef.current.profile)
+        newErrors.profile_image = "Profile image is required";
       if (!bio.trim() || bio.length < 50)
         newErrors.bio = "Bio must be at least 50 characters";
     }
@@ -604,7 +613,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     }
     if (!bio.trim() || bio.length < 50)
       newErrors.bio = "Bio must be at least 50 characters";
-    if (!filesRef.current.profile) newErrors.profile_image = "Profile image is required";
+    if (!filesRef.current.profile)
+      newErrors.profile_image = "Profile image is required";
     if (!formData.consent_for_publication)
       newErrors.consent_for_publication = "Please select consent option";
 
@@ -667,7 +677,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     try {
       // Create a STABLE clone of the file to prevent ERR_UPLOAD_FILE_CHANGED
       const clonedFile = await cloneFile(file);
-      
+
       if (!clonedFile) {
         toast.error("Failed to process file. Please try again.");
         return;
@@ -675,7 +685,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
       // Store the ORIGINAL file in state for UI preview only
       setter(file);
-      
+
       // Store the CLONED file in ref for stable upload
       if (fieldName === "profile_image") {
         filesRef.current.profile = clonedFile;
@@ -803,19 +813,40 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
       // Add CLONED files from ref (these are stable and won't change)
       // IMPORTANT: Use the cloned files, not the original ones from state
-      if (filesRef.current.profile && filesRef.current.profile instanceof File) {
+      if (
+        filesRef.current.profile &&
+        filesRef.current.profile instanceof File
+      ) {
         formDataToSend.append("profile_image", filesRef.current.profile);
-        console.log("Adding CLONED profile file:", filesRef.current.profile.name, filesRef.current.profile.size);
+        console.log(
+          "Adding CLONED profile file:",
+          filesRef.current.profile.name,
+          filesRef.current.profile.size,
+        );
       }
 
-      if (filesRef.current.abstract && filesRef.current.abstract instanceof File) {
+      if (
+        filesRef.current.abstract &&
+        filesRef.current.abstract instanceof File
+      ) {
         formDataToSend.append("abstract_file", filesRef.current.abstract);
-        console.log("Adding CLONED abstract file:", filesRef.current.abstract.name, filesRef.current.abstract.size);
+        console.log(
+          "Adding CLONED abstract file:",
+          filesRef.current.abstract.name,
+          filesRef.current.abstract.size,
+        );
       }
 
-      if (filesRef.current.article && filesRef.current.article instanceof File) {
+      if (
+        filesRef.current.article &&
+        filesRef.current.article instanceof File
+      ) {
         formDataToSend.append("article_file", filesRef.current.article);
-        console.log("Adding CLONED article file:", filesRef.current.article.name, filesRef.current.article.size);
+        console.log(
+          "Adding CLONED article file:",
+          filesRef.current.article.name,
+          filesRef.current.article.size,
+        );
       }
 
       // Add declaration data
@@ -856,7 +887,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             console.error("Failed to parse response:", responseText);
             throw new Error(`Server error: ${response.status}`);
           }
-          
+
           if (data.alreadyApplied) {
             setAlreadyApplied(true);
             toast.error("You have already applied for this event");
@@ -871,7 +902,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         setSubmitSuccess(true);
         toast.success("🎉 Application submitted successfully!");
       } catch (fetchError) {
-        if (fetchError.name === 'AbortError') {
+        if (fetchError.name === "AbortError") {
           throw new Error("Request timeout. Please try again.");
         }
         throw fetchError;
@@ -898,7 +929,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         setArticleFile(null);
         setProfileImage(null);
         setProfilePreview(null);
-        
+
         // Reset file refs
         filesRef.current = {
           profile: null,
@@ -1279,16 +1310,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       <div class="container">
         <!-- Page 1 -->
         <div class="print-header no-break">
-          <div class="logo-section">
-            <!-- NHRA Logo - You can replace this with actual logo URL -->
-            <div style="text-align: center; margin-bottom: 2mm;">
-              <div style="display: inline-block; padding: 2mm 4mm; background: #03215F; color: white; font-weight: bold; font-size: 12pt; border-radius: 3px;">
-                NHRA
-              </div>
-            </div>
-          </div>
           
-          <div class="title-section">
+          
+          <div class="title-section" style="margin-top: 5mm;">
             <h1>SPEAKER APPLICATION FORM</h1>
             <h2>${event.title}</h2>
           </div>
@@ -1375,12 +1399,13 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         
         <!-- Page Break for Page 2 -->
         <div class="no-break">
-          <!-- NHRA Header for Page 2 -->
-          <div style="text-align: center; margin-bottom: 3mm; padding-bottom: 2mm; border-bottom: 1px solid #03215F;">
-            <div style="display: inline-block; padding: 1mm 3mm; background: #03215F; color: white; font-weight: bold; font-size: 10pt; border-radius: 2px;">
-              NHRA SPEAKER DECLARATION
+         <div class="logo-section">
+            <!-- NHRA Logo - You can replace this with actual logo URL -->
+            <div style="text-align: center; margin-bottom: 2mm;">
+              <div style="display: inline-block; height: 25mm; ">
+                 <img src="https://www.bds-bh.org/nera-logo.png" style="margin:2px auto; height:25mm;" alt="NHRA Logo"/>
+              </div>
             </div>
-           
           </div>
           
           <!-- Section 3: NHRA Declaration -->
@@ -1485,7 +1510,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
           
           <!-- Footer -->
           <div class="footer">
-            <p><strong>NHRA Speaker Application System</strong></p>
+            <p><strong>Bahrain Dental Society</strong></p>
             <p>${event.title} | Printed: ${currentDate}</p>
             <div class="print-button">
               <button onclick="window.print()" style="
@@ -2062,11 +2087,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                         type="file"
                         accept=".pdf,.doc,.docx"
                         onChange={(e) =>
-                          handleFileChange(
-                            e,
-                            setAbstractFile,
-                            "abstract_file",
-                          )
+                          handleFileChange(e, setAbstractFile, "abstract_file")
                         }
                         className="hidden"
                         id="abstract-upload"
