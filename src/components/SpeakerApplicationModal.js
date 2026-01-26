@@ -300,20 +300,45 @@ const FORM_STEPS = [
   { id: 5, title: "Declaration", icon: FileText },
 ];
 
+// Helper function to create a safe clone of a File object
+const cloneFile = async (file) => {
+  if (!file) return null;
+  
+  try {
+    // Read the file as ArrayBuffer to create a stable copy
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Create a new File object with the same properties
+    const clonedFile = new File([arrayBuffer], file.name, {
+      type: file.type,
+      lastModified: file.lastModified,
+    });
+    
+    return clonedFile;
+  } catch (error) {
+    console.error("Error cloning file:", error);
+    // Fallback: create a new File with the original file
+    return new File([file], file.name, {
+      type: file.type,
+      lastModified: file.lastModified,
+    });
+  }
+};
+
 export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [alreadyApplied, setAlreadyApplied] = useState(false);
 
-  // File states - using refs to prevent re-creation on re-renders
+  // File references - store CLONED files here for upload stability
   const filesRef = useRef({
-    profile: null,
-    abstract: null,
-    article: null,
+    profile: null,      // Cloned profile image file
+    abstract: null,     // Cloned abstract file  
+    article: null,      // Cloned article file
   });
   
-  // UI state for file display
+  // UI state for file display (these are just for preview, NOT for upload)
   const [abstractFile, setAbstractFile] = useState(null);
   const [articleFile, setArticleFile] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
@@ -374,13 +399,10 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const formRef = useRef(null);
   const [printLoading, setPrintLoading] = useState(false);
 
-  // File input refs
+  // File input refs - kept only for triggering file selection
   const profileInputRef = useRef(null);
   const abstractInputRef = useRef(null);
   const articleInputRef = useRef(null);
-
-  // Store File objects in a Map to prevent re-creation
-  const fileStore = useRef(new Map());
 
   // Removed mobile check effect
 
@@ -432,26 +454,23 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         consent_for_publication: "",
       });
 
-      // Clear files and reset file input refs
+      // Clear UI file states (preview only)
       setAbstractFile(null);
       setArticleFile(null);
       setProfileImage(null);
       setProfilePreview(null);
       
-      // Clear refs
+      // Clear the cloned files in ref
       filesRef.current = {
         profile: null,
         abstract: null,
         article: null,
       };
-      
-      // Clear file store
-      fileStore.current.clear();
 
-      // Clear file inputs
-      if (profileInputRef.current) profileInputRef.current.value = "";
+      // Reset file inputs (this is safe since we don't rely on them for upload)
       if (abstractInputRef.current) abstractInputRef.current.value = "";
       if (articleInputRef.current) articleInputRef.current.value = "";
+      if (profileInputRef.current) profileInputRef.current.value = "";
 
       setErrors({});
       setShowDeclaration(true);
@@ -631,8 +650,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Enhanced file handling function
-  const handleFileChange = (e, setter, fieldName) => {
+  // SAFE file handling function - clones files to prevent ERR_UPLOAD_FILE_CHANGED
+  const handleFileChange = async (e, setter, fieldName) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -653,29 +672,39 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       }
     }
 
-    // Store file in both state (for UI) and ref (for submission)
-    setter(file);
-    
-    // Create a unique key for this file and store it
-    const fileKey = `${fieldName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    fileStore.current.set(fileKey, file);
-    
-    // Update the ref with the file key reference
-    if (fieldName === "profile_image") {
-      filesRef.current.profile = { key: fileKey, file };
-      // Preview image
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    } else if (fieldName === "abstract_file") {
-      filesRef.current.abstract = { key: fileKey, file };
-    } else if (fieldName === "article_file") {
-      filesRef.current.article = { key: fileKey, file };
-    }
+    try {
+      // Create a STABLE clone of the file to prevent ERR_UPLOAD_FILE_CHANGED
+      const clonedFile = await cloneFile(file);
+      
+      if (!clonedFile) {
+        toast.error("Failed to process file. Please try again.");
+        return;
+      }
 
-    setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+      // Store the ORIGINAL file in state for UI preview only
+      setter(file);
+      
+      // Store the CLONED file in ref for stable upload
+      if (fieldName === "profile_image") {
+        filesRef.current.profile = clonedFile;
+        // Create preview from original file (UI only)
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setProfilePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else if (fieldName === "abstract_file") {
+        filesRef.current.abstract = clonedFile;
+      } else if (fieldName === "article_file") {
+        filesRef.current.article = clonedFile;
+      }
+
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    } catch (error) {
+      console.error("Error handling file:", error);
+      toast.error("Failed to process file. Please try again.");
+      e.target.value = "";
+    }
   };
 
   const handleInputChange = (e) => {
@@ -780,29 +809,21 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       formDataToSend.append("event_id", event.id);
       formDataToSend.append("bio", bio);
 
-      // Add files - retrieve from fileStore using the stored keys
-      if (filesRef.current.profile && filesRef.current.profile.key) {
-        const profileFile = fileStore.current.get(filesRef.current.profile.key);
-        if (profileFile && profileFile instanceof File) {
-          formDataToSend.append("profile_image", profileFile);
-          console.log("Adding profile file:", profileFile.name, profileFile.size);
-        }
+      // Add CLONED files from ref (these are stable and won't change)
+      // IMPORTANT: Use the cloned files, not the original ones from state
+      if (filesRef.current.profile && filesRef.current.profile instanceof File) {
+        formDataToSend.append("profile_image", filesRef.current.profile);
+        console.log("Adding CLONED profile file:", filesRef.current.profile.name, filesRef.current.profile.size);
       }
 
-      if (filesRef.current.abstract && filesRef.current.abstract.key) {
-        const abstractFile = fileStore.current.get(filesRef.current.abstract.key);
-        if (abstractFile && abstractFile instanceof File) {
-          formDataToSend.append("abstract_file", abstractFile);
-          console.log("Adding abstract file:", abstractFile.name, abstractFile.size);
-        }
+      if (filesRef.current.abstract && filesRef.current.abstract instanceof File) {
+        formDataToSend.append("abstract_file", filesRef.current.abstract);
+        console.log("Adding CLONED abstract file:", filesRef.current.abstract.name, filesRef.current.abstract.size);
       }
 
-      if (filesRef.current.article && filesRef.current.article.key) {
-        const articleFile = fileStore.current.get(filesRef.current.article.key);
-        if (articleFile && articleFile instanceof File) {
-          formDataToSend.append("article_file", articleFile);
-          console.log("Adding article file:", articleFile.name, articleFile.size);
-        }
+      if (filesRef.current.article && filesRef.current.article instanceof File) {
+        formDataToSend.append("article_file", filesRef.current.article);
+        console.log("Adding CLONED article file:", filesRef.current.article.name, filesRef.current.article.size);
       }
 
       // Add declaration data
@@ -815,8 +836,11 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       }
 
       // Debug: Check what's being sent
-      console.log("File store size:", fileStore.current.size);
-      console.log("Files ref:", filesRef.current);
+      console.log("Uploading CLONED files:", {
+        profile: filesRef.current.profile?.name,
+        abstract: filesRef.current.abstract?.name,
+        article: filesRef.current.article?.name,
+      });
 
       // Make the request with timeout
       const controller = new AbortController();
@@ -872,6 +896,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
           "Network error. Please check your connection and try again.",
         );
       } else if (error.message.includes("UPLOAD_FILE_CHANGED")) {
+        // This should now be prevented by our cloning approach
         toast.error(
           "File upload error. The file reference was lost. Please re-select your files and submit again.",
         );
@@ -888,9 +913,6 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
           abstract: null,
           article: null,
         };
-        
-        // Clear file store
-        fileStore.current.clear();
 
         // Clear file inputs
         if (abstractInputRef.current) abstractInputRef.current.value = "";
