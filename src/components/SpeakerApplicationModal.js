@@ -306,13 +306,15 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [alreadyApplied, setAlreadyApplied] = useState(false);
 
-  // File states with additional metadata
+  // File states with additional metadata - using refs to prevent re-creation
+  const filesRef = useRef({
+    profile: null,
+    abstract: null,
+    article: null,
+  });
   const [abstractFile, setAbstractFile] = useState(null);
-  const [abstractFileKey, setAbstractFileKey] = useState(Date.now()); // Key for file input reset
   const [articleFile, setArticleFile] = useState(null);
-  const [articleFileKey, setArticleFileKey] = useState(Date.now());
   const [profileImage, setProfileImage] = useState(null);
-  const [profileImageKey, setProfileImageKey] = useState(Date.now());
   const [profilePreview, setProfilePreview] = useState(null);
 
   const [showDeclaration, setShowDeclaration] = useState(true);
@@ -425,16 +427,23 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         consent_for_publication: "",
       });
 
-      // Clear files and reset file input keys
+      // Clear files and reset file input refs
       setAbstractFile(null);
       setArticleFile(null);
       setProfileImage(null);
       setProfilePreview(null);
+      
+      // Clear refs
+      filesRef.current = {
+        profile: null,
+        abstract: null,
+        article: null,
+      };
 
-      // Reset file input keys to force re-render of file inputs
-      setAbstractFileKey(Date.now());
-      setArticleFileKey(Date.now());
-      setProfileImageKey(Date.now());
+      // Clear file inputs
+      if (profileInputRef.current) profileInputRef.current.value = "";
+      if (abstractInputRef.current) abstractInputRef.current.value = "";
+      if (articleInputRef.current) articleInputRef.current.value = "";
 
       setErrors({});
       setShowDeclaration(true);
@@ -630,19 +639,28 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     if (fieldName === "profile_image") {
       const valid = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
       if (!valid.includes(file.type)) {
-        toast.error("Invalid image type");
+        toast.error("Invalid image type. Please use JPEG, PNG, or WebP");
         e.target.value = "";
         return;
       }
     }
 
-    // Save File safely
+    // Save File safely in both state and ref
     setter(file);
-
-    // Preview image
+    
+    // Store the original file reference in the ref
     if (fieldName === "profile_image") {
-      const url = URL.createObjectURL(file);
-      setProfilePreview(url);
+      filesRef.current.profile = file;
+      // Preview image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else if (fieldName === "abstract_file") {
+      filesRef.current.abstract = file;
+    } else if (fieldName === "article_file") {
+      filesRef.current.article = file;
     }
 
     setErrors((prev) => ({ ...prev, [fieldName]: "" }));
@@ -750,17 +768,18 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       formDataToSend.append("event_id", event.id);
       formDataToSend.append("bio", bio);
 
-      // Add files only if they exist and are valid
-      if (profileImage && profileImage instanceof File) {
-        formDataToSend.append("profile_image", profileImage);
+      // Add files using the refs to ensure original File objects are used
+      // This prevents the ERR_UPLOAD_FILE_CHANGED error
+      if (filesRef.current.profile && filesRef.current.profile instanceof File) {
+        formDataToSend.append("profile_image", filesRef.current.profile);
       }
 
-      if (abstractFile && abstractFile instanceof File) {
-        formDataToSend.append("abstract_file", abstractFile);
+      if (filesRef.current.abstract && filesRef.current.abstract instanceof File) {
+        formDataToSend.append("abstract_file", filesRef.current.abstract);
       }
 
-      if (articleFile && articleFile instanceof File) {
-        formDataToSend.append("article_file", articleFile);
+      if (filesRef.current.article && filesRef.current.article instanceof File) {
+        formDataToSend.append("article_file", filesRef.current.article);
       }
 
       // Add declaration data
@@ -772,15 +791,11 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         });
       }
 
-      // Log form data for debugging (remove in production)
-      console.log("Submitting form data:");
-      for (let [key, value] of formDataToSend.entries()) {
-        if (value instanceof File) {
-          console.log(`${key}: File - ${value.name} (${value.size} bytes)`);
-        } else {
-          console.log(`${key}: ${value}`);
-        }
-      }
+      // Debug: Check what's being sent
+      console.log("Submitting form with files:");
+      console.log("Profile file:", filesRef.current.profile);
+      console.log("Abstract file:", filesRef.current.abstract);
+      console.log("Article file:", filesRef.current.article);
 
       const response = await fetch("/api/events/speaker-request", {
         method: "POST",
@@ -788,17 +803,16 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         // Don't set Content-Type header for FormData - let browser set it
       });
 
-      const responseText = await response.text();
-      let data;
-
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.error("Failed to parse response:", responseText);
-        throw new Error("Invalid response from server");
-      }
-
       if (!response.ok) {
+        const responseText = await response.text();
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error("Failed to parse response:", responseText);
+          throw new Error(`Server error: ${response.status}`);
+        }
+        
         if (data.alreadyApplied) {
           setAlreadyApplied(true);
           toast.error("You have already applied for this event");
@@ -809,6 +823,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         );
       }
 
+      const data = await response.json();
       setSubmitSuccess(true);
       toast.success("🎉 Application submitted successfully!");
     } catch (error) {
@@ -832,14 +847,17 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         setArticleFile(null);
         setProfileImage(null);
         setProfilePreview(null);
+        
+        // Reset file refs
+        filesRef.current = {
+          profile: null,
+          abstract: null,
+          article: null,
+        };
 
-        // Reset file input keys
-        setAbstractFileKey(Date.now());
-        setArticleFileKey(Date.now());
-        setProfileImage(null);
-        setArticleFile(null);
-        setAbstractFile(null);
-        setProfilePreview(null);
+        // Clear file inputs
+        if (abstractInputRef.current) abstractInputRef.current.value = "";
+        if (articleInputRef.current) articleInputRef.current.value = "";
         if (profileInputRef.current) profileInputRef.current.value = "";
       } else {
         toast.error(error.message || "Failed to submit application");
@@ -1545,7 +1563,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             className="p-4 md:p-6 space-y-6 md:space-y-8 max-h-[60vh] md:max-h-[70vh] overflow-y-auto"
           >
             {/* Profile Section - always visible */}
-            {(
+            {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-blue-100">
                 <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
                   <div className="p-1.5 md:p-2 bg-blue-100 rounded-lg">
@@ -1630,10 +1648,10 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                   </div>
                 </div>
               </div>
-            )}
+            }
 
             {/* Step 2: Personal Information */}
-            {(
+            {
               <div className="space-y-4 md:space-y-6">
                 <div className="grid grid-cols-1 gap-4 md:gap-6">
                   {/* Full Name */}
@@ -1848,10 +1866,10 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                   </div>
                 </div>
               </div>
-            )}
+            }
 
             {/* Step 3: Presentation Topics */}
-            {(
+            {
               <div className="bg-gray-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-gray-200">
                 <label className="block text-sm font-semibold text-gray-700 mb-3 md:mb-4">
                   Presentation Topics <span className="text-red-500">*</span>
@@ -1947,10 +1965,10 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                   </p>
                 )}
               </div>
-            )}
+            }
 
             {/* Step 4: File Uploads & Consent */}
-            {(
+            {
               <>
                 {/* File Uploads */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -1975,7 +1993,6 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                           handleFileChange(
                             e,
                             setAbstractFile,
-
                             "abstract_file",
                           )
                         }
@@ -2165,7 +2182,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                   )}
                 </div>
               </>
-            )}
+            }
 
             {/* Step 5: Declaration Form */}
             {showDeclaration && (
@@ -2217,7 +2234,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             )}
 
             {/* Submit Button - Desktop Only */}
-            {(
+            {
               <div className="pt-4 md:pt-6 border-t border-gray-200">
                 <button
                   type="submit"
@@ -2240,7 +2257,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                   By submitting, you agree to our terms and conditions
                 </p>
               </div>
-            )}
+            }
           </form>
         )}
       </div>
