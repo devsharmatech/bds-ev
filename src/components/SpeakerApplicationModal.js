@@ -317,8 +317,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
 
   const [showDeclaration, setShowDeclaration] = useState(true);
   const [bio, setBio] = useState("");
+  // Remove step logic for mobile; always show full form
   const [currentStep, setCurrentStep] = useState(1);
-  const [isMobile, setIsMobile] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -375,23 +375,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const abstractInputRef = useRef(null);
   const articleInputRef = useRef(null);
 
-  // Check if mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+  // Removed mobile check effect
 
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  // Auto scroll to top on step change
-  useEffect(() => {
-    if (formRef.current) {
-      formRef.current.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [currentStep]);
+  // Removed auto scroll on step change
 
   // Close modal on ESC key
   useEffect(() => {
@@ -851,6 +837,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         setAbstractFileKey(Date.now());
         setArticleFileKey(Date.now());
         setProfileImage(null);
+        setArticleFile(null);
+        setAbstractFile(null);
         setProfilePreview(null);
         if (profileInputRef.current) profileInputRef.current.value = "";
       } else {
@@ -1483,49 +1471,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Mobile Step Indicator */}
-        {isMobile && !alreadyApplied && !submitSuccess && (
-          <div className="sticky top-[72px] md:top-0 bg-white border-b z-10 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={handlePrevStep}
-                disabled={currentStep === 1}
-                className={`p-1.5 rounded-lg ${currentStep === 1 ? "text-gray-400" : "text-[#03215F] hover:bg-gray-100"}`}
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-
-              <div className="flex items-center gap-1">
-                {FORM_STEPS.map((step) => (
-                  <div
-                    key={step.id}
-                    className={`w-8 h-1.5 rounded-full ${currentStep >= step.id ? "bg-[#03215F]" : "bg-gray-300"}`}
-                  />
-                ))}
-              </div>
-
-              <button
-                onClick={currentStep === 5 ? handleSubmit : handleNextStep}
-                className={`p-1.5  ${currentStep === 5 ? "bg-gradient-to-r from-[#03215F] via-[#1a3a8f] to-[#03215F] text-white" : "hover:bg-gray-100 text-[#03215F]"}  rounded-lg text-sm font-medium`}
-              >
-                {currentStep === 5 ? (
-                  <span className="flex items-center gap-1">
-                    Submit
-                    <CheckCircle className="w-4 h-4" />
-                  </span>
-                ) : (
-                  <ArrowRight className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-            <div className="mt-2 text-center">
-              <span className="text-xs font-medium text-gray-700">
-                Step {currentStep} of 5:{" "}
-                {FORM_STEPS.find((s) => s.id === currentStep)?.title}
-              </span>
-            </div>
-          </div>
-        )}
+        {/* Removed mobile step indicator and navigation */}
 
         {/* Already Applied Message */}
         {alreadyApplied ? (
@@ -1598,8 +1544,8 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             onSubmit={handleSubmit}
             className="p-4 md:p-6 space-y-6 md:space-y-8 max-h-[60vh] md:max-h-[70vh] overflow-y-auto"
           >
-            {/* Step 1: Profile Section */}
-            {(!isMobile || currentStep === 1) && (
+            {/* Profile Section - always visible */}
+            {(
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-blue-100">
                 <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
                   <div className="p-1.5 md:p-2 bg-blue-100 rounded-lg">
@@ -1663,7 +1609,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
                         onChange={(e) => setBio(e.target.value)}
                         className={`w-full px-3 md:px-4 py-2.5 md:py-3 border rounded-lg md:rounded-xl focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all duration-200 resize-none ${errors.bio ? "border-red-500" : "border-gray-300 hover:border-blue-300"}`}
                         placeholder="Write a detailed professional bio (minimum 50 characters)..."
-                        rows={isMobile ? 4 : 5}
+                        rows={5}
                       />
                       <div className="flex justify-between items-center mt-2">
                         <span
@@ -1687,7 +1633,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             )}
 
             {/* Step 2: Personal Information */}
-            {(!isMobile || currentStep === 2) && (
+            {(
               <div className="space-y-4 md:space-y-6">
                 <div className="grid grid-cols-1 gap-4 md:gap-6">
                   {/* Full Name */}
@@ -1905,7 +1851,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             )}
 
             {/* Step 3: Presentation Topics */}
-            {(!isMobile || currentStep === 3) && (
+            {(
               <div className="bg-gray-50 rounded-lg md:rounded-xl p-4 md:p-6 border border-gray-200">
                 <label className="block text-sm font-semibold text-gray-700 mb-3 md:mb-4">
                   Presentation Topics <span className="text-red-500">*</span>
@@ -2004,7 +1950,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             )}
 
             {/* Step 4: File Uploads & Consent */}
-            {(!isMobile || currentStep === 4) && (
+            {(
               <>
                 {/* File Uploads */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -2222,7 +2168,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             )}
 
             {/* Step 5: Declaration Form */}
-            {(!isMobile || currentStep === 5) && showDeclaration && (
+            {showDeclaration && (
               <>
                 {/* Speaker Declaration Checkbox */}
                 <div className="bg-amber-50 border border-amber-200 rounded-lg md:rounded-xl p-3 md:p-4">
@@ -2271,7 +2217,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
             )}
 
             {/* Submit Button - Desktop Only */}
-            {!isMobile && (
+            {(
               <div className="pt-4 md:pt-6 border-t border-gray-200">
                 <button
                   type="submit"
