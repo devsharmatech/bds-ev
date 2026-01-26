@@ -306,12 +306,14 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [alreadyApplied, setAlreadyApplied] = useState(false);
 
-  // File states with additional metadata - using refs to prevent re-creation
+  // File states - using refs to prevent re-creation on re-renders
   const filesRef = useRef({
     profile: null,
     abstract: null,
     article: null,
   });
+  
+  // UI state for file display
   const [abstractFile, setAbstractFile] = useState(null);
   const [articleFile, setArticleFile] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
@@ -377,6 +379,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
   const abstractInputRef = useRef(null);
   const articleInputRef = useRef(null);
 
+  // Store File objects in a Map to prevent re-creation
+  const fileStore = useRef(new Map());
+
   // Removed mobile check effect
 
   // Removed auto scroll on step change
@@ -439,6 +444,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         abstract: null,
         article: null,
       };
+      
+      // Clear file store
+      fileStore.current.clear();
 
       // Clear file inputs
       if (profileInputRef.current) profileInputRef.current.value = "";
@@ -479,7 +487,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     const newErrors = {};
 
     if (currentStep === 1) {
-      if (!profileImage) newErrors.profile_image = "Profile image is required";
+      if (!filesRef.current.profile) newErrors.profile_image = "Profile image is required";
       if (!bio.trim() || bio.length < 50)
         newErrors.bio = "Bio must be at least 50 characters";
     }
@@ -585,7 +593,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     }
     if (!bio.trim() || bio.length < 50)
       newErrors.bio = "Bio must be at least 50 characters";
-    if (!profileImage) newErrors.profile_image = "Profile image is required";
+    if (!filesRef.current.profile) newErrors.profile_image = "Profile image is required";
     if (!formData.consent_for_publication)
       newErrors.consent_for_publication = "Please select consent option";
 
@@ -645,12 +653,16 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       }
     }
 
-    // Save File safely in both state and ref
+    // Store file in both state (for UI) and ref (for submission)
     setter(file);
     
-    // Store the original file reference in the ref
+    // Create a unique key for this file and store it
+    const fileKey = `${fieldName}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    fileStore.current.set(fileKey, file);
+    
+    // Update the ref with the file key reference
     if (fieldName === "profile_image") {
-      filesRef.current.profile = file;
+      filesRef.current.profile = { key: fileKey, file };
       // Preview image
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -658,9 +670,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       };
       reader.readAsDataURL(file);
     } else if (fieldName === "abstract_file") {
-      filesRef.current.abstract = file;
+      filesRef.current.abstract = { key: fileKey, file };
     } else if (fieldName === "article_file") {
-      filesRef.current.article = file;
+      filesRef.current.article = { key: fileKey, file };
     }
 
     setErrors((prev) => ({ ...prev, [fieldName]: "" }));
@@ -768,18 +780,29 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       formDataToSend.append("event_id", event.id);
       formDataToSend.append("bio", bio);
 
-      // Add files using the refs to ensure original File objects are used
-      // This prevents the ERR_UPLOAD_FILE_CHANGED error
-      if (filesRef.current.profile && filesRef.current.profile instanceof File) {
-        formDataToSend.append("profile_image", filesRef.current.profile);
+      // Add files - retrieve from fileStore using the stored keys
+      if (filesRef.current.profile && filesRef.current.profile.key) {
+        const profileFile = fileStore.current.get(filesRef.current.profile.key);
+        if (profileFile && profileFile instanceof File) {
+          formDataToSend.append("profile_image", profileFile);
+          console.log("Adding profile file:", profileFile.name, profileFile.size);
+        }
       }
 
-      if (filesRef.current.abstract && filesRef.current.abstract instanceof File) {
-        formDataToSend.append("abstract_file", filesRef.current.abstract);
+      if (filesRef.current.abstract && filesRef.current.abstract.key) {
+        const abstractFile = fileStore.current.get(filesRef.current.abstract.key);
+        if (abstractFile && abstractFile instanceof File) {
+          formDataToSend.append("abstract_file", abstractFile);
+          console.log("Adding abstract file:", abstractFile.name, abstractFile.size);
+        }
       }
 
-      if (filesRef.current.article && filesRef.current.article instanceof File) {
-        formDataToSend.append("article_file", filesRef.current.article);
+      if (filesRef.current.article && filesRef.current.article.key) {
+        const articleFile = fileStore.current.get(filesRef.current.article.key);
+        if (articleFile && articleFile instanceof File) {
+          formDataToSend.append("article_file", articleFile);
+          console.log("Adding article file:", articleFile.name, articleFile.size);
+        }
       }
 
       // Add declaration data
@@ -792,40 +815,51 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
       }
 
       // Debug: Check what's being sent
-      console.log("Submitting form with files:");
-      console.log("Profile file:", filesRef.current.profile);
-      console.log("Abstract file:", filesRef.current.abstract);
-      console.log("Article file:", filesRef.current.article);
+      console.log("File store size:", fileStore.current.size);
+      console.log("Files ref:", filesRef.current);
 
-      const response = await fetch("/api/events/speaker-request", {
-        method: "POST",
-        body: formDataToSend,
-        // Don't set Content-Type header for FormData - let browser set it
-      });
+      // Make the request with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      if (!response.ok) {
-        const responseText = await response.text();
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch (e) {
-          console.error("Failed to parse response:", responseText);
-          throw new Error(`Server error: ${response.status}`);
+      try {
+        const response = await fetch("/api/events/speaker-request", {
+          method: "POST",
+          body: formDataToSend,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const responseText = await response.text();
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (e) {
+            console.error("Failed to parse response:", responseText);
+            throw new Error(`Server error: ${response.status}`);
+          }
+          
+          if (data.alreadyApplied) {
+            setAlreadyApplied(true);
+            toast.error("You have already applied for this event");
+            return;
+          }
+          throw new Error(
+            data.message || `Failed to submit application (${response.status})`,
+          );
         }
-        
-        if (data.alreadyApplied) {
-          setAlreadyApplied(true);
-          toast.error("You have already applied for this event");
-          return;
+
+        const data = await response.json();
+        setSubmitSuccess(true);
+        toast.success("🎉 Application submitted successfully!");
+      } catch (fetchError) {
+        if (fetchError.name === 'AbortError') {
+          throw new Error("Request timeout. Please try again.");
         }
-        throw new Error(
-          data.message || `Failed to submit application (${response.status})`,
-        );
+        throw fetchError;
       }
-
-      const data = await response.json();
-      setSubmitSuccess(true);
-      toast.success("🎉 Application submitted successfully!");
     } catch (error) {
       console.error("Application error:", error);
 
@@ -839,7 +873,7 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         );
       } else if (error.message.includes("UPLOAD_FILE_CHANGED")) {
         toast.error(
-          "File upload error. Please re-select your files and try again.",
+          "File upload error. The file reference was lost. Please re-select your files and submit again.",
         );
 
         // Reset file states
@@ -854,6 +888,9 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
           abstract: null,
           article: null,
         };
+        
+        // Clear file store
+        fileStore.current.clear();
 
         // Clear file inputs
         if (abstractInputRef.current) abstractInputRef.current.value = "";
