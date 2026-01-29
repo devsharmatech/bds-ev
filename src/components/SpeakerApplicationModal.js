@@ -1311,7 +1311,6 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
         <!-- Page 1 -->
         <div class="print-header no-break">
           
-          
           <div class="title-section" style="margin-top: 5mm;">
             <h1>SPEAKER APPLICATION FORM</h1>
             <h2>${event.title}</h2>

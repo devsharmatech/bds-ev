@@ -14,6 +14,9 @@ export async function GET(request) {
     const status = (url.searchParams.get('status') || '').trim();
     const type = (url.searchParams.get('type') || '').trim();
     const verified = (url.searchParams.get('verified') || '').trim();
+    const date = (url.searchParams.get('date') || '').trim();
+    const from_date = (url.searchParams.get('from_date') || '').trim();
+    const to_date = (url.searchParams.get('to_date') || '').trim();
 
     const from = Math.max(0, (page - 1) * per_page);
     const to = from + per_page - 1;
@@ -82,6 +85,37 @@ export async function GET(request) {
       query = query.eq('is_member_verified', isVerified);
     }
 
+    if (date === 'today') {
+      const now = new Date();
+      const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+      const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+      query = query.gte('created_at', start.toISOString()).lte('created_at', end.toISOString());
+    } else if (from_date || to_date) {
+      let start = null;
+      let end = null;
+
+      if (from_date) {
+        const d = new Date(from_date);
+        if (!Number.isNaN(d.getTime())) {
+          start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+        }
+      }
+
+      if (to_date) {
+        const d = new Date(to_date);
+        if (!Number.isNaN(d.getTime())) {
+          end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+        }
+      }
+
+      if (start) {
+        query = query.gte('created_at', start.toISOString());
+      }
+      if (end) {
+        query = query.lte('created_at', end.toISOString());
+      }
+    }
+
     if (sort) {
       const [col, dir] = sort.split('.');
       if (col && dir && ['asc', 'desc'].includes(dir.toLowerCase())) {
@@ -117,6 +151,37 @@ export async function GET(request) {
     if (verified) {
       const isVerified = verified.toLowerCase() === 'true';
       countQuery = countQuery.eq('is_member_verified', isVerified);
+    }
+
+    if (date === 'today') {
+      const now = new Date();
+      const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+      const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+      countQuery = countQuery.gte('created_at', start.toISOString()).lte('created_at', end.toISOString());
+    } else if (from_date || to_date) {
+      let start = null;
+      let end = null;
+
+      if (from_date) {
+        const d = new Date(from_date);
+        if (!Number.isNaN(d.getTime())) {
+          start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+        }
+      }
+
+      if (to_date) {
+        const d = new Date(to_date);
+        if (!Number.isNaN(d.getTime())) {
+          end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+        }
+      }
+
+      if (start) {
+        countQuery = countQuery.gte('created_at', start.toISOString());
+      }
+      if (end) {
+        countQuery = countQuery.lte('created_at', end.toISOString());
+      }
     }
 
     const { count } = await countQuery;

@@ -77,23 +77,35 @@ export default function Sidebar({
 
   // Main menu items as requested
   const mainMenuItems = [
+    // Core overview
     { name: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard", badge: null },
-    { name: "Events", icon: Calendar, href: "/admin/events", badge: null },
+
+    // Members first
     { name: "Members", icon: Users, href: "/admin/members", badge: null },
     { name: "Expired Members", icon: Users, href: "/admin/members/expired", badge: null },
-    { name: "Users", icon: Shield, href: "/admin/users", badge: null },
+
+    // Events & check-in
+    { name: "Events", icon: Calendar, href: "/admin/events", badge: null },
     { name: "CheckIn", icon: Users, href: "/admin/check-in", badge: null },
-    { name: "Speaker Requests", icon: Mic, href: "/admin/speaker-requests", badge: null },
-    { name: "Hero Settings", icon: Video, href: "/admin/hero-settings", badge: null },
-    { name: "Committees", icon: Globe, href: "/admin/committees", badge: null },
-    // { name: "Committee Pages", icon: FileText, href: "/admin/committee-pages", badge: null },
-    // { name: "Committee Chairman", icon: Users, href: "/admin/committee-members", badge: null },
-    { name: "Gallery", icon: ImageIcon, href: "/admin/gallery", badge: null },
-    { name: "Research", icon: FileText, href: "/admin/research", badge: null },
-    { name: "Board Members", icon: Users, href: "/admin/board-members", badge: null },
+
+    // Payments
+    { name: "Payment History", icon: CreditCard, href: "/admin/payment-history", badge: null },
     { name: "Subscriptions", icon: CreditCard, href: "/admin/subscriptions", badge: null },
-    { name: "Contact Messages", icon: Mail, href: "/admin/contact-messages", badge: null },
+
+    // Content & community
+    { name: "Speaker Requests", icon: Mic, href: "/admin/speaker-requests", badge: null },
+    { name: "Committees", icon: Globe, href: "/admin/committees", badge: null },
+    { name: "Board Members", icon: Users, href: "/admin/board-members", badge: null },
+    { name: "Research", icon: FileText, href: "/admin/research", badge: null },
+    { name: "Gallery", icon: ImageIcon, href: "/admin/gallery", badge: null },
+
+    // Communication
     { name: "Notifications", icon: Bell, href: "/admin/notifications", badge: null },
+    { name: "Contact Messages", icon: Mail, href: "/admin/contact-messages", badge: null },
+
+    // System
+    { name: "Users", icon: Shield, href: "/admin/users", badge: null },
+    { name: "Hero Settings", icon: Video, href: "/admin/hero-settings", badge: null },
   ];
 
   // Settings submenu items
@@ -125,17 +137,17 @@ export default function Sidebar({
       animate={{ x: 0 }}
       exit={{ x: -300 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
-      className="w-64 bg-gradient-to-b from-white/95 to-white/90 backdrop-blur-xl shadow-2xl h-full flex flex-col z-50 fixed lg:relative lg:z-auto overflow-hidden border-r border-gray-300/30"
+      className="w-64 bg-linear-to-b from-white/95 to-white/90 backdrop-blur-xl shadow-2xl h-full flex flex-col z-50 fixed lg:relative lg:z-auto overflow-hidden border-r border-gray-300/30"
     >
       {/* Header */}
       <div className="p-6 py-4 border-b border-gray-300/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#03215F] to-[#03215F] rounded-xl flex items-center justify-center shadow-lg border border-[#ECCF0F]/30">
+            <div className="w-10 h-10 bg-linear-to-br from-[#03215F] to-[#03215F] rounded-xl flex items-center justify-center shadow-lg border border-accent-yellow/30">
               <Building2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
+              <h2 className="text-lg font-bold bg-linear-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
                 BDS Admin
               </h2>
               
@@ -145,7 +157,7 @@ export default function Sidebar({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className="lg:hidden p-2 rounded-lg bg-gradient-to-r from-gray-100 to-white border border-gray-300/50 transition-all duration-200 hover:shadow-lg"
+            className="lg:hidden p-2 rounded-lg bg-linear-to-r from-gray-100 to-white border border-gray-300/50 transition-all duration-200 hover:shadow-lg"
           >
             <X className="w-4 h-4 text-gray-600" />
           </motion.button>
@@ -174,23 +186,23 @@ export default function Sidebar({
                     onClick={() => window.innerWidth < 1024 && onClose()}
                     className={`group flex items-center justify-between gap-3 px-3 py-3 rounded-xl transition-all duration-300 font-medium text-sm relative overflow-hidden ${
                       isActive
-                        ? "bg-gradient-to-r from-[#03215F]/10 to-[#03215F]/10 text-[#03215F] border border-[#03215F]/20 shadow-lg"
-                        : "text-gray-700 hover:bg-gradient-to-r hover:from-gray-100/50 hover:to-gray-50/50 hover:text-gray-900 hover:shadow-md"
+                        ? "bg-linear-to-r from-[#03215F]/10 to-[#03215F]/10 text-[#03215F] border border-[#03215F]/20 shadow-lg"
+                        : "text-gray-700 hover:bg-linear-to-r hover:from-gray-100/50 hover:to-gray-50/50 hover:text-gray-900 hover:shadow-md"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${isActive ? 'bg-gradient-to-r from-[#03215F] to-[#03215F] text-white' : 'bg-gray-100 text-gray-600'}`}>
+                      <div className={`p-2 rounded-lg ${isActive ? 'bg-linear-to-r from-[#03215F] to-[#03215F] text-white' : 'bg-gray-100 text-gray-600'}`}>
                         <item.icon size={16} />
                       </div>
                       <span className="font-medium">{item.name}</span>
                     </div>
                     {item.badge && (
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-gray-900">
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-linear-to-r from-accent-yellow to-accent-yellow text-gray-900">
                         {item.badge}
                       </span>
                     )}
                     {isActive && (
-                      <div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#03215F] to-[#03215F] rounded-l-full"></div>
+                      <div className="absolute right-0 top-0 bottom-0 w-1 bg-linear-to-b from-[#03215F] to-[#03215F] rounded-l-full"></div>
                     )}
                   </Link>
                 </motion.div>
@@ -203,8 +215,8 @@ export default function Sidebar({
       {/* Footer Section */}
       <div className="p-4 border-t border-gray-300/30 space-y-4">
         {/* User Info */}
-        <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50/50 to-white/50 rounded-xl border border-gray-300/30">
-          <div className="w-10 h-10 bg-gradient-to-br from-[#03215F] to-[#03215F] rounded-xl flex items-center justify-center border border-[#ECCF0F]/30">
+        <div className="flex items-center gap-3 p-3 bg-linear-to-r from-gray-50/50 to-white/50 rounded-xl border border-gray-300/30">
+          <div className="w-10 h-10 bg-linear-to-br from-[#03215F] to-[#03215F] rounded-xl flex items-center justify-center border border-accent-yellow/30">
             <User className="w-5 h-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -215,8 +227,8 @@ export default function Sidebar({
               {userInfo.email || "admin@bds.com"}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <div className="w-2 h-2 bg-[#AE9B66] rounded-full animate-pulse"></div>
-              <span className="text-xs text-[#AE9B66] font-medium">
+              <div className="w-2 h-2 bg-secondary rounded-full animate-pulse"></div>
+              <span className="text-xs text-secondary font-medium">
                 Online
               </span>
             </div>
@@ -230,9 +242,9 @@ export default function Sidebar({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-3 bg-gradient-to-r from-[#b8352d]/50 to-[#b8352d]/30 hover:from-[#b8352d]/50 hover:to-[#b8352d]/50 text-[#b8352d] hover:text-[#b8352d] rounded-xl transition-all duration-300 border border-[#b8352d]/50 group"
+          className="w-full flex items-center gap-3 px-3 py-3 bg-linear-to-r from-accent-red/50 to-accent-red/30 hover:from-accent-red/50 hover:to-accent-red/50 text-accent-red hover:text-accent-red rounded-xl transition-all duration-300 border border-accent-red/50 group"
         >
-          <div className="p-2 rounded-lg bg-[#b8352d]/50 group-hover:bg-[#b8352d]/50">
+          <div className="p-2 rounded-lg bg-accent-red/50 group-hover:bg-accent-red/50">
             <LogOut size={16} />
           </div>
           <span className="text-sm font-semibold flex-1 text-left">Logout</span>

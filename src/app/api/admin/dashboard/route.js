@@ -117,7 +117,7 @@ export async function GET() {
     // Keep only last 6 months
     const recentRegistrationData = memberRegistrationData.slice(-6);
 
-    // 5. MEMBER STATUS COUNTS
+    // 5. MEMBER STATUS COUNTS + TODAY'S NEW MEMBERS
     const { count: activeMembers } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
@@ -140,6 +140,14 @@ export async function GET() {
       .from('users')
       .select('*', { count: 'exact', head: true })
       .eq('role', 'member');
+
+    // Today's registrations (members created today in Bahrain time)
+    const { count: todayRegistrations } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'member')
+      .gte('created_at', todayISO)
+      .lt('created_at', tomorrowISO);
 
     // 6. TODAY'S ATTENDANCE
     const { count: todayAttendance } = await supabase
@@ -199,6 +207,7 @@ export async function GET() {
         inactive_members: inactiveMembers || 0,
         blocked_members: blockedMembers || 0,
         total_members: totalMembers || 0,
+        today_registrations: todayRegistrations || 0,
         
         // Event Members
         event_members: eventMembersCount || 0,

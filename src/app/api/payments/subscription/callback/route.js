@@ -208,7 +208,7 @@ export async function GET(request) {
       });
     }
 
-    if (isPaid) {
+        if (isPaid) {
           console.log('[PAYMENT-CALLBACK] Payment confirmed as paid, updating records');
           
           // Payment successful - update records
@@ -393,6 +393,39 @@ export async function GET(request) {
             }))
           });
 
+          // Log successful payment in payment_history table
+          try {
+            // Fetch subscription and plan details for richer context
+            const { data: subscriptionData } = await supabase
+              .from('user_subscriptions')
+              .select('*, subscription_plan:subscription_plans(*)')
+              .eq('id', payment.subscription_id)
+              .single();
+
+            const planName = subscriptionData?.subscription_plan?.name || payment.payment_type || 'Membership';
+
+            await supabase.from('payment_history').insert({
+              user_id: payment.user_id,
+              payment_id: String(paymentId),
+              invoice_id: invoiceIdToCheck,
+              amount: payment.amount,
+              currency: payment.currency || 'BHD',
+              status: 'completed',
+              payment_for: payment.payment_type || 'membership_payment',
+              details: {
+                type: 'membership',
+                subscription_id: payment.subscription_id,
+                plan_id: subscriptionData?.subscription_plan_id,
+                plan_name: planName,
+                redirect_to: redirectTo || null,
+                user_name: payment.user?.full_name || null,
+                user_email: payment.user?.email || null
+              }
+            });
+          } catch (historyError) {
+            console.error('[PAYMENT-CALLBACK] Failed to log payment_history record:', historyError);
+          }
+
           // Send payment confirmation email
           try {
             if (payment.user?.email) {
@@ -453,6 +486,29 @@ export async function GET(request) {
           invoice_id: invoiceIdToCheck,
           payment_id: paymentId
         });
+
+        // Log failed / unconfirmed payment attempt in payment_history
+        try {
+          await supabase.from('payment_history').insert({
+            user_id: payment?.user_id || null,
+            payment_id: String(paymentId),
+            invoice_id: invoiceIdToCheck,
+            amount: payment?.amount || 0,
+            currency: payment?.currency || 'BHD',
+            status: 'failed',
+            payment_for: payment?.payment_type || 'membership_payment',
+            details: {
+              type: 'membership',
+              subscription_id: payment?.subscription_id || null,
+              redirect_to: redirectTo || null,
+              user_name: payment?.user?.full_name || null,
+              user_email: payment?.user?.email || null
+            },
+            error_message: statusResult?.message || 'Payment not confirmed as paid'
+          });
+        } catch (historyError) {
+          console.error('[PAYMENT-CALLBACK] Failed to log failed payment_history record:', historyError);
+        }
         
         // Payment failed - redirect to login page
         let loginUrl = '/auth/login?error=payment_failed&message=' + encodeURIComponent('Payment was not completed. Please try again.');

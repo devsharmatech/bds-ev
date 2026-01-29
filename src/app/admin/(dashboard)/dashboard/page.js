@@ -365,6 +365,7 @@ export default function Page() {
 
   // Today's paid joins (from API)
   const todayPaidJoins = stats?.today_paid_joins || 0;
+  const todayRegistrations = stats?.today_registrations || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-[#9cc2ed]/30 p-4 md:p-6">
@@ -382,11 +383,11 @@ export default function Page() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
-                  Event Dashboard
+                  Admin Dashboard
                 </h1>
                 <p className="text-gray-600 mt-1 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#ECCF0F]" />
-                  Real-time event and member analytics
+                  Real-time members, events, and payments overview
                 </p>
               </div>
             </div>
@@ -476,7 +477,7 @@ export default function Page() {
           </div>
         </div>
 
-        {/* SECTION 2: TODAY'S EVENTS & ATTENDANCE */}
+        {/* SECTION 2: TODAY'S OVERVIEW (Events, Attendance, Payments, Registrations) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Today's Events */}
           <div className="lg:col-span-2">
@@ -520,7 +521,7 @@ export default function Page() {
               
               {/* Today's Highlights */}
               <div className="mt-6 pt-6 border-t border-gray-200/50">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="text-center p-4 rounded-xl bg-gradient-to-br from-[#9cc2ed] to-[#9cc2ed]">
                     <p className="text-2xl font-bold text-[#03215F]">
                       {stats?.today_unique_checkins ?? 0}
@@ -531,7 +532,13 @@ export default function Page() {
                     <p className="text-2xl font-bold text-white">
                       {todayPaidJoins}
                     </p>
-                    <p className="text-sm text-white/90">New Paid Registrations</p>
+                    <p className="text-sm text-white/90">Today&apos;s Paid Payments</p>
+                  </div>
+                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-[#03215F] to-[#03215F]">
+                    <p className="text-2xl font-bold text-white">
+                      {todayRegistrations}
+                    </p>
+                    <p className="text-sm text-white/90">Today&apos;s New Members</p>
                   </div>
                 </div>
               </div>

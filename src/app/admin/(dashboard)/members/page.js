@@ -353,9 +353,13 @@ export default function MembersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [verifiedFilter, setVerifiedFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all"); // all | today
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [summaryCounts, setSummaryCounts] = useState({
     total: 0,
+    today: 0,
     active: 0,
     inactive: 0,
     blocked: 0,
@@ -447,7 +451,7 @@ export default function MembersPage() {
   useEffect(() => {
     fetchMembers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, query, sort, perPage, statusFilter, typeFilter, verifiedFilter]);
+  }, [page, query, sort, perPage, statusFilter, typeFilter, verifiedFilter, dateFilter, fromDate, toDate]);
 
   useEffect(() => {
     fetchSummary();
@@ -517,6 +521,10 @@ export default function MembersPage() {
 
       const nonAdmins = all.filter((m) => m.role !== "admin");
       const totalCount = nonAdmins.length;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todayCount = nonAdmins.filter((m) =>
+        m.created_at && m.created_at.slice(0, 10) === todayStr
+      ).length;
       const activeCount = nonAdmins.filter((m) => m.membership_status === "active").length;
       const inactiveCount = nonAdmins.filter((m) => m.membership_status === "inactive").length;
       const blockedCount = nonAdmins.filter((m) => m.membership_status === "blocked").length;
@@ -527,6 +535,7 @@ export default function MembersPage() {
 
       setSummaryCounts({
         total: totalCount,
+        today: todayCount,
         active: activeCount,
         inactive: inactiveCount,
         blocked: blockedCount,
@@ -557,6 +566,15 @@ export default function MembersPage() {
       }
       if (verifiedFilter && verifiedFilter !== "all") {
         url.searchParams.set("verified", verifiedFilter === "verified" ? "true" : "false");
+      }
+      if (dateFilter === "today") {
+        url.searchParams.set("date", "today");
+      }
+      if (fromDate) {
+        url.searchParams.set("from_date", fromDate);
+      }
+      if (toDate) {
+        url.searchParams.set("to_date", toDate);
       }
 
       const res = await fetch(url.toString());
@@ -1429,24 +1447,27 @@ export default function MembersPage() {
           </div>
 
           {/* Search and Filters */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-6">
+          <div className="flex flex-col xl:flex-row gap-4 mb-6">
             <motion.div
               whileFocus={{ scale: 1.02 }}
-              className="flex-1 relative"
+              className="w-full xl:w-1/3"
             >
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search by name, email, or membership code..."
-                className="w-full pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
-              />
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Search by name, email, or membership code..."
+                  className="w-full pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
+                />
+              </div>
             </motion.div>
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-              <div className="flex flex-wrap gap-2">
+            <div className="w-full xl:w-2/3 flex flex-col gap-3 items-stretch">
+              <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+                <div className="flex flex-wrap gap-2 items-center">
                 <select
                   value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
@@ -1476,42 +1497,73 @@ export default function MembersPage() {
                   <option value="verified">Verified</option>
                   <option value="unverified">Unverified</option>
                 </select>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => fetchMembers()}
+                    className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200 flex items-center gap-2"
+                  >
+                    <Search className="w-4 h-4" />
+                    Search
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={toggleSelectAll}
+                    className="px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200"
+                    title="Toggle Select All"
+                  >
+                    <Check className="w-4 h-4" />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => selectedIds.size > 0 && openDeleteModal("bulk")}
+                    disabled={selectedIds.size === 0}
+                    className="px-6 py-3 bg-gradient-to-r from-[#b8352d] to-[#b8352d] text-white rounded-xl font-medium hover:from-[#b8352d] hover:to-[#b8352d] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Selected ({selectedIds.size})
+                  </motion.button>
+                </div>
               </div>
-              <div className="flex gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => fetchMembers()}
-                className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200 flex items-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Search
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={toggleSelectAll}
-                className="px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200"
-                title="Toggle Select All"
-              >
-                <Check className="w-4 h-4" />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => selectedIds.size > 0 && openDeleteModal("bulk")}
-                disabled={selectedIds.size === 0}
-                className="px-6 py-3 bg-gradient-to-r from-[#b8352d] to-[#b8352d] text-white rounded-xl font-medium hover:from-[#b8352d] hover:to-[#b8352d] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete Selected ({selectedIds.size})
-              </motion.button>
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex items-center gap-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-xl px-3 py-1.5">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <span className="hidden sm:inline">Registration Date:</span>
+                  <select
+                    value={dateFilter}
+                    onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
+                    className="px-2 py-1 bg-transparent border-none text-sm focus:outline-none"
+                  >
+                    <option value="all">All</option>
+                    <option value="today">Today</option>
+                  </select>
+                  <span className="text-gray-300">|</span>
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
+                    className="px-2 py-1 bg-transparent border-none text-sm focus:outline-none min-w-[110px]"
+                    placeholder="From"
+                  />
+                  <span className="text-gray-400">-</span>
+                  <input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => { setToDate(e.target.value); setPage(1); }}
+                    className="px-2 py-1 bg-transparent border-none text-sm focus:outline-none min-w-[110px]"
+                    placeholder="To"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-8">
+          {/* Stats Cards (simplified) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {[
               {
                 label: "Total Members",
@@ -1520,34 +1572,16 @@ export default function MembersPage() {
                 color: "from-[#9cc2ed] to-[#03215F]",
               },
               {
+                label: "Today's Registrations",
+                value: summaryCounts.today,
+                icon: Calendar,
+                color: "from-[#10B981] to-[#10B981]",
+              },
+              {
                 label: "Active Members",
                 value: summaryCounts.active,
                 icon: UserCheck,
                 color: "from-[#10B981] to-[#10B981]",
-              },
-              {
-                label: "Inactive Members",
-                value: summaryCounts.inactive,
-                icon: UserX,
-                color: "from-[#ECCF0F] to-[#ECCF0F]",
-              },
-              {
-                label: "Blocked Members",
-                value: summaryCounts.blocked,
-                icon: AlertCircle,
-                color: "from-[#b8352d] to-[#b8352d]",
-              },
-              {
-                label: "Verified",
-                value: summaryCounts.verified,
-                icon: ShieldCheck,
-                color: "from-[#10B981] to-[#10B981]",
-              },
-              {
-                label: "Pending",
-                value: summaryCounts.pending,
-                icon: Clock,
-                color: "from-[#F59E0B] to-[#F59E0B]",
               },
               {
                 label: "Paid Members",

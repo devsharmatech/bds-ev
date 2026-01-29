@@ -428,6 +428,29 @@ export async function GET(request) {
         duration_ms: Date.now() - startTime
       });
 
+      // Log successful event payment in payment_history table
+      try {
+        await supabase.from('payment_history').insert({
+          user_id: eventMember.user_id,
+          payment_id: invoiceIdToCheck,
+          invoice_id: invoiceIdToCheck,
+          amount: amount,
+          currency: 'BHD',
+          status: 'completed',
+          payment_for: 'event_registration',
+          details: {
+            type: 'event',
+            event_id: eventId,
+            event_member_id: eventMember.id,
+            event_title: eventMember.event?.title || null,
+            user_name: eventMember.user?.full_name || null,
+            user_email: eventMember.user?.email || null
+          }
+        });
+      } catch (historyError) {
+        console.error('[EVENT-PAYMENT-CALLBACK] Failed to log payment_history record:', historyError);
+      }
+
       // Send event join confirmation email
       try {
         if (eventMember.user?.email) {
@@ -472,6 +495,30 @@ export async function GET(request) {
         return redirect(`/events?success=payment_completed&event=${encodeURIComponent(eventMember.event?.title || 'Event')}`);
       }
       
+      // Log failed / unverified event payment attempt in payment_history
+      try {
+        await supabase.from('payment_history').insert({
+          user_id: eventMember?.user_id || null,
+          payment_id: invoiceIdToCheck,
+          invoice_id: invoiceIdToCheck,
+          amount: amount || 0,
+          currency: 'BHD',
+          status: 'failed',
+          payment_for: 'event_registration',
+          details: {
+            type: 'event',
+            event_id: eventId,
+            event_member_id: eventMember?.id || null,
+            event_title: eventMember?.event?.title || null,
+            user_name: eventMember?.user?.full_name || null,
+            user_email: eventMember?.user?.email || null
+          },
+          error_message: statusResult?.message || 'Payment not confirmed as paid'
+        });
+      } catch (historyError) {
+        console.error('[EVENT-PAYMENT-CALLBACK] Failed to log failed payment_history record:', historyError);
+      }
+
       // Payment failed or could not be verified
       return redirect('/events?error=payment_failed&message=Payment could not be verified. Please contact support if payment was deducted.');
     }
