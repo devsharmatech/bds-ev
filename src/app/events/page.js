@@ -166,6 +166,24 @@ const formatRelativeDate = (dateString) => {
   return "";
 };
 
+// Calculate early bird countdown text based on early_bird_deadline
+const getEarlyBirdCountdown = (event) => {
+  if (!event || !event.early_bird_deadline) return null;
+  const deadline = new Date(event.early_bird_deadline);
+  const now = new Date();
+  if (Number.isNaN(deadline.getTime()) || now >= deadline) return null;
+
+  const diff = deadline - now;
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor(
+    (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+  );
+
+  if (days > 0) return `${days} day${days > 1 ? "s" : ""} left`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} left`;
+  return "Ending soon!";
+};
+
 // Get event type based on title/description
 const getEventType = (event) => {
   const title = event.title?.toLowerCase() || "";
@@ -991,12 +1009,7 @@ function EventsPageContent() {
         <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-10"></div>
         <div className="container mx-auto px-4 relative">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-6">
-              <Sparkles className="w-4 h-4 text-white" />
-              <span className="text-sm font-medium text-white">
-                Premium Events
-              </span>
-            </div>
+            
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
               Upcoming <span className="text-[#AE9B66]">Events</span>
             </h1>
@@ -1173,6 +1186,8 @@ function EventsPageContent() {
                     const savingsDisplay = savings > 0 ? formatBHDPrice(savings) : null;
                     const currentTier = getPricingTier(event);
                     const tierDisplay = getTierDisplayName(currentTier);
+                    const isEarlyBird = currentTier === "earlybird" && event.is_paid;
+                    const earlyBirdCountdown = getEarlyBirdCountdown(event);
 
                     return (
                       <motion.div
@@ -1237,38 +1252,32 @@ function EventsPageContent() {
                               {/* Price Badge */}
                               <div className="flex flex-col items-end gap-1.5">
                                 <div className="bg-gradient-to-br from-white to-gray-50 backdrop-blur-md rounded-xl shadow-xl border border-white/50 overflow-hidden">
-                                    {event.is_paid ? (
-                                      <div className="px-2.5 py-2 md:px-3 md:py-2.5">
-                                        <div className="flex items-center gap-1.5 justify-end">
-                                          <BahrainFlag />
-                                          <span className="text-sm md:text-base font-bold text-[#03215F]">{priceToPay}</span>
-                                          {/* Early Bird Badge */}
-                                          {currentTier === 'earlybird' && (
-                                            <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FFD700]/90 text-[#03215F] text-[10px] font-semibold animate-pulse shadow-md">
-                                              <Sparkles className="w-3 h-3 text-[#AE9B66]" /> Early Bird
+                                  {event.is_paid ? (
+                                    <div className="px-2.5 py-2 md:px-3 md:py-2.5">
+                                      <div className="flex items-center gap-1.5 justify-end">
+                                        <BahrainFlag />
+                                        <span className="text-sm md:text-base font-bold text-[#03215F]">{priceToPay}</span>
+                                      </div>
+                                      {(user && priceInfo.category !== 'regular') || hasMultiplePricingTiers(event) ? (
+                                        <div className="flex flex-col items-end mt-0.5">
+                                          {user && priceInfo.category !== 'regular' && (
+                                            <span className="text-[9px] md:text-[10px] text-[#AE9B66] font-semibold">
+                                              {priceInfo.categoryDisplay}
+                                            </span>
+                                          )}
+                                          {hasMultiplePricingTiers(event) && (
+                                            <span className="text-[9px] md:text-[10px] text-gray-500 font-medium">
+                                              {tierDisplay}
                                             </span>
                                           )}
                                         </div>
-                                        {(user && priceInfo.category !== 'regular') || hasMultiplePricingTiers(event) ? (
-                                          <div className="flex flex-col items-end mt-0.5">
-                                            {user && priceInfo.category !== 'regular' && (
-                                              <span className="text-[9px] md:text-[10px] text-[#AE9B66] font-semibold">
-                                                {priceInfo.categoryDisplay}
-                                              </span>
-                                            )}
-                                            {hasMultiplePricingTiers(event) && (
-                                              <span className="text-[9px] md:text-[10px] text-gray-500 font-medium">
-                                                {tierDisplay}
-                                              </span>
-                                            )}
-                                          </div>
-                                        ) : null}
-                                      </div>
-                                    ) : (
-                                      <div className="px-3 py-2 md:px-4 md:py-2.5">
-                                        <span className="text-sm md:text-base font-bold text-[#AE9B66]">FREE</span>
-                                      </div>
-                                    )}
+                                      ) : null}
+                                    </div>
+                                  ) : (
+                                    <div className="px-3 py-2 md:px-4 md:py-2.5">
+                                      <span className="text-sm md:text-base font-bold text-[#AE9B66]">FREE</span>
+                                    </div>
+                                  )}
                                 </div>
                                 {/* Show More Prices Button */}
                                 {event.is_paid && (event.price > 0 || event.member_price > 0 || event.student_price > 0) && (
@@ -1319,6 +1328,19 @@ function EventsPageContent() {
                                     Joined
                                   </div>
                                 ) : null}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                {isEarlyBird && (
+                                  <span className="px-2 py-0.5 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full text-[10px] font-bold flex items-center gap-1 mr-1">
+                                    <Sparkles className="w-3 h-3" /> EARLY BIRD
+                                    {earlyBirdCountdown && (
+                                      <span className="flex items-center gap-1 ml-1 pl-1.5 border-l border-white/30">
+                                        <Clock className="w-3 h-3" />
+                                        {earlyBirdCountdown}
+                                      </span>
+                                    )}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>

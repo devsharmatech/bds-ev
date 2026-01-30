@@ -45,7 +45,6 @@ export default function GalleryPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showThumbnails, setShowThumbnails] = useState(true);
-  const [favoriteImages, setFavoriteImages] = useState(new Set());
   const [favoriteGalleries, setFavoriteGalleries] = useState(new Set());
 
   // Derived totals for hero/stats
@@ -132,19 +131,6 @@ export default function GalleryPage() {
     }
   };
 
-  // Toggle favorite image
-  const toggleFavorite = (imageId) => {
-    const newFavorites = new Set(favoriteImages);
-    if (newFavorites.has(imageId)) {
-      newFavorites.delete(imageId);
-      toast.success("Removed from favorites");
-    } else {
-      newFavorites.add(imageId);
-      toast.success("Added to favorites");
-    }
-    setFavoriteImages(newFavorites);
-  };
-
   // Toggle favorite gallery
   const toggleFavoriteGallery = (galleryId, e) => {
     e.stopPropagation();
@@ -229,7 +215,7 @@ export default function GalleryPage() {
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 cursor-pointer"
     >
-      {/* Image Container with Gradient Overlay */}
+      {/* Image Container with Gradient Overlay (no text on image) */}
       <div className="relative h-72 w-full overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200">
           {gallery.featured_image_url ? (
@@ -272,34 +258,33 @@ export default function GalleryPage() {
           </button>
         </div>
         
-        {/* Content Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-white transform transition-transform duration-300 group-hover:-translate-y-2">
-          <div className="mb-3">
-            <h3 className="font-bold text-xl mb-2 line-clamp-1">{gallery.title}</h3>
-            <p className="text-sm opacity-90 line-clamp-2">
-              {gallery.description || 'Explore the collection'}
-            </p>
+      </div>
+
+      {/* Text content under the image */}
+      <div className="p-5 bg-white">
+        <div className="mb-3">
+          <h3 className="font-bold text-lg mb-1 line-clamp-1 text-gray-900">{gallery.title}</h3>
+          <p className="text-sm text-gray-600 line-clamp-2">
+            {gallery.short_description || 'Explore the collection'}
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="flex items-center gap-4 text-xs md:text-sm text-gray-500">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4" />
+              {formatGalleryDate(gallery.created_at)}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Layers className="w-4 h-4" />
+              Album
+            </span>
           </div>
-          
-          <div className="flex items-center justify-between pt-3 border-t border-white/20">
-            <div className="flex items-center gap-4 text-sm">
-              <span className="flex items-center gap-1.5 opacity-90">
-                <Calendar className="w-4 h-4" />
-                {formatGalleryDate(gallery.created_at)}
-              </span>
-              <span className="flex items-center gap-1.5 opacity-90">
-                <Layers className="w-4 h-4" />
-                Album
-              </span>
-            </div>
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              
-              <Eye className="w-4 h-4" />
-            </div>
+          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-[#03215F]">
+            <Eye className="w-4 h-4" />
           </div>
         </div>
       </div>
-
       
     </motion.div>
   );
@@ -380,34 +365,34 @@ export default function GalleryPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className={`fixed inset-0 z-50 bg-black ${isFullscreen ? '' : 'p-4 md:p-8'}`}
+            className={`fixed inset-0 z-50 bg-white ${isFullscreen ? '' : 'p-4 md:p-8'}`}
           >
             {/* Top Controls */}
             <motion.div
               initial={{ y: -50 }}
               animate={{ y: 0 }}
-              className="absolute top-0 left-0 right-0 z-10 p-4 md:p-6 bg-gradient-to-b from-black/90 via-black/80 to-transparent backdrop-blur-sm"
+              className="absolute top-0 left-0 right-0 z-10 p-3 md:p-4 bg-white border-b border-gray-200 shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setViewerOpen(false)}
-                    className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                    className="p-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 hover:scale-105"
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   
-                  <div className="text-white">
+                  <div className="text-gray-900">
                     <h2 className="font-bold text-lg md:text-xl truncate max-w-md">
                       {activeGallery?.title}
                     </h2>
-                    <div className="flex items-center gap-3 text-sm opacity-80">
+                    <div className="flex items-center gap-3 text-sm opacity-80 text-gray-600">
                       <span className="flex items-center gap-1.5">
                         <ImageIcon className="w-4 h-4" />
                         {currentImageIndex + 1} of {activeImages.length}
                       </span>
                       {activeGallery?.tag1 && (
-                        <span className="px-3 py-1 rounded-full bg-white/10 text-xs border border-white/20">
+                        <span className="px-3 py-1 rounded-full bg-gray-100 text-xs border border-gray-200 text-gray-700">
                           {activeGallery.tag1}
                         </span>
                       )}
@@ -419,7 +404,7 @@ export default function GalleryPage() {
                   {/* Fullscreen Toggle */}
                   <button
                     onClick={() => setIsFullscreen(!isFullscreen)}
-                    className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                    className="p-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 hover:scale-105"
                   >
                     {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
                   </button>
@@ -427,7 +412,7 @@ export default function GalleryPage() {
                   {/* Close */}
                   <button
                     onClick={() => setViewerOpen(false)}
-                    className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                    className="p-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 hover:scale-105"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -436,18 +421,18 @@ export default function GalleryPage() {
             </motion.div>
 
             {/* Main Image Display */}
-            <div className="relative w-full h-full flex items-center justify-center">
+            <div className="relative w-full h-full flex items-center justify-center pt-16 pb-24 md:pt-20 md:pb-28">
               {loadingImages ? (
-                <div className="flex flex-col items-center justify-center gap-4 text-white">
+                <div className="flex flex-col items-center justify-center gap-4 text-gray-700">
                   <div className="relative">
-                    <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-                    <Sparkles className="w-8 h-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white animate-pulse" />
+                    <div className="w-16 h-16 border-4 border-gray-200 border-t-[#03215F] rounded-full animate-spin"></div>
+                    <Sparkles className="w-8 h-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#03215F] animate-pulse" />
                   </div>
                   <p className="text-lg">Loading images...</p>
                 </div>
               ) : activeImages.length === 0 ? (
-                <div className="text-white text-center">
-                  <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <div className="text-gray-700 text-center">
+                  <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                   <p className="text-lg">No images available</p>
                 </div>
               ) : (
@@ -472,14 +457,14 @@ export default function GalleryPage() {
                   {/* Navigation Arrows */}
                   <button
                     onClick={prevImage}
-                    className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                    className="absolute left-2 md:left-6 top-1/2 transform -translate-y-1/2 p-2.5 md:p-3.5 rounded-full bg-white text-gray-700 shadow-md hover:bg-gray-100 transition-all duration-200 hover:scale-110"
                   >
                     <ChevronLeft className="w-6 h-6" />
                   </button>
                   
                   <button
                     onClick={nextImage}
-                    className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 p-4 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110"
+                    className="absolute right-2 md:right-6 top-1/2 transform -translate-y-1/2 p-2.5 md:p-3.5 rounded-full bg-white text-gray-700 shadow-md hover:bg-gray-100 transition-all duration-200 hover:scale-110"
                   >
                     <ChevronRight className="w-6 h-6" />
                   </button>
@@ -488,14 +473,14 @@ export default function GalleryPage() {
                   <motion.div
                     initial={{ y: 50 }}
                     animate={{ y: 0 }}
-                    className="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-black/90 via-black/80 to-transparent backdrop-blur-sm"
+                    className="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-transparent "
                   >
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                       {/* Image Controls */}
                       <div className="flex items-center gap-2 flex-wrap justify-center">
                         <button
                           onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.5))}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                          className="p-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 hover:scale-105"
                           disabled={zoomLevel <= 0.5}
                         >
                           <ZoomOut className="w-5 h-5" />
@@ -503,14 +488,14 @@ export default function GalleryPage() {
                         
                         <button
                           onClick={() => setZoomLevel(1)}
-                          className="px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 text-sm font-medium"
+                          className="px-4 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 transition-all duration-200 hover:scale-105 text-sm font-medium"
                         >
                           {Math.round(zoomLevel * 100)}%
                         </button>
                         
                         <button
                           onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 3))}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                          className="p-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 hover:scale-105"
                           disabled={zoomLevel >= 3}
                         >
                           <ZoomIn className="w-5 h-5" />
@@ -519,21 +504,9 @@ export default function GalleryPage() {
                         {/* Slideshow Toggle */}
                         <button
                           onClick={() => setIsPlaying(!isPlaying)}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                          className="p-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 hover:scale-105"
                         >
                           {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                        </button>
-
-                        {/* Favorite */}
-                        <button
-                          onClick={() => toggleFavorite(activeImages[currentImageIndex]?.id)}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
-                        >
-                          <Heart className={`w-5 h-5 transition-colors ${
-                            favoriteImages.has(activeImages[currentImageIndex]?.id) 
-                              ? 'fill-red-500 text-red-500' 
-                              : ''
-                          }`} />
                         </button>
                       </div>
 
@@ -541,7 +514,7 @@ export default function GalleryPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={shareGallery}
-                          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-all duration-200 hover:scale-105"
+                          className="p-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-all duration-200 hover:scale-105"
                         >
                           <Share2 className="w-5 h-5" />
                         </button>
@@ -553,7 +526,7 @@ export default function GalleryPage() {
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="mt-4 overflow-x-auto"
+                        className="mt-4 overflow-x-auto bg-white/90 backdrop-blur-sm rounded-xl p-2 border border-gray-200"
                       >
                         <div className="flex gap-2 pb-2">
                           {activeImages.map((img, idx) => (
@@ -565,7 +538,7 @@ export default function GalleryPage() {
                               }}
                               className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden transition-all duration-200 ${
                                 idx === currentImageIndex
-                                  ? 'ring-2 ring-white scale-105 shadow-lg'
+                                  ? 'ring-2 ring-[#03215F] scale-105 shadow-lg'
                                   : 'opacity-60 hover:opacity-100 hover:scale-105'
                               }`}
                             >

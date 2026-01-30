@@ -9,7 +9,7 @@ export async function GET(req) {
     const q = searchParams.get("q") || "";
     const { data, error } = await supabase
       .from("galleries")
-      .select("id,title,slug,featured_image_url,tag1,tag2,created_at,updated_at,gallery_images(count)")
+      .select("id,title,slug,featured_image_url,short_description,tag1,tag2,created_at,updated_at,gallery_images(count)")
       .eq("is_active", true)
       .ilike("title", q ? `%${q}%` : "%")
       .order("created_at", { ascending: false });
@@ -20,6 +20,7 @@ export async function GET(req) {
       title: g.title,
       slug: g.slug,
       featured_image_url: g.featured_image_url,
+      short_description: g.short_description,
       tag1: g.tag1,
       tag2: g.tag2,
       created_at: g.created_at,

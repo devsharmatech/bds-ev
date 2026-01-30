@@ -76,6 +76,7 @@ export default function AdminGalleryPage() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
     title: "",
+    short_description: "",
     tag1: "",
     tag2: "",
     is_active: true,
@@ -265,6 +266,7 @@ export default function AdminGalleryPage() {
 
       const fd = new FormData();
       fd.append("title", form.title.trim());
+      if (form.short_description) fd.append("short_description", form.short_description);
       if (form.tag1) fd.append("tag1", form.tag1);
       if (form.tag2) fd.append("tag2", form.tag2);
       fd.append("is_active", String(!!form.is_active));
@@ -490,6 +492,19 @@ export default function AdminGalleryPage() {
                       required
                       className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
                       placeholder="Enter gallery title"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Short Description
+                    </label>
+                    <textarea
+                      value={form.short_description}
+                      onChange={(e) => setForm({ ...form, short_description: e.target.value })}
+                      rows={3}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent resize-none text-sm"
+                      placeholder="Optional short description shown on the website"
                     />
                   </div>
 

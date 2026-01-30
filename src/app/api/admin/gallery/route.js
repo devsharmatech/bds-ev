@@ -89,6 +89,7 @@ export async function POST(req) {
         title,
         slug: body.slug?.trim() || slugify(title),
         featured_image_url: body.featured_image_url || null,
+        short_description: body.short_description || null,
         tag1: body.tag1 || null,
         tag2: body.tag2 || null,
         is_active: body.is_active ?? true,
@@ -100,6 +101,7 @@ export async function POST(req) {
 
     const form = await req.formData();
     const title = (form.get("title") || "").toString().trim();
+    const short_description = (form.get("short_description") || "").toString().trim() || null;
     const tag1 = (form.get("tag1") || "").toString().trim() || null;
     const tag2 = (form.get("tag2") || "").toString().trim() || null;
     const is_active = (form.get("is_active") || "true").toString() === "true";
@@ -117,6 +119,7 @@ export async function POST(req) {
       title,
       slug: slugify(title),
       featured_image_url: featuredUrl,
+      short_description,
       tag1,
       tag2,
       is_active,

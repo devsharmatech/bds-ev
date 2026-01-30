@@ -222,8 +222,8 @@ export default function DashboardPage() {
 
   const handleDownloadMembershipCard = async () => {
     try {
-      if (!user || user.membership_type === 'free') {
-        toast.error('Membership card is available for paid members only');
+      if (!user || user.membership_type === 'free' || user.membership_status !== 'active') {
+        toast.error('Membership card is available for active paid members only');
         return;
       }
 
@@ -272,6 +272,7 @@ export default function DashboardPage() {
   const isPremiumMember = user?.membership_type === 'paid'
   const membershipExpired = (!!(currentSubscription?.expires_at && new Date(currentSubscription.expires_at) < new Date())) || (user?.membership_expiry_date && new Date(user.membership_expiry_date) < new Date())
   const displayIsActive = !membershipExpired && user?.membership_status === 'active'
+  const canShowMembershipId = isPremiumMember && displayIsActive && !!user?.membership_code
   // planName is managed via state (derived from user/membership and refreshed via API)
 
   const dashboardStats = [
@@ -363,8 +364,8 @@ export default function DashboardPage() {
           : 'N/A',
       icon: CalendarDays
     },
-    // Only show Membership ID for paid members
-    ...(isPremiumMember ? [{ label: 'Membership ID', value: user?.membership_code, icon: BadgeCheck }] : []),
+    // Only show Membership ID for active paid members with a code
+    ...(canShowMembershipId ? [{ label: 'Membership ID', value: user?.membership_code, icon: BadgeCheck }] : []),
     { label: 'Membership Type', value: planName || (isPremiumMember ? 'Paid' : 'Free'), icon: Crown }
   ]
 
@@ -399,8 +400,8 @@ export default function DashboardPage() {
           
           {/* Membership Badges - Mobile Stacked */}
           <div className="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3">
-            {/* Only show Membership ID for paid members */}
-            {isPremiumMember && (
+            {/* Only show Membership ID for active paid members */}
+            {canShowMembershipId && (
               <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-xs md:text-sm flex items-center justify-center md:justify-start">
                 <BadgeCheck className="w-3 h-3 md:w-4 md:h-4 mr-1.5 md:mr-2" />
                 <span className="font-medium">ID: {user?.membership_code || 'N/A'}</span>

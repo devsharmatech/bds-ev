@@ -127,10 +127,10 @@ function LoginPageContent() {
         }
       }
 
-      // Show success toast
+      // Show success toast (navigation happens immediately after)
       toast.success("Login Successful!", {
-        description: "Welcome back! Redirecting...",
-        duration: 3000,
+        description: "Welcome back!",
+        duration: 2500,
         position: "top-center",
         icon: (
           <div className="w-6 h-6 rounded-full bg-[#AE9B66] flex items-center justify-center">
@@ -139,16 +139,10 @@ function LoginPageContent() {
             </svg>
           </div>
         ),
-        action: {
-          label: "Dismiss",
-          onClick: () => toast.dismiss(),
-        },
       });
 
-      // Optional: Add a small delay before redirecting to show the toast
-      setTimeout(() => {
-        router.push(redirectPath);
-      }, 1500);
+      // Navigate immediately after successful login
+      router.push(redirectPath);
 
     } catch (err) {
       // Show error toast
@@ -351,6 +345,22 @@ function LoginPageContent() {
                 >
                   Create an account
                 </Link>
+              </p>
+              <p className="text-gray-500 text-sm mt-3">
+                Having issues completing your registration payment?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!formData.email) {
+                      toast.error("Please enter your email above first.");
+                      return;
+                    }
+                    router.push(`/auth/register/payment?email=${encodeURIComponent(formData.email)}`);
+                  }}
+                  className="text-[#03215F] font-semibold hover:underline"
+                >
+                  Complete your payment
+                </button>
               </p>
             </div>
           </div>

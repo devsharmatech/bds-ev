@@ -32,6 +32,7 @@ import {
   Mic,
   Tag,
   AlertCircle,
+  Sparkles 
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { QRCodeCanvas } from "qrcode.react";
@@ -132,6 +133,24 @@ const calculateDuration = (startDate, endDate) => {
   } else {
     return `${minutes} minute${minutes > 1 ? "s" : ""}`;
   }
+};
+
+// Calculate early bird countdown text based on early_bird_deadline
+const getEarlyBirdCountdown = (event) => {
+  if (!event || !event.early_bird_deadline) return null;
+  const deadline = new Date(event.early_bird_deadline);
+  const now = new Date();
+  if (Number.isNaN(deadline.getTime()) || now >= deadline) return null;
+
+  const diff = deadline - now;
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor(
+    (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+  );
+
+  if (days > 0) return `${days} day${days > 1 ? "s" : ""} left`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} left`;
+  return "Ending soon!";
 };
 
 export default function EventDetailsPage() {
@@ -298,6 +317,7 @@ export default function EventDetailsPage() {
   const progress = calculateProgress();
   const duration = calculateDuration(event.start_datetime, event.end_datetime);
   const spotsLeft = event.capacity ? event.capacity - event.registered_count : null;
+  const earlyBirdCountdown = getEarlyBirdCountdown(event);
 
   return (
     <MainLayout>
@@ -693,6 +713,16 @@ export default function EventDetailsPage() {
                               <p className="text-xs text-green-600 mt-1">
                                 You save {formatBHDPrice(savings)}!
                               </p>
+                            )}
+                            {/* Early Bird badge with remaining time */}
+                            {!priceInfo.isFree && priceInfo.tier === 'earlybird' && earlyBirdCountdown && (
+                              <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FFD700]/90 text-[#03215F] text-[11px] font-semibold shadow-md">
+                                <Sparkles className="w-3 h-3 text-[#AE9B66]" /> EARLY BIRD
+                                <span className="flex items-center gap-1 ml-1 pl-1.5 border-l border-[#03215F]/20">
+                                  <Clock className="w-3 h-3" />
+                                  {earlyBirdCountdown}
+                                </span>
+                              </div>
                             )}
                           </>
                         );

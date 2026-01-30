@@ -93,6 +93,7 @@ export default function Sidebar({
     { name: "Subscriptions", icon: CreditCard, href: "/admin/subscriptions", badge: null },
 
     // Content & community
+    { name: "Hero Slides", icon: ImageIcon, href: "/admin/hero-slides", badge: null },
     { name: "Speaker Requests", icon: Mic, href: "/admin/speaker-requests", badge: null },
     { name: "Committees", icon: Globe, href: "/admin/committees", badge: null },
     { name: "Board Members", icon: Users, href: "/admin/board-members", badge: null },
@@ -143,14 +144,15 @@ export default function Sidebar({
       <div className="p-6 py-4 border-b border-gray-300/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-linear-to-br from-[#03215F] to-[#03215F] rounded-xl flex items-center justify-center shadow-lg border border-accent-yellow/30">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
+            <Link href="/admin/dashboard" className="flex items-center gap-2">
+              <img
+                src="/long-logo.png"
+                alt="Bahrain Dental Society Logo"
+                className="h-8 w-auto object-contain"
+              />
+            </Link>
             <div>
-              <h2 className="text-lg font-bold bg-linear-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
-                BDS Admin
-              </h2>
-              
+             
             </div>
           </div>
           <motion.button

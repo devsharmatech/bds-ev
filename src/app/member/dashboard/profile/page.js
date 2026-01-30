@@ -335,9 +335,9 @@ export default function ProfilePage() {
             </div>
             <div>
               <h3 className="font-bold text-lg md:text-xl">{user?.full_name || 'Member'}</h3>
-              {/* Only show Membership ID for paid members */}
-              {user?.membership_type === 'paid' && (
-                <p className="text-white/80 text-sm">{user?.membership_code || 'No Membership ID'}</p>
+              {/* Only show Membership ID for active paid members */}
+              {user?.membership_type === 'paid' && user?.membership_status === 'active' && user?.membership_code && (
+                <p className="text-white/80 text-sm">{user.membership_code}</p>
               )}
               <div className="flex items-center gap-2 mt-1">
                 

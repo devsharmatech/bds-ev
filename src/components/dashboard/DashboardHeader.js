@@ -219,8 +219,14 @@ export default function DashboardHeader({ onMenuToggle }) {
                   <Menu className="w-5 h-5" />
                 )}
               </button>
-
-
+              {/* Site Logo */}
+              <Link href="/" className="hidden sm:flex items-center shrink-0">
+                <img
+                  src="https://bds-web-iota.vercel.app/long-logo.png"
+                  alt="Bahrain Dental Society Logo"
+                  className="h-8 md:h-9 w-auto object-contain"
+                />
+              </Link>
             </div>
 
             {/* Right: User Menu & Notifications */}

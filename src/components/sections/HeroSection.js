@@ -209,6 +209,8 @@ export default function HeroSection() {
     video_url: "/file.mp4",
     poster_url: "/bgn.png",
   });
+  const [heroSlides, setHeroSlides] = useState([]);
+  const [activeSlide, setActiveSlide] = useState(0);
 
   // Dummy member data for non-logged-in or non-paid members
   const dummyMemberData = {
@@ -237,6 +239,9 @@ export default function HeroSection() {
               video_url: data.video_url || "/file.mp4",
               poster_url: data.poster_url || "/bgn.png",
             });
+            if (Array.isArray(data.slides)) {
+              setHeroSlides(data.slides.filter((s) => s.is_active !== false));
+            }
           }
         }
       } catch (error) {
@@ -245,6 +250,38 @@ export default function HeroSection() {
     };
     fetchHeroSettings();
   }, []);
+
+  const defaultSlides = [
+    {
+      id: "default",
+      title: "Welcome to Bahrain Dental Society",
+      subtitle: "Bahrain's premier dental community",
+      description:
+        "Join Bahrain's premier dental community. Access exclusive events, continuous education, and professional networking opportunities.",
+    },
+  ];
+
+  const hasCustomSlides = heroSlides.length > 0;
+  const slidesToUse = hasCustomSlides ? heroSlides : defaultSlides;
+  const currentSlide =
+    slidesToUse[Math.min(activeSlide, slidesToUse.length - 1)] ||
+    defaultSlides[0];
+  const isContentSlide =
+    !currentSlide.slide_type || currentSlide.slide_type === "content";
+  const hasImage = !!currentSlide.image_url;
+  const hasSlideText = Boolean(
+    (currentSlide.title && currentSlide.title.trim()) ||
+    (currentSlide.subtitle && currentSlide.subtitle.trim()) ||
+    (currentSlide.description && currentSlide.description.trim()),
+  );
+
+  useEffect(() => {
+    if (!slidesToUse.length || slidesToUse.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % slidesToUse.length);
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [slidesToUse.length]);
 
   // Check if user is logged in and has paid membership
   useEffect(() => {
@@ -712,58 +749,233 @@ export default function HeroSection() {
       {/* Main Content */}
       <div className="container relative z-10 mx-auto px-4 py-20 md:py-28">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8 backdrop-blur-sm bg-white/30 rounded-2xl p-8 md:p-10 shadow-xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#03215F]">
-              Bahrain{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#AE9B66] to-[#AE9B66]">
-                Dental
-              </span>{" "}
-              Society
-            </h1>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide.id || `slide-${activeSlide}`}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              className="space-y-8 backdrop-blur-sm bg-white/30 rounded-2xl p-8 md:p-10 shadow-xl min-h-[420px] md:min-h-[460px]"
+            >
+              {hasImage ? (
+                <>
+                  <div className="relative overflow-hidden rounded-2xl border border-white/30 bg-white/40 shadow-lg h-64 md:h-80">
+                    <img
+                      src={currentSlide.image_url}
+                      alt={currentSlide.title || "Hero slide"}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
+                    <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-8 space-y-3 text-white">
+                      {currentSlide.subtitle && (
+                        <p className="text-xs md:text-sm font-semibold uppercase tracking-wide text-[#F5E6BF]">
+                          {currentSlide.subtitle}
+                        </p>
+                      )}
+                      <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">
+                        {currentSlide.title || "Bahrain Dental Society"}
+                      </h1>
+                      {currentSlide.description && (
+                        <p className="text-sm md:text-base lg:text-lg text-gray-100 leading-relaxed">
+                          {currentSlide.description}
+                        </p>
+                      )}
 
-            <p className="text-lg md:text-xl text-gray-700 leading-relaxed">
-              Join Bahrain &apos; s premier dental community. Access exclusive
-              events, continuous education, and professional networking
-              opportunities.
-            </p>
+                      {(currentSlide.button_text && currentSlide.button_url) ||
+                      (currentSlide.secondary_button_text &&
+                        currentSlide.secondary_button_url) ? (
+                        <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                          {currentSlide.button_text &&
+                            currentSlide.button_url && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  router.push(currentSlide.button_url)
+                                }
+                                className="px-8 py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg hover:shadow-xl hover:shadow-[#AE9B66]/30 transition-all duration-300 font-semibold flex items-center justify-center hover:scale-105 transform"
+                              >
+                                {currentSlide.button_text}
+                              </button>
+                            )}
+                          {currentSlide.secondary_button_text &&
+                            currentSlide.secondary_button_url && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  router.push(currentSlide.secondary_button_url)
+                                }
+                                className="px-8 py-3 border-2 border-[#AE9B66] text-[#AE9B66] rounded-lg hover:bg-[#AE9B66]/10 transition-all duration-300 font-semibold flex items-center justify-center hover:scale-105 transform bg-white/5"
+                              >
+                                {currentSlide.secondary_button_text}
+                              </button>
+                            )}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => setShowJoinChoice(true)}
-                className="group px-8 py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg hover:shadow-xl hover:shadow-[#AE9B66]/30 transition-all duration-300 font-semibold flex items-center justify-center hover:scale-105 transform"
-              >
-                Become a Member
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
+                  {(currentSlide.show_stats_row ?? true) && hasSlideText && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
+                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                        <div className="text-2xl font-bold text-[#AE9B66]">
+                          350+
+                        </div>
+                        <div className="text-sm text-gray-600">Members</div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                        <div className="text-2xl font-bold text-[#AE9B66]">
+                          50+
+                        </div>
+                        <div className="text-sm text-gray-600">Events</div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                        <div className="text-2xl font-bold text-[#AE9B66]">
+                          100+
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          CME Certificate
+                        </div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                        <div className="text-2xl font-bold text-[#AE9B66]">
+                          30+
+                        </div>
+                        <div className="text-sm text-gray-600">Years</div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#03215F]">
+                    {isContentSlide && currentSlide.title ? (
+                      currentSlide.title
+                    ) : (
+                      <>
+                        Bahrain{" "}
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#AE9B66] to-[#AE9B66]">
+                          Dental
+                        </span>{" "}
+                        Society
+                      </>
+                    )}
+                  </h1>
 
-              <button
-                onClick={() => router.push("/events")}
-                className="px-8 py-3 border-2 border-[#AE9B66] text-[#AE9B66] rounded-lg hover:bg-[#AE9B66]/10 transition-all duration-300 font-semibold flex items-center justify-center hover:scale-105 transform"
-              >
-                <Calendar className="mr-2 w-5 h-5" />
-                View Events
-              </button>
-            </div>
+                  {currentSlide.subtitle && (
+                    <p className="text-sm font-semibold uppercase tracking-wide text-[#AE9B66]">
+                      {currentSlide.subtitle}
+                    </p>
+                  )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
-              <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
-                <div className="text-2xl font-bold text-[#AE9B66]">350+</div>
-                <div className="text-sm text-gray-600">Members</div>
-              </div>
-              <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
-                <div className="text-2xl font-bold text-[#AE9B66]">50+</div>
-                <div className="text-sm text-gray-600">Events</div>
-              </div>
-              <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
-                <div className="text-2xl font-bold text-[#AE9B66]">100+</div>
-                <div className="text-sm text-gray-600">CME Certificate</div>
-              </div>
-              <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
-                <div className="text-2xl font-bold text-[#AE9B66]">30+</div>
-                <div className="text-sm text-gray-600">Years</div>
-              </div>
-            </div>
-          </div>
+                  <p className="text-lg md:text-xl text-gray-700 leading-relaxed">
+                    {hasCustomSlides
+                      ? currentSlide.description || ""
+                      : currentSlide.description ||
+                        "Join Bahrain's premier dental community. Access exclusive events, continuous education, and professional networking opportunities."}
+                  </p>
+
+                  {!hasCustomSlides && (
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <button
+                        onClick={() => setShowJoinChoice(true)}
+                        className="group px-8 py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg hover:shadow-xl hover:shadow-[#AE9B66]/30 transition-all duration-300 font-semibold flex items-center justify-center hover:scale-105 transform"
+                      >
+                        Become a Member
+                        <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </button>
+
+                      <button
+                        onClick={() => router.push("/events")}
+                        className="px-8 py-3 border-2 border-[#AE9B66] text-[#AE9B66] rounded-lg hover:bg-[#AE9B66]/10 transition-all duration-300 font-semibold flex items-center justify-center hover:scale-105 transform"
+                      >
+                        <Calendar className="mr-2 w-5 h-5" />
+                        View Events
+                      </button>
+                    </div>
+                  )}
+
+                  
+
+                  {(currentSlide.button_text && currentSlide.button_url) ||
+                  (currentSlide.secondary_button_text &&
+                    currentSlide.secondary_button_url) ? (
+                    <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                      {currentSlide.button_text && currentSlide.button_url && (
+                        <button
+                          type="button"
+                          onClick={() => router.push(currentSlide.button_url)}
+                          className="px-8 py-3 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg hover:shadow-xl hover:shadow-[#AE9B66]/30 transition-all duration-300 font-semibold flex items-center justify-center hover:scale-105 transform"
+                        >
+                          {currentSlide.button_text}
+                        </button>
+                      )}
+                      {currentSlide.secondary_button_text &&
+                        currentSlide.secondary_button_url && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.push(currentSlide.secondary_button_url)
+                            }
+                            className="px-8 py-3 border-2 border-[#AE9B66] text-[#AE9B66] rounded-lg hover:bg-[#AE9B66]/10 transition-all duration-300 font-semibold flex items-center justify-center hover:scale-105 transform"
+                          >
+                            {currentSlide.secondary_button_text}
+                          </button>
+                        )}
+                    </div>
+                  ) : null}
+                  {(currentSlide.show_stats_row ?? true) && hasSlideText && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
+                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                        <div className="text-2xl font-bold text-[#AE9B66]">
+                          350+
+                        </div>
+                        <div className="text-sm text-gray-600">Members</div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                        <div className="text-2xl font-bold text-[#AE9B66]">
+                          50+
+                        </div>
+                        <div className="text-sm text-gray-600">Events</div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                        <div className="text-2xl font-bold text-[#AE9B66]">
+                          100+
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          CME Certificate
+                        </div>
+                      </div>
+                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                        <div className="text-2xl font-bold text-[#AE9B66]">
+                          30+
+                        </div>
+                        <div className="text-sm text-gray-600">Years</div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {slidesToUse.length > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  {slidesToUse.map((slide, idx) => (
+                    <button
+                      key={slide.id || idx}
+                      type="button"
+                      onClick={() => setActiveSlide(idx)}
+                      className={`w-2.5 h-2.5 rounded-full transition-all ${
+                        idx === activeSlide
+                          ? "bg-[#AE9B66] w-6"
+                          : "bg-gray-300 hover:bg-gray-400"
+                      }`}
+                      aria-label={`Show slide ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
 
           {/* Membership Card Section - Show real card for paid members, dummy card for others */}
           {mounted && (

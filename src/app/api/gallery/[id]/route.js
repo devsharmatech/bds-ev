@@ -8,7 +8,7 @@ export async function GET(_req, { params }) {
     const { id } = await params;
     const { data: gallery, error } = await supabase
       .from("galleries")
-      .select("id,title,slug,featured_image_url,tag1,tag2,created_at")
+      .select("id,title,slug,featured_image_url,short_description,tag1,tag2,created_at")
       .eq("id", id)
       .eq("is_active", true)
       .single();

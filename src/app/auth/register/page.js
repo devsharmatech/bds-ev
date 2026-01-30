@@ -509,18 +509,33 @@ function RegisterPageContent() {
         className: "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] border border-[#AE9B66]",
       });
 
-      // Additional info toast
-      toast.info("📋 Your Registration Details", {
-        description: `Member ID: ${data.memberId || 'BDS-' + Date.now().toString().slice(-6)}\nEmail: ${formData.email}\nMembership: ${formData.membershipType}`,
-        duration: 6000,
-        position: "top-center",
-      });
-
       // Check if selected plan requires payment
       const selectedPlan = plans.find(p => p.id === formData.subscriptionPlanId);
       const requiresPayment = selectedPlan && 
         ((selectedPlan.registration_fee > 0 && !selectedPlan.registration_waived) ||
          (selectedPlan.annual_fee > 0 && !selectedPlan.annual_waived));
+
+      // If payment is required, show guidance toast with "Complete Payment" option (no membership code shown)
+      if (requiresPayment && data.data?.paymentRequired) {
+        toast.info("Complete Your Payment", {
+          description: "Please complete your membership payment to activate your account and receive your Membership ID.",
+          duration: 7000,
+          position: "top-center",
+          action: {
+            label: "Complete Payment",
+            onClick: () => {
+              router.push(`/auth/register/payment?email=${encodeURIComponent(formData.email)}`);
+            },
+          },
+        });
+      } else {
+        // For free memberships, just show a brief next-steps message (no membership code)
+        toast.info("Registration Details", {
+          description: `Email: ${formData.email}\nMembership: ${formData.membershipType || 'free'}`,
+          duration: 5000,
+          position: "top-center",
+        });
+      }
 
       // Show redirect toast
       const redirectToastId = toast.loading(

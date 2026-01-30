@@ -314,15 +314,15 @@ function MembershipCard({
               flexWrap: isNarrow ? "wrap" : "nowrap",
             }}
           >
-            {/* Only show Member ID for paid members */}
-            {!isFreeMember && (
+                {/* Only show Membership ID for active paid members */}
+                {!isFreeMember && user?.membership_status === "active" && user?.membership_code && (
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p
                   style={{
                     fontSize: "clamp(9px, 2.6vw, 11px)",
                     color: "#C7D7F2",
                     textTransform: "uppercase",
-                    margin: 0,
+                      {user.membership_code}
                     letterSpacing: "0.1em",
                   }}
                 >
@@ -1096,6 +1096,12 @@ export default function MembershipCardPage() {
   const downloadMembershipCard = async () => {
     if (!cardRef.current) return;
 
+    // Only allow active paid members to download the card
+    if (!user || user.membership_type === "free" || user.membership_status !== "active") {
+      toast.error("Membership card is available for active paid members only.");
+      return;
+    }
+
     try {
       toast.loading("Generating membership card image...");
 
@@ -1308,6 +1314,12 @@ export default function MembershipCardPage() {
   // Download PDF
   const handleDownloadPDF = async () => {
     if (!cardRef.current) return;
+
+    // Only allow active paid members to download the card as PDF
+    if (!user || user.membership_type === "free" || user.membership_status !== "active") {
+      toast.error("Membership card is available for active paid members only.");
+      return;
+    }
 
     try {
       toast.loading("Generating membership card PDF...");
@@ -1544,7 +1556,10 @@ export default function MembershipCardPage() {
   };
 
   const handleCopyId = () => {
-    if (!user || user.membership_type === "free") return;
+    if (!user || user.membership_type === "free" || user.membership_status !== "active") {
+      toast.error("Membership ID is available only for active paid members.");
+      return;
+    }
 
     if (user.membership_code) {
       navigator.clipboard.writeText(user.membership_code);
@@ -1733,7 +1748,7 @@ export default function MembershipCardPage() {
                 {isFreeMember
                   ? "Upgrade to premium for your official membership card"
                   : "Your digital membership card and benefits"}
-              </p>
+              <div
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -1741,8 +1756,8 @@ export default function MembershipCardPage() {
                 <button
                   onClick={handleCopyId}
                   className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center hover:scale-105 active:scale-95"
-                >
-                  {copied ? (
+                {/* Only show Member ID for active paid members with a code */}
+                {!isFreeMember && user?.membership_status === "active" && user?.membership_code && (
                     <CheckCircle className="w-5 h-5 mr-2 text-[#AE9B66]" />
                   ) : (
                     <Copy className="w-5 h-5 mr-2" />
@@ -2074,7 +2089,7 @@ export default function MembershipCardPage() {
                       <span className="text-gray-600">ID</span>
                     </div>
                     <span className="font-mono font-semibold text-gray-900">
-                      {user?.membership_code || "N/A"}
+                      {user.membership_code}
                     </span>
                   </div>
                 )}
