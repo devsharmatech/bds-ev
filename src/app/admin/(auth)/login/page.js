@@ -107,7 +107,7 @@ export default function Page() {
 
       <div className="w-full max-w-md relative z-10">
         {/* Login Card */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 transition-all duration-300 border border-gray-200/30 hover:shadow-2xl hover:shadow-[#03215F]/10">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 py-3 transition-all duration-300 border border-gray-200/30 hover:shadow-2xl hover:shadow-[#03215F]/10">
           {/* Decorative top accent */}
           <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-[#03215F] via-[#ECCF0F] to-[#03215F] rounded-b-lg"></div>
 
@@ -204,20 +204,19 @@ export default function Page() {
           </div>
 
           {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-gray-200/50 text-center">
+          <div className="mt-2 pt-2 border-t border-gray-200/50 text-center">
             <p className="text-sm text-gray-600 font-medium">
-              © 2025 BDS System
+              © 2026 BDS System
             </p>
             <p className="text-xs text-gray-500 mt-2">
-              نظام إدارة الأعمال البحريني • Secure Enterprise Portal
+               • Secure Enterprise Portal
             </p>
             <div className="flex items-center justify-center gap-4 mt-4 text-xs text-gray-400">
               <span className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-[#AE9B66] rounded-full animate-pulse"></div>
                 System Secure
               </span>
-              <span>•</span>
-              <span>Version 1.0.0</span>
+              
             </div>
           </div>
         </div>
