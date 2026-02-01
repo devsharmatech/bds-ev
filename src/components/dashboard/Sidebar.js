@@ -96,6 +96,7 @@ export default function Sidebar({
     { name: "Hero Slides", icon: ImageIcon, href: "/admin/hero-slides", badge: null },
     { name: "Speaker Requests", icon: Mic, href: "/admin/speaker-requests", badge: null },
     { name: "Committees", icon: Globe, href: "/admin/committees", badge: null },
+    { name: "Committee Sections", icon: FileText, href: "/admin/committee-sections", badge: null },
     { name: "Board Members", icon: Users, href: "/admin/board-members", badge: null },
     { name: "Research", icon: FileText, href: "/admin/research", badge: null },
     { name: "Gallery", icon: ImageIcon, href: "/admin/gallery", badge: null },

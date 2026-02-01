@@ -268,7 +268,6 @@ CREATE INDEX IF NOT EXISTS idx_membership_payments_invoice_id ON membership_paym
 -- CONTENT MANAGEMENT
 -- =====================================================
 
--- Committees Table
 CREATE TABLE IF NOT EXISTS public.committees (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT UNIQUE NOT NULL,
@@ -288,36 +287,25 @@ CREATE TABLE IF NOT EXISTS public.committees (
 CREATE INDEX IF NOT EXISTS idx_committees_slug ON committees(slug);
 CREATE INDEX IF NOT EXISTS idx_committees_is_active ON committees(is_active);
 
--- Committee Pages Table
-CREATE TABLE IF NOT EXISTS public.committee_pages (
+-- Committee Sections Table
+CREATE TABLE IF NOT EXISTS public.committee_sections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   committee_id UUID NOT NULL REFERENCES committees(id) ON DELETE CASCADE,
-  slug TEXT NOT NULL,
   title TEXT NOT NULL,
   content TEXT,
+  -- Optional rich section layout fields for the public committee page
+  image_url TEXT,
+  image_alignment TEXT CHECK (image_alignment IN ('left', 'right', 'full')) DEFAULT 'left',
+  button_label TEXT,
+  button_url TEXT,
+  show_button BOOLEAN DEFAULT FALSE,
   sort_order INTEGER DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(committee_id, slug)
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_committee_pages_committee_id ON committee_pages(committee_id);
-
--- Committee Members Table
-CREATE TABLE IF NOT EXISTS public.committee_members (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  committee_id UUID NOT NULL REFERENCES committees(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  position TEXT,
-  specialty TEXT,
-  role TEXT,
-  photo_url TEXT,
-  sort_order INTEGER DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_committee_members_committee_id ON committee_members(committee_id);
+CREATE INDEX IF NOT EXISTS idx_committee_sections_committee_id ON committee_sections(committee_id);
 
 -- Gallery Table
 CREATE TABLE IF NOT EXISTS public.galleries (

@@ -31,8 +31,6 @@ export default function Navbar() {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [isMembershipDropdownOpen, setIsMembershipDropdownOpen] =
-    useState(false);
   const [isMoreDropdownOpen, setIsMoreDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -108,6 +106,7 @@ export default function Navbar() {
           const items = data.committees.map((c) => ({
             name: c.name,
             href: `/committees/${c.slug}`,
+            icon: <Users className="w-4 h-4" />,
           }));
           setCommitteesMenu(items);
         }
@@ -134,12 +133,12 @@ export default function Navbar() {
       href: "/membership",
       icon: <Shield className="w-4 h-4" />,
     },
-    // {
-    //   name: "Committees",
-    //   href: "/committees",
-    //   icon: <Users className="w-4 h-4" />,
-    //   submenu: committeesMenu,
-    // },
+    {
+      name: "Committees",
+      href: "/committees",
+      icon: <Users className="w-4 h-4" />,
+      submenu: committeesMenu,
+    },
     {
       name: "More",
       icon: <MoreVertical className="w-4 h-4" />,
@@ -157,6 +156,27 @@ export default function Navbar() {
       ],
     },
   ];
+
+  // Mobile navigation: move Committees under More dropdown
+  const mobileNavItems = mainNavItems
+    .map((item) => {
+      if (item.name === "More") {
+        return {
+          ...item,
+          submenu: [
+            {
+              name: "All Committees",
+              href: "/committees",
+              icon: <Users className="w-4 h-4" />,
+            },
+            ...committeesMenu,
+            ...(item.submenu || []),
+          ],
+        };
+      }
+      return item;
+    })
+    .filter((item) => item.name !== "Committees");
 
 
   // Handle search with debounce
@@ -447,7 +467,7 @@ export default function Navbar() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-18 md:lg-20 lg:h-24 xl:h-18 ">
+          <div className="flex items-center justify-between h-14 md:h-16 lg:h-18 2xl:h-20">
             {/* Logo */}
             <Link href="/" className="flex items-center shrink-0">
               <img
@@ -461,8 +481,8 @@ export default function Navbar() {
               />
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden xl:flex items-center space-x-1">
+            {/* Desktop Navigation (very large screens only) */}
+            <div className="hidden 2xl:flex items-center space-x-1">
               {mainNavItems.map((item) => {
                 if (item.name === "Committees" || item.name === "More") {
                   return (
@@ -506,7 +526,7 @@ export default function Navbar() {
               {/* Search Button - Opens Modal */}
               <button
                 onClick={() => setShowSearchModal(true)}
-                className="hidden xl:flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="hidden 2xl:flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 aria-label="Open search"
               >
                 <Search className="w-5 h-5 text-gray-600" />
@@ -514,7 +534,7 @@ export default function Navbar() {
 
 
               {/* AUTH SLOT – FIXED WIDTH */}
-              <div className="hidden xl:flex items-center justify-end w-[150px]">
+              <div className="hidden 2xl:flex items-center justify-end w-[150px]">
                 {isAuthLoading ? (
                   // Skeleton placeholder (same size)
                   <div className="h-10 w-full rounded-lg bg-gray-200 animate-pulse" />
@@ -562,7 +582,7 @@ export default function Navbar() {
 
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="xl:hidden p-2 rounded-lg bg-gray-100"
+                className="2xl:hidden p-2 rounded-lg bg-gray-100"
                 aria-label="Toggle menu"
               >
                 {isMenuOpen ? (
@@ -576,7 +596,7 @@ export default function Navbar() {
 
           {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="xl:hidden py-4 border-t border-gray-200">
+            <div className="2xl:hidden py-4 border-t border-gray-200">
               {/* Search and Theme Toggle in Mobile */}
               <div className="px-4 mb-4 flex items-center justify-between">
                 <button
@@ -594,10 +614,10 @@ export default function Navbar() {
 
               {/* Main Navigation Items */}
               <div className="flex flex-col space-y-1 px-2">
-                {mainNavItems.map((item) => {
-                  if (item.name === "Committees" || item.name === "More") {
-                    const isDropdownOpen = item.name === "Committees" ? isMembershipDropdownOpen : isMoreDropdownOpen;
-                    const setDropdownOpen = item.name === "Committees" ? setIsMembershipDropdownOpen : setIsMoreDropdownOpen;
+                {mobileNavItems.map((item) => {
+                  if (item.name === "More") {
+                    const isDropdownOpen = isMoreDropdownOpen;
+                    const setDropdownOpen = setIsMoreDropdownOpen;
                     return (
                       <div key={item.name}>
                         <button
@@ -614,7 +634,7 @@ export default function Navbar() {
                             className={`w-5 h-5 transition-transform text-gray-500 ${isDropdownOpen ? "rotate-180" : ""}`}
                           />
                         </button>
-                        {/* Dropdown for Committees/More */}
+                        {/* Dropdown for More (includes Committees on mobile) */}
                         {isDropdownOpen && (
                           <div className="ml-8 mt-1 mb-2 space-y-1">
                             {item.submenu?.map((subItem) => (

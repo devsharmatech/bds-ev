@@ -22,14 +22,8 @@ export async function GET(_req, { params }) {
     }
 
     const { data: pages } = await supabase
-      .from("committee_pages")
+      .from("committee_sections")
       .select("*")
-      .eq("committee_id", committee.id)
-      .order("sort_order", { ascending: true });
-
-    const { data: members } = await supabase
-      .from("committee_members")
-      .select("id, name, position, specialty, role, photo_url, sort_order")
       .eq("committee_id", committee.id)
       .order("sort_order", { ascending: true });
 
@@ -37,7 +31,6 @@ export async function GET(_req, { params }) {
       success: true,
       committee,
       pages: pages || [],
-      members: members || [],
     });
   } catch (err) {
     return NextResponse.json(

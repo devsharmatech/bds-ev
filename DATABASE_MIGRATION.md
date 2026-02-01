@@ -89,31 +89,47 @@ CREATE TABLE IF NOT EXISTS public.committees (
   updated_at timestamptz DEFAULT now()
 );
 
--- Committee sub pages/sections
-CREATE TABLE IF NOT EXISTS public.committee_pages (
+-- Reset committee-related tables (drop old, recreate minimal required structure)
+-- NOTE: This will delete all existing committee data. Run only if you intend to rebuild.
+
+-- 1) Drop in dependency order
+DROP TABLE IF EXISTS public.committee_members CASCADE;
+DROP TABLE IF EXISTS public.committee_sections CASCADE;
+DROP TABLE IF EXISTS public.committees CASCADE;
+
+-- 2) Recreate committees master table
+CREATE TABLE IF NOT EXISTS public.committees (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  committee_id uuid NOT NULL REFERENCES public.committees(id) ON DELETE CASCADE,
-  slug text NOT NULL,
-  title text NOT NULL,
-  content text, -- markdown or html
+  slug text UNIQUE NOT NULL,
+  name text NOT NULL,
+  hero_title text,
+  hero_subtitle text,
+  focus text,
+  description text,
+  banner_image text,
+  contact_email text,
   sort_order integer DEFAULT 0,
   is_active boolean DEFAULT true,
   created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
-  UNIQUE (committee_id, slug)
+  updated_at timestamptz DEFAULT now()
 );
 
--- Optional: Committee members directory
-CREATE TABLE IF NOT EXISTS public.committee_members (
+-- 3) Recreate committee sections table
+CREATE TABLE IF NOT EXISTS public.committee_sections (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   committee_id uuid NOT NULL REFERENCES public.committees(id) ON DELETE CASCADE,
-  name text NOT NULL,
-  position text,
-  specialty text,
-  role text,
-  photo_url text,
+  title text NOT NULL,
+  content text, -- markdown or html
+  -- Optional structured section fields for hero/sections
+  image_url text,
+  image_alignment text CHECK (image_alignment IN ('left', 'right', 'full')) DEFAULT 'left',
+  button_label text,
+  button_url text,
+  show_button boolean DEFAULT false,
   sort_order integer DEFAULT 0,
-  created_at timestamptz DEFAULT now()
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 );
 
 -- Storage bucket (run in Supabase SQL or create via dashboard)

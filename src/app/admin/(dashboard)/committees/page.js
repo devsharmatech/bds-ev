@@ -33,6 +33,15 @@ import toast, { Toaster } from "react-hot-toast";
 import Modal from "@/components/Modal";
 import DeleteModal from "@/components/DeleteModal";
 
+const generateSlugPreview = (name) => {
+  return (name || "")
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+};
+
 export default function AdminCommitteesPage() {
   const [loading, setLoading] = useState(true);
   const [committees, setCommittees] = useState([]);
@@ -69,38 +78,9 @@ export default function AdminCommitteesPage() {
     sort_order: 0,
     is_active: true,
   });
+  const [bannerImageFile, setBannerImageFile] = useState(null);
 
-  // Predefined committee options
-  const COMMITTEE_OPTIONS = [
-    { 
-      slug: "professional-affairs-committee", 
-      name: "Professional Affairs Committee",
-      focus: "Promoting high standards of professional practice and ethics",
-      defaultHero: "Advancing Professional Excellence",
-      defaultSubtitle: "Setting standards for dental practice in Bahrain"
-    },
-    { 
-      slug: "scientific-committee", 
-      name: "Scientific Committee",
-      focus: "Organizing educational programs and scientific research",
-      defaultHero: "Scientific Advancement",
-      defaultSubtitle: "Leading dental research and education"
-    },
-    { 
-      slug: "social-and-public-health-committee", 
-      name: "Social & Public Health Committee",
-      focus: "Community outreach and public dental health initiatives",
-      defaultHero: "Community Health",
-      defaultSubtitle: "Serving the dental health needs of our community"
-    },
-    { 
-      slug: "media-committee", 
-      name: "Media Committee",
-      focus: "Communication, public relations, and digital presence",
-      defaultHero: "Digital Engagement",
-      defaultSubtitle: "Connecting with members and the public"
-    },
-  ];
+  // Committees are now fully configurable; no fixed templates
 
   // Load committees with pagination and filters
   const loadCommittees = async () => {
@@ -169,6 +149,7 @@ export default function AdminCommitteesPage() {
       sort_order: 0,
       is_active: true,
     });
+    setBannerImageFile(null);
   };
 
   // Open create modal
@@ -194,6 +175,7 @@ export default function AdminCommitteesPage() {
       is_active: !!committee.is_active,
     });
     setShowCreateModal(true);
+    setBannerImageFile(null);
   };
 
   // Open delete modal
@@ -202,59 +184,48 @@ export default function AdminCommitteesPage() {
     setShowDeleteModal(true);
   };
 
-  // Handle committee type selection
-  const handleCommitteeTypeSelect = (e) => {
-    const selectedSlug = e.target.value;
-    if (!selectedSlug) {
-      resetForm();
-      return;
-    }
-    
-    const committeeType = COMMITTEE_OPTIONS.find(opt => opt.slug === selectedSlug);
-    if (committeeType) {
-      setForm(prev => ({
-        ...prev,
-        slug: committeeType.slug,
-        name: committeeType.name,
-        focus: committeeType.focus,
-        hero_title: committeeType.defaultHero,
-        hero_subtitle: committeeType.defaultSubtitle,
-      }));
-    }
-  };
-
   // Handle save
   const handleSave = async (e) => {
     e.preventDefault();
     setModalLoading(true);
-    
+
     try {
-      const payload = { 
-        ...form, 
-        sort_order: Number(form.sort_order) || 0 
-      };
-      
+      const formData = new FormData();
+      formData.append("name", form.name || "");
+      formData.append("hero_title", form.hero_title || "");
+      formData.append("hero_subtitle", form.hero_subtitle || "");
+      formData.append("focus", form.focus || "");
+      formData.append("description", form.description || "");
+      formData.append("banner_image", form.banner_image || "");
+      formData.append("contact_email", form.contact_email || "");
+      formData.append("sort_order", String(Number(form.sort_order) || 0));
+      formData.append("is_active", form.is_active ? "true" : "false");
+      if (editing) {
+        formData.append("id", editing.id);
+      }
+      if (bannerImageFile) {
+        formData.append("banner_image_file", bannerImageFile);
+      }
+
       const res = await fetch(
         editing ? `/api/admin/committees/${editing.id}` : "/api/admin/committees",
         {
           method: editing ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: formData,
           credentials: "include",
         }
       );
-      
+
       const data = await res.json();
-      
+
       if (!data.success) {
         throw new Error(data.message || "Save failed");
       }
-      
+
       toast.success(editing ? "Committee updated successfully" : "Committee created successfully");
       setShowCreateModal(false);
       resetForm();
       await loadCommittees();
-      
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -291,34 +262,7 @@ export default function AdminCommitteesPage() {
     }
   };
 
-  // Handle seed data
-  const handleSeedData = async () => {
-    if (!confirm("This will create default committees. Continue?")) return;
-    
-    setModalLoading(true);
-    try {
-      const res = await fetch("/api/admin/committees/seed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-        credentials: "include",
-      });
-      
-      const data = await res.json();
-      
-      if (!data.success) {
-        throw new Error(data.message || "Seed failed");
-      }
-      
-      toast.success("Default committees created successfully");
-      await loadCommittees();
-      
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setModalLoading(false);
-    }
-  };
+  // No seed/templating logic; committees are created manually
 
   // Status badge component
   const StatusBadge = ({ isActive }) => (
@@ -379,41 +323,6 @@ export default function AdminCommitteesPage() {
             size="xl"
           >
             <form onSubmit={handleSave} className="space-y-6">
-              {/* Committee Type Selection (only for create) */}
-              {!editing && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-6"
-                >
-                  <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
-                    <Database className="w-5 h-5" />
-                    Committee Template
-                  </h3>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-blue-700 mb-2">
-                      Select Committee Type
-                    </label>
-                    <select
-                      value={form.slug}
-                      onChange={handleCommitteeTypeSelect}
-                      className="w-full px-4 py-2.5 bg-white border border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
-                    >
-                      <option value="">Start from scratch</option>
-                      {COMMITTEE_OPTIONS.map((opt) => (
-                        <option key={opt.slug} value={opt.slug}>
-                          {opt.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-2 text-sm text-blue-600">
-                      Select a template to pre-fill common committee information
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-
               {/* Basic Information */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -429,24 +338,18 @@ export default function AdminCommitteesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Slug *
+                      Slug
                     </label>
-                    <select
-                      value={form.slug}
-                      onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                      required
-                      disabled={!!editing}
-                      className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select slug</option>
-                      {COMMITTEE_OPTIONS.map((opt) => (
-                        <option key={opt.slug} value={opt.slug}>
-                          {opt.slug}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      type="text"
+                      value={editing ? form.slug : generateSlugPreview(form.name)}
+                      readOnly
+                      disabled
+                      className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-gray-600 cursor-not-allowed"
+                      placeholder="Auto-generated from committee name"
+                    />
                     <p className="mt-1 text-xs text-gray-500">
-                      Cannot be changed after creation
+                      Slug is generated automatically from the committee name.
                     </p>
                   </div>
 
@@ -562,14 +465,32 @@ export default function AdminCommitteesPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Banner Image URL
+                        Banner Image
                       </label>
-                      <input
-                        value={form.banner_image}
-                        onChange={(e) => setForm({ ...form, banner_image: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent"
-                        placeholder="https://example.com/banner.jpg"
-                      />
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                        <label className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium cursor-pointer hover:bg-gray-200 transition">
+                          <span>{bannerImageFile ? "Change Image" : "Upload Image"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] || null;
+                              setBannerImageFile(file);
+                            }}
+                          />
+                        </label>
+                        {form.banner_image && !bannerImageFile && (
+                          <img
+                            src={form.banner_image}
+                            alt="Banner preview"
+                            className="mt-2 sm:mt-0 w-24 h-16 object-cover rounded border border-gray-200"
+                          />
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Optional banner image shown at the top of the committee page.
+                      </p>
                     </div>
 
                     <div>
@@ -665,14 +586,6 @@ export default function AdminCommitteesPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
-            <button
-              onClick={handleSeedData}
-              disabled={modalLoading}
-              className="w-full sm:w-auto px-4 py-2.5 border-2 border-[#03215F] text-[#03215F] rounded-xl font-medium hover:bg-[#03215F] hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
-            >
-              <Database className="w-4 h-4" />
-              Create Defaults
-            </button>
             <button
               onClick={openCreateModal}
               className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl font-medium hover:from-[#03215F] hover:to-[#03215F] transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
@@ -780,19 +693,12 @@ export default function AdminCommitteesPage() {
                   <Plus className="w-4 h-4" />
                   Create Committee
                 </button>
-                <button
-                  onClick={handleSeedData}
-                  className="px-6 py-2.5 border border-[#03215F] text-[#03215F] rounded-xl font-medium hover:bg-[#03215F] hover:text-white transition-all duration-200 flex items-center gap-2"
-                >
-                  <Database className="w-4 h-4" />
-                  Create Defaults
-                </button>
               </div>
             </div>
           ) : (
             <>
               {/* Cards Grid */}
-              <div className="p-4">
+              <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {committees.map((committee) => (
                     <motion.div
