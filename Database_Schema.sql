@@ -117,6 +117,8 @@ CREATE TABLE IF NOT EXISTS public.event_members (
   checked_in_at TIMESTAMP WITH TIME ZONE,
   joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   price_paid DECIMAL(10, 3) DEFAULT 0,
+  coupon_code TEXT,
+  discount_amount DECIMAL(10, 3) DEFAULT 0,
   UNIQUE(event_id, user_id)
 );
 
@@ -124,6 +126,58 @@ CREATE INDEX IF NOT EXISTS idx_event_members_event_id ON event_members(event_id)
 CREATE INDEX IF NOT EXISTS idx_event_members_user_id ON event_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_event_members_token ON event_members(token);
 CREATE INDEX IF NOT EXISTS idx_event_members_checked_in ON event_members(checked_in);
+
+-- Event Coupons Table
+CREATE TABLE IF NOT EXISTS public.event_coupons (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id UUID REFERENCES events(id) ON DELETE SET NULL,
+  event_title TEXT,
+  code TEXT UNIQUE NOT NULL,
+  description TEXT,
+  discount_type TEXT CHECK (discount_type IN ('fixed', 'percentage')) NOT NULL DEFAULT 'fixed',
+  discount_value DECIMAL(10, 3) NOT NULL,
+  max_uses INTEGER,
+  used_count INTEGER DEFAULT 0,
+  valid_from TIMESTAMP WITH TIME ZONE,
+  valid_until TIMESTAMP WITH TIME ZONE,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_coupons_event_id ON event_coupons(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_coupons_code ON event_coupons(code);
+
+-- Event Coupon Usage Tracking Table
+CREATE TABLE IF NOT EXISTS public.event_coupon_usages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  coupon_id UUID REFERENCES event_coupons(id) ON DELETE SET NULL,
+  event_id UUID REFERENCES events(id) ON DELETE SET NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  event_member_id UUID REFERENCES event_members(id) ON DELETE SET NULL,
+  payment_id TEXT,
+  invoice_id TEXT,
+  amount_before DECIMAL(10, 3),
+  discount_amount DECIMAL(10, 3),
+  amount_after DECIMAL(10, 3),
+  used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  metadata JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_coupon_usages_coupon_id ON event_coupon_usages(coupon_id);
+CREATE INDEX IF NOT EXISTS idx_event_coupon_usages_event_id ON event_coupon_usages(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_coupon_usages_user_id ON event_coupon_usages(user_id);
+
+-- Helper function to safely increment coupon used_count
+CREATE OR REPLACE FUNCTION public.increment_event_coupon_used_count(coupon_row_id UUID)
+RETURNS void AS $$
+BEGIN
+  UPDATE event_coupons
+  SET used_count = COALESCE(used_count, 0) + 1
+  WHERE id = coupon_row_id;
+END;
+$$ LANGUAGE plpgsql;
 
 -- Attendance Logs Table
 CREATE TABLE IF NOT EXISTS public.attendance_logs (

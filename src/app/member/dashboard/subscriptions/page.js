@@ -454,6 +454,10 @@ export default function SubscriptionsPage() {
   }
 
   const isFreeMember = (user?.membership_type || "").toLowerCase() === "free";
+  const isCurrentFreePlan = currentPlan && (
+    (currentPlan.name || "").toLowerCase() === "free" ||
+    (currentPlan.display_name || "").toLowerCase().includes("free")
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
@@ -533,7 +537,7 @@ export default function SubscriptionsPage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5 border border-blue-200">
                 <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
                   <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-white shadow-sm">
@@ -570,13 +574,13 @@ export default function SubscriptionsPage() {
                   <div className="min-w-0">
                     <p className="text-xs sm:text-sm text-emerald-700 font-medium">Payment</p>
                     <p className="font-bold text-gray-900 text-xs sm:text-sm lg:text-base truncate">
-                      {currentSubscription.registration_paid && currentSubscription.annual_paid
+                      {isCurrentFreePlan || isFreeMember
+                        ? "No Payment"
+                        : currentSubscription.registration_paid && currentSubscription.annual_paid
                         ? "Fully Paid"
-                        : currentSubscription.registration_paid
-                        ? "Reg. Paid"
-                        : currentSubscription.annual_paid
-                        ? "Annual Paid"
-                        : "Pending"}
+                        : currentSubscription.registration_paid || currentSubscription.annual_paid
+                        ? "Partly Paid"
+                        : "No Payment"}
                     </p>
                   </div>
                 </div>
@@ -984,17 +988,10 @@ export default function SubscriptionsPage() {
                 <div className="p-4 rounded-full bg-gray-100 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
                   <AlertCircle className="w-10 h-10 text-gray-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">No Active Plan</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">Free Membership</h2>
                 <p className="text-gray-600 mb-6">
-                  You do not have an active membership plan. Please contact the admin to get started with a membership.
+                  You currently do not have a paid membership plan. Your account is on free membership.
                 </p>
-                <a 
-                  href="/contact" 
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#03215F] text-white rounded-xl font-medium hover:bg-[#03215F]/90 transition-colors"
-                >
-                  Contact Admin
-                  <ArrowRight className="w-4 h-4" />
-                </a>
               </div>
             </div>
           )
@@ -1060,23 +1057,38 @@ export default function SubscriptionsPage() {
                           {sub.expires_at ? formatDate(sub.expires_at) : "—"}
                         </td>
                         <td className="py-5 px-6">
-                          <div className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold ${
-                            (sub.status === 'active' || (sub.registration_paid && sub.annual_paid))
+                          {(() => {
+                            const planNameRaw =
+                              (sub.subscription_plan?.name || "") ||
+                              (sub.subscription_plan_name || "");
+                            const isFreeHistoryPlan = planNameRaw.toLowerCase() === "free" ||
+                              planNameRaw.toLowerCase().includes("free");
+
+                            const isFullyPaid = sub.registration_paid && sub.annual_paid;
+                            const isPartlyPaid = !isFullyPaid && (sub.registration_paid || sub.annual_paid);
+
+                            const badgeClass = isFreeHistoryPlan
+                              ? 'bg-gray-100 text-gray-700'
+                              : isFullyPaid
                               ? 'bg-green-100 text-green-700'
-                              : 'bg-amber-100 text-amber-700'
-                          }`}>
-                            {(sub.status === 'active' || (sub.registration_paid && sub.annual_paid)) ? (
-                              <>
-                                <CheckCircle className="w-3 h-3" />
-                                Paid
-                              </>
-                            ) : (
-                              <>
-                                <AlertCircle className="w-3 h-3" />
-                                Partial
-                              </>
-                            )}
-                          </div>
+                              : isPartlyPaid
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-gray-100 text-gray-700';
+
+                            let label = 'No Payment';
+                            if (!isFreeHistoryPlan) {
+                              if (isFullyPaid) label = 'Paid';
+                              else if (isPartlyPaid) label = 'Partly Paid';
+                            }
+
+                            return (
+                              <div className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold ${badgeClass}`}>
+                                {label === 'Paid' && <CheckCircle className="w-3 h-3" />}
+                                {label !== 'Paid' && <AlertCircle className="w-3 h-3" />}
+                                {label}
+                              </div>
+                            );
+                          })()}
                         </td>
                       </motion.tr>
                     ))}

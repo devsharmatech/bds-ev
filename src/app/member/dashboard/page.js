@@ -299,7 +299,7 @@ export default function DashboardPage() {
     },
     { 
       label: 'Membership Plan', 
-      value: planName || (isPremiumMember ? 'Paid' : 'Free'), 
+      value: planName || (isPremiumMember ? 'Paid Membership' : 'Free Membership'), 
       icon: isPremiumMember ? Crown : Shield, 
       color: isPremiumMember ? 'green' : 'gray',
       change: user?.membership_status === 'active' ? 'Active' : 'Inactive'
@@ -366,7 +366,7 @@ export default function DashboardPage() {
     },
     // Only show Membership ID for active paid members with a code
     ...(canShowMembershipId ? [{ label: 'Membership ID', value: user?.membership_code, icon: BadgeCheck }] : []),
-    { label: 'Membership Type', value: planName || (isPremiumMember ? 'Paid' : 'Free'), icon: Crown }
+    { label: 'Membership Type', value: planName || (isPremiumMember ? 'Paid Membership' : 'Free Membership'), icon: Crown }
   ]
 
   return (

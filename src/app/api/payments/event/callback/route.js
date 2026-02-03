@@ -343,10 +343,35 @@ export async function GET(request) {
     if (isPaid) {
       console.log('[EVENT-PAYMENT-CALLBACK] Payment confirmed as paid, updating event member record');
 
-      // Calculate price using the pricing utility (handles member type, category, and pricing tier)
+      // First, try to determine amount from any provisional coupon usage
+      // created at invoice step (discounted amount_after). This ensures the
+      // stored price reflects the actual paid amount after coupon.
       let amount = 0;
-      
-      if (eventMember.event && eventMember.event.is_paid && eventMember.user) {
+      let usedDiscountedAmount = false;
+
+      const { data: latestUsage, error: couponUsageError } = await supabase
+        .from('event_coupon_usages')
+        .select('id, amount_before, discount_amount, amount_after')
+        .eq('event_id', eventId)
+        .eq('user_id', eventMember.user_id)
+        .is('event_member_id', null)
+        .order('id', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!couponUsageError && latestUsage && latestUsage.amount_after != null) {
+        amount = Number(latestUsage.amount_after) || 0;
+        usedDiscountedAmount = true;
+        console.log('[EVENT-PAYMENT-CALLBACK] Using discounted amount from coupon usage:', {
+          usage_id: latestUsage.id,
+          amount_before: latestUsage.amount_before,
+          discount_amount: latestUsage.discount_amount,
+          amount_after: latestUsage.amount_after,
+        });
+      }
+
+      // If no discounted amount was found, fall back to pricing utility
+      if (amount === 0 && eventMember.event && eventMember.event.is_paid && eventMember.user) {
         // Flatten member profile data for getUserEventPrice
         const userForPricing = { ...eventMember.user };
         if (userForPricing.member_profiles) {
@@ -364,7 +389,8 @@ export async function GET(request) {
           pricing_tier: priceInfo.tier,
           amount,
           user_membership_type: eventMember.user.membership_type,
-          user_profile_category: userForPricing.category
+          user_profile_category: userForPricing.category,
+          used_discounted_amount: usedDiscountedAmount,
         });
       }
 
@@ -388,7 +414,8 @@ export async function GET(request) {
         amount: amount,
         user_membership_type: eventMember.user?.membership_type,
         event_regular_price: eventMember.event?.regular_price,
-        event_member_price: eventMember.event?.member_price
+        event_member_price: eventMember.event?.member_price,
+        used_discounted_amount: usedDiscountedAmount,
       });
 
       // Update event member record
@@ -449,6 +476,49 @@ export async function GET(request) {
         });
       } catch (historyError) {
         console.error('[EVENT-PAYMENT-CALLBACK] Failed to log payment_history record:', historyError);
+      }
+
+      // Update coupon usage records (if any provisional records exist for this user/event)
+      try {
+        const { data: provisionalUsages } = await supabase
+          .from('event_coupon_usages')
+          .select('id, coupon_id, discount_amount')
+          .eq('event_id', eventId)
+          .eq('user_id', eventMember.user_id)
+          .is('event_member_id', null);
+
+        if (Array.isArray(provisionalUsages) && provisionalUsages.length > 0) {
+          const usageIds = provisionalUsages.map((u) => u.id);
+          const totalDiscount = provisionalUsages.reduce(
+            (sum, u) => sum + (Number(u.discount_amount) || 0),
+            0
+          );
+
+          await supabase
+            .from('event_coupon_usages')
+            .update({
+              event_member_id: eventMember.id,
+              payment_id: invoiceIdToCheck,
+              invoice_id: invoiceIdToCheck,
+              metadata: { stage: 'paid' },
+            })
+            .in('id', usageIds);
+
+          // Increment used_count for affected coupons
+          for (const u of provisionalUsages) {
+            await supabase.rpc('increment_event_coupon_used_count', {
+              coupon_row_id: u.coupon_id,
+            });
+          }
+
+          console.log('[EVENT-PAYMENT-CALLBACK] Coupon usage finalized:', {
+            event_member_id: eventMember.id,
+            usage_count: provisionalUsages.length,
+            total_discount: totalDiscount,
+          });
+        }
+      } catch (couponErr) {
+        console.error('[EVENT-PAYMENT-CALLBACK] Failed to finalize coupon usage:', couponErr);
       }
 
       // Send event join confirmation email

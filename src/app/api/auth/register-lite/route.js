@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseAdmin";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -13,26 +14,70 @@ function isValidPhone(phone) {
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const {
-      full_name,
-      email,
-      phone,
-      password,
-      cpr_id,
-      gender = null,
-      dob = null,
-      nationality = null,
-      address = null,
-      city = null,
-      state = null,
-      pin_code = null,
-      work_sector = null,
-      employer = null,
-      position = null,
-      specialty = null,
-      category = null,
-    } = body;
+    const contentType = request.headers.get("content-type") || "";
+    const isMultipart = contentType.includes("multipart/form-data");
+
+    let full_name;
+    let email;
+    let phone;
+    let password;
+    let cpr_id;
+    let gender = null;
+    let dob = null;
+    let nationality = null;
+    let address = null;
+    let city = null;
+    let state = null;
+    let pin_code = null;
+    let work_sector = null;
+    let employer = null;
+    let position = null;
+    let specialty = null;
+    let category = null;
+    let studentIdFile = null;
+
+    if (isMultipart) {
+      const formData = await request.formData();
+      full_name = formData.get("full_name") || "";
+      email = formData.get("email") || "";
+      phone = formData.get("phone") || "";
+      password = formData.get("password") || "";
+      cpr_id = formData.get("cpr_id") || null;
+      gender = formData.get("gender") || null;
+      dob = formData.get("dob") || null;
+      nationality = formData.get("nationality") || null;
+      address = formData.get("address") || null;
+      city = formData.get("city") || null;
+      state = formData.get("state") || null;
+      pin_code = formData.get("pin_code") || null;
+      work_sector = formData.get("work_sector") || null;
+      employer = formData.get("employer") || null;
+      position = formData.get("position") || null;
+      specialty = formData.get("specialty") || null;
+      category = formData.get("category") || null;
+      studentIdFile = formData.get("student_id_card");
+    } else {
+      const body = await request.json();
+      ({
+        full_name,
+        email,
+        phone,
+        password,
+        cpr_id,
+        gender = null,
+        dob = null,
+        nationality = null,
+        address = null,
+        city = null,
+        state = null,
+        pin_code = null,
+        work_sector = null,
+        employer = null,
+        position = null,
+        specialty = null,
+        category = null,
+      } = body || {});
+    }
 
     if (!full_name || !email || !phone || !password) {
       return NextResponse.json(
@@ -124,6 +169,69 @@ export async function POST(request) {
       );
     }
 
+    // Handle optional student ID card upload (for student category)
+    let idCardUrl = null;
+
+    const isStudentCategory = (category || "").toLowerCase().includes("student");
+
+    if (isMultipart && (studentIdFile && studentIdFile.size > 0 || isStudentCategory)) {
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "application/pdf",
+      ];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+
+      if (isStudentCategory && (!studentIdFile || studentIdFile.size === 0)) {
+        await supabase.from("users").delete().eq("id", newUser.id);
+        return NextResponse.json(
+          { success: false, message: "Student ID card is required for student registrations" },
+          { status: 400 }
+        );
+      }
+
+      if (studentIdFile && studentIdFile.size > 0) {
+        if (!allowedTypes.includes(studentIdFile.type)) {
+          await supabase.from("users").delete().eq("id", newUser.id);
+          return NextResponse.json(
+            { success: false, message: "Student ID must be JPEG/PNG/WebP/PDF" },
+            { status: 400 }
+          );
+        }
+        if (studentIdFile.size > maxSize) {
+          await supabase.from("users").delete().eq("id", newUser.id);
+          return NextResponse.json(
+            { success: false, message: "Student ID file too large (max 10MB)" },
+            { status: 400 }
+          );
+        }
+
+        const ext = (studentIdFile.name || "file").split(".").pop();
+        const filename = `${uuidv4()}.${ext}`;
+        const path = `verification/${newUser.id}/id_card_${filename}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("profile_pictures")
+          .upload(path, studentIdFile, { cacheControl: "3600", upsert: false });
+
+        if (uploadError) {
+          console.error("Student ID upload error:", uploadError);
+          await supabase.from("users").delete().eq("id", newUser.id);
+          return NextResponse.json(
+            { success: false, message: "Failed to upload Student ID", error: uploadError.message },
+            { status: 500 }
+          );
+        }
+
+        const { data: urlData } = supabase.storage
+          .from("profile_pictures")
+          .getPublicUrl(path);
+        idCardUrl = urlData.publicUrl || null;
+      }
+    }
+
     // Create member profile
     const { error: profileErr } = await supabase
       .from("member_profiles")
@@ -142,9 +250,14 @@ export async function POST(request) {
         position,
         specialty,
         category,
+        id_card_url: idCardUrl,
       });
     if (profileErr) {
-      // Rollback user if profile fails (best-effort)
+      // Rollback user and uploaded file if profile fails (best-effort)
+      if (idCardUrl) {
+        const path = idCardUrl.split("/").slice(-2).join("/");
+        await supabase.storage.from("profile_pictures").remove([path]);
+      }
       await supabase.from("users").delete().eq("id", newUser.id);
       return NextResponse.json(
         { success: false, message: "Failed to create member profile", error: profileErr.message },
@@ -176,8 +289,8 @@ export async function POST(request) {
           status: "active",
           started_at: new Date().toISOString(),
           auto_renew: false,
-          registration_paid: true,
-          annual_paid: true,
+          registration_paid: false,
+          annual_paid: false,
         });
       }
 

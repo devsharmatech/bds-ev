@@ -212,7 +212,24 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
+    // Basic validation before sending to API
+    if (!formData.full_name || !formData.full_name.trim()) {
+      toast.error('Full name is required', {
+        duration: 4000,
+        position: 'top-right'
+      })
+      return
+    }
+
+    if (formData.phone && formData.phone.trim().length < 6) {
+      toast.error('Please enter a valid phone number', {
+        duration: 4000,
+        position: 'top-right'
+      })
+      return
+    }
+
     try {
       setSaving(true)
 

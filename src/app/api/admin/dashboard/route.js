@@ -141,6 +141,19 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .eq('role', 'member');
 
+    // Membership type counts (paid vs free)
+    const { count: paidMembers } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'member')
+      .eq('membership_type', 'paid');
+
+    const { count: freeMembers } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'member')
+      .eq('membership_type', 'free');
+
     // Today's registrations (members created today in Bahrain time)
     const { count: todayRegistrations } = await supabase
       .from('users')
@@ -174,6 +187,13 @@ export async function GET() {
       .lt('joined_at', tomorrowISO)
       .gt('price_paid', 0);
 
+    // 6c. TODAY'S TOTAL EVENT JOINS (paid + free)
+    const { count: todayEventJoins } = await supabase
+      .from('event_members')
+      .select('*', { count: 'exact', head: true })
+      .gte('joined_at', todayISO)
+      .lt('joined_at', tomorrowISO);
+
     // 7. EVENT MEMBERS COUNT
     const { count: eventMembersCount } = await supabase
       .from('event_members')
@@ -184,6 +204,94 @@ export async function GET() {
       .from('event_members')
       .select('*', { count: 'exact', head: true })
       .eq('checked_in', true);
+
+    // 9. HIGHLIGHT EVENTS WITH JOIN COUNTS (one ongoing, one upcoming)
+    const sortByStartAsc = (arr) =>
+      [...(arr || [])].sort(
+        (a, b) => new Date(a.start_datetime) - new Date(b.start_datetime)
+      );
+
+    const ongoingHighlightBase = sortByStartAsc(ongoingDerived)[0] || null;
+    const upcomingHighlightBase = sortByStartAsc(upcomingDerived)[0] || null;
+
+    const enrichEventWithJoins = async (event) => {
+      if (!event) return null;
+
+      const { count: totalJoins } = await supabase
+        .from('event_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', event.id);
+
+      const { count: todayJoins } = await supabase
+        .from('event_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', event.id)
+        .gte('joined_at', todayISO)
+        .lt('joined_at', tomorrowISO);
+
+      return {
+        ...event,
+        total_joins: totalJoins || 0,
+        today_joins: todayJoins || 0,
+      };
+    };
+
+    const [ongoingHighlight, upcomingHighlight] = await Promise.all([
+      enrichEventWithJoins(ongoingHighlightBase),
+      enrichEventWithJoins(upcomingHighlightBase),
+    ]);
+
+    // 10. COUPON COUNTS
+    const { count: totalCoupons } = await supabase
+      .from('event_coupons')
+      .select('*', { count: 'exact', head: true });
+
+    const { data: couponUsageRows } = await supabase
+      .from('event_coupon_usages')
+      .select('user_id, event_member_id');
+
+    const couponUsedMembers = Array.isArray(couponUsageRows)
+      ? new Set(
+          couponUsageRows
+            .filter((row) => row.user_id && row.event_member_id)
+            .map((row) => row.user_id)
+        ).size
+      : 0;
+
+    // 11. REVENUE (EVENTS + MEMBERSHIP SUBSCRIPTIONS)
+    const { data: eventPayments } = await supabase
+      .from('payment_history')
+      .select('amount')
+      .eq('status', 'completed')
+      .eq('payment_for', 'event_registration');
+
+    const totalEventRevenue = Array.isArray(eventPayments)
+      ? eventPayments.reduce((sum, row) => {
+          const val = Number(row.amount || 0);
+          return val > 0 ? sum + val : sum;
+        }, 0)
+      : 0;
+
+    // Membership / subscription earnings: include all completed subscription_* and membership_payment
+    const { data: membershipPayments } = await supabase
+      .from('payment_history')
+      .select('amount, payment_for')
+      .eq('status', 'completed')
+      .or("payment_for.ilike.subscription%,payment_for.eq.membership_payment");
+
+    const totalSubscriptionRevenue = Array.isArray(membershipPayments)
+      ? membershipPayments.reduce((sum, row) => {
+          const val = Number(row.amount || 0);
+          return val > 0 ? sum + val : sum;
+        }, 0)
+      : 0;
+
+    // 12. EVENT OPTIONS FOR ANALYTICS FILTER (id, title, start_datetime)
+    const eventFilterOptions = sortByStartAsc(eventsBasic || []).map((e) => ({
+      id: e.id,
+      title: e.title,
+      start_datetime: e.start_datetime,
+    }));
 
     return NextResponse.json({
       success: true,
@@ -207,22 +315,38 @@ export async function GET() {
         inactive_members: inactiveMembers || 0,
         blocked_members: blockedMembers || 0,
         total_members: totalMembers || 0,
+        paid_members: paidMembers || 0,
+        free_members: freeMembers || 0,
         today_registrations: todayRegistrations || 0,
         
         // Event Members
         event_members: eventMembersCount || 0,
         checked_in_members: checkedInMembersCount || 0,
+
+        // Today event joins
+        today_event_joins: todayEventJoins || 0,
         
         // Conversion rate
         conversion_rate: eventMembersCount > 0 
           ? Math.round((checkedInMembersCount / eventMembersCount) * 100 * 10) / 10 
           : 0,
+
+        // Coupons
+        total_coupons: totalCoupons || 0,
+        coupon_used_members: couponUsedMembers || 0,
+
+        // Revenue (BHD)
+        total_event_revenue: totalEventRevenue,
+        total_subscription_revenue: totalSubscriptionRevenue,
       },
       charts: {
         member_registration: recentRegistrationData,
       },
       upcoming_events: upcomingEvents || [],
       today_events: todayEvents || [],
+      highlight_ongoing_event: ongoingHighlight,
+      highlight_upcoming_event: upcomingHighlight,
+      event_filter_options: eventFilterOptions,
     });
   } catch (err) {
     console.error('Dashboard API Error:', err);

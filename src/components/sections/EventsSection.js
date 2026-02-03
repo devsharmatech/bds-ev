@@ -827,10 +827,10 @@ export default function EventsSection() {
 
                           {/* Action Button */}
                           <div className="flex flex-col gap-2">
-                            <div className="flex gap-2">
+                            <div className="flex flex-col lg:flex-row lg:flex-wrap gap-2">
                               <button
                                 onClick={() => handleViewDetails(event)}
-                                className="flex-1 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-1.5"
+                                className="w-full lg:flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5"
                               >
                                 <Eye className="w-4 h-4" />
                                 Details
@@ -840,7 +840,7 @@ export default function EventsSection() {
                               {event.is_paid && (
                                 <button
                                   onClick={() => handleViewPrices(event)}
-                                  className="px-3 py-2.5 bg-gradient-to-r from-[#AE9B66]/80 to-[#AE9B66]/90 text-white border border-[#AE9B66]/30 rounded-lg hover:bg-[#AE9B66]/20 transition-colors flex items-center justify-center"
+                                  className="w-full lg:w-auto px-3 py-2 bg-gradient-to-r from-[#AE9B66]/80 to-[#AE9B66]/90 text-white border border-[#AE9B66]/30 rounded-lg hover:bg-[#AE9B66]/20 transition-colors flex items-center justify-center"
                                   title="View All Prices"
                                 >
                                   <DollarSign className="w-4 h-4" />
@@ -850,7 +850,7 @@ export default function EventsSection() {
                               {/* QR Code Button */}
                               <button
                                 onClick={() => handleQRCode(event)}
-                                className="px-3 py-2.5 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg hover:opacity-90 transition-colors flex items-center justify-center"
+                                className="w-full lg:w-auto px-3 py-2 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg hover:opacity-90 transition-colors flex items-center justify-center"
                                 title="Share QR Code"
                               >
                                 <QrCode className="w-4 h-4" />
@@ -862,7 +862,7 @@ export default function EventsSection() {
                               !isFull ? (
                                 <button
                                   onClick={() => handleJoinNow(event)}
-                                  className="flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
+                                  className="w-full lg:flex-1 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
                                 >
                                   <ArrowRight className="w-4 h-4" />
                                   Join
@@ -870,7 +870,7 @@ export default function EventsSection() {
                               ) : event.payment_pending ? (
                                 <button
                                   onClick={() => handleJoinNow(event)}
-                                  className="flex-1 py-2.5 bg-gradient-to-r from-[#ECCF0F] to-[#b8352d] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                  className="w-full lg:flex-1 py-2 bg-gradient-to-r from-[#ECCF0F] to-[#b8352d] text-white rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
                                 >
                                   <CreditCard className="w-4 h-4" />
                                   Complete Payment
@@ -878,7 +878,7 @@ export default function EventsSection() {
                               ) : event.joined ? (
                                 <button
                                   onClick={() => handleViewDetails(event)}
-                                  className="flex-1 py-2.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                  className="w-full lg:flex-1 py-2 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
                                 >
                                   <CheckCircle className="w-4 h-4" />
                                   Joined

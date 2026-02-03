@@ -102,6 +102,40 @@ export async function PUT(req, { params }) {
 
     const updateData = {};
     if (typeof body.checked_in === "boolean") {
+      // If attempting to check in, enforce event time window (within 5 hours before start)
+      if (body.checked_in === true) {
+        const { data: event, error: eventError } = await supabase
+          .from("events")
+          .select("id, start_datetime")
+          .eq("id", eventId)
+          .single();
+
+        if (eventError || !event) {
+          console.error("EVENT MEMBER CHECK-IN - Event fetch error:", eventError);
+          return NextResponse.json(
+            { success: false, message: "Event not found for check-in" },
+            { status: 404 }
+          );
+        }
+
+        if (event.start_datetime) {
+          const now = new Date();
+          const eventStart = new Date(event.start_datetime);
+          const fiveHoursBefore = new Date(eventStart.getTime() - 5 * 60 * 60 * 1000);
+
+          if (now < fiveHoursBefore) {
+            return NextResponse.json(
+              {
+                success: false,
+                message:
+                  "Check-in is not open yet. Members can be checked in only within 5 hours before the event start time.",
+              },
+              { status: 400 }
+            );
+          }
+        }
+      }
+
       updateData.checked_in = body.checked_in;
       updateData.checked_in_at = body.checked_in ? new Date().toISOString() : null;
     }

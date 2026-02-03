@@ -184,6 +184,9 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
   const [selectedMethod, setSelectedMethod] = useState(null)
   const [paymentStep, setPaymentStep] = useState(1) // 1: join button, 2: payment methods, 3: processing
   const [error, setError] = useState(null)
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
+  const [applyingCoupon, setApplyingCoupon] = useState(false)
   const [selectedPreviewCategory, setSelectedPreviewCategory] = useState(null) // For price preview switching
   const contentRef = useRef(null)
   const modalRef = useRef(null)
@@ -198,6 +201,8 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
       setSelectedMethod(null)
       setError(null)
       setSelectedPreviewCategory(null) // Reset preview category on modal open
+      setCouponCode('')
+      setAppliedCoupon(null)
     }
   }, [isOpen])
 
@@ -316,7 +321,8 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
         },
         body: JSON.stringify({
           event_id: event.id,
-          user_id: user.id
+          user_id: user.id,
+          coupon_code: appliedCoupon?.code || null,
         })
       })
 
@@ -342,6 +348,46 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
 
   const handleSelectMethod = (method) => {
     setSelectedMethod(method)
+  }
+
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim()
+    if (!code) {
+      toast.error('Enter a coupon code')
+      return
+    }
+    if (!user) {
+      toast.error('Login required to apply coupon')
+      return
+    }
+
+    setApplyingCoupon(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/event/apply-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_id: event.id, code }),
+      })
+      const data = await res.json()
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to apply coupon')
+      }
+      setAppliedCoupon({
+        code: data.coupon.code,
+        discount_type: data.coupon.discount_type,
+        discount_value: data.coupon.discount_value,
+        discount_amount: data.discount_amount,
+        final_amount: data.final_amount,
+      })
+      toast.success('Coupon applied')
+    } catch (err) {
+      console.error('Apply coupon error:', err)
+      setAppliedCoupon(null)
+      toast.error(err.message)
+    } finally {
+      setApplyingCoupon(false)
+    }
   }
 
   const handleExecutePayment = async () => {
@@ -1360,15 +1406,17 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                     )}
                   </div>
                   <div className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
-                    {formatBHD(priceToPay)}
+                    {appliedCoupon ? formatBHD(appliedCoupon.final_amount) : formatBHD(priceToPay)}
                   </div>
                 </div>
                 {event.is_paid && (
                   <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Regular Price</span>
+                      <span className="text-gray-600">
+                        Base Price ({displayCategoryInfo.categoryDisplay})
+                      </span>
                       <span className="text-gray-700">
-                        {formatBHD(event.regular_price)}
+                        {formatBHD(priceToPay)}
                       </span>
                     </div>
                     {user?.membership_type === 'paid' && event.member_price && (
@@ -1380,18 +1428,57 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                         <span>-{formatBHD(memberSavings)}</span>
                       </div>
                     )}
+                    {appliedCoupon && (
+                      <div className="flex items-center justify-between text-emerald-600">
+                        <span className="flex items-center gap-1">
+                          <Tag className="w-3 h-3 md:w-4 md:h-4" />
+                          Coupon {appliedCoupon.code}
+                        </span>
+                        <span>-{formatBHD(appliedCoupon.discount_amount)}</span>
+                      </div>
+                    )}
                     <div className="border-t border-gray-200 pt-1 md:pt-2 mt-1 md:mt-2">
                       <div className="flex items-center justify-between font-semibold">
                         <span>Amount to Pay</span>
                         <span className="flex items-center gap-1">
                           <BahrainFlag />
-                          {formatBHD(priceToPay)}
+                          {appliedCoupon ? formatBHD(appliedCoupon.final_amount) : formatBHD(priceToPay)}
                         </span>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
+
+              {event.is_paid && user && (
+                <div className="mb-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-gray-600">
+                    <span>Have a coupon code?</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="ENTER CODE"
+                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent tracking-widest uppercase"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={applyingCoupon}
+                      className="px-3 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl text-xs md:text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {applyingCoupon ? 'Applying...' : 'Apply'}
+                    </button>
+                  </div>
+                  {appliedCoupon && (
+                    <p className="text-[11px] text-emerald-700">
+                      Coupon {appliedCoupon.code} applied. New amount: {formatBHD(appliedCoupon.final_amount)}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Join Button */}
               <button
@@ -1423,7 +1510,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                   <>
                     <span className="text-xs sm:text-sm md:text-base">
                       {event.is_paid ? (
-                        `Pay ${formatBHD(priceToPay)} & Join Now`
+                        `Pay ${formatBHD(appliedCoupon ? appliedCoupon.final_amount : priceToPay)} & Join Now`
                       ) : (
                         'Join Event for Free'
                       )}

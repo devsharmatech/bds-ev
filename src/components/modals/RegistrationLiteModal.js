@@ -84,8 +84,11 @@ export default function RegistrationLiteModal({
   const [position, setPosition] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [category, setCategory] = useState("");
+  const [studentIdFile, setStudentIdFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const isStudentCategory = category?.toLowerCase().includes("student");
 
   // Build full country list with phone codes (client-side)
   const [countryOptions, setCountryOptions] = useState(COUNTRY_OPTIONS);
@@ -157,6 +160,7 @@ export default function RegistrationLiteModal({
     setPosition("");
     setSpecialty("");
     setCategory("");
+    setStudentIdFile(null);
     setError(null);
   };
 
@@ -192,33 +196,42 @@ export default function RegistrationLiteModal({
         return;
       }
 
+      if (isStudentCategory && !studentIdFile) {
+        setError("Please upload your student ID card");
+        toast.error("Please upload your student ID card");
+        setLoading(false);
+        return;
+      }
+
       const combinedPhone =
         phone.trim().startsWith("+") || countryDial === "+"
           ? phone.trim()
           : `${countryDial} ${phone.trim()}`;
 
+      const formData = new FormData();
+      formData.append("full_name", fullName.trim());
+      formData.append("email", email.trim());
+      formData.append("phone", combinedPhone);
+      formData.append("password", password.trim());
+      formData.append("cpr_id", "");
+      formData.append("gender", gender || "");
+      formData.append("dob", dob || "");
+      formData.append("nationality", nationality || "");
+      formData.append("address", address || "");
+      formData.append("city", city || "");
+      formData.append("state", state || "");
+      formData.append("work_sector", workSector || "");
+      formData.append("employer", employer || "");
+      formData.append("position", position || "");
+      formData.append("specialty", specialty || "");
+      formData.append("category", category || "");
+      if (studentIdFile) {
+        formData.append("student_id_card", studentIdFile);
+      }
+
       const res = await fetch("/api/auth/register-lite", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: fullName.trim(),
-          email: email.trim(),
-          phone: combinedPhone,
-          password: password.trim(),
-          // cpr removed for all registrations
-          cpr_id: null,
-          gender: gender || null,
-          dob: dob || null,
-          nationality: nationality || null,
-          address: address || null,
-          city: city || null,
-          state: state || null,
-          work_sector: workSector || null,
-          employer: employer || null,
-          position: position || null,
-          specialty: specialty || null,
-          category: category || null,
-        }),
+        body: formData,
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -544,6 +557,26 @@ export default function RegistrationLiteModal({
                 ))}
               </select>
             </div>
+
+            {isStudentCategory && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Student ID Card (required for students)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setStudentIdFile(file);
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none text-sm"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Upload a clear photo or PDF of your valid student ID card.
+                </p>
+              </div>
+            )}
 
           </form>
           {/* Footer - Fixed inside modal */}

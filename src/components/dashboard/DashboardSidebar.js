@@ -38,7 +38,7 @@ export default function DashboardSidebar() {
     { name: 'Dashboard', href: '/member/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { name: 'My Events', href: '/member/dashboard/events', icon: <Calendar className="w-5 h-5" /> },
     { name: 'Check-Ins', href: '/member/dashboard/check-ins', icon: <CheckCircle className="w-5 h-5" /> },
-    { name: 'Subscriptions', href: '/member/dashboard/subscriptions', icon: <Shield className="w-5 h-5" /> },
+    { name: 'Membership', href: '/member/dashboard/subscriptions', icon: <Shield className="w-5 h-5" /> },
     { name: 'Membership Card', href: '/member/dashboard/membership', icon: <CreditCard className="w-5 h-5" /> },
     { name: 'Certificates', href: '/member/dashboard/certificates', icon: <Badge className="w-5 h-5" /> },
     { name: 'Profile', href: '/member/dashboard/profile', icon: <User className="w-5 h-5" /> },
@@ -62,7 +62,7 @@ export default function DashboardSidebar() {
           const derived =
             data?.user?.current_subscription_plan_display_name ||
             data?.user?.current_subscription_plan_name ||
-            (data?.user?.membership_type === 'paid' ? 'Premium' : 'Standard')
+            (data?.user?.membership_type === 'paid' ? 'Paid Membership' : 'Free Membership')
           setPlanName(derived || '')
         } else {
           // Redirect to login if not authenticated

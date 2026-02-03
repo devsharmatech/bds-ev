@@ -170,7 +170,7 @@ export default function PaymentHistoryPage() {
   );
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
       <Toaster 
         position="top-right"
         toastOptions={{
@@ -277,7 +277,7 @@ export default function PaymentHistoryPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Total Amount</p>
-                <p className="text-2xl font-bold mt-1">{formatCurrency(stats.totalAmount)}</p>
+                <p className="text-lg font-bold mt-1">{formatCurrency(stats.totalAmount)}</p>
               </div>
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function PaymentHistoryPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Completed</p>
-                <p className="text-2xl font-bold mt-1">{stats.completed}</p>
+                <p className="text-lg font-bold mt-1">{stats.completed}</p>
               </div>
             </div>
           </div>
@@ -301,7 +301,7 @@ export default function PaymentHistoryPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Pending</p>
-                <p className="text-2xl font-bold mt-1">{stats.pending}</p>
+                <p className="text-lg font-bold mt-1">{stats.pending}</p>
               </div>
             </div>
           </div>
@@ -313,7 +313,7 @@ export default function PaymentHistoryPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Failed</p>
-                <p className="text-2xl font-bold mt-1">{stats.failed}</p>
+                <p className="text-lg font-bold mt-1">{stats.failed}</p>
               </div>
             </div>
           </div>

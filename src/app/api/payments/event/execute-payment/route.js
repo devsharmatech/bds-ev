@@ -150,23 +150,49 @@ export async function POST(request) {
       );
     }
 
-    // Calculate price using the pricing utility
-    // This handles member type, category (student, hygienist), and pricing tier (early bird, standard, onsite)
-    const priceInfo = getUserEventPrice(event, user);
-    const amount = priceInfo.price;
+    // Determine amount to charge
+    // Prefer any provisional coupon usage created at invoice step (discounted amount_after)
+    // Fallback to base price from pricing utility if no coupon usage found
+    let amount; 
+    let priceInfo = null;
+
+    const { data: provisionalUsage, error: usageError } = await supabase
+      .from('event_coupon_usages')
+      .select('*')
+      .eq('event_id', event_id)
+      .eq('user_id', user_id)
+      .is('event_member_id', null)
+      .order('used_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!usageError && provisionalUsage && provisionalUsage.amount_after != null) {
+      amount = Number(provisionalUsage.amount_after);
+      console.log('[EVENT-EXECUTE-PAYMENT] Using discounted amount from coupon usage:', {
+        amount_before: provisionalUsage.amount_before,
+        discount_amount: provisionalUsage.discount_amount,
+        amount_after: provisionalUsage.amount_after,
+      });
+    } else {
+      // Calculate price using the pricing utility
+      // This handles member type, category (student, hygienist), and pricing tier (early bird, standard, onsite)
+      priceInfo = getUserEventPrice(event, user);
+      amount = priceInfo.price;
+    }
     
     // Determine if user is a BDS member based on pricing category and active membership
     const now = new Date();
     const membershipValid = user && user.membership_type === 'paid' && user.membership_status === 'active' && (!user.membership_expiry_date || new Date(user.membership_expiry_date) > now);
-    const isMember = priceInfo.category === 'member' || membershipValid;
+    const isMember = (priceInfo && priceInfo.category === 'member') || membershipValid;
 
-    console.log('[EVENT-EXECUTE-PAYMENT] Price calculated:', {
-      user_category: priceInfo.category,
-      pricing_tier: priceInfo.tier,
+    console.log('[EVENT-EXECUTE-PAYMENT] Price calculated for execute-payment:', {
+      user_category: priceInfo?.category,
+      pricing_tier: priceInfo?.tier,
       amount,
       user_membership_type: user.membership_type,
       user_profile_category: user.category,
-      isMember
+      isMember,
+      used_discounted_amount: !!provisionalUsage,
     });
 
     if (!amount || amount <= 0) {

@@ -17,7 +17,7 @@ export default function AttendanceStats({ stats }) {
       value: stats.totalScans || 0,
       icon: BarChart3,
       color: "from-[#9cc2ed]/30 to-[#03215F]/30",
-      bgColor: "from-[#9cc2ed]/30 to-[#9cc2ed]/30",
+      bgColor: "from-white to-white",
       borderColor: "border-[#9cc2ed]/50",
     },
     {
@@ -25,7 +25,7 @@ export default function AttendanceStats({ stats }) {
       value: stats.uniqueAttendees || 0,
       icon: Users,
       color: "from-[#AE9B66]/30 to-[#AE9B66]/30",
-      bgColor: "from-[#AE9B66]/30 to-[#AE9B66]/30",
+      bgColor: "from-white to-white",
       borderColor: "border-[#AE9B66]/50",
     },
     {
@@ -33,7 +33,7 @@ export default function AttendanceStats({ stats }) {
       value: stats.todayScans || 0,
       icon: Calendar,
       color: "from-[#03215F]/30 to-[#03215F]/30",
-      bgColor: "from-[#03215F]/30 to-[#03215F]/30",
+      bgColor: "from-white to-white",
       borderColor: "border-[#03215F]/50",
     },
     {
@@ -41,7 +41,7 @@ export default function AttendanceStats({ stats }) {
       value: stats.checkinRate || "0%",
       icon: TrendingUp,
       color: "from-green-500/90 to-green-500/80",
-      bgColor: "from-green-500/30 to-green-500/30",
+      bgColor: "from-white to-white",
       borderColor: "border-green-500/50",
     },
   ];

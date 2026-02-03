@@ -121,6 +121,38 @@ export async function POST(req, { params }) {
       );
     }
 
+    // Check event start time: allow check-in only within 5 hours before start
+    const { data: event, error: eventError } = await supabase
+      .from("events")
+      .select("id, start_datetime")
+      .eq("id", eventId)
+      .single();
+
+    if (eventError || !event) {
+      console.error("ATTENDANCE RECORD ERROR - Event fetch:", eventError);
+      return NextResponse.json(
+        { success: false, message: "Event not found for attendance" },
+        { status: 404 }
+      );
+    }
+
+    if (event.start_datetime) {
+      const now = new Date();
+      const eventStart = new Date(event.start_datetime);
+      const fiveHoursBefore = new Date(eventStart.getTime() - 5 * 60 * 60 * 1000);
+
+      if (now < fiveHoursBefore) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Check-in is not open yet. Attendance can be recorded only within 5 hours before the event start time.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Find event member by token
     const { data: eventMember, error: memberError } = await supabase
       .from("event_members")

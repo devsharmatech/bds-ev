@@ -1473,11 +1473,11 @@ function EventsPageContent() {
 
                             {/* Action Button */}
                             <div className="flex flex-col gap-2">
-                              <div className="flex gap-2">
+                              <div className="flex flex-col lg:flex-row lg:flex-wrap gap-2">
                                 {/* Details Button - Opens EventDetailsModal */}
                                 <button
                                   onClick={() => handleViewDetails(event)}
-                                  className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-1.5"
+                                  className="w-full lg:flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5"
                                 >
                                   <Eye className="w-4 h-4" />
                                   Details
@@ -1486,7 +1486,7 @@ function EventsPageContent() {
                                 {/* QR Code Button */}
                                 <button
                                   onClick={() => handleQRCode(event)}
-                                  className="px-3 py-2 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg hover:opacity-90 transition-colors flex items-center justify-center"
+                                  className="w-full lg:w-auto px-3 py-2 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg hover:opacity-90 transition-colors flex items-center justify-center"
                                   title="Share QR Code"
                                 >
                                   <QrCode className="w-4 h-4" />
@@ -1496,7 +1496,7 @@ function EventsPageContent() {
                                 {(event.price > 0 || event.member_price > 0 || event.student_price > 0) && (
                                   <button
                                     onClick={() => handleViewPrices(event)}
-                                    className="px-3 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:opacity-90 transition-colors flex items-center justify-center"
+                                    className="w-full lg:w-auto px-3 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:opacity-90 transition-colors flex items-center justify-center"
                                     title="View Prices"
                                   >
                                     <DollarSign className="w-4 h-4" />
@@ -1508,7 +1508,7 @@ function EventsPageContent() {
                                   <button
                                     onClick={() => handleJoinClick(event)}
                                     disabled={joiningEvent === event.id}
-                                    className={`flex-1 py-2 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1.5 ${joiningEvent === event.id
+                                    className={`w-full lg:flex-1 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 ${joiningEvent === event.id
                                         ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                                         : "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white hover:shadow-lg"
                                       }`}
@@ -1528,7 +1528,7 @@ function EventsPageContent() {
                                 ) : event.payment_pending ? (
                                   <button
                                     onClick={() => handleJoinClick(event)}
-                                    className="flex-1 py-2 bg-gradient-to-r from-[#ECCF0F] to-[#b8352d] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                    className="w-full lg:flex-1 py-2 bg-gradient-to-r from-[#ECCF0F] to-[#b8352d] text-white rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
                                   >
                                     <CreditCard className="w-4 h-4" />
                                     Complete Payment
@@ -1536,7 +1536,7 @@ function EventsPageContent() {
                                 ) : event.joined ? (
                                   <button
                                     onClick={() => handleViewDetails(event)}
-                                    className="flex-1 py-2 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
+                                    className="w-full lg:flex-1 py-2 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white rounded-lg font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 hover:opacity-90"
                                   >
                                     <CheckCircle className="w-4 h-4" />
                                     Joined

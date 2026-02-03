@@ -1030,7 +1030,7 @@ export default function SpeakerRequestsPage() {
       <span style={{width:"fit-content"}} className={`px-3 py-1.5 text-xs font-semibold rounded-full border ${STATUS_COLORS[status] || "bg-gray-100 text-gray-800 border-gray-200"} flex items-center gap-1.5`}>
         {status === "approved" && <CheckCircle className="w-3 h-3" />}
         {status === "rejected" && <XCircle className="w-3 h-3" />}
-        {status === "pending" && <Loader2 className="w-3 h-3 animate-spin" />}
+        {status === "pending" && <Loader2 className="w-3 h-3" />}
         {status?.charAt(0).toUpperCase() + status?.slice(1)}
       </span>
     );
@@ -1059,7 +1059,7 @@ export default function SpeakerRequestsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 ">
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">

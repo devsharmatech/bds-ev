@@ -1405,7 +1405,7 @@ export default function MembersPage() {
                 Create, edit, view and manage members and membership fees.
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 self-start sm:self-auto">
+            <div className="flex flex-wrap gap-3 self-start sm:self-auto justify-start sm:justify-end">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -1498,7 +1498,7 @@ export default function MembersPage() {
                   <option value="unverified">Unverified</option>
                 </select>
                 </div>
-                <div className="flex gap-2 justify-end">
+                <div className="flex flex-wrap gap-2 justify-start lg:justify-end">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

@@ -88,6 +88,9 @@ export default function Sidebar({
     { name: "Events", icon: Calendar, href: "/admin/events", badge: null },
     { name: "CheckIn", icon: Users, href: "/admin/check-in", badge: null },
 
+    // Event Coupons
+    { name: "Event Coupons", icon: CreditCard, href: "/admin/event-coupons", badge: null },
+
     // Payments
     { name: "Payment History", icon: CreditCard, href: "/admin/payment-history", badge: null },
     { name: "Subscriptions", icon: CreditCard, href: "/admin/subscriptions", badge: null },

@@ -556,7 +556,7 @@ export default function EventMembersPage() {
             }
             .attendee-title {
               text-align: center;
-              margin: 30px 0;
+              margin: 10px 0;
               position: relative;
               z-index: 2;
             }
@@ -633,11 +633,18 @@ export default function EventMembersPage() {
               z-index: 2;
             }
             .qr-container {
+            height: 120px;
+            width: 120px;
               background: white;
               padding: 8px;
               border-radius: 12px;
               box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
             }
+              .qr-container img{
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+              }
             @media (max-width: 480px) {
               body {
                 padding: 10px;
@@ -660,7 +667,7 @@ export default function EventMembersPage() {
                 font-size: 9px;
               }
               .attendee-title {
-                margin: 20px 0;
+                margin: 10px 0;
               }
               .category {
                 font-size: 16px;
@@ -801,6 +808,7 @@ export default function EventMembersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+      <Toaster position="top-right" />
       {/* Add Member Modal */}
       <AnimatePresence>
         {showAddModal && (
@@ -867,7 +875,7 @@ export default function EventMembersPage() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"
+          className="flex flex-col lg:flex-row flex-wrap justify-between items-start lg:items-center gap-6"
         >
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -878,20 +886,20 @@ export default function EventMembersPage() {
                 <ChevronLeft className="w-5 h-5 text-gray-600" />
               </button>
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-[#03215F] to-[#03215F] shadow-lg">
-                <Users className="w-6 h-6 text-white" />
+                <Users className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
                   {event?.title}
                 </h1>
-                <p className="text-gray-600 mt-1">
+                <p className="text-gray-600 text-sm mt-1">
                   Manage event members and attendance
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto text-xs">
             <button
               onClick={() => {
                 fetchMembers();
@@ -935,7 +943,7 @@ export default function EventMembersPage() {
           transition={{ delay: 0.1 }}
           className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${event?.is_paid && stats.paymentPending > 0 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}
         >
-          <div className="bg-gradient-to-br from-white to-[#9cc2ed] rounded-2xl shadow-lg border border-[#9cc2ed]/50 p-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-[#9cc2ed]/50 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
@@ -951,7 +959,7 @@ export default function EventMembersPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-white to-[#AE9B66] rounded-2xl shadow-lg border border-[#AE9B66]/50 p-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-[#AE9B66]/50 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
@@ -967,7 +975,7 @@ export default function EventMembersPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-white to-[#b8352d] rounded-2xl shadow-lg border border-[#b8352d]/50 p-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-[#b8352d]/50 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
@@ -983,7 +991,7 @@ export default function EventMembersPage() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-white to-[#03215F] rounded-2xl shadow-lg border border-[#03215F]/50 p-6">
+          <div className="bg-white rounded-2xl shadow-lg border border-[#03215F]/50 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
@@ -1001,7 +1009,7 @@ export default function EventMembersPage() {
 
           {/* Payment Pending Card - Only shown for paid events */}
           {event?.is_paid && stats.paymentPending > 0 && (
-            <div className="bg-gradient-to-br from-white to-orange-400 rounded-2xl shadow-lg border border-orange-400/50 p-6">
+            <div className="bg-white rounded-2xl shadow-lg border border-orange-400/50 p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">
@@ -1026,7 +1034,7 @@ export default function EventMembersPage() {
           transition={{ delay: 0.2 }}
           className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200/50 p-6"
         >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -1160,7 +1168,7 @@ export default function EventMembersPage() {
                         animate={{ opacity: 1 }}
                         className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
                       >
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-6 text-sm sm:text-base">
                           <div className="flex items-start gap-3">
                             {member.users?.profile_image ? (
                               <img
@@ -1198,7 +1206,7 @@ export default function EventMembersPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-6 text-sm sm:text-base">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-sm">
                               <Tag className="w-4 h-4 text-[#03215F]" />
@@ -1212,7 +1220,7 @@ export default function EventMembersPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-6 text-sm sm:text-base">
                           <div className="space-y-1">
                             <div
                               className={`inline-flex items-center gap-1 text-sm font-medium ${
@@ -1244,7 +1252,7 @@ export default function EventMembersPage() {
                             )}
                           </div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-4 px-6 text-sm sm:text-base">
                           <div className="flex flex-col gap-2">
                             <div
                               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium w-fit ${
@@ -1272,8 +1280,8 @@ export default function EventMembersPage() {
                             )}
                           </div>
                         </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
+                        <td className="py-4 px-6 text-sm sm:text-base">
+                          <div className="flex flex-wrap items-center gap-2">
                             <button
                               onClick={() => handleViewDetails(member)}
                               className="p-2 rounded-lg bg-white border-2 border-gray-300 text-[#03215F] hover:bg-gray-50 hover:border-[#03215F] transition-colors hover:scale-110 active:scale-95"
@@ -1313,13 +1321,6 @@ export default function EventMembersPage() {
                                 </button>
                               );
                             })()}
-                            <button
-                              onClick={() => handleDeleteClick(member)}
-                              className="p-2 rounded-lg bg-[#b8352d] text-white hover:bg-[#b8352d]/90 transition-colors hover:scale-110 active:scale-95"
-                              title="Remove Member"
-                            >
-                              <Trash2 className="w-4 h-4 text-white" />
-                            </button>
                           </div>
                         </td>
                       </motion.tr>

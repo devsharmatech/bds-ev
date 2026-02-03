@@ -322,7 +322,7 @@ export default function EventsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Toaster position="top-right" />
 
       {/* Create Event Modal */}
@@ -671,13 +671,6 @@ export default function EventsPage() {
                               title="Edit Event"
                             >
                               <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(event)}
-                              className="p-2 rounded-lg bg-gradient-to-r from-[#b8352d] to-[#b8352d] text-white hover:opacity-90 transition-colors hover:scale-105 active:scale-95"
-                              title="Delete Event"
-                            >
-                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </div>

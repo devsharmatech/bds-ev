@@ -529,7 +529,7 @@ export default function MembershipCardPage() {
           const derived =
             data?.user?.current_subscription_plan_display_name ||
             data?.user?.current_subscription_plan_name ||
-            (data?.user?.membership_type === "paid" ? "Premium" : "Standard");
+            (data?.user?.membership_type === "paid" ? "Paid Membership" : "Free Membership");
 
           setPlanName(derived || "");
         }
@@ -558,7 +558,7 @@ export default function MembershipCardPage() {
             data?.currentSubscription?.subscription_plan_name ||
             user?.current_subscription_plan_display_name ||
             user?.current_subscription_plan_name ||
-            (user?.membership_type === "paid" ? "Premium" : "Standard");
+            (user?.membership_type === "paid" ? "Paid Membership" : "Free Membership");
           console.log("Derived plan name:", display);
           if (display) setPlanName(display);
         }
@@ -1745,7 +1745,7 @@ export default function MembershipCardPage() {
               </h1>
               <p className="text-white/80">
                 {isFreeMember
-                  ? "Upgrade to premium for your official membership card"
+                  ? "Upgrade your membership to get your official membership card"
                   : "Your digital membership card and benefits"}
               </p>
             </div>
@@ -1798,10 +1798,10 @@ export default function MembershipCardPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 mb-1">
-                    Unlock Premium Benefits
+                    Unlock Full Membership Benefits
                   </h3>
                   <p className="text-gray-600">
-                    Upgrade to premium for exclusive features including
+                    Upgrade your membership for exclusive features including
                     membership card, event discounts, and more
                   </p>
                 </div>
@@ -1842,7 +1842,7 @@ export default function MembershipCardPage() {
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#ECCF0F]/20 border border-[#ECCF0F]/30 rounded-lg">
                       <Lock className="w-4 h-4 text-[#ECCF0F]" />
                       <span className="text-sm text-gray-700 font-medium">
-                        Upgrade to premium to unlock QR code verification
+                        Upgrade your membership to unlock QR code verification
                       </span>
                     </div>
                   </div>
@@ -1856,7 +1856,7 @@ export default function MembershipCardPage() {
                   </h3>
                   <p className="text-gray-600">
                     {isFreeMember
-                      ? "Upgrade to premium to get your official membership card with QR code verification"
+                      ? "Upgrade your membership to get your official membership card with QR code verification"
                       : "This is your official BDS membership card. Show the QR code at events for verification."}
                   </p>
                 </div>
@@ -2207,7 +2207,7 @@ export default function MembershipCardPage() {
               <div className="bg-gradient-to-br from-[#ECCF0F]/10 to-[#ECCF0F]/10 rounded-xl p-6 border border-[#ECCF0F]/20">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                   <Diamond className="w-5 h-5 text-[#ECCF0F] mr-2" />
-                  Premium Features
+                  Member Benefits
                 </h3>
 
                 <div className="space-y-3">
@@ -2258,7 +2258,7 @@ export default function MembershipCardPage() {
                     className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] text-[#03215F] rounded-lg font-bold hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
                   >
                     <Crown className="w-5 h-5 text-[#03215F]" />
-                    Upgrade to Premium
+                    Upgrade Membership
                   </button>
                 </div>
               </div>
@@ -2275,7 +2275,7 @@ export default function MembershipCardPage() {
                 className="w-full px-4 py-3 bg-white text-[#03215F] rounded-lg font-bold hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 <Crown className="w-5 h-5 text-[#03215F]" />
-                Upgrade to Premium
+                Upgrade Membership
                 <ArrowRight className="w-5 h-5 text-[#03215F]" />
               </button>
             </div>
