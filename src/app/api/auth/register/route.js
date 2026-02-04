@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabaseAdmin";
+import { generateMembershipCode } from "@/lib/membershipCode";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
@@ -196,6 +197,16 @@ export async function POST(req) {
       .single();
 
     if (userError) throw userError;
+
+    // Assign membership code in format BDS-00001 (no year)
+    const membershipCode = await generateMembershipCode();
+    if (membershipCode) {
+      await supabase
+        .from("users")
+        .update({ membership_code: membershipCode })
+        .eq("id", user.id);
+      user.membership_code = membershipCode;
+    }
 
     // --------------------------------------------------
     // HANDLE FILE UPLOADS (if provided)

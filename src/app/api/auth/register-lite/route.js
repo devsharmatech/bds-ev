@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseAdmin";
+import { generateMembershipCode } from "@/lib/membershipCode";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
@@ -167,6 +168,15 @@ export async function POST(request) {
         { success: false, message: "Failed to create user", error: userInsertError?.message },
         { status: 500 }
       );
+    }
+
+    // Assign membership code in format BDS-00001 (no year)
+    const membershipCode = await generateMembershipCode();
+    if (membershipCode) {
+      await supabase
+        .from("users")
+        .update({ membership_code: membershipCode })
+        .eq("id", newUser.id);
     }
 
     // Handle optional student ID card upload (for student category)

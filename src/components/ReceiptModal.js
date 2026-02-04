@@ -9,6 +9,14 @@ export default function ReceiptModal({ receipt, onClose }) {
 
   if (!receipt) return null;
 
+  const membershipType = receipt.user?.membership_type || 'free';
+  const membershipStatus = receipt.user?.membership_status || 'inactive';
+  const membershipExpiry = receipt.user?.membership_expiry_date;
+  const hasActivePaidMembership =
+    membershipType === 'paid' &&
+    membershipStatus === 'active' &&
+    (!membershipExpiry || new Date(membershipExpiry) > new Date());
+
   /* ================= UTIL ================= */
   const formatDate = (date) =>
     new Date(date).toLocaleDateString('en-BH', {
@@ -161,10 +169,12 @@ h2{
     <span>Full Name</span>
     <strong>${receipt.user?.full_name || 'N/A'}</strong>
   </div>
+  ${hasActivePaidMembership && receipt.user?.membership_code ? `
   <div class="row">
     <span>Membership ID</span>
-    <strong>${receipt.user?.membership_code || 'N/A'}</strong>
+    <strong>${receipt.user.membership_code}</strong>
   </div>
+  ` : ''}
   <div class="row">
     <span>Email Address</span>
     <strong>${receipt.user?.email || 'N/A'}</strong>
@@ -328,7 +338,9 @@ window.onload=()=>{window.print();setTimeout(()=>window.close(),500);}
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Membership ID</p>
-                    <p className="font-semibold text-[#03215F] bg-gray-50 p-3 rounded-lg">{receipt.user?.membership_code}</p>
+                     {hasActivePaidMembership && receipt.user?.membership_code && (
+                       <p className="font-semibold text-[#03215F] bg-gray-50 p-3 rounded-lg">{receipt.user.membership_code}</p>
+                     )}
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Email</p>

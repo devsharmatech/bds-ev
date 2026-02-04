@@ -64,7 +64,7 @@ export async function GET(req, { params }) {
 
     const { data: user } = await supabase
       .from("users")
-      .select("full_name, email, membership_code")
+      .select("full_name, email, membership_code, membership_type, membership_status, membership_expiry_date")
       .eq("id", userId)
       .single();
 

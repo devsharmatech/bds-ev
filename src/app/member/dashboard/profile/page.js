@@ -123,8 +123,7 @@ export default function ProfilePage() {
   const genders = [
     { value: '', label: 'Select Gender' },
     { value: 'male', label: 'Male' },
-    { value: 'female', label: 'Female' },
-    { value: 'other', label: 'Other' }
+    { value: 'female', label: 'Female' }
   ]
 
   // Nationality options (All countries - fetched)

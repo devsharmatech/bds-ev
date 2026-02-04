@@ -351,7 +351,7 @@ export default function MembersPage() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("created_at.desc");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [planFilter, setPlanFilter] = useState("all");
   const [verifiedFilter, setVerifiedFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all"); // all | today
   const [fromDate, setFromDate] = useState("");
@@ -367,7 +367,9 @@ export default function MembersPage() {
     free: 0,
     verified: 0,
     pending: 0,
+    expiringSoon: 0,
   });
+  const [planStats, setPlanStats] = useState([]);
   
   // Country options state (for nationality dropdown)
   const [countryOptions, setCountryOptions] = useState(COUNTRY_OPTIONS);
@@ -451,7 +453,7 @@ export default function MembersPage() {
   useEffect(() => {
     fetchMembers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, query, sort, perPage, statusFilter, typeFilter, verifiedFilter, dateFilter, fromDate, toDate]);
+  }, [page, query, sort, perPage, statusFilter, planFilter, verifiedFilter, dateFilter, fromDate, toDate]);
 
   useEffect(() => {
     fetchSummary();
@@ -529,9 +531,58 @@ export default function MembersPage() {
       const inactiveCount = nonAdmins.filter((m) => m.membership_status === "inactive").length;
       const blockedCount = nonAdmins.filter((m) => m.membership_status === "blocked").length;
       const paidCount = nonAdmins.filter((m) => m.membership_type === "paid").length;
-      const freeCount = Math.max(0, totalCount - paidCount);
+      // Free members are explicitly marked as "free" or have no membership_type set
+      const freeCount = nonAdmins.filter((m) => !m.membership_type || m.membership_type === "free").length;
       const verifiedCount = nonAdmins.filter((m) => m.is_member_verified === true).length;
-      const pendingCount = nonAdmins.filter((m) => m.membership_status === "pending").length;
+      // Pending approvals = members who are NOT verified yet
+      const pendingCount = nonAdmins.filter((m) => !m.is_member_verified).length;
+
+      // Members whose membership is expiring in the next 30 days
+      const now = new Date();
+      const in30Days = new Date(now);
+      in30Days.setDate(in30Days.getDate() + 30);
+      const expiringSoonCount = nonAdmins.filter((m) => {
+        if (!m.membership_expiry_date) return false;
+        const d = new Date(m.membership_expiry_date);
+        if (Number.isNaN(d.getTime())) return false;
+        return d >= now && d <= in30Days;
+      }).length;
+
+      // Distribution by membership plan type (exact 5 buckets)
+      const planMap = {
+        Active: 0,
+        Associate: 0,
+        Student: 0,
+        Honorary: 0,
+        Free: 0,
+      };
+
+      nonAdmins.forEach((m) => {
+        // All non-paid (or missing type) members are counted in Free
+        if (!m.membership_type || m.membership_type === "free") {
+          planMap.Free += 1;
+          return;
+        }
+
+        const rawName = (m.current_subscription_plan_name || "").toLowerCase().trim();
+
+        if (rawName.includes("student")) planMap.Student += 1;
+        else if (rawName.includes("associate")) planMap.Associate += 1;
+        else if (rawName.includes("honorary")) planMap.Honorary += 1;
+        else if (rawName.includes("free")) planMap.Free += 1;
+        else if (rawName.includes("active") || rawName.includes("dentist")) planMap.Active += 1;
+        else planMap.Active += 1; // default bucket for paid without clear plan name
+      });
+
+      const orderedPlans = ["Active", "Associate", "Student", "Honorary", "Free"];
+      const planStatsData = orderedPlans.map((name) => {
+        const count = planMap[name] || 0;
+        return {
+          name,
+          count,
+          percentage: totalCount ? Math.round((count / totalCount) * 100) : 0,
+        };
+      });
 
       setSummaryCounts({
         total: totalCount,
@@ -543,7 +594,9 @@ export default function MembersPage() {
         free: freeCount,
         verified: verifiedCount,
         pending: pendingCount,
+        expiringSoon: expiringSoonCount,
       });
+      setPlanStats(planStatsData);
     } catch {
       // ignore
     }
@@ -561,8 +614,8 @@ export default function MembersPage() {
       if (statusFilter && statusFilter !== "all") {
         url.searchParams.set("status", statusFilter);
       }
-      if (typeFilter && typeFilter !== "all") {
-        url.searchParams.set("type", typeFilter);
+      if (planFilter && planFilter !== "all") {
+        url.searchParams.set("plan", planFilter);
       }
       if (verifiedFilter && verifiedFilter !== "all") {
         url.searchParams.set("verified", verifiedFilter === "verified" ? "true" : "false");
@@ -1257,7 +1310,7 @@ export default function MembersPage() {
         </td>
         <td className="p-3 sm:p-4 hidden lg:table-cell">
           <div className="text-xs sm:text-sm text-gray-700">
-            {member.membership_type === "paid" ? "Paid" : "Free"}
+            {member.current_subscription_plan_name || (member.membership_type === "paid" ? "Active" : "Free")}
           </div>
         </td>
         <td className="p-3 sm:p-4 hidden lg:table-cell">
@@ -1480,12 +1533,15 @@ export default function MembersPage() {
                   <option value="pending">Pending</option>
                 </select>
                 <select
-                  value={typeFilter}
-                  onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
+                  value={planFilter}
+                  onChange={(e) => { setPlanFilter(e.target.value); setPage(1); }}
                   className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm"
                 >
-                  <option value="all">All Types</option>
-                  <option value="paid">Paid</option>
+                  <option value="all">All Plans</option>
+                  <option value="active">Active</option>
+                  <option value="associate">Associate</option>
+                  <option value="student">Student</option>
+                  <option value="honorary">Honorary</option>
                   <option value="free">Free</option>
                 </select>
                 <select
@@ -1562,31 +1618,31 @@ export default function MembersPage() {
             </div>
           </div>
 
-          {/* Stats Cards (simplified) */}
+          {/* Top Stats Cards - Members CRM style */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {[
+              {
+                label: "New Registrations",
+                value: summaryCounts.today,
+                icon: Users,
+                color: "from-[#10B981] to-[#10B981]",
+              },
+              {
+                label: "Expiring Soon (30 Days)",
+                value: summaryCounts.expiringSoon,
+                icon: Calendar,
+                color: "from-[#F59E0B] to-[#F59E0B]",
+              },
+              {
+                label: "Pending Approvals",
+                value: summaryCounts.pending,
+                icon: Shield,
+                color: "from-[#9cc2ed] to-[#03215F]",
+              },
               {
                 label: "Total Members",
                 value: summaryCounts.total,
                 icon: Users,
-                color: "from-[#9cc2ed] to-[#03215F]",
-              },
-              {
-                label: "Today's Registrations",
-                value: summaryCounts.today,
-                icon: Calendar,
-                color: "from-[#10B981] to-[#10B981]",
-              },
-              {
-                label: "Active Members",
-                value: summaryCounts.active,
-                icon: UserCheck,
-                color: "from-[#10B981] to-[#10B981]",
-              },
-              {
-                label: "Paid Members",
-                value: summaryCounts.paid,
-                icon: Shield,
                 color: "from-[#AE9B66] to-[#AE9B66]",
               },
             ].map((stat, index) => (
@@ -1615,6 +1671,48 @@ export default function MembersPage() {
               </motion.div>
             ))}
           </div>
+
+          {/* Membership Distribution by Plan */}
+          {planStats.length > 0 && (
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 shadow-lg mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Membership Distribution by Plan</h3>
+                <p className="text-sm text-gray-500">
+                  {summaryCounts.total} total members
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {planStats.map((plan) => (
+                  <div
+                    key={plan.name}
+                    className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col gap-3 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                          {plan.name}
+                        </p>
+                        <p className="text-xl font-bold text-gray-900 mt-1">
+                          {plan.count}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-[#03215F] to-[#AE9B66]"
+                          style={{ width: `${Math.min(plan.percentage, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        {plan.percentage}% of total base
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </motion.header>
 
         {/* Members Table */}
@@ -2046,7 +2144,6 @@ export default function MembersPage() {
                       <option value="">Select</option>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
-                      <option value="other">Other</option>
                     </select>
                   </div>
 
@@ -3431,7 +3528,6 @@ export default function MembersPage() {
                       <option value="">Select</option>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
-                      <option value="other">Other</option>
                     </select>
                   </div>
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseAdmin';
+import { generateMembershipCode } from '@/lib/membershipCode';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
@@ -13,6 +14,7 @@ export async function GET(request) {
     const sort = url.searchParams.get('sort') || 'created_at.desc';
     const status = (url.searchParams.get('status') || '').trim();
     const type = (url.searchParams.get('type') || '').trim();
+    const plan = (url.searchParams.get('plan') || '').trim().toLowerCase();
     const verified = (url.searchParams.get('verified') || '').trim();
     const date = (url.searchParams.get('date') || '').trim();
     const from_date = (url.searchParams.get('from_date') || '').trim();
@@ -76,7 +78,13 @@ export async function GET(request) {
       query = query.eq('membership_status', status);
     }
 
-    if (type) {
+    if (plan) {
+      if (plan === 'free') {
+        query = query.eq('membership_type', 'free');
+      } else {
+        query = query.eq('membership_type', 'paid').ilike('current_subscription_plan_name', `%${plan}%`);
+      }
+    } else if (type) {
       query = query.eq('membership_type', type);
     }
 
@@ -144,7 +152,13 @@ export async function GET(request) {
       countQuery = countQuery.eq('membership_status', status);
     }
 
-    if (type) {
+    if (plan) {
+      if (plan === 'free') {
+        countQuery = countQuery.eq('membership_type', 'free');
+      } else {
+        countQuery = countQuery.eq('membership_type', 'paid').ilike('current_subscription_plan_name', `%${plan}%`);
+      }
+    } else if (type) {
       countQuery = countQuery.eq('membership_type', type);
     }
 
@@ -301,6 +315,13 @@ export async function POST(request) {
     }
 
     // create user
+    let membershipCode = body.membership_code && body.membership_code.trim()
+      ? body.membership_code.trim()
+      : null;
+    if (!membershipCode) {
+      membershipCode = await generateMembershipCode();
+    }
+
     const { data: user, error: insertError } = await supabase
       .from('users')
       .insert({
@@ -310,7 +331,7 @@ export async function POST(request) {
         phone: body.phone || null,
         mobile: body.mobile || null,
         role: body.role || 'member',
-        membership_code: body.membership_code || null,
+        membership_code: membershipCode,
         membership_status: body.membership_status || 'active',
         membership_type: membershipType,
         membership_expiry_date: membershipExpiryDate,
