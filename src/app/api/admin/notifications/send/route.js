@@ -70,7 +70,7 @@ export async function POST(request) {
       );
     }
 
-    let { title, body, target, membership_type, event_id, data } = await request.json();
+    let { title, body, target, membership_type, plan, event_id, data } = await request.json();
     
     // Ensure data object exists
     if (!data) {
@@ -98,6 +98,28 @@ export async function POST(request) {
       query = query.eq('membership_type', 'paid');
     } else if (target === 'membership_type' && membership_type) {
       query = query.eq('membership_type', membership_type);
+    } else if (target === 'plan' && plan) {
+      const normalizedPlan = String(plan).trim().toLowerCase();
+      const planPatterns = {
+        active: ['%active%'],
+        associate: ['%associate%'],
+        student: ['%student%'],
+        honorary: ['%honorary%'],
+        free: ['%free%'],
+      };
+
+      const patterns = planPatterns[normalizedPlan] || [`%${normalizedPlan}%`];
+
+      if (normalizedPlan === 'free') {
+        query = query.or(
+          `membership_type.eq.free,current_subscription_plan_name.ilike.${patterns[0]}`
+        );
+      } else {
+        const orFilters = patterns
+          .map((p) => `current_subscription_plan_name.ilike.${p}`)
+          .join(',');
+        query = query.eq('membership_type', 'paid').or(orFilters);
+      }
     } else if (target === 'event' && event_id) {
       // Get event details first to ensure it exists and get slug
       const { data: eventData } = await supabase
@@ -235,6 +257,7 @@ export async function POST(request) {
         body,
         target,
         membership_type: membership_type || null,
+        plan: plan || null,
         event_id: event_id || null,
         sent_count: sent,
         failed_count: failed,

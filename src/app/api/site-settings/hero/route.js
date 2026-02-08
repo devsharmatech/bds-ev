@@ -14,11 +14,12 @@ export async function GET() {
 
     if (error) {
       console.error('[SITE-SETTINGS-HERO] Error:', error);
-      // Return defaults if table doesn't exist or error
+      // Return empty values if table doesn't exist or error
       return NextResponse.json({
         success: true,
-        video_url: '/file.mp4',
-        poster_url: '/bgn.png',
+        video_url: '',
+        poster_url: '',
+        slides: [],
       });
     }
 
@@ -49,17 +50,18 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      video_url: settingsObj.hero_video_url || '/file.mp4',
-      poster_url: settingsObj.hero_poster_url || '/bgn.png',
+      video_url: settingsObj.hero_video_url || '',
+      poster_url: settingsObj.hero_poster_url || '',
       slides,
     });
   } catch (error) {
     console.error('[SITE-SETTINGS-HERO] Error:', error);
-    // Return defaults on error
+    // Return empty values on error
     return NextResponse.json({
       success: true,
-      video_url: '/file.mp4',
-      poster_url: '/bgn.png',
+      video_url: '',
+      poster_url: '',
+      slides: [],
     });
   }
 }

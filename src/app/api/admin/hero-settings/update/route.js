@@ -13,11 +13,21 @@ export async function POST(request) {
     const poster = formData.get('poster');
     const videoUrl = formData.get('video_url'); // For URL input
     const posterUrl = formData.get('poster_url'); // For URL input
+    const removeVideo = (formData.get('remove_video') || '').toString() === 'true';
+    const removePoster = (formData.get('remove_poster') || '').toString() === 'true';
 
     const updates = [];
 
-    // Handle video file upload
-    if (video && video.size > 0) {
+    // Handle video removal
+    if (removeVideo) {
+      updates.push({
+        setting_key: 'hero_video_url',
+        setting_value: '',
+        setting_type: 'video',
+        description: 'Background video for the hero section on homepage',
+        updated_at: new Date().toISOString(),
+      });
+    } else if (video && video.size > 0) {
       const fileExt = video.name.split('.').pop();
       const fileName = `hero-video-${uuidv4()}.${fileExt}`;
       const filePath = `hero/${fileName}`;
@@ -58,8 +68,16 @@ export async function POST(request) {
       });
     }
 
-    // Handle poster image upload
-    if (poster && poster.size > 0) {
+    // Handle poster removal
+    if (removePoster) {
+      updates.push({
+        setting_key: 'hero_poster_url',
+        setting_value: '',
+        setting_type: 'image',
+        description: 'Poster image shown before video loads',
+        updated_at: new Date().toISOString(),
+      });
+    } else if (poster && poster.size > 0) {
       const fileExt = poster.name.split('.').pop();
       const fileName = `hero-poster-${uuidv4()}.${fileExt}`;
       const filePath = `hero/${fileName}`;
@@ -129,8 +147,8 @@ export async function POST(request) {
       success: true,
       message: 'Hero settings updated successfully',
       settings: {
-        hero_video_url: settingsObj.hero_video_url || '/file.mp4',
-        hero_poster_url: settingsObj.hero_poster_url || '/bgn.png',
+        hero_video_url: settingsObj.hero_video_url || '',
+        hero_poster_url: settingsObj.hero_poster_url || '',
       },
     });
   } catch (error) {

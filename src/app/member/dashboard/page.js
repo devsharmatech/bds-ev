@@ -42,6 +42,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { getFCMToken } from '@/lib/firebase'
 
 // Utility functions
 const formatBHD = (amount) => {
@@ -88,6 +89,7 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState([])
   const [isMobile, setIsMobile] = useState(false)
   const [planName, setPlanName] = useState('')
+  const [pushLoading, setPushLoading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -258,6 +260,39 @@ export default function DashboardPage() {
     }
   }
 
+  const handleEnablePush = async () => {
+    try {
+      setPushLoading(true)
+      const token = await getFCMToken()
+
+      if (!token) {
+        toast.error('Unable to enable notifications. Please allow notifications in your browser.')
+        return
+      }
+
+      const res = await fetch('/api/notifications/device-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ device_token: token, platform: 'web' })
+      })
+
+      const data = await res.json()
+      if (!data.success) {
+        toast.error(data.message || 'Failed to enable notifications')
+        return
+      }
+
+      setUser((prev) => (prev ? { ...prev, device_token: token } : prev))
+      toast.success('Push notifications enabled')
+    } catch (error) {
+      console.error('Enable push error:', error)
+      toast.error('Failed to enable notifications')
+    } finally {
+      setPushLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -368,6 +403,8 @@ export default function DashboardPage() {
     ...(canShowMembershipId ? [{ label: 'Membership ID', value: user?.membership_code, icon: BadgeCheck }] : []),
     { label: 'Membership Type', value: planName || (isPremiumMember ? 'Paid Membership' : 'Free Membership'), icon: Crown }
   ]
+
+  const showPushStrip = user && !user.device_token
 
   return (
     <div className="space-y-4 md:space-y-8 pb-16 md:pb-8">
@@ -825,6 +862,30 @@ export default function DashboardPage() {
 
       
 
+      {showPushStrip && (
+        <div className="bg-[#03215F] text-white rounded-xl px-4 py-3 shadow-lg mx-2 md:mx-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-white/10 rounded-lg">
+                <Bell className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-semibold">Enable push notifications</p>
+                <p className="text-xs sm:text-sm text-white/80">
+                  Get reminders and important updates directly on your device.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleEnablePush}
+              disabled={pushLoading}
+              className="px-4 py-2 bg-white text-[#03215F] rounded-md font-semibold hover:bg-white/90 transition disabled:opacity-60"
+            >
+              {pushLoading ? 'Enabling...' : 'Enable'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

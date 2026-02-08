@@ -1393,7 +1393,7 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-3">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -1640,7 +1640,7 @@ export default function MembersPage() {
                 color: "from-[#9cc2ed] to-[#03215F]",
               },
               {
-                label: "Total Members",
+                label: "Total Records",
                 value: summaryCounts.total,
                 icon: Users,
                 color: "from-[#AE9B66] to-[#AE9B66]",
@@ -1678,7 +1678,7 @@ export default function MembersPage() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Membership Distribution by Plan</h3>
                 <p className="text-sm text-gray-500">
-                  {summaryCounts.total} total members
+                  {summaryCounts.total} total records
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

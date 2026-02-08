@@ -117,7 +117,7 @@ export default function Navbar() {
 
   const mainNavItems = [
     { name: "Home", href: "/", icon: <Home className="w-4 h-4" /> },
-    { name: "About Us", href: "/about", icon: <User className="w-4 h-4" /> },
+    { name: "Gallery", href: "/gallery", icon: <ImageIcon className="w-4 h-4" /> },
     {
       name: "Upcoming Events",
       href: "/events",
@@ -144,14 +144,14 @@ export default function Navbar() {
       icon: <MoreVertical className="w-4 h-4" />,
       submenu: [
         {
+          name: "About Us",
+          href: "/about",
+          icon: <User className="w-4 h-4" />,
+        },
+        {
           name: "Research",
           href: "/research",
           icon: <FileText className="w-4 h-4" />,
-        },
-        {
-          name: "Gallery",
-          href: "/gallery",
-          icon: <ImageIcon className="w-4 h-4" />,
         },
       ],
     },
@@ -484,7 +484,34 @@ export default function Navbar() {
             {/* Desktop Navigation (very large screens only) */}
             <div className="hidden 2xl:flex items-center space-x-1">
               {mainNavItems.map((item) => {
-                if (item.name === "Committees" || item.name === "More") {
+                if (item.name === "Committees") {
+                  return (
+                    <div key={item.name} className="relative group">
+                      <Link
+                        href={item.href}
+                        className="flex items-center space-x-1 px-2 py-2 text-[#03215F] hover:text-[#AE9B66] transition-colors font-medium text-sm"
+                      >
+                        {item.icon}
+                        <span>{item.name}</span>
+                        <ChevronDown className="w-4 h-4" />
+                      </Link>
+                      {/* Dropdown Menu */}
+                      <div className="absolute top-full left-0 w-48 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+                        {item.submenu?.map((subItem) => (
+                          <Link
+                            key={subItem.name}
+                            href={subItem.href}
+                            className="block px-2 py-3 text-[#03215F] hover:bg-gray-50 hover:text-[#AE9B66] transition-colors first:rounded-t-lg last:rounded-b-lg text-sm"
+                          >
+                            <span className="inline-flex items-center gap-2">{subItem.icon}{subItem.name}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (item.name === "More") {
                   return (
                     <div key={item.name} className="relative group">
                       <button className="flex items-center space-x-1 px-2 py-2 text-[#03215F] hover:text-[#AE9B66] transition-colors font-medium text-sm">
@@ -506,18 +533,18 @@ export default function Navbar() {
                       </div>
                     </div>
                   );
-                } else {
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className="flex items-center space-x-2 px-2 py-2 text-[#03215F] hover:text-[#AE9B66] transition-colors font-medium text-sm"
-                    >
-                      {item.icon}
-                      <span>{item.name}</span>
-                    </Link>
-                  );
                 }
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="flex items-center space-x-2 px-2 py-2 text-[#03215F] hover:text-[#AE9B66] transition-colors font-medium text-sm"
+                  >
+                    {item.icon}
+                    <span>{item.name}</span>
+                  </Link>
+                );
               })}
             </div>
 

@@ -26,8 +26,8 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       settings: {
-        hero_video_url: settingsObj.hero_video_url || '/file.mp4',
-        hero_poster_url: settingsObj.hero_poster_url || '/bgn.png',
+        hero_video_url: settingsObj.hero_video_url || '',
+        hero_poster_url: settingsObj.hero_poster_url || '',
       },
     });
   } catch (error) {

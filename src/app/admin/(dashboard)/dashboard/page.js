@@ -330,7 +330,7 @@ export default function AdminDashboardPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <StatCard
-              title="Total Members"
+              title="Total Records"
               value={stats?.total_members}
               icon={Users}
               color="blue"

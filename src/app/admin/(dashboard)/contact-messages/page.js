@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -45,6 +46,11 @@ export default function ContactMessagesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [selectAllAcrossPages, setSelectAllAcrossPages] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePayload, setDeletePayload] = useState({ ids: [], deleteAll: false });
+  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -52,7 +58,7 @@ export default function ContactMessagesPage() {
 
   useEffect(() => {
     fetchMessages();
-  }, [page, statusFilter]);
+  }, [page, statusFilter, searchTerm]);
 
   const fetchMessages = async () => {
     setLoading(true);
@@ -62,12 +68,15 @@ export default function ContactMessagesPage() {
         limit: limit.toString(),
         status: statusFilter,
       });
+      if (searchTerm) params.set('search', searchTerm);
 
       const response = await fetch(`/api/admin/contact-messages?${params}`);
       const data = await response.json();
 
       if (data.success) {
         setMessages(data.messages || []);
+        setSelectedIds(new Set());
+        setSelectAllAcrossPages(false);
         setTotalPages(data.pagination?.totalPages || 1);
         setTotal(data.pagination?.total || 0);
       } else {
@@ -120,6 +129,71 @@ export default function ContactMessagesPage() {
     if (message.status === "new") {
       updateMessageStatus(message.id, "read");
     }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setSelectAllAcrossPages(false);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredMessages.length && filteredMessages.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredMessages.map((m) => m.id)));
+    }
+    setSelectAllAcrossPages(false);
+  };
+
+  const deleteMessages = async (ids, deleteAll = false) => {
+    if (!deleteAll && !ids.length) return;
+    try {
+      setDeleting(true);
+      const res = await fetch('/api/admin/contact-messages', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(deleteAll
+          ? { all: true, status: statusFilter, search: searchTerm }
+          : { ids }
+        )
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Message(s) deleted');
+        setSelectedIds(new Set());
+        setSelectAllAcrossPages(false);
+        if (selectedMessage && ids.includes(selectedMessage.id)) {
+          setShowDetailModal(false);
+          setSelectedMessage(null);
+        }
+        fetchMessages();
+      } else {
+        toast.error(data.message || 'Failed to delete messages');
+      }
+    } catch (error) {
+      console.error('Error deleting messages:', error);
+      toast.error('Failed to delete messages');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const requestDelete = (ids, deleteAll = false) => {
+    if (!deleteAll && !ids.length) return;
+    setDeletePayload({ ids, deleteAll });
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    const { ids, deleteAll } = deletePayload;
+    await deleteMessages(ids, deleteAll);
+    setShowDeleteConfirm(false);
+    setDeletePayload({ ids: [], deleteAll: false });
   };
 
   const filteredMessages = messages.filter((message) => {
@@ -186,7 +260,10 @@ export default function ContactMessagesPage() {
                 type="text"
                 placeholder="Search by name, email, or message..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03215F]"
               />
             </div>
@@ -212,6 +289,59 @@ export default function ContactMessagesPage() {
             ))}
           </div>
         </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <button
+            onClick={toggleSelectAll}
+            className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm"
+          >
+            {selectedIds.size === filteredMessages.length && filteredMessages.length > 0
+              ? 'Clear Selection'
+              : 'Select All'}
+          </button>
+          <button
+            onClick={() => {
+              setSelectAllAcrossPages(true);
+              setSelectedIds(new Set(filteredMessages.map((m) => m.id)));
+            }}
+            disabled={total <= filteredMessages.length}
+            className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Select all across pages ({total})
+          </button>
+          <button
+            onClick={() => requestDelete(Array.from(selectedIds), selectAllAcrossPages)}
+            disabled={selectedIds.size === 0 && !selectAllAcrossPages}
+            className="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {deleting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Deleting...
+              </>
+            ) : (
+              <>
+                <Trash2 className="w-4 h-4" />
+                Delete Selected ({selectAllAcrossPages ? total : selectedIds.size})
+              </>
+            )}
+          </button>
+        </div>
+        {selectAllAcrossPages && (
+          <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 flex items-center justify-between">
+            <span>
+              All {total} messages in the current filter are selected.
+            </span>
+            <button
+              onClick={() => {
+                setSelectAllAcrossPages(false);
+                setSelectedIds(new Set());
+              }}
+              className="text-blue-700 hover:text-blue-900 font-semibold"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Messages List */}
@@ -240,6 +370,15 @@ export default function ContactMessagesPage() {
                 onClick={() => handleViewMessage(message)}
               >
                 <div className="flex items-start justify-between gap-4">
+                  <div className="pt-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(message.id)}
+                      onChange={() => toggleSelect(message.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 text-[#03215F] border-gray-300 rounded"
+                    />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="p-2 bg-[#03215F]/10 rounded-lg">
@@ -261,6 +400,18 @@ export default function ContactMessagesPage() {
                         <StatusIcon className="w-3 h-3" />
                         {statusOption?.label || message.status}
                       </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          requestDelete([message.id]);
+                        }}
+                        disabled={deleting}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4 mt-4">
@@ -412,6 +563,14 @@ export default function ContactMessagesPage() {
 
               {/* Actions */}
               <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => requestDelete([selectedMessage.id])}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
                 <button
                   onClick={() => updateMessageStatus(selectedMessage.id, "read")}
                   className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-2"
@@ -440,6 +599,56 @@ export default function ContactMessagesPage() {
                   <Mail className="w-4 h-4" />
                   Reply via Email
                 </a>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+          >
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900">Confirm Delete</h3>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700">
+                {deletePayload.deleteAll
+                  ? `Delete all ${total} messages that match the current filters?`
+                  : `Delete ${deletePayload.ids.length} message${deletePayload.ids.length > 1 ? 's' : ''}?`}
+              </p>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete'
+                  )}
+                </button>
               </div>
             </div>
           </motion.div>

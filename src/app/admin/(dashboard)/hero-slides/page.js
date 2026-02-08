@@ -7,6 +7,7 @@ import {
   Plus,
   Edit2,
   Trash2,
+  X,
   Loader2,
   Upload,
   ArrowUp,
@@ -22,6 +23,8 @@ const emptyForm = {
   subtitle: "",
   description: "",
   imageFile: null,
+  imageUrl: "",
+  removeImage: false,
   slideType: "content",
   buttonText: "",
   buttonUrl: "",
@@ -142,6 +145,8 @@ export default function HeroSlidesPage() {
       secondaryButtonText: slide.secondary_button_text || "",
       secondaryButtonUrl: slide.secondary_button_url || "",
       imageFile: null,
+      imageUrl: slide.image_url || "",
+      removeImage: false,
     });
     setIsEditing(true);
     setShowForm(true);
@@ -185,6 +190,7 @@ export default function HeroSlidesPage() {
     if (form.buttonUrl) formData.append("button_url", form.buttonUrl);
     if (form.secondaryButtonText) formData.append("secondary_button_text", form.secondaryButtonText);
     if (form.secondaryButtonUrl) formData.append("secondary_button_url", form.secondaryButtonUrl);
+    if (form.removeImage) formData.append("remove_image", "true");
     if (form.imageFile) formData.append("image", form.imageFile);
 
     const method = isEditing ? "PUT" : "POST";
@@ -238,29 +244,47 @@ export default function HeroSlidesPage() {
         </div>
       </div>
 
-      {/* Form */}
+      {/* Form Modal */}
       <AnimatePresence>
         {showForm && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={resetForm}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {isEditing ? "Edit Slide" : "Create New Slide"}
-              </h2>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="text-sm text-gray-500 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.98 }}
+              className="bg-white rounded-xl shadow-xl border border-gray-200 p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {isEditing ? "Edit Slide" : "Create New Slide"}
+                </h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="text-sm text-gray-500 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
+                    aria-label="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Title</label>
@@ -383,6 +407,24 @@ export default function HeroSlidesPage() {
                   <ImageIcon className="w-4 h-4" />
                   Optional Slide Image
                 </label>
+                {isEditing && form.imageUrl && !form.removeImage && !form.imageFile && (
+                  <div className="relative aspect-video w-full max-w-lg overflow-hidden rounded-lg border border-gray-200">
+                    <img
+                      src={form.imageUrl}
+                      alt="Current slide"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                {form.imageFile && (
+                  <div className="relative aspect-video w-full max-w-lg overflow-hidden rounded-lg border border-gray-200">
+                    <img
+                      src={URL.createObjectURL(form.imageFile)}
+                      alt="Selected slide"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <label className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 rounded-lg text-sm font-medium cursor-pointer hover:bg-gray-200 transition">
                     <Upload className="w-4 h-4" />
@@ -393,14 +435,27 @@ export default function HeroSlidesPage() {
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null;
-                        setForm((f) => ({ ...f, imageFile: file }));
+                        setForm((f) => ({ ...f, imageFile: file, removeImage: false }));
                       }}
                     />
                   </label>
+                  {isEditing && form.imageUrl && !form.imageFile && !form.removeImage && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, removeImage: true }))}
+                      className="inline-flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Remove Image
+                    </button>
+                  )}
                   <p className="text-xs text-gray-500">
                     Recommended landscape image, max 5MB. Shown beside the hero text on desktop and above it on mobile.
                   </p>
                 </div>
+                {isEditing && form.removeImage && (
+                  <p className="text-xs text-red-600">Image will be removed when you save.</p>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
@@ -428,7 +483,8 @@ export default function HeroSlidesPage() {
                   )}
                 </button>
               </div>
-            </form>
+              </form>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -2,6 +2,14 @@ import { supabase } from '@/lib/supabaseAdmin';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
+function getMediaPathFromUrl(url) {
+  if (!url) return null;
+  const marker = '/storage/v1/object/public/media/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.substring(idx + marker.length);
+}
+
 async function getSlides() {
   const { data, error } = await supabase
     .from('hero_slides')
@@ -138,6 +146,7 @@ export async function PUT(request) {
     const isActive = formData.get('is_active');
     const showStatsRow = formData.get('show_stats_row');
     const image = formData.get('image');
+    const removeImage = (formData.get('remove_image') || '').toString() === 'true';
     const { data: slides, error: fetchError } = await supabase
       .from('hero_slides')
       .select('*')
@@ -162,7 +171,14 @@ export async function PUT(request) {
     if (isActive !== null) slide.is_active = isActive === 'true';
     if (showStatsRow !== null) slide.show_stats_row = showStatsRow === 'true';
 
-    if (image && typeof image === 'object' && image.size > 0) {
+    if (removeImage) {
+      const path = getMediaPathFromUrl(slide.image_url);
+      if (path) {
+        await supabase.storage.from('media').remove([path]);
+      }
+      slide.image_url = null;
+    }
+    if (!removeImage && image && typeof image === 'object' && image.size > 0) {
       const ext = image.name.split('.').pop();
       const filename = `hero-slide-${id}-${uuidv4()}.${ext}`;
       const filePath = `hero-slides/${filename}`;

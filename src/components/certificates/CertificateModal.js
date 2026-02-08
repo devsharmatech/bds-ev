@@ -184,8 +184,8 @@ export default function CertificateModal({ certificate, user, isOpen, onClose })
             </div>
 
             {/* Certificate Content */}
-            <div className="overflow-y-auto max-h-[calc(95vh-80px)] bg-gray-100 p-4">
-              <div className="bg-white shadow-lg">
+            <div className="overflow-auto max-h-[calc(95vh-80px)] bg-gray-100 p-4">
+              <div className="bg-white shadow-lg mx-auto" style={{ width: '816px', minWidth: '816px' }}>
                 <div ref={certificateRef}>
                   <CertificateTemplate 
                     certificate={{ 

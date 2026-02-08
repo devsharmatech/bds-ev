@@ -36,6 +36,7 @@ import {
   Printer,
   User,
   MessageSquare,
+  Award,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -46,6 +47,7 @@ import DeleteModal2 from "@/components/DeleteModal2";
 import MemberDetailsModal from "@/components/events/MemberDetailsModal";
 import CheckInModal from "@/components/events/CheckInModal";
 import EventTabs from "@/components/events/EventTabs";
+import CertificateModal from "@/components/certificates/CertificateModal";
 
 // Format BHD currency
 const formatBHD = (amount) => {
@@ -79,6 +81,15 @@ const formatTimeBH = (dateString) => {
     minute: "2-digit",
     timeZone: "Asia/Bahrain",
   });
+};
+
+const isEventCompleted = (eventData) => {
+  if (!eventData) return false;
+  const now = new Date();
+  return (
+    eventData.status === "completed" ||
+    (eventData.end_datetime && new Date(eventData.end_datetime) < now)
+  );
 };
 
 export default function EventMembersPage() {
@@ -122,6 +133,9 @@ export default function EventMembersPage() {
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
+  const [selectedCertificate, setSelectedCertificate] = useState(null);
+  const [selectedCertificateUser, setSelectedCertificateUser] = useState(null);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
 
   // Fetch event details and members
   const fetchData = async () => {
@@ -793,6 +807,40 @@ export default function EventMembersPage() {
     printWindow.document.close();
   };
 
+  const handlePrintCertificate = (member) => {
+    if (!event) {
+      toast.error("Event information not found");
+      return;
+    }
+
+    if (!isEventCompleted(event)) {
+      toast.error("Certificate will be available after the event is completed.");
+      return;
+    }
+
+    if (!member?.checked_in) {
+      toast.error("Certificate is only available for checked-in attendees.");
+      return;
+    }
+
+    const certificate = {
+      id: member.id,
+      event_id: event.id,
+      event_title: event.title,
+      event_date: event.start_datetime,
+      end_datetime: event.end_datetime,
+      venue_name: event.venue_name,
+      checked_in_at: member.checked_in_at,
+      certificate_id: `CERT-${member.id.slice(0, 8).toUpperCase()}`,
+      event_status: event.status,
+      member_name: member.users?.full_name || "",
+    };
+
+    setSelectedCertificate(certificate);
+    setSelectedCertificateUser(member.users || null);
+    setShowCertificateModal(true);
+  };
+
   if (loading && !event) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
@@ -807,7 +855,7 @@ export default function EventMembersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-2">
       <Toaster position="top-right" />
       {/* Add Member Modal */}
       <AnimatePresence>
@@ -869,6 +917,20 @@ export default function EventMembersPage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Certificate Modal */}
+      {showCertificateModal && selectedCertificate && (
+        <CertificateModal
+          certificate={selectedCertificate}
+          user={selectedCertificateUser}
+          isOpen={showCertificateModal}
+          onClose={() => {
+            setShowCertificateModal(false);
+            setSelectedCertificate(null);
+            setSelectedCertificateUser(null);
+          }}
+        />
+      )}
 
       <div className="mx-auto space-y-6">
         {/* HEADER */}
@@ -1296,6 +1358,25 @@ export default function EventMembersPage() {
                                 title="Print Badge"
                               >
                                 <Printer className="w-4 h-4 text-white" />
+                              </button>
+                            )}
+                            {member.checked_in && isEventCompleted(event) && (
+                              <button
+                                onClick={() => handlePrintCertificate(member)}
+                                className="p-2 rounded-lg bg-gradient-to-r from-[#03215F] to-[#b8352d] text-white hover:opacity-90 transition-opacity hover:scale-110 active:scale-95"
+                                title="Print Certificate"
+                              >
+                                <Award className="w-4 h-4 text-white" />
+                              </button>
+                            )}
+                            {member.checked_in && !isEventCompleted(event) && (
+                              <button
+                                disabled
+                                className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed"
+                                title="Certificate will be available after the event is completed"
+                              >
+                                <Award className="w-4 h-4 text-gray-500" />
+                                <span className="text-xs font-medium">Pending</span>
                               </button>
                             )}
                             {(() => {

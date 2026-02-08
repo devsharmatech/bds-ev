@@ -21,8 +21,8 @@ export default function HeroSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
-    video_url: '/file.mp4',
-    poster_url: '/bgn.png',
+    video_url: '',
+    poster_url: '',
   });
   
   const [videoFile, setVideoFile] = useState(null);
@@ -33,6 +33,8 @@ export default function HeroSettingsPage() {
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const [posterUrlInput, setPosterUrlInput] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [removeVideo, setRemoveVideo] = useState(false);
+  const [removePoster, setRemovePoster] = useState(false);
   
   const videoRef = useRef(null);
   const videoInputRef = useRef(null);
@@ -51,8 +53,8 @@ export default function HeroSettingsPage() {
       
       if (data.success) {
         setSettings({
-          video_url: data.settings.hero_video_url || '/file.mp4',
-          poster_url: data.settings.hero_poster_url || '/bgn.png',
+          video_url: data.settings.hero_video_url || '',
+          poster_url: data.settings.hero_poster_url || '',
         });
         setVideoUrlInput(data.settings.hero_video_url || '');
         setPosterUrlInput(data.settings.hero_poster_url || '');
@@ -74,6 +76,7 @@ export default function HeroSettingsPage() {
         return;
       }
       setVideoFile(file);
+      setRemoveVideo(false);
       const url = URL.createObjectURL(file);
       setVideoPreview(url);
     }
@@ -88,6 +91,7 @@ export default function HeroSettingsPage() {
         return;
       }
       setPosterFile(file);
+      setRemovePoster(false);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPosterPreview(reader.result);
@@ -123,6 +127,8 @@ export default function HeroSettingsPage() {
         if (videoFile) formData.append('video', videoFile);
         if (posterFile) formData.append('poster', posterFile);
       }
+      if (removeVideo) formData.append('remove_video', 'true');
+      if (removePoster) formData.append('remove_poster', 'true');
 
       const res = await fetch('/api/admin/hero-settings/update', {
         method: 'POST',
@@ -142,6 +148,8 @@ export default function HeroSettingsPage() {
         setPosterFile(null);
         setVideoPreview(null);
         setPosterPreview(null);
+        setRemoveVideo(false);
+        setRemovePoster(false);
       } else {
         toast.error(data.error || 'Failed to save settings', { id: toastId });
       }
@@ -161,6 +169,8 @@ export default function HeroSettingsPage() {
     setPosterPreview(null);
     setVideoUrlInput(settings.video_url);
     setPosterUrlInput(settings.poster_url);
+    setRemoveVideo(false);
+    setRemovePoster(false);
   };
 
   if (loading) {
@@ -194,7 +204,7 @@ export default function HeroSettingsPage() {
           </button>
           <button
             onClick={handleSave}
-            disabled={saving || (!videoFile && !posterFile && !useUrlInput)}
+            disabled={saving || (!videoFile && !posterFile && !useUrlInput && !removeVideo && !removePoster)}
             className="px-6 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
           >
             {saving ? (
@@ -257,30 +267,38 @@ export default function HeroSettingsPage() {
 
             {/* Current Video Preview */}
             <div className="relative aspect-video bg-gray-900 rounded-xl overflow-hidden">
-              <video
-                ref={videoRef}
-                src={videoPreview || settings.video_url}
-                poster={posterPreview || settings.poster_url}
-                className="w-full h-full object-cover"
-                loop
-                muted
-                playsInline
-              />
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <button
-                  onClick={toggleVideoPlay}
-                  className="p-4 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
-                >
-                  {isPlaying ? (
-                    <Pause className="w-8 h-8 text-white" />
-                  ) : (
-                    <Play className="w-8 h-8 text-white" />
+              {videoPreview || settings.video_url ? (
+                <>
+                  <video
+                    ref={videoRef}
+                    src={videoPreview || settings.video_url}
+                    poster={posterPreview || settings.poster_url || undefined}
+                    className="w-full h-full object-cover"
+                    loop
+                    muted
+                    playsInline
+                  />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <button
+                      onClick={toggleVideoPlay}
+                      className="p-4 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                    >
+                      {isPlaying ? (
+                        <Pause className="w-8 h-8 text-white" />
+                      ) : (
+                        <Play className="w-8 h-8 text-white" />
+                      )}
+                    </button>
+                  </div>
+                  {videoPreview && (
+                    <div className="absolute top-2 right-2 px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                      New Video Selected
+                    </div>
                   )}
-                </button>
-              </div>
-              {videoPreview && (
-                <div className="absolute top-2 right-2 px-2 py-1 bg-green-500 text-white text-xs rounded-full">
-                  New Video Selected
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                  No video selected
                 </div>
               )}
             </div>
@@ -318,6 +336,22 @@ export default function HeroSettingsPage() {
                 </button>
               </div>
             )}
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>{removeVideo ? 'Video will be removed when you save.' : ''}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setRemoveVideo(true);
+                  setVideoFile(null);
+                  setVideoPreview(null);
+                  setVideoUrlInput('');
+                }}
+                className="inline-flex items-center gap-1 px-2 py-1 text-red-600 border border-red-200 rounded-md hover:bg-red-50"
+              >
+                <X className="w-3 h-3" />
+                Remove Video
+              </button>
+            </div>
           </div>
 
           {/* Poster Section */}
@@ -334,14 +368,22 @@ export default function HeroSettingsPage() {
 
             {/* Current Poster Preview */}
             <div className="relative aspect-video bg-gray-100 rounded-xl overflow-hidden">
-              <img
-                src={posterPreview || settings.poster_url}
-                alt="Video poster"
-                className="w-full h-full object-cover"
-              />
-              {posterPreview && (
-                <div className="absolute top-2 right-2 px-2 py-1 bg-green-500 text-white text-xs rounded-full">
-                  New Poster Selected
+              {posterPreview || settings.poster_url ? (
+                <>
+                  <img
+                    src={posterPreview || settings.poster_url}
+                    alt="Video poster"
+                    className="w-full h-full object-cover"
+                  />
+                  {posterPreview && (
+                    <div className="absolute top-2 right-2 px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                      New Poster Selected
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                  No poster selected
                 </div>
               )}
             </div>
@@ -379,6 +421,22 @@ export default function HeroSettingsPage() {
                 </button>
               </div>
             )}
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>{removePoster ? 'Poster will be removed when you save.' : ''}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setRemovePoster(true);
+                  setPosterFile(null);
+                  setPosterPreview(null);
+                  setPosterUrlInput('');
+                }}
+                className="inline-flex items-center gap-1 px-2 py-1 text-red-600 border border-red-200 rounded-md hover:bg-red-50"
+              >
+                <X className="w-3 h-3" />
+                Remove Poster
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -391,31 +449,35 @@ export default function HeroSettingsPage() {
             <Video className="w-5 h-5 text-[#03215F] mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-700">Video URL</p>
-              <p className="text-sm text-gray-500 truncate">{settings.video_url}</p>
+              <p className="text-sm text-gray-500 truncate">{settings.video_url || 'Not set'}</p>
             </div>
-            <a
-              href={settings.video_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              <Eye className="w-4 h-4 text-gray-500" />
-            </a>
+            {settings.video_url && (
+              <a
+                href={settings.video_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                <Eye className="w-4 h-4 text-gray-500" />
+              </a>
+            )}
           </div>
           <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
             <ImageIcon className="w-5 h-5 text-[#AE9B66] mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-700">Poster URL</p>
-              <p className="text-sm text-gray-500 truncate">{settings.poster_url}</p>
+              <p className="text-sm text-gray-500 truncate">{settings.poster_url || 'Not set'}</p>
             </div>
-            <a
-              href={settings.poster_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              <Eye className="w-4 h-4 text-gray-500" />
-            </a>
+            {settings.poster_url && (
+              <a
+                href={settings.poster_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                <Eye className="w-4 h-4 text-gray-500" />
+              </a>
+            )}
           </div>
         </div>
       </div>

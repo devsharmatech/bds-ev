@@ -102,6 +102,7 @@ export default function Sidebar({
     { name: "Committee Sections", icon: FileText, href: "/admin/committee-sections", badge: null },
     { name: "Board Members", icon: Users, href: "/admin/board-members", badge: null },
     { name: "Research", icon: FileText, href: "/admin/research", badge: null },
+    { name: "Research Submissions", icon: FileText, href: "/admin/research-submissions", badge: null },
     { name: "Gallery", icon: ImageIcon, href: "/admin/gallery", badge: null },
 
     // Communication
@@ -257,15 +258,7 @@ export default function Sidebar({
           <ChevronRight size={16} className="opacity-50" />
         </motion.button>
 
-        {/* Footer Note */}
-        <div className="text-center pt-2 border-t border-gray-300/30">
-          <p className="text-xs text-gray-500">
-            © 2025 BDS System
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            v1.0.0 • Bahrain
-          </p>
-        </div>
+      
       </div>
     </motion.aside>
   );

@@ -34,6 +34,7 @@ export async function GET() {
         membership_type,
         membership_status,
         membership_expiry_date,
+        device_token,
         member_profiles!member_profiles_user_id_fkey(
           category,
           position,
@@ -64,6 +65,7 @@ export async function GET() {
         membership_type: user.membership_type,
         membership_status: user.membership_status || null,
         membership_expiry_date: user.membership_expiry_date,
+        device_token: user.device_token || null,
         category: memberProfile.category || null,
         position: memberProfile.position || null,
         specialty: memberProfile.specialty || null,

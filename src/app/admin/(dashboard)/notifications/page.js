@@ -34,8 +34,9 @@ export default function NotificationsPage() {
   const [form, setForm] = useState({
     title: "",
     body: "",
-    target: "all", // all, free, paid, membership_type, event
+    target: "all", // all, free, paid, membership_type, plan, event
     membership_type: "",
+    plan: "",
     event_id: "",
     click_action: "",
   });
@@ -91,6 +92,11 @@ export default function NotificationsPage() {
       return;
     }
 
+    if (form.target === "plan" && !form.plan) {
+      toast.error("Please select membership plan");
+      return;
+    }
+
     if (form.target === "event" && !form.event_id) {
       toast.error("Please select an event");
       return;
@@ -109,6 +115,7 @@ export default function NotificationsPage() {
           body: form.body,
           target: form.target,
           membership_type: form.membership_type || null,
+          plan: form.plan || null,
           event_id: form.event_id || null,
           data: {
             click_action: form.click_action || "",
@@ -127,6 +134,7 @@ export default function NotificationsPage() {
           body: "",
           target: "all",
           membership_type: "",
+          plan: "",
           event_id: "",
           click_action: "",
         });
@@ -193,7 +201,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4">
       <Toaster position="top-right" />
 
       <div className="w-full mx-auto space-y-6">
@@ -222,7 +230,7 @@ export default function NotificationsPage() {
                 <Users className="w-5 h-5 text-[#03215F]" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Members</p>
+                <p className="text-sm text-gray-600">Total Records</p>
                 <p className="text-2xl font-bold text-[#03215F]">
                   {stats.total}
                 </p>
@@ -315,7 +323,7 @@ export default function NotificationsPage() {
               <select
                 value={form.target}
                 onChange={(e) =>
-                  setForm({ ...form, target: e.target.value, event_id: "", membership_type: "" })
+                  setForm({ ...form, target: e.target.value, event_id: "", membership_type: "", plan: "" })
                 }
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
                 required
@@ -324,6 +332,7 @@ export default function NotificationsPage() {
                 <option value="free">Free Members Only</option>
                 <option value="paid">Paid Members Only</option>
                 <option value="membership_type">By Membership Type</option>
+                <option value="plan">By Membership Plan</option>
                 <option value="event">Event Attendees</option>
               </select>
             </div>
@@ -344,6 +353,29 @@ export default function NotificationsPage() {
                   <option value="">Select type</option>
                   <option value="free">Free</option>
                   <option value="paid">Paid</option>
+                </select>
+              </div>
+            )}
+
+            {form.target === "plan" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Membership Plan *
+                </label>
+                <select
+                  value={form.plan}
+                  onChange={(e) =>
+                    setForm({ ...form, plan: e.target.value })
+                  }
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#03215F] focus:border-transparent outline-none"
+                  required
+                >
+                  <option value="">Select plan</option>
+                  <option value="active">Active</option>
+                  <option value="associate">Associate</option>
+                  <option value="student">Student</option>
+                  <option value="honorary">Honorary</option>
+                  <option value="free">Free</option>
                 </select>
               </div>
             )}

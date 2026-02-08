@@ -206,8 +206,8 @@ export default function HeroSection() {
   const [badgeStatus, setBadgeStatus] = useState(null);
   const [badgeEvents, setBadgeEvents] = useState([]);
   const [heroSettings, setHeroSettings] = useState({
-    video_url: "/file.mp4",
-    poster_url: "/bgn.png",
+    video_url: "",
+    poster_url: "",
   });
   const [heroSlides, setHeroSlides] = useState([]);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -236,8 +236,8 @@ export default function HeroSection() {
           const data = await res.json();
           if (data.success) {
             setHeroSettings({
-              video_url: data.video_url || "/file.mp4",
-              poster_url: data.poster_url || "/bgn.png",
+              video_url: data.video_url || "",
+              poster_url: data.poster_url || "",
             });
             if (Array.isArray(data.slides)) {
               setHeroSlides(data.slides.filter((s) => s.is_active !== false));
@@ -268,6 +268,7 @@ export default function HeroSection() {
     defaultSlides[0];
   const isContentSlide =
     !currentSlide.slide_type || currentSlide.slide_type === "content";
+  const isImageSlide = currentSlide.slide_type === "image";
   const hasImage = !!currentSlide.image_url;
   const hasSlideText = Boolean(
     (currentSlide.title && currentSlide.title.trim()) ||
@@ -702,19 +703,21 @@ export default function HeroSection() {
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* Video Container */}
         <div className="relative w-full h-full">
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute top-0 left-0 w-full h-full object-cover opacity-30"
-            poster={heroSettings.poster_url}
-            key={heroSettings.video_url} // Force re-render when URL changes
-          >
-            <source src={heroSettings.video_url} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+          {heroSettings.video_url && (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute top-0 left-0 w-full h-full object-cover opacity-30"
+              poster={heroSettings.poster_url || undefined}
+              key={heroSettings.video_url} // Force re-render when URL changes
+            >
+              <source src={heroSettings.video_url} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          )}
 
           {/* Gradient Overlays */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/50 to-white"></div>
@@ -747,8 +750,8 @@ export default function HeroSection() {
       </div>
 
       {/* Main Content */}
-      <div className="container relative z-10 mx-auto px-4 py-20 md:py-28">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <div className="container relative z-10 mx-auto px-4 py-12 md:py-16">
+        <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-center">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentSlide.id || `slide-${activeSlide}`}
@@ -756,28 +759,28 @@ export default function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="space-y-8 backdrop-blur-sm bg-white/30 rounded-2xl p-8 md:p-10 shadow-xl min-h-[420px] md:min-h-[460px]"
+              className="space-y-5 md:space-y-6 backdrop-blur-sm bg-white/30 rounded-2xl p-5 md:p-6 lg:p-8 shadow-xl"
             >
-              {hasImage ? (
+              {isImageSlide && hasImage ? (
                 <>
-                  <div className="relative overflow-hidden rounded-2xl border border-white/30 bg-white/40 shadow-lg h-64 md:h-80">
+                  <div className="relative overflow-hidden rounded-2xl border border-white/30 bg-white/40 shadow-lg h-64 sm:h-72 md:h-80">
                     <img
                       src={currentSlide.image_url}
                       alt={currentSlide.title || "Hero slide"}
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
-                    <div className="relative z-10 h-full flex flex-col justify-end p-6 md:p-8 space-y-3 text-white">
+                    <div className="relative z-10 h-full flex flex-col justify-end p-5 md:p-6 space-y-2 text-white">
                       {currentSlide.subtitle && (
                         <p className="text-xs md:text-sm font-semibold uppercase tracking-wide text-[#F5E6BF]">
                           {currentSlide.subtitle}
                         </p>
                       )}
-                      <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">
+                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight">
                         {currentSlide.title || "Bahrain Dental Society"}
                       </h1>
                       {currentSlide.description && (
-                        <p className="text-sm md:text-base lg:text-lg text-gray-100 leading-relaxed">
+                        <p className="text-sm sm:text-base text-gray-100 leading-relaxed line-clamp-3">
                           {currentSlide.description}
                         </p>
                       )}
@@ -816,20 +819,20 @@ export default function HeroSection() {
                   </div>
 
                   {(currentSlide.show_stats_row ?? true) && hasSlideText && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
-                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
+                      <div className="text-center p-3 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                         <div className="text-2xl font-bold text-[#AE9B66]">
                           350+
                         </div>
                         <div className="text-sm text-gray-600">Members</div>
                       </div>
-                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                      <div className="text-center p-3 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                         <div className="text-2xl font-bold text-[#AE9B66]">
                           50+
                         </div>
                         <div className="text-sm text-gray-600">Events</div>
                       </div>
-                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                      <div className="text-center p-3 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                         <div className="text-2xl font-bold text-[#AE9B66]">
                           100+
                         </div>
@@ -837,7 +840,7 @@ export default function HeroSection() {
                           CME Certificate
                         </div>
                       </div>
-                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                      <div className="text-center p-3 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                         <div className="text-2xl font-bold text-[#AE9B66]">
                           30+
                         </div>
@@ -848,6 +851,15 @@ export default function HeroSection() {
                 </>
               ) : (
                 <>
+                  {hasImage && (
+                    <div className="relative overflow-hidden rounded-2xl border border-white/30 bg-white/40 shadow-lg h-44 sm:h-52">
+                      <img
+                        src={currentSlide.image_url}
+                        alt={currentSlide.title || "Hero slide"}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#03215F]">
                     {isContentSlide && currentSlide.title ? (
                       currentSlide.title
@@ -895,12 +907,10 @@ export default function HeroSection() {
                     </div>
                   )}
 
-                  
-
                   {(currentSlide.button_text && currentSlide.button_url) ||
                   (currentSlide.secondary_button_text &&
                     currentSlide.secondary_button_url) ? (
-                    <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3">
                       {currentSlide.button_text && currentSlide.button_url && (
                         <button
                           type="button"
@@ -925,20 +935,20 @@ export default function HeroSection() {
                     </div>
                   ) : null}
                   {(currentSlide.show_stats_row ?? true) && hasSlideText && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
-                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
+                      <div className="text-center p-3 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                         <div className="text-2xl font-bold text-[#AE9B66]">
                           350+
                         </div>
                         <div className="text-sm text-gray-600">Members</div>
                       </div>
-                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                      <div className="text-center p-3 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                         <div className="text-2xl font-bold text-[#AE9B66]">
                           50+
                         </div>
                         <div className="text-sm text-gray-600">Events</div>
                       </div>
-                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                      <div className="text-center p-3 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                         <div className="text-2xl font-bold text-[#AE9B66]">
                           100+
                         </div>
@@ -946,7 +956,7 @@ export default function HeroSection() {
                           CME Certificate
                         </div>
                       </div>
-                      <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
+                      <div className="text-center p-3 rounded-xl bg-white/50 backdrop-blur-sm border border-white/20">
                         <div className="text-2xl font-bold text-[#AE9B66]">
                           30+
                         </div>

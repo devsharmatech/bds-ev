@@ -15,10 +15,11 @@ try {
 
 // Initialize transporter if nodemailer is available and SMTP is configured
 if (nodemailer && process.env.SMTP_HOST) {
+  const smtpPort = parseInt(process.env.SMTP_PORT || '587');
   transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+    port: smtpPort,
+    secure: process.env.SMTP_SECURE === 'true' || smtpPort === 465, // auto-detect secure for port 465
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASSWORD,
@@ -576,6 +577,136 @@ export async function sendEmail(toOrOptions, subject, text, html) {
   }
   
   return { success: false, error: 'Email service not configured' };
+}
+
+/**
+ * Send research submission confirmation email
+ */
+export async function sendResearchSubmissionEmail(email, data) {
+  const { full_name, research_title, research_category } = data;
+  const subject = 'Research Submission Received – BDS';
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+      <div style="background: linear-gradient(135deg, #03215F 0%, #AE9B66 100%); padding: 30px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Research Submission Received</h1>
+        <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;">Bahrain Dental Society</p>
+      </div>
+      <div style="padding: 30px;">
+        <p style="color: #333; font-size: 16px; line-height: 1.6;">Dear <strong>${full_name}</strong>,</p>
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          Thank you for submitting your research to the Bahrain Dental Society. We have received your submission and it is now under review.
+        </p>
+        <div style="background: #f8f9fa; border-left: 4px solid #03215F; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0 0 8px; color: #333; font-size: 14px;"><strong>Research Title:</strong> ${research_title}</p>
+          <p style="margin: 0 0 8px; color: #333; font-size: 14px;"><strong>Category:</strong> ${research_category}</p>
+          <p style="margin: 0; color: #333; font-size: 14px;"><strong>Status:</strong> <span style="color: #f59e0b; font-weight: 600;">Pending Review</span></p>
+        </div>
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          Our team will review your submission carefully. You will receive an email notification once the review is complete with the decision.
+        </p>
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          If you have any questions, please don't hesitate to contact us.
+        </p>
+        <p style="color: #333; font-size: 14px; margin-top: 24px;">
+          Best regards,<br/>
+          <strong>Bahrain Dental Society</strong>
+        </p>
+      </div>
+      <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+        <p style="color: #9ca3af; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} Bahrain Dental Society. All rights reserved.</p>
+      </div>
+    </div>
+  `;
+  const text = `Dear ${full_name},\n\nThank you for submitting your research "${research_title}" (${research_category}) to the Bahrain Dental Society.\n\nYour submission is now under review. You will be notified via email once the review is complete.\n\nBest regards,\nBahrain Dental Society`;
+  return sendEmail(email, subject, text, html);
+}
+
+/**
+ * Send research approval email
+ */
+export async function sendResearchApprovalEmail(email, data) {
+  const { full_name, research_title, research_category } = data;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://bds.com';
+  const subject = 'Research Submission Approved – BDS';
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+      <div style="background: linear-gradient(135deg, #03215F 0%, #AE9B66 100%); padding: 30px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Research Approved!</h1>
+        <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;">Bahrain Dental Society</p>
+      </div>
+      <div style="padding: 30px;">
+        <p style="color: #333; font-size: 16px; line-height: 1.6;">Dear <strong>${full_name}</strong>,</p>
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          We are pleased to inform you that your research submission has been <strong style="color: #16a34a;">approved</strong> by the Bahrain Dental Society review team.
+        </p>
+        <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0 0 8px; color: #333; font-size: 14px;"><strong>Research Title:</strong> ${research_title}</p>
+          <p style="margin: 0 0 8px; color: #333; font-size: 14px;"><strong>Category:</strong> ${research_category || 'N/A'}</p>
+          <p style="margin: 0; color: #333; font-size: 14px;"><strong>Status:</strong> <span style="color: #16a34a; font-weight: 600;">Approved ✓</span></p>
+        </div>
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          Your research may now be featured on our website. Thank you for your valuable contribution to the dental community.
+        </p>
+        <div style="text-align: center; margin: 25px 0;">
+          <a href="${baseUrl}/research" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #03215F, #AE9B66); color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">View Research Page</a>
+        </div>
+        <p style="color: #333; font-size: 14px; margin-top: 24px;">
+          Best regards,<br/>
+          <strong>Bahrain Dental Society</strong>
+        </p>
+      </div>
+      <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+        <p style="color: #9ca3af; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} Bahrain Dental Society. All rights reserved.</p>
+      </div>
+    </div>
+  `;
+  const text = `Dear ${full_name},\n\nWe are pleased to inform you that your research "${research_title}" has been approved by the Bahrain Dental Society.\n\nYour research may now be featured on our website.\n\nVisit: ${baseUrl}/research\n\nBest regards,\nBahrain Dental Society`;
+  return sendEmail(email, subject, text, html);
+}
+
+/**
+ * Send research rejection email
+ */
+export async function sendResearchRejectionEmail(email, data) {
+  const { full_name, research_title, research_category, rejection_reason } = data;
+  const subject = 'Research Submission Update – BDS';
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+      <div style="background: linear-gradient(135deg, #03215F 0%, #AE9B66 100%); padding: 30px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Research Submission Update</h1>
+        <p style="color: rgba(255,255,255,0.8); margin: 8px 0 0; font-size: 14px;">Bahrain Dental Society</p>
+      </div>
+      <div style="padding: 30px;">
+        <p style="color: #333; font-size: 16px; line-height: 1.6;">Dear <strong>${full_name}</strong>,</p>
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          Thank you for your interest in contributing to the Bahrain Dental Society. After careful review, we regret to inform you that your research submission could not be approved at this time.
+        </p>
+        <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0 0 8px; color: #333; font-size: 14px;"><strong>Research Title:</strong> ${research_title}</p>
+          <p style="margin: 0 0 8px; color: #333; font-size: 14px;"><strong>Category:</strong> ${research_category || 'N/A'}</p>
+          <p style="margin: 0; color: #333; font-size: 14px;"><strong>Status:</strong> <span style="color: #ef4444; font-weight: 600;">Not Approved</span></p>
+        </div>
+        ${rejection_reason ? `
+        <div style="background: #fffbeb; border: 1px solid #fcd34d; padding: 15px 20px; margin: 20px 0; border-radius: 8px;">
+          <p style="margin: 0 0 5px; color: #92400e; font-size: 13px; font-weight: 600;">Reason / Feedback:</p>
+          <p style="margin: 0; color: #78350f; font-size: 14px; line-height: 1.5;">${rejection_reason}</p>
+        </div>
+        ` : ''}
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          We encourage you to review the feedback and consider resubmitting after making the necessary revisions. If you have any questions, please feel free to contact us.
+        </p>
+        <p style="color: #333; font-size: 14px; margin-top: 24px;">
+          Best regards,<br/>
+          <strong>Bahrain Dental Society</strong>
+        </p>
+      </div>
+      <div style="background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+        <p style="color: #9ca3af; font-size: 12px; margin: 0;">© ${new Date().getFullYear()} Bahrain Dental Society. All rights reserved.</p>
+      </div>
+    </div>
+  `;
+  const text = `Dear ${full_name},\n\nThank you for your submission "${research_title}" to the Bahrain Dental Society.\n\nAfter review, we regret to inform you that your research could not be approved at this time.${rejection_reason ? `\n\nReason: ${rejection_reason}` : ''}\n\nWe encourage you to review the feedback and consider resubmitting.\n\nBest regards,\nBahrain Dental Society`;
+  return sendEmail(email, subject, text, html);
 }
 
 

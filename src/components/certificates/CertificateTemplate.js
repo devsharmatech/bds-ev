@@ -44,10 +44,11 @@ export default function CertificateTemplate({ certificate, user }) {
 
   return (
     <div
-      className="bg-white w-full mx-auto p-0 certificate-container"
+      className="bg-white p-0 certificate-container"
       style={{
-        width: '100%',
-        height: '11in',
+        width: '816px',
+        minWidth: '816px',
+        height: '1056px',
         backgroundColor: '#ffffff',
         color: '#000000',
         margin: '0 auto',
@@ -55,6 +56,15 @@ export default function CertificateTemplate({ certificate, user }) {
         overflow: 'hidden'
       }}
     >
+      <style jsx>{`
+        @media print {
+          .certificate-container {
+            width: 8.5in !important;
+            min-width: 8.5in !important;
+            height: 11in !important;
+          }
+        }
+      `}</style>
       {/* Certificate Container */}
       <div className="relative bg-white h-full flex flex-col" style={{ border: 'none' }}>
         {/* Top Decorative Wave - Blue and Gold */}
