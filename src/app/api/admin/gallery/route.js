@@ -96,6 +96,19 @@ export async function POST(req) {
       };
       const { data: created, error } = await supabase.from("galleries").insert(payload).select().single();
       if (error) throw new Error(error.message);
+
+      // Handle pre-uploaded family image URLs
+      const familyUrls = body.family_image_urls;
+      if (Array.isArray(familyUrls) && familyUrls.length > 0) {
+        const rows = familyUrls.map((url) => ({
+          gallery_id: created.id,
+          image_url: url,
+          sort_order: 0,
+        }));
+        const { error: imgErr } = await supabase.from("gallery_images").insert(rows);
+        if (imgErr) throw new Error(imgErr.message);
+      }
+
       return NextResponse.json({ success: true, gallery: created });
     }
 

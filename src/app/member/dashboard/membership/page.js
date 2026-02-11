@@ -48,6 +48,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { useRouter } from "next/navigation";
 import PaymentMethodModal from "@/components/modals/PaymentMethodModal";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
+import { uploadFile } from "@/lib/uploadClient";
 
 // Membership Card Component
 function MembershipCard({
@@ -620,15 +621,26 @@ export default function MembershipCardPage() {
 
     setUploadingDocs(true);
     try {
-      const formData = new FormData();
-      if (idCardFile) formData.append("id_card", idCardFile);
-      if (personalPhotoFile)
-        formData.append("personal_photo", personalPhotoFile);
+      // Upload files directly to Supabase Storage first
+      let id_card_url = null;
+      let personal_photo_url = null;
 
+      if (idCardFile) {
+        toast.loading("Uploading ID Card...", { id: "doc-upload" });
+        id_card_url = await uploadFile(idCardFile, "profile_pictures", "verification");
+      }
+      if (personalPhotoFile) {
+        toast.loading("Uploading Personal Photo...", { id: "doc-upload" });
+        personal_photo_url = await uploadFile(personalPhotoFile, "profile_pictures", "verification");
+      }
+      toast.dismiss("doc-upload");
+
+      // Send JSON with pre-uploaded URLs
       const res = await fetch("/api/dashboard/verification", {
         method: "PUT",
         credentials: "include",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_card_url, personal_photo_url }),
       });
 
       const data = await res.json();
@@ -643,6 +655,7 @@ export default function MembershipCardPage() {
         toast.error(data.message || "Failed to upload documents");
       }
     } catch (error) {
+      toast.dismiss("doc-upload");
       console.error("Error uploading documents:", error);
       toast.error("Failed to upload documents");
     } finally {

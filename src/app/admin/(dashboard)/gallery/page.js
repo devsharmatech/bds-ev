@@ -46,6 +46,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Modal from "@/components/Modal";
 import DeleteModal2 from "@/components/DeleteModal2";
+import { uploadFile } from "@/lib/uploadClient";
 
 export default function AdminGalleryPage() {
   const [loading, setLoading] = useState(true);
@@ -264,25 +265,44 @@ export default function AdminGalleryPage() {
         return;
       }
 
-      const fd = new FormData();
-      fd.append("title", form.title.trim());
-      if (form.short_description) fd.append("short_description", form.short_description);
-      if (form.tag1) fd.append("tag1", form.tag1);
-      if (form.tag2) fd.append("tag2", form.tag2);
-      fd.append("is_active", String(!!form.is_active));
-      
+      // Upload files directly to Supabase Storage first
+      let featured_image_url = form.featured_preview || null;
       if (form.featured_file) {
-        fd.append("featured_image", form.featured_file);
+        toast.loading("Uploading featured image...", { id: "gallery-upload" });
+        featured_image_url = await uploadFile(form.featured_file, "gallery", "featured");
       }
-      
-      form.family_files.forEach((file, index) => {
-        fd.append(`family_images_${index}`, file);
-      });
+
+      const family_image_urls = [];
+      if (form.family_files.length > 0) {
+        toast.loading(`Uploading ${form.family_files.length} images...`, { id: "gallery-upload" });
+        for (let i = 0; i < form.family_files.length; i++) {
+          toast.loading(`Uploading image ${i + 1}/${form.family_files.length}...`, { id: "gallery-upload" });
+          const url = await uploadFile(form.family_files[i], "gallery", "albums");
+          family_image_urls.push(url);
+        }
+      }
+      toast.dismiss("gallery-upload");
+
+      // Send JSON with pre-uploaded URLs
+      const jsonBody = {
+        title: form.title.trim(),
+        short_description: form.short_description || null,
+        tag1: form.tag1 || null,
+        tag2: form.tag2 || null,
+        is_active: !!form.is_active,
+      };
+      if (featured_image_url) jsonBody.featured_image_url = featured_image_url;
+      if (family_image_urls.length > 0) jsonBody.family_image_urls = family_image_urls;
 
       const url = editing ? `/api/admin/gallery/${editing.id}` : "/api/admin/gallery";
       const method = editing ? "PUT" : "POST";
       
-      const res = await fetch(url, { method, body: fd, credentials: "include" });
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(jsonBody),
+        credentials: "include",
+      });
       const data = await res.json();
       
       if (!data.success) {
@@ -295,6 +315,7 @@ export default function AdminGalleryPage() {
       await loadGalleries();
       
     } catch (err) {
+      toast.dismiss("gallery-upload");
       toast.error(err.message);
     } finally {
       setModalLoading(false);

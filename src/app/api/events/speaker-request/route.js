@@ -3,45 +3,143 @@ import { NextResponse } from 'next/server';
 
 /**
  * POST /api/events/speaker-request
- * Submit a speaker application for an event
+ * Submit a speaker application for an event.
+ * Supports both:
+ *   1) JSON body with pre-uploaded file paths (new, avoids timeout)
+ *   2) multipart/form-data with files (legacy fallback)
  */
 export async function POST(request) {
   const startTime = Date.now();
 
   try {
-    const formData = await request.formData();
+    const contentType = request.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
 
-    // Extract form fields
-    const event_id = formData.get('event_id');
-    const full_name = formData.get('full_name');
-    const email = formData.get('email')?.toLowerCase();
-    const phone = formData.get('phone');
-    const affiliation_institution = formData.get('affiliation_institution');
-    const country_of_practice = formData.get('country_of_practice');
-    const professional_title = formData.get('professional_title');
-    const category = formData.get('category');
-    const presentation_topics = formData.get('presentation_topics'); // JSON string
-    const presentation_topic_other = formData.get('presentation_topic_other');
-    const consent_for_publication = formData.get('consent_for_publication'); // 'agree' or 'disagree'
-    // Declaration form fields
-    const declaration_cpd_title = formData.get('declaration_cpd_title');
-    const declaration_speaker_name = formData.get('declaration_speaker_name');
-    const declaration_presentation_title = formData.get('declaration_presentation_title');
-    const declaration_presentation_date = formData.get('declaration_presentation_date');
-    const declaration_contact_number = formData.get('declaration_contact_number');
-    const declaration_email = formData.get('declaration_email');
-    const declaration_abstract = formData.get('declaration_abstract');
-    const declaration_final_speaker_name = formData.get('declaration_final_speaker_name');
-    const declaration_final_date = formData.get('declaration_final_date');
-    const declaration_final_signature = formData.get('declaration_final_signature');
-    // 10 statements
-    const declaration_statements = [];
-    for (let i = 0; i < 10; i++) {
-      declaration_statements.push(formData.get(`declaration_statement_${i}`));
+    let event_id, full_name, email, phone, affiliation_institution,
+        country_of_practice, professional_title, category,
+        presentation_topics, presentation_topic_other,
+        consent_for_publication, bio;
+    let profileImageUrl = null;
+    let abstractFormUrl = null;
+    let articlePresentationUrl = null;
+    let declaration_cpd_title, declaration_speaker_name, declaration_presentation_title,
+        declaration_presentation_date, declaration_contact_number, declaration_email,
+        declaration_abstract, declaration_final_speaker_name, declaration_final_date,
+        declaration_final_signature;
+    let declaration_statements = [];
+
+    if (isJson) {
+      // ─── NEW: JSON body with pre-uploaded file paths ───
+      const body = await request.json();
+      event_id = body.event_id;
+      full_name = body.full_name;
+      email = body.email?.toLowerCase();
+      phone = body.phone;
+      affiliation_institution = body.affiliation_institution;
+      country_of_practice = body.country_of_practice;
+      professional_title = body.professional_title;
+      category = body.category;
+      presentation_topics = body.presentation_topics; // already an array
+      presentation_topic_other = body.presentation_topic_other;
+      consent_for_publication = body.consent_for_publication;
+      bio = body.bio;
+
+      // Files already uploaded by client
+      profileImageUrl = body.profile_image_url || null;
+      abstractFormUrl = body.abstract_form_url || null;
+      articlePresentationUrl = body.article_presentation_url || null;
+
+      // Declaration data
+      const decl = body.declaration || {};
+      declaration_cpd_title = decl.declaration_cpd_title;
+      declaration_speaker_name = decl.declaration_speaker_name;
+      declaration_presentation_title = decl.declaration_presentation_title;
+      declaration_presentation_date = decl.declaration_presentation_date;
+      declaration_contact_number = decl.declaration_contact_number;
+      declaration_email = decl.declaration_email;
+      declaration_abstract = decl.declaration_abstract;
+      declaration_final_speaker_name = decl.declaration_final_speaker_name;
+      declaration_final_date = decl.declaration_final_date;
+      declaration_final_signature = decl.declaration_final_signature;
+      for (let i = 0; i < 10; i++) {
+        declaration_statements.push(decl[`declaration_statement_${i}`] || null);
+      }
+
+      // Ensure topics is an array
+      if (typeof presentation_topics === 'string') {
+        try { presentation_topics = JSON.parse(presentation_topics); } catch { presentation_topics = []; }
+      }
+    } else {
+      // ─── LEGACY: multipart/form-data with file uploads ───
+      const formData = await request.formData();
+
+      event_id = formData.get('event_id');
+      full_name = formData.get('full_name');
+      email = formData.get('email')?.toLowerCase();
+      phone = formData.get('phone');
+      affiliation_institution = formData.get('affiliation_institution');
+      country_of_practice = formData.get('country_of_practice');
+      professional_title = formData.get('professional_title');
+      category = formData.get('category');
+      presentation_topics = formData.get('presentation_topics');
+      presentation_topic_other = formData.get('presentation_topic_other');
+      consent_for_publication = formData.get('consent_for_publication');
+      bio = formData.get('bio');
+
+      declaration_cpd_title = formData.get('declaration_cpd_title');
+      declaration_speaker_name = formData.get('declaration_speaker_name');
+      declaration_presentation_title = formData.get('declaration_presentation_title');
+      declaration_presentation_date = formData.get('declaration_presentation_date');
+      declaration_contact_number = formData.get('declaration_contact_number');
+      declaration_email = formData.get('declaration_email');
+      declaration_abstract = formData.get('declaration_abstract');
+      declaration_final_speaker_name = formData.get('declaration_final_speaker_name');
+      declaration_final_date = formData.get('declaration_final_date');
+      declaration_final_signature = formData.get('declaration_final_signature');
+      for (let i = 0; i < 10; i++) {
+        declaration_statements.push(formData.get(`declaration_statement_${i}`));
+      }
+
+      try { presentation_topics = JSON.parse(presentation_topics || '[]'); } catch { presentation_topics = []; }
+
+      // Upload files from form data (legacy path)
+      const profileImage = formData.get('profile_image');
+      const abstractFile = formData.get('abstract_file');
+      const articleFile = formData.get('article_file');
+
+      try {
+        if (profileImage && typeof profileImage.name === 'string') {
+          const profileFileName = `${event_id}/${email}/profile_${Date.now()}_${profileImage.name}`;
+          const { error: profileError, data: profileData } = await supabase.storage
+            .from('speaker-documents')
+            .upload(profileFileName, profileImage, { upsert: true });
+          if (profileError) throw new Error(`Profile image upload failed: ${profileError.message}`);
+          profileImageUrl = profileData?.path;
+        }
+        if (abstractFile && typeof abstractFile.name === 'string') {
+          const abstractFileName = `${event_id}/${email}/abstract_${Date.now()}_${abstractFile.name}`;
+          const { error: abstractError, data: abstractData } = await supabase.storage
+            .from('speaker-documents')
+            .upload(abstractFileName, abstractFile, { upsert: true });
+          if (abstractError) throw new Error(`Abstract upload failed: ${abstractError.message}`);
+          abstractFormUrl = abstractData?.path;
+        }
+        if (articleFile && typeof articleFile.name === 'string') {
+          const articleFileName = `${event_id}/${email}/article_${Date.now()}_${articleFile.name}`;
+          const { error: articleError, data: articleData } = await supabase.storage
+            .from('speaker-documents')
+            .upload(articleFileName, articleFile, { upsert: true });
+          if (articleError) throw new Error(`Article upload failed: ${articleError.message}`);
+          articlePresentationUrl = articleData?.path;
+        }
+      } catch (fileError) {
+        console.error('[SPEAKER-REQUEST] File upload error:', fileError);
+        return NextResponse.json(
+          { success: false, message: fileError.message || 'File upload failed' },
+          { status: 500 }
+        );
+      }
     }
-    // Profile image and bio
-    const profileImage = formData.get('profile_image');
-    const bio = formData.get('bio');
 
     // Validate required fields
     if (!event_id || !full_name || !email || !phone || !affiliation_institution || 
@@ -67,13 +165,7 @@ export async function POST(request) {
       );
     }
 
-    // Parse presentation topics
-    let parsedTopics = [];
-    try {
-      parsedTopics = JSON.parse(presentation_topics || '[]');
-    } catch (e) {
-      parsedTopics = [];
-    }
+    const parsedTopics = Array.isArray(presentation_topics) ? presentation_topics : [];
 
     if (parsedTopics.length === 0) {
       return NextResponse.json(
@@ -82,15 +174,10 @@ export async function POST(request) {
       );
     }
 
-    // Get files
-    const abstractFile = formData.get('abstract_file');
-    const articleFile = formData.get('article_file');
-
-    // Profile image is optional, bio is required
     if (!bio || !bio.trim()) {
       return NextResponse.json(
         { success: false, message: 'Bio is required' },
-        { status: 400, headers: corsHeaders }
+        { status: 400 }
       );
     }
 
@@ -101,49 +188,6 @@ export async function POST(request) {
       professional_title,
       timestamp: new Date().toISOString(),
     });
-
-    // Upload files to Supabase Storage
-    let abstractFormUrl = null;
-    let articlePresentationUrl = null;
-    let profileImageUrl = null;
-
-    try {
-      // Upload Profile Image (Optional)
-      if (profileImage && typeof profileImage.name === 'string') {
-        const profileFileName = `${event_id}/${email}/profile_${Date.now()}_${profileImage.name}`;
-        const { error: profileError, data: profileData } = await supabase.storage
-          .from('speaker-documents')
-          .upload(profileFileName, profileImage, { upsert: true });
-        if (profileError) throw new Error(`Profile image upload failed: ${profileError.message}`);
-        profileImageUrl = profileData?.path;
-      }
-      // Upload Abstract Form (Required)
-      if (abstractFile) {
-        const abstractFileName = `${event_id}/${email}/abstract_${Date.now()}_${abstractFile.name}`;
-        const { error: abstractError, data: abstractData } = await supabase.storage
-          .from('speaker-documents')
-          .upload(abstractFileName, abstractFile, { upsert: true });
-
-        if (abstractError) throw new Error(`Abstract upload failed: ${abstractError.message}`);
-        abstractFormUrl = abstractData?.path;
-      }
-      // Upload Article/Presentation (Optional)
-      if (articleFile) {
-        const articleFileName = `${event_id}/${email}/article_${Date.now()}_${articleFile.name}`;
-        const { error: articleError, data: articleData } = await supabase.storage
-          .from('speaker-documents')
-          .upload(articleFileName, articleFile, { upsert: true });
-
-        if (articleError) throw new Error(`Article upload failed: ${articleError.message}`);
-        articlePresentationUrl = articleData?.path;
-      }
-    } catch (fileError) {
-      console.error('[SPEAKER-REQUEST] File upload error:', fileError);
-      return NextResponse.json(
-        { success: false, message: fileError.message || 'File upload failed' },
-        { status: 500 }
-      );
-    }
 
     // Save to database
     try {

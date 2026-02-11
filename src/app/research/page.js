@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import MainLayout from "@/components/MainLayout";
 import toast, { Toaster } from "react-hot-toast";
+import { uploadFile } from "@/lib/uploadClient";
 
 export default function ResearchPage() {
   const [loading, setLoading] = useState(true);
@@ -466,26 +467,35 @@ export default function ResearchPage() {
 
     setSubmitLoading(true);
     try {
-      const fd = new FormData();
-      fd.append('full_name', submitForm.full_name.trim());
-      fd.append('email', submitForm.email.trim());
-      fd.append('phone', submitForm.phone.trim());
-      fd.append('country_code', submitForm.country_code);
-      fd.append('affiliation_institution', submitForm.affiliation_institution.trim());
-      fd.append('country_of_practice', submitForm.country_of_practice);
-      fd.append('professional_title', submitForm.professional_title);
-      fd.append('bio', submitForm.bio.trim());
-      fd.append('research_title', submitForm.research_title.trim());
+      // Upload files directly to Supabase Storage first (avoids server timeout)
+      const uploadFolder = `research-submissions/${submitForm.email.trim()}`;
+      let profileImageUrl = null;
+      let abstractUrl = null;
+      let researchDocumentUrl = null;
+      let featuredImageUrl = null;
+
+      if (submitForm.profile_image) {
+        const result = await uploadFile(submitForm.profile_image, 'research', uploadFolder);
+        profileImageUrl = result.publicUrl;
+      }
+      if (submitForm.abstract) {
+        const result = await uploadFile(submitForm.abstract, 'research', uploadFolder);
+        abstractUrl = result.publicUrl;
+      }
+      if (submitForm.research_document) {
+        const result = await uploadFile(submitForm.research_document, 'research', uploadFolder);
+        researchDocumentUrl = result.publicUrl;
+      }
+      if (submitForm.featured_image) {
+        const result = await uploadFile(submitForm.featured_image, 'research', uploadFolder);
+        featuredImageUrl = result.publicUrl;
+      }
+
+      // Build JSON body with file URLs
       const finalCat = submitForm.research_category === 'Other' && submitForm.customCategory.trim()
         ? submitForm.customCategory.trim()
         : submitForm.research_category;
-      fd.append('research_category', finalCat);
-      fd.append('description', submitForm.description.trim());
-      fd.append('presentation_topics', JSON.stringify(submitForm.presentation_topics));
-      fd.append('presentation_topic_other', submitForm.presentation_topic_other.trim());
-      fd.append('external_link', submitForm.external_link.trim());
-      fd.append('consent_for_publication', submitForm.consent_for_publication);
-      // Declaration data as JSON
+
       const declarationData = {
         declaration_cpd_title: submitForm.declaration_cpd_title.trim(),
         declaration_speaker_name: submitForm.declaration_speaker_name.trim(),
@@ -499,13 +509,36 @@ export default function ResearchPage() {
         declaration_final_signature: submitForm.declaration_final_signature.trim(),
         ...Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`declaration_statement_${i}`, submitForm[`declaration_statement_${i}`]])),
       };
-      fd.append('declaration_data', JSON.stringify(declarationData));
-      if (submitForm.profile_image) fd.append('profile_image', submitForm.profile_image);
-      if (submitForm.abstract) fd.append('abstract', submitForm.abstract);
-      if (submitForm.research_document) fd.append('research_document', submitForm.research_document);
-      if (submitForm.featured_image) fd.append('featured_image', submitForm.featured_image);
 
-      const res = await fetch('/api/research/submit', { method: 'POST', body: fd });
+      const jsonBody = {
+        full_name: submitForm.full_name.trim(),
+        email: submitForm.email.trim(),
+        phone: submitForm.phone.trim(),
+        country_code: submitForm.country_code,
+        affiliation_institution: submitForm.affiliation_institution.trim(),
+        country_of_practice: submitForm.country_of_practice,
+        professional_title: submitForm.professional_title,
+        bio: submitForm.bio.trim(),
+        research_title: submitForm.research_title.trim(),
+        research_category: finalCat,
+        description: submitForm.description.trim(),
+        presentation_topics: submitForm.presentation_topics,
+        presentation_topic_other: submitForm.presentation_topic_other.trim(),
+        external_link: submitForm.external_link.trim(),
+        consent_for_publication: submitForm.consent_for_publication,
+        declaration_data: declarationData,
+        // Pre-uploaded file URLs
+        profile_image_url: profileImageUrl,
+        abstract_url: abstractUrl,
+        research_document_url: researchDocumentUrl,
+        featured_image_url: featuredImageUrl,
+      };
+
+      const res = await fetch('/api/research/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(jsonBody),
+      });
       const data = await res.json();
 
       if (!data.success) throw new Error(data.message || 'Submission failed');

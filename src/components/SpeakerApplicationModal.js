@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { uploadFile } from "@/lib/uploadClient";
 import SpeakerDeclarationSection, {
   statements as declarationStatementsList,
 } from "./SpeakerDeclarationSection";
@@ -779,104 +780,67 @@ export default function SpeakerApplicationModal({ event, isOpen, onClose }) {
     setLoading(true);
 
     try {
-      // Create FormData object
-      const formDataToSend = new FormData();
+      // Upload files directly to Supabase Storage first (bypasses server timeout)
+      const uploadFolder = `${event.id}/${formData.email}`;
+      let profileImageUrl = null;
+      let abstractFileUrl = null;
+      let articleFileUrl = null;
 
-      // Add form fields
-      formDataToSend.append("full_name", formData.full_name);
-      formDataToSend.append("email", formData.email);
-      formDataToSend.append("phone", `${formData.phone_code}${formData.phone}`);
-      formDataToSend.append(
-        "affiliation_institution",
-        formData.affiliation_institution,
-      );
-      formDataToSend.append(
-        "country_of_practice",
-        formData.country_of_practice,
-      );
-      formDataToSend.append("professional_title", formData.professional_title);
-      formDataToSend.append("category", formData.category);
-      formDataToSend.append(
-        "presentation_topics",
-        JSON.stringify(formData.presentation_topics),
-      );
-      formDataToSend.append(
-        "presentation_topic_other",
-        formData.presentation_topic_other,
-      );
-      formDataToSend.append(
-        "consent_for_publication",
-        formData.consent_for_publication,
-      );
-      formDataToSend.append("event_id", event.id);
-      formDataToSend.append("bio", bio);
-
-      // Add CLONED files from ref (these are stable and won't change)
-      // IMPORTANT: Use the cloned files, not the original ones from state
-      if (
-        filesRef.current.profile &&
-        filesRef.current.profile instanceof File
-      ) {
-        formDataToSend.append("profile_image", filesRef.current.profile);
-        console.log(
-          "Adding CLONED profile file:",
-          filesRef.current.profile.name,
-          filesRef.current.profile.size,
-        );
+      if (filesRef.current.profile && filesRef.current.profile instanceof File) {
+        console.log("Uploading profile image directly...", filesRef.current.profile.name);
+        const result = await uploadFile(filesRef.current.profile, "speaker-documents", uploadFolder);
+        profileImageUrl = result.path;
       }
 
-      if (
-        filesRef.current.abstract &&
-        filesRef.current.abstract instanceof File
-      ) {
-        formDataToSend.append("abstract_file", filesRef.current.abstract);
-        console.log(
-          "Adding CLONED abstract file:",
-          filesRef.current.abstract.name,
-          filesRef.current.abstract.size,
-        );
+      if (filesRef.current.abstract && filesRef.current.abstract instanceof File) {
+        console.log("Uploading abstract file directly...", filesRef.current.abstract.name);
+        const result = await uploadFile(filesRef.current.abstract, "speaker-documents", uploadFolder);
+        abstractFileUrl = result.path;
       }
 
-      if (
-        filesRef.current.article &&
-        filesRef.current.article instanceof File
-      ) {
-        formDataToSend.append("article_file", filesRef.current.article);
-        console.log(
-          "Adding CLONED article file:",
-          filesRef.current.article.name,
-          filesRef.current.article.size,
-        );
+      if (filesRef.current.article && filesRef.current.article instanceof File) {
+        console.log("Uploading article file directly...", filesRef.current.article.name);
+        const result = await uploadFile(filesRef.current.article, "speaker-documents", uploadFolder);
+        articleFileUrl = result.path;
       }
+
+      // Build JSON body with file URLs (no large files sent to API)
+      const jsonBody = {
+        full_name: formData.full_name,
+        email: formData.email,
+        phone: `${formData.phone_code}${formData.phone}`,
+        affiliation_institution: formData.affiliation_institution,
+        country_of_practice: formData.country_of_practice,
+        professional_title: formData.professional_title,
+        category: formData.category,
+        presentation_topics: formData.presentation_topics,
+        presentation_topic_other: formData.presentation_topic_other,
+        consent_for_publication: formData.consent_for_publication,
+        event_id: event.id,
+        bio,
+        // Pre-uploaded file paths
+        profile_image_url: profileImageUrl,
+        abstract_form_url: abstractFileUrl,
+        article_presentation_url: articleFileUrl,
+      };
 
       // Add declaration data
       if (showDeclaration) {
+        jsonBody.declaration = {};
         Object.entries(declarationData).forEach(([key, value]) => {
           if (value) {
-            formDataToSend.append(key, value.toString());
+            jsonBody.declaration[key] = value.toString();
           }
         });
       }
 
-      // Debug: Check what's being sent
-      console.log("Uploading CLONED files:", {
-        profile: filesRef.current.profile?.name,
-        abstract: filesRef.current.abstract?.name,
-        article: filesRef.current.article?.name,
-      });
-
-      // Make the request with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
+      // Make the request (lightweight JSON, no timeout issues)
       try {
         const response = await fetch("/api/events/speaker-request", {
           method: "POST",
-          body: formDataToSend,
-          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(jsonBody),
         });
-
-        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const responseText = await response.text();

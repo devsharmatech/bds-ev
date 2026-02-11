@@ -90,29 +90,38 @@ export async function PUT(req) {
     }
 
     const contentType = req.headers.get("content-type") || "";
-    if (!contentType.includes("multipart/form-data")) {
-      return NextResponse.json(
-        { success: false, message: "Content-Type must be multipart/form-data" },
-        { status: 400 }
-      );
-    }
-
-    const formData = await req.formData();
-    const idCardFile = formData.get("id_card");
-    const personalPhotoFile = formData.get("personal_photo");
-
-    if (!idCardFile && !personalPhotoFile) {
-      return NextResponse.json(
-        { success: false, message: "At least one document must be provided" },
-        { status: 400 }
-      );
-    }
-
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"];
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const isJson = contentType.includes("application/json");
 
     let idCardUrl = null;
     let personalPhotoUrl = null;
+
+    if (isJson) {
+      // ─── NEW: JSON body with pre-uploaded file URLs ───
+      const body = await req.json();
+      idCardUrl = body.id_card_url || null;
+      personalPhotoUrl = body.personal_photo_url || null;
+
+      if (!idCardUrl && !personalPhotoUrl) {
+        return NextResponse.json(
+          { success: false, message: "At least one document URL must be provided" },
+          { status: 400 }
+        );
+      }
+    } else if (contentType.includes("multipart/form-data")) {
+      // ─── LEGACY: multipart/form-data with file uploads ───
+      const formData = await req.formData();
+      const idCardFile = formData.get("id_card");
+      const personalPhotoFile = formData.get("personal_photo");
+
+      if (!idCardFile && !personalPhotoFile) {
+        return NextResponse.json(
+          { success: false, message: "At least one document must be provided" },
+          { status: 400 }
+        );
+      }
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"];
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
     // Upload ID Card
     if (idCardFile && idCardFile.size > 0) {
@@ -210,6 +219,12 @@ export async function PUT(req) {
 
       const { data: urlData } = supabase.storage.from("profile_pictures").getPublicUrl(path);
       personalPhotoUrl = urlData.publicUrl || null;
+    }
+    } else {
+      return NextResponse.json(
+        { success: false, message: "Content-Type must be application/json or multipart/form-data" },
+        { status: 400 }
+      );
     }
 
     // Update member_profiles with document URLs

@@ -34,6 +34,7 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import PhoneInput from "@/components/PhoneInput";
 import Modal from "@/components/Modal";
+import { uploadFile } from "@/lib/uploadClient";
 
 function RegisterPageContent() {
   const router = useRouter();
@@ -410,75 +411,50 @@ function RegisterPageContent() {
         duration: Infinity,
       });
 
-      // Create FormData if files are present, otherwise use JSON
-      const hasFiles = idCardFile || personalPhotoFile;
-      let res;
+      // Upload files directly to Supabase Storage first (bypasses Vercel timeout)
+      let id_card_url = null;
+      let personal_photo_url = null;
 
-      if (hasFiles) {
-        const formDataToSend = new FormData();
-        formDataToSend.append("fullNameEng", formData.fullNameEng);
-        formDataToSend.append("fullNameArb", formData.fullNameArb || "");
-        formDataToSend.append("email", formData.email);
-        formDataToSend.append("password", formData.password);
-        formDataToSend.append("mobile", formData.mobile);
-        formDataToSend.append("cpr", formData.cpr || "");
-        formDataToSend.append("gender", formData.gender || "");
-        formDataToSend.append("nationality", formData.nationality || "");
-        formDataToSend.append("category", formData.category);
-        formDataToSend.append("workSector", formData.workSector);
-        formDataToSend.append("employer", formData.employer);
-        formDataToSend.append("position", formData.position);
-        formDataToSend.append("specialty", formData.specialty || "");
-        formDataToSend.append("address", formData.address || "");
-        formDataToSend.append("membershipType", formData.membershipType);
-        formDataToSend.append("subscriptionPlanId", formData.subscriptionPlanId || "");
-        formDataToSend.append("typeOfApplication", formData.typeOfApplication);
-        formDataToSend.append("membershipDate", formData.membershipDate || new Date().toISOString().split("T")[0]);
-        formDataToSend.append("licenseNumber", formData.licenseNumber || "");
-        formDataToSend.append("yearsOfExperience", formData.yearsOfExperience || "");
-
-        if (idCardFile) {
-          formDataToSend.append("id_card", idCardFile);
-        }
-        if (personalPhotoFile) {
-          formDataToSend.append("personal_photo", personalPhotoFile);
-        }
-
-        res = await fetch("/api/auth/register", {
-          method: "POST",
-          body: formDataToSend,
-        });
-      } else {
-        res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fullNameEng: formData.fullNameEng,
-            fullNameArb: formData.fullNameArb,
-            email: formData.email,
-            password: formData.password,
-            mobile: formData.mobile,
-            cpr: formData.cpr,
-            gender: formData.gender,
-            nationality: formData.nationality,
-
-            category: formData.category,
-            workSector: formData.workSector,
-            employer: formData.employer,
-            position: formData.position,
-            specialty: formData.specialty,
-            address: formData.address,
-
-            membershipType: formData.membershipType,
-            subscriptionPlanId: formData.subscriptionPlanId,
-            typeOfApplication: formData.typeOfApplication,
-            membershipDate:
-              formData.membershipDate || new Date().toISOString().split("T")[0],
-            licenseNumber: formData.licenseNumber || "",
-            yearsOfExperience: formData.yearsOfExperience || "",
-          }),
-        });
+      if (idCardFile) {
+        toast.loading("Uploading ID Card...", { id: loadingToastId });
+        id_card_url = await uploadFile(idCardFile, "profile_pictures", "verification");
       }
+      if (personalPhotoFile) {
+        toast.loading("Uploading Personal Photo...", { id: loadingToastId });
+        personal_photo_url = await uploadFile(personalPhotoFile, "profile_pictures", "verification");
+      }
+
+      toast.loading("Creating your account...", { id: loadingToastId });
+
+      // Always send JSON with pre-uploaded file URLs
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullNameEng: formData.fullNameEng,
+          fullNameArb: formData.fullNameArb,
+          email: formData.email,
+          password: formData.password,
+          mobile: formData.mobile,
+          cpr: formData.cpr,
+          gender: formData.gender,
+          nationality: formData.nationality,
+          category: formData.category,
+          workSector: formData.workSector,
+          employer: formData.employer,
+          position: formData.position,
+          specialty: formData.specialty,
+          address: formData.address,
+          membershipType: formData.membershipType,
+          subscriptionPlanId: formData.subscriptionPlanId,
+          typeOfApplication: formData.typeOfApplication,
+          membershipDate: formData.membershipDate || new Date().toISOString().split("T")[0],
+          licenseNumber: formData.licenseNumber || "",
+          yearsOfExperience: formData.yearsOfExperience || "",
+          id_card_url,
+          personal_photo_url,
+        }),
+      });
 
       const data = await res.json();
 

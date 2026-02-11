@@ -221,7 +221,6 @@ export async function POST(req) {
       // Upload ID Card
       if (idCardFile && idCardFile.size > 0) {
         if (!allowedTypes.includes(idCardFile.type)) {
-          // Delete user if created
           await supabase.from("users").delete().eq("id", user.id);
           return NextResponse.json(
             { success: false, message: "ID Card must be JPEG/PNG/WebP/PDF" },
@@ -256,7 +255,6 @@ export async function POST(req) {
         const { data: urlData } = supabase.storage.from("profile_pictures").getPublicUrl(path);
         idCardUrl = urlData.publicUrl || null;
       } else if (isMultipart && (!idCardFile || idCardFile.size === 0)) {
-        // If FormData is sent but ID card is missing, it's required
         await supabase.from("users").delete().eq("id", user.id);
         return NextResponse.json(
           { success: false, message: "ID Card (CPR) copy is required" },
@@ -268,7 +266,6 @@ export async function POST(req) {
       if (personalPhotoFile && personalPhotoFile.size > 0) {
         const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
         if (!allowedImageTypes.includes(personalPhotoFile.type)) {
-          // Clean up ID card if it was uploaded
           if (idCardUrl) {
             const idPath = idCardUrl.split("/").slice(-2).join("/");
             await supabase.storage.from("profile_pictures").remove([idPath]);
@@ -280,7 +277,6 @@ export async function POST(req) {
           );
         }
         if (personalPhotoFile.size > maxSize) {
-          // Clean up ID card if it was uploaded
           if (idCardUrl) {
             const idPath = idCardUrl.split("/").slice(-2).join("/");
             await supabase.storage.from("profile_pictures").remove([idPath]);
@@ -302,7 +298,6 @@ export async function POST(req) {
 
         if (uploadError) {
           console.error("Personal Photo upload error:", uploadError);
-          // Clean up ID card if it was uploaded
           if (idCardUrl) {
             const idPath = idCardUrl.split("/").slice(-2).join("/");
             await supabase.storage.from("profile_pictures").remove([idPath]);
@@ -328,6 +323,10 @@ export async function POST(req) {
           { status: 400 }
         );
       }
+    } else {
+      // JSON body path: accept pre-uploaded file URLs
+      idCardUrl = body.id_card_url || null;
+      personalPhotoUrl = body.personal_photo_url || null;
     }
 
     // --------------------------------------------------

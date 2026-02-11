@@ -76,6 +76,17 @@ export async function PUT(req, { params }) {
       if (Object.prototype.hasOwnProperty.call(body, "tag1")) update.tag1 = body.tag1 || null;
       if (Object.prototype.hasOwnProperty.call(body, "tag2")) update.tag2 = body.tag2 || null;
       if (Object.prototype.hasOwnProperty.call(body, "is_active")) update.is_active = !!body.is_active;
+      if (body.featured_image_url) update.featured_image_url = body.featured_image_url;
+      // Pre-uploaded family image URLs
+      if (Array.isArray(body.family_image_urls) && body.family_image_urls.length > 0) {
+        const rows = body.family_image_urls.map((url) => ({
+          gallery_id: id,
+          image_url: url,
+          sort_order: 0,
+        }));
+        const { error: imgErr } = await supabase.from("gallery_images").insert(rows);
+        if (imgErr) throw new Error(imgErr.message);
+      }
     }
 
     if (Object.keys(update).length) {
