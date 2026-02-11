@@ -2,12 +2,24 @@ import { supabase } from "@/lib/supabaseAdmin";
 
 export async function PUT(req) {
   try {
-    const formData = await req.formData();
+    const contentType = req.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
 
-    const id = formData.get("id");
-    const url = formData.get("url");
-    const status = formData.get("status") === "true";
-    const newImage = formData.get("image");
+    let id, url, status, newImage, newImageUrl;
+
+    if (isJson) {
+      const body = await req.json();
+      id = body.id;
+      url = body.url;
+      status = body.status === true || body.status === 'true';
+      newImageUrl = body.image_url || null;
+    } else {
+      const formData = await req.formData();
+      id = formData.get("id");
+      url = formData.get("url");
+      status = formData.get("status") === "true";
+      newImage = formData.get("image");
+    }
 
     if (!id) {
       return Response.json({ success: false, error: "Banner ID required" }, { status: 400 });
@@ -26,16 +38,20 @@ export async function PUT(req) {
 
     let image_url = existing.image_url;
 
-    // If admin uploads a new image → upload and delete old
-    if (newImage && newImage.name) {
-      // DELETE OLD FILE
+    if (newImageUrl) {
+      // JSON path: client already uploaded
+      const oldPath = existing.image_url?.split("/storage/v1/object/public/media/")[1];
+      if (oldPath) {
+        await supabase.storage.from("media").remove([oldPath]);
+      }
+      image_url = newImageUrl;
+    } else if (newImage && newImage.name) {
+      // Legacy FormData path
       const oldPath = existing.image_url.split("/storage/v1/object/public/media/")[1];
-
       if (oldPath) {
         await supabase.storage.from("media").remove([oldPath]);
       }
 
-      // UPLOAD NEW FILE
       const ext = newImage.name.split(".").pop();
       const fileName = `banner_${Date.now()}.${ext}`;
       const fileBuffer = Buffer.from(await newImage.arrayBuffer());

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { uploadFile } from "@/lib/uploadClient";
 import {
   FileText,
   Plus,
@@ -241,38 +242,48 @@ export default function AdminResearchPage() {
         return;
       }
 
-      const fd = new FormData();
-      fd.append("title", form.title.trim());
-      fd.append("description", form.description.trim() || "");
-      // Use custom category if "Other" is selected, otherwise use selected category
       const finalCategory = form.category === "Other" && form.customCategory.trim() 
         ? form.customCategory.trim() 
         : (form.category.trim() || "");
-      fd.append("category", finalCategory);
-      fd.append("researcher_name", form.researcher_name.trim());
-      fd.append("external_link", form.external_link.trim() || "");
-      fd.append("more_information", JSON.stringify(form.more_information || {}));
 
+      const payload = {
+        title: form.title.trim(),
+        description: form.description.trim() || "",
+        category: finalCategory,
+        researcher_name: form.researcher_name.trim(),
+        external_link: form.external_link.trim() || "",
+        more_information: form.more_information || {},
+      };
+
+      // Upload featured image directly if provided
       if (form.featured_image) {
-        fd.append("featured_image", form.featured_image);
+        const result = await uploadFile(form.featured_image, "research", "featured");
+        payload.featured_image_url = result.publicUrl;
       }
 
       if (form.remove_featured_image) {
-        fd.append("remove_featured_image", "true");
+        payload.remove_featured_image = true;
       }
 
+      // Upload research content directly if provided
       if (form.research_content) {
-        fd.append("research_content", form.research_content);
+        const result = await uploadFile(form.research_content, "research", "content");
+        payload.research_content_url = result.publicUrl;
       }
 
       if (form.remove_research_content) {
-        fd.append("remove_research_content", "true");
+        payload.remove_research_content = true;
       }
 
       const url = editing ? `/api/admin/research/${editing.id}` : "/api/admin/research";
       const method = editing ? "PUT" : "POST";
 
-      const res = await fetch(url, { method, body: fd, credentials: "include" });
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        credentials: "include",
+      });
       const data = await res.json();
 
       if (!data.success) {

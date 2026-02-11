@@ -78,6 +78,9 @@ export async function POST(request) {
         specialty = null,
         category = null,
       } = body || {});
+      // Accept pre-uploaded student ID card URL from JSON body
+      studentIdFile = null; // no file in JSON mode
+      var studentIdCardUrl = body?.student_id_card_url || null;
     }
 
     if (!full_name || !email || !phone || !password) {
@@ -184,7 +187,10 @@ export async function POST(request) {
 
     const isStudentCategory = (category || "").toLowerCase().includes("student");
 
-    if (isMultipart && (studentIdFile && studentIdFile.size > 0 || isStudentCategory)) {
+    if (!isMultipart && studentIdCardUrl) {
+      // JSON path: use pre-uploaded URL
+      idCardUrl = studentIdCardUrl;
+    } else if (isMultipart && (studentIdFile && studentIdFile.size > 0 || isStudentCategory)) {
       const allowedTypes = [
         "image/jpeg",
         "image/jpg",

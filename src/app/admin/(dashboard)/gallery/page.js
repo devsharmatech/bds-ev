@@ -269,7 +269,8 @@ export default function AdminGalleryPage() {
       let featured_image_url = form.featured_preview || null;
       if (form.featured_file) {
         toast.loading("Uploading featured image...", { id: "gallery-upload" });
-        featured_image_url = await uploadFile(form.featured_file, "gallery", "featured");
+        const result = await uploadFile(form.featured_file, "gallery", "featured");
+        featured_image_url = result.publicUrl;
       }
 
       const family_image_urls = [];
@@ -277,8 +278,8 @@ export default function AdminGalleryPage() {
         toast.loading(`Uploading ${form.family_files.length} images...`, { id: "gallery-upload" });
         for (let i = 0; i < form.family_files.length; i++) {
           toast.loading(`Uploading image ${i + 1}/${form.family_files.length}...`, { id: "gallery-upload" });
-          const url = await uploadFile(form.family_files[i], "gallery", "albums");
-          family_image_urls.push(url);
+          const result = await uploadFile(form.family_files[i], "gallery", "albums");
+          family_image_urls.push(result.publicUrl);
         }
       }
       toast.dismiss("gallery-upload");

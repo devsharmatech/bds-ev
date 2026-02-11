@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { uploadFile } from "@/lib/uploadClient";
 import {
   Video,
   Image as ImageIcon,
@@ -118,21 +119,29 @@ export default function HeroSettingsPage() {
     const toastId = toast.loading('Saving hero settings...');
     
     try {
-      const formData = new FormData();
+      const payload = {};
       
       if (useUrlInput) {
-        if (videoUrlInput) formData.append('video_url', videoUrlInput);
-        if (posterUrlInput) formData.append('poster_url', posterUrlInput);
+        if (videoUrlInput) payload.video_url = videoUrlInput;
+        if (posterUrlInput) payload.poster_url = posterUrlInput;
       } else {
-        if (videoFile) formData.append('video', videoFile);
-        if (posterFile) formData.append('poster', posterFile);
+        // Upload files directly to Supabase
+        if (videoFile) {
+          const result = await uploadFile(videoFile, "media", "hero");
+          payload.video_url = result.publicUrl;
+        }
+        if (posterFile) {
+          const result = await uploadFile(posterFile, "media", "hero");
+          payload.poster_url = result.publicUrl;
+        }
       }
-      if (removeVideo) formData.append('remove_video', 'true');
-      if (removePoster) formData.append('remove_poster', 'true');
+      if (removeVideo) payload.remove_video = true;
+      if (removePoster) payload.remove_poster = true;
 
       const res = await fetch('/api/admin/hero-settings/update', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
       
       const data = await res.json();

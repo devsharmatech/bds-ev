@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { uploadFile } from "@/lib/uploadClient";
 import {
   Search,
   Plus,
@@ -325,13 +326,16 @@ export default function ManageUsersPage() {
     const toastId = toast.loading("Uploading profile picture...");
 
     try {
-      const formData = new FormData();
-      formData.append("id", pictureUser.id);
-      formData.append("profile_picture", selectedFile);
+      // Upload directly to Supabase storage
+      const result = await uploadFile(selectedFile, "profile_pictures", "users");
 
       const res = await fetch("/api/admin/users/update-picture", {
         method: "PUT",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: pictureUser.id,
+          profile_image_url: result.publicUrl,
+        }),
       });
       const json = await res.json();
       
@@ -346,7 +350,7 @@ export default function ManageUsersPage() {
         loadUsers();
       }
     } catch (err) {
-      toast.error("Network error");
+      toast.error(err.message || "Network error");
     } finally {
       setUploadingPicture(false);
       toast.dismiss(toastId);

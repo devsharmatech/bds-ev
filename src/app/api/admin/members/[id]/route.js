@@ -308,10 +308,59 @@ export async function PUT(request, { params }) {
           updateUser.membership_type = rawType;
         }
       }
+      if (body.membership_expiry_date !== undefined) {
+        if (body.membership_expiry_date && typeof body.membership_expiry_date === 'string' && body.membership_expiry_date.trim()) {
+          const date = new Date(body.membership_expiry_date.trim());
+          if (!Number.isNaN(date.getTime())) {
+            date.setUTCHours(23, 59, 59, 999);
+            updateUser.membership_expiry_date = date.toISOString();
+          }
+        } else {
+          updateUser.membership_expiry_date = null;
+        }
+      }
       if (body.role !== undefined) updateUser.role = body.role;
       if (body.membership_code !== undefined) updateUser.membership_code = body.membership_code;
+      if (body.is_member_verified !== undefined) updateUser.is_member_verified = body.is_member_verified === 'true' || body.is_member_verified === true;
+      if (body.set_personal_as_profile !== undefined) setPersonalAsProfile = body.set_personal_as_profile === 'true' || body.set_personal_as_profile === true;
 
-      profileData = body.member_profile || {};
+      // Build profile data from flat keys or member_profile object
+      profileData = {};
+      if (body.member_profile) {
+        profileData = body.member_profile;
+      } else {
+        const profileKeys = [
+          'gender','dob','address','city','state','pin_code','cpr_id','nationality',
+          'type_of_application','membership_date','work_sector','employer','position',
+          'specialty','category','license_number','years_of_experience'
+        ];
+        for (const key of profileKeys) {
+          if (body[key] !== undefined) {
+            profileData[key] = body[key] === '' ? null : body[key];
+          }
+        }
+      }
+
+      // JSON path: handle pre-uploaded file URLs
+      if (body.profile_image_url) {
+        // Delete old image
+        if (existingUser.profile_image) {
+          const oldFile = existingUser.profile_image.split('/').pop();
+          if (oldFile) {
+            await supabase.storage.from('profile_pictures').remove([`profiles/${oldFile}`]);
+          }
+        }
+        updateUser.profile_image = body.profile_image_url;
+      }
+      if (body.verification_id_card_url) {
+        profileData.id_card_url = body.verification_id_card_url;
+      }
+      if (body.verification_personal_photo_url) {
+        profileData.personal_photo_url = body.verification_personal_photo_url;
+        if (setPersonalAsProfile) {
+          updateUser.profile_image = body.verification_personal_photo_url;
+        }
+      }
 
       if (body.subscription_plan !== undefined) {
         const rawPlan = String(body.subscription_plan || '').trim().toLowerCase();
@@ -332,25 +381,28 @@ export async function PUT(request, { params }) {
       }
 
       // payments
-      if (typeof body.membership_fee_registration === 'number') {
+      const payNow = body.membership_pay_now === true || body.membership_pay_now === 'true';
+      const feeReg = body.membership_fee_registration ? parseFloat(body.membership_fee_registration) : undefined;
+      const feeAnn = body.membership_fee_annual ? parseFloat(body.membership_fee_annual) : undefined;
+      if (typeof feeReg === 'number' && !isNaN(feeReg)) {
         paymentsToAdd.push({
           user_id: id,
           payment_type: 'registration',
-          amount: body.membership_fee_registration,
+          amount: feeReg,
           currency: 'B.D',
-          paid: body.membership_pay_now === true,
-          paid_at: body.membership_pay_now === true ? new Date().toISOString() : null,
+          paid: payNow,
+          paid_at: payNow ? new Date().toISOString() : null,
           reference: body.payment_reference || null
         });
       }
-      if (typeof body.membership_fee_annual === 'number') {
+      if (typeof feeAnn === 'number' && !isNaN(feeAnn)) {
         paymentsToAdd.push({
           user_id: id,
           payment_type: 'annual',
-          amount: body.membership_fee_annual,
+          amount: feeAnn,
           currency: 'B.D',
-          paid: body.membership_pay_now === true,
-          paid_at: body.membership_pay_now === true ? new Date().toISOString() : null,
+          paid: payNow,
+          paid_at: payNow ? new Date().toISOString() : null,
           reference: body.payment_reference || null
         });
       }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, User, Mail, Phone, CheckCircle, AlertCircle, Globe, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { uploadFile } from "@/lib/uploadClient";
 
 export default function RegistrationLiteModal({
   isOpen,
@@ -208,30 +209,36 @@ export default function RegistrationLiteModal({
           ? phone.trim()
           : `${countryDial} ${phone.trim()}`;
 
-      const formData = new FormData();
-      formData.append("full_name", fullName.trim());
-      formData.append("email", email.trim());
-      formData.append("phone", combinedPhone);
-      formData.append("password", password.trim());
-      formData.append("cpr_id", "");
-      formData.append("gender", gender || "");
-      formData.append("dob", dob || "");
-      formData.append("nationality", nationality || "");
-      formData.append("address", address || "");
-      formData.append("city", city || "");
-      formData.append("state", state || "");
-      formData.append("work_sector", workSector || "");
-      formData.append("employer", employer || "");
-      formData.append("position", position || "");
-      formData.append("specialty", specialty || "");
-      formData.append("category", category || "");
+      // Upload student ID card directly to Supabase Storage first
+      let student_id_card_url = null;
       if (studentIdFile) {
-        formData.append("student_id_card", studentIdFile);
+        const result = await uploadFile(studentIdFile, "profile_pictures", "verification");
+        student_id_card_url = result.publicUrl;
       }
 
+      // Send JSON with pre-uploaded URL
       const res = await fetch("/api/auth/register-lite", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: fullName.trim(),
+          email: email.trim(),
+          phone: combinedPhone,
+          password: password.trim(),
+          cpr_id: "",
+          gender: gender || "",
+          dob: dob || "",
+          nationality: nationality || "",
+          address: address || "",
+          city: city || "",
+          state: state || "",
+          work_sector: workSector || "",
+          employer: employer || "",
+          position: position || "",
+          specialty: specialty || "",
+          category: category || "",
+          student_id_card_url,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {

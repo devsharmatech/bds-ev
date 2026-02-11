@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { uploadFile } from "@/lib/uploadClient";
 import {
   Plus,
   Edit3,
@@ -119,21 +120,31 @@ export default function BannersManager() {
     );
 
     try {
-      const formData = new FormData();
-      if (form.image) formData.append("image", form.image);
-      formData.append("url", form.url.trim());
-      formData.append("status", form.status);
+      const payload = {
+        url: form.url.trim(),
+        status: form.status,
+      };
+
+      // Upload image directly if provided
+      if (form.image) {
+        const result = await uploadFile(form.image, "media", "banners");
+        payload.image_url = result.publicUrl;
+      }
 
       let endpoint = "/api/admin/banners/create";
       let method = "POST";
 
       if (editingBanner) {
         endpoint = "/api/admin/banners/update";
-        formData.append("id", editingBanner.id);
+        payload.id = editingBanner.id;
         method = "PUT";
       }
 
-      const response = await fetch(endpoint, { method, body: formData });
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const data = await response.json();
 
       if (data.success) {

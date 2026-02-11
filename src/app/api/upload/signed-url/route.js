@@ -26,6 +26,7 @@ export async function POST(request) {
     const ALLOWED_BUCKETS = [
       "profile_pictures",
       "events",
+      "event-banners",
       "gallery",
       "research",
       "speaker-documents",

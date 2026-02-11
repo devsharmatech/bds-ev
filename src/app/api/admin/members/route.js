@@ -262,6 +262,23 @@ export async function POST(request) {
       body.payment_reference = formData.get('payment_reference') || null;
     } else {
       body = await request.json();
+      // JSON path: build member_profile from flat fields if not provided
+      if (!body.member_profile) {
+        body.member_profile = {};
+        const profileKeys = [
+          'gender', 'dob', 'address', 'city', 'state', 'pin_code', 'cpr_id',
+          'nationality', 'type_of_application', 'membership_date', 'work_sector',
+          'employer', 'position', 'specialty', 'category', 'license_number', 'years_of_experience'
+        ];
+        profileKeys.forEach(k => {
+          if (body[k] !== undefined) body.member_profile[k] = body[k] || null;
+        });
+      }
+      // Parse numeric fees
+      if (body.membership_fee_registration) body.membership_fee_registration = parseFloat(body.membership_fee_registration);
+      if (body.membership_fee_annual) body.membership_fee_annual = parseFloat(body.membership_fee_annual);
+      body.membership_pay_now = body.membership_pay_now === 'true' || body.membership_pay_now === true;
+      body.is_verified = body.is_verified === 'true' || body.is_verified === true;
     }
 
     // validate required fields
@@ -347,7 +364,11 @@ export async function POST(request) {
 
     // handle profile image upload if provided
     let publicProfileUrl = null;
-    if (profileImage && profileImage.size > 0) {
+    if (body.profile_image_url) {
+      // JSON path: client already uploaded directly
+      publicProfileUrl = body.profile_image_url;
+      await supabase.from('users').update({ profile_image: publicProfileUrl }).eq('id', userId);
+    } else if (profileImage && profileImage.size > 0) {
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       const maxSize = 5 * 1024 * 1024;
       if (!allowedTypes.includes(profileImage.type)) {
@@ -373,7 +394,10 @@ export async function POST(request) {
 
     // Handle ID card upload if provided
     let idCardUrl = null;
-    if (body.id_card && body.id_card.size > 0) {
+    if (body.id_card_url) {
+      // JSON path: client already uploaded
+      idCardUrl = body.id_card_url;
+    } else if (body.id_card && body.id_card.size > 0) {
       const idCard = body.id_card;
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
       const maxSize = 5 * 1024 * 1024;
@@ -397,7 +421,10 @@ export async function POST(request) {
 
     // Handle personal photo upload if provided
     let personalPhotoUrl = null;
-    if (body.personal_photo && body.personal_photo.size > 0) {
+    if (body.personal_photo_url) {
+      // JSON path: client already uploaded
+      personalPhotoUrl = body.personal_photo_url;
+    } else if (body.personal_photo && body.personal_photo.size > 0) {
       const personalPhoto = body.personal_photo;
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       const maxSize = 5 * 1024 * 1024;

@@ -32,6 +32,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Modal from "@/components/Modal";
 import DeleteModal from "@/components/DeleteModal";
+import { uploadFile } from "@/lib/uploadClient";
 
 const generateSlugPreview = (name) => {
   return (name || "")
@@ -190,28 +191,34 @@ export default function AdminCommitteesPage() {
     setModalLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("name", form.name || "");
-      formData.append("hero_title", form.hero_title || "");
-      formData.append("hero_subtitle", form.hero_subtitle || "");
-      formData.append("focus", form.focus || "");
-      formData.append("description", form.description || "");
-      formData.append("banner_image", form.banner_image || "");
-      formData.append("contact_email", form.contact_email || "");
-      formData.append("sort_order", String(Number(form.sort_order) || 0));
-      formData.append("is_active", form.is_active ? "true" : "false");
-      if (editing) {
-        formData.append("id", editing.id);
-      }
+      // Upload banner image directly to Supabase if a new file was selected
+      let bannerImageUrl = form.banner_image || null;
       if (bannerImageFile) {
-        formData.append("banner_image_file", bannerImageFile);
+        const result = await uploadFile(bannerImageFile, "media", "committees");
+        bannerImageUrl = result.publicUrl;
+      }
+
+      const payload = {
+        name: form.name || "",
+        hero_title: form.hero_title || "",
+        hero_subtitle: form.hero_subtitle || "",
+        focus: form.focus || "",
+        description: form.description || "",
+        banner_image: bannerImageUrl,
+        contact_email: form.contact_email || "",
+        sort_order: Number(form.sort_order) || 0,
+        is_active: !!form.is_active,
+      };
+      if (editing) {
+        payload.id = editing.id;
       }
 
       const res = await fetch(
         editing ? `/api/admin/committees/${editing.id}` : "/api/admin/committees",
         {
           method: editing ? "PUT" : "POST",
-          body: formData,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
           credentials: "include",
         }
       );

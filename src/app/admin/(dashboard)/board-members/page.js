@@ -32,6 +32,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Modal from "@/components/Modal";
 import DeleteModal2 from "@/components/DeleteModal2";
+import { uploadFile } from "@/lib/uploadClient";
 
 export default function AdminSiteMembersPage() {
   const [loading, setLoading] = useState(true);
@@ -223,25 +224,28 @@ export default function AdminSiteMembersPage() {
         return;
       }
 
-      const fd = new FormData();
-      fd.append("name", form.name.trim());
-      fd.append("title", form.title || "");
-      fd.append("role", form.role || "");
-      fd.append("bio", form.bio || "");
-      fd.append("email", form.email || "");
-      fd.append("phone", form.phone || "");
-      fd.append("instagram", form.instagram || "");
-      fd.append("linkedin", form.linkedin || "");
-      fd.append("facebook", form.facebook || "");
-      fd.append("twitter", form.twitter || "");
-      fd.append("sort_order", String(Number(form.sort_order) || 0));
-      fd.append("is_active", String(!!form.is_active));
-      
+      // Upload photo directly to Supabase if a new file was selected
+      let photoUrl = form.photo_url || null;
       if (form.photo_file) {
-        fd.append("photo", form.photo_file);
-      } else if (!editing && form.photo_url) {
-        fd.append("photo_url", form.photo_url);
+        const result = await uploadFile(form.photo_file, "media", "site_members/team");
+        photoUrl = result.publicUrl;
       }
+
+      const payload = {
+        name: form.name.trim(),
+        title: form.title || "",
+        role: form.role || "",
+        bio: form.bio || "",
+        email: form.email || "",
+        phone: form.phone || "",
+        instagram: form.instagram || "",
+        linkedin: form.linkedin || "",
+        facebook: form.facebook || "",
+        twitter: form.twitter || "",
+        sort_order: Number(form.sort_order) || 0,
+        is_active: !!form.is_active,
+        photo_url: photoUrl,
+      };
 
       const url = editing 
         ? `/api/admin/site-members/${editing.id}` 
@@ -251,7 +255,8 @@ export default function AdminSiteMembersPage() {
       
       const res = await fetch(url, {
         method,
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
         credentials: "include",
       });
       

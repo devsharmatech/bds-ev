@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { uploadFile } from "@/lib/uploadClient";
 import {
   Image as ImageIcon,
   Plus,
@@ -107,13 +108,10 @@ export default function HeroSlidesPage() {
 
   const handleToggleActive = async (slide) => {
     try {
-      const formData = new FormData();
-      formData.append("id", slide.id);
-      formData.append("is_active", slide.is_active === false ? "true" : "false");
-
       const res = await fetch("/api/admin/hero-slides", {
         method: "PUT",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: slide.id, is_active: slide.is_active === false }),
       });
       const data = await res.json();
       if (data.success) {
@@ -177,28 +175,32 @@ export default function HeroSlidesPage() {
     e.preventDefault();
     setSaving(true);
 
-    const formData = new FormData();
-    if (isEditing) {
-      formData.append("id", form.id);
-    }
-    if (form.title) formData.append("title", form.title);
-    if (form.subtitle) formData.append("subtitle", form.subtitle);
-    if (form.description) formData.append("description", form.description);
-    if (form.slideType) formData.append("slide_type", form.slideType);
-    formData.append("show_stats_row", form.showStatsRow ? "true" : "false");
-    if (form.buttonText) formData.append("button_text", form.buttonText);
-    if (form.buttonUrl) formData.append("button_url", form.buttonUrl);
-    if (form.secondaryButtonText) formData.append("secondary_button_text", form.secondaryButtonText);
-    if (form.secondaryButtonUrl) formData.append("secondary_button_url", form.secondaryButtonUrl);
-    if (form.removeImage) formData.append("remove_image", "true");
-    if (form.imageFile) formData.append("image", form.imageFile);
-
-    const method = isEditing ? "PUT" : "POST";
-
     try {
+      const payload = {};
+      if (isEditing) payload.id = form.id;
+      if (form.title) payload.title = form.title;
+      if (form.subtitle) payload.subtitle = form.subtitle;
+      if (form.description) payload.description = form.description;
+      if (form.slideType) payload.slide_type = form.slideType;
+      payload.show_stats_row = form.showStatsRow ? true : false;
+      if (form.buttonText) payload.button_text = form.buttonText;
+      if (form.buttonUrl) payload.button_url = form.buttonUrl;
+      if (form.secondaryButtonText) payload.secondary_button_text = form.secondaryButtonText;
+      if (form.secondaryButtonUrl) payload.secondary_button_url = form.secondaryButtonUrl;
+      if (form.removeImage) payload.remove_image = true;
+
+      // Upload image directly if provided
+      if (form.imageFile) {
+        const result = await uploadFile(form.imageFile, "media", "hero-slides");
+        payload.image_url = result.publicUrl;
+      }
+
+      const method = isEditing ? "PUT" : "POST";
+
       const res = await fetch("/api/admin/hero-slides", {
         method,
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {

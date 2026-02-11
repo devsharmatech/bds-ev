@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { uploadFile } from "@/lib/uploadClient";
 import {
   Search,
   Plus,
@@ -916,25 +917,27 @@ export default function MembersPage() {
     try {
       setVerifying(true);
 
-      // Create form data
-      const fd = new FormData();
-      fd.append("is_member_verified", "true");
-      // Only append files if they are being uploaded (not null)
+      // Upload verification documents directly to Supabase
+      const payload = {
+        is_member_verified: "true",
+        set_personal_as_profile: usePersonalAsProfile ? "true" : "false",
+        verification_date: new Date().toISOString(),
+        verified_by_admin: "true",
+      };
+
       if (verifyIdCard) {
-        fd.append("verification_id_card", verifyIdCard);
+        const result = await uploadFile(verifyIdCard, "profile_pictures", `verification/${activeMember.id}`);
+        payload.verification_id_card_url = result.publicUrl;
       }
       if (verifyPersonalPhoto) {
-        fd.append("verification_personal_photo", verifyPersonalPhoto);
+        const result = await uploadFile(verifyPersonalPhoto, "profile_pictures", `verification/${activeMember.id}`);
+        payload.verification_personal_photo_url = result.publicUrl;
       }
-      fd.append("set_personal_as_profile", usePersonalAsProfile ? "true" : "false");
-
-      // Add verification timestamp
-      fd.append("verification_date", new Date().toISOString());
-      fd.append("verified_by_admin", "true");
 
       const res = await fetch(`/api/admin/members/${activeMember.id}`, {
         method: "PUT",
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -1013,70 +1016,63 @@ export default function MembersPage() {
     }
 
     try {
-      const fd = new FormData();
-      fd.append("email", form.email);
-      fd.append("password", form.password);
-      fd.append("full_name", form.full_name);
-      if (form.phone) fd.append("phone", form.phone);
-      if (form.mobile) fd.append("mobile", form.mobile);
-      fd.append("role", form.role);
-      if (form.membership_code)
-        fd.append("membership_code", form.membership_code);
-      fd.append("membership_status", form.membership_status);
-      fd.append("membership_type", form.membership_type || "free");
-      fd.append("subscription_plan", form.subscription_plan || "");
-      fd.append("membership_expiry_date", form.membership_expiry_date || "");
+      const payload = {
+        email: form.email,
+        password: form.password,
+        full_name: form.full_name,
+        role: form.role,
+        membership_status: form.membership_status,
+        membership_type: form.membership_type || "free",
+        subscription_plan: form.subscription_plan || "",
+        membership_expiry_date: form.membership_expiry_date || "",
+      };
+
+      if (form.phone) payload.phone = form.phone;
+      if (form.mobile) payload.mobile = form.mobile;
+      if (form.membership_code) payload.membership_code = form.membership_code;
 
       const profileKeys = [
-        "gender",
-        "dob",
-        "address",
-        "city",
-        "state",
-        "cpr_id",
-        "nationality",
-        "work_sector",
-        "employer",
-        "position",
-        "specialty",
-        "category",
-        "license_number",
-        "years_of_experience",
+        "gender", "dob", "address", "city", "state", "cpr_id",
+        "nationality", "work_sector", "employer", "position",
+        "specialty", "category", "license_number", "years_of_experience",
       ];
       profileKeys.forEach((k) => {
         if (form[k] !== undefined && form[k] !== "") {
-          fd.append(k, String(form[k]));
+          payload[k] = String(form[k]);
         }
       });
 
-      if (profileImageFile) fd.append("profile_image", profileImageFile);
-      
-      // Add verification documents for auto-verification
-      if (addIdCardFile) fd.append("id_card", addIdCardFile);
-      if (addPersonalPhotoFile) fd.append("personal_photo", addPersonalPhotoFile);
-      
+      // Upload files directly to Supabase
+      if (profileImageFile) {
+        const result = await uploadFile(profileImageFile, "profile_pictures", "profile");
+        payload.profile_image_url = result.publicUrl;
+      }
+      if (addIdCardFile) {
+        const result = await uploadFile(addIdCardFile, "profile_pictures", "verification");
+        payload.id_card_url = result.publicUrl;
+      }
+      if (addPersonalPhotoFile) {
+        const result = await uploadFile(addPersonalPhotoFile, "profile_pictures", "verification");
+        payload.personal_photo_url = result.publicUrl;
+      }
+
       // If both documents are provided, mark as verified
       if (addIdCardFile && addPersonalPhotoFile) {
-        fd.append("is_verified", "true");
+        payload.is_verified = "true";
       }
 
       if (form.membership_fee_registration !== undefined)
-        fd.append(
-          "membership_fee_registration",
-          String(form.membership_fee_registration)
-        );
+        payload.membership_fee_registration = String(form.membership_fee_registration);
       if (form.membership_fee_annual !== undefined)
-        fd.append("membership_fee_annual", String(form.membership_fee_annual));
-      fd.append(
-        "membership_pay_now",
-        form.membership_pay_now ? "true" : "false"
-      );
+        payload.membership_fee_annual = String(form.membership_fee_annual);
+      payload.membership_pay_now = form.membership_pay_now ? "true" : "false";
       if (form.payment_reference)
-        fd.append("payment_reference", form.payment_reference);
+        payload.payment_reference = form.payment_reference;
 
       const res = await fetch("/api/admin/members", {
         method: "POST",
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
@@ -1102,71 +1098,60 @@ export default function MembersPage() {
     if (!activeMember) return;
     setIsEditing(true);
     try {
-      const fd = new FormData();
-      fd.append("full_name", form.full_name);
-      fd.append("email", form.email);
+      const payload = {
+        full_name: form.full_name,
+        email: form.email,
+        membership_status: form.membership_status,
+        role: form.role,
+      };
+
       // Only send password if provided (to update it)
       if (form.password && form.password.trim().length > 0) {
         if (form.password.trim().length < 6) {
           toast.error("Password must be at least 6 characters");
           return;
         }
-        fd.append("password", form.password);
+        payload.password = form.password;
       }
-      if (form.phone) fd.append("phone", form.phone);
-      if (form.mobile) fd.append("mobile", form.mobile);
-      fd.append("membership_status", form.membership_status);
+      if (form.phone) payload.phone = form.phone;
+      if (form.mobile) payload.mobile = form.mobile;
       if (form.membership_type !== undefined) {
-        fd.append("membership_type", form.membership_type || "free");
+        payload.membership_type = form.membership_type || "free";
       }
       if (form.subscription_plan !== undefined) {
-        fd.append("subscription_plan", form.subscription_plan || "");
+        payload.subscription_plan = form.subscription_plan || "";
       }
       if (form.membership_expiry_date !== undefined) {
-        fd.append("membership_expiry_date", form.membership_expiry_date || "");
+        payload.membership_expiry_date = form.membership_expiry_date || "";
       }
-      fd.append("role", form.role);
-      if (form.membership_code)
-        fd.append("membership_code", form.membership_code);
+      if (form.membership_code) payload.membership_code = form.membership_code;
 
       const profileKeys = [
-        "gender",
-        "dob",
-        "address",
-        "city",
-        "state",
-        "cpr_id",
-        "nationality",
-        "work_sector",
-        "employer",
-        "position",
-        "specialty",
-        "category",
-        "license_number",
-        "years_of_experience",
+        "gender", "dob", "address", "city", "state", "cpr_id",
+        "nationality", "work_sector", "employer", "position",
+        "specialty", "category", "license_number", "years_of_experience",
       ];
       profileKeys.forEach((k) => {
-        if (form[k] !== undefined) fd.append(k, String(form[k] || ""));
+        if (form[k] !== undefined) payload[k] = String(form[k] || "");
       });
 
-      if (profileImageFile) fd.append("profile_image", profileImageFile);
+      // Upload profile image directly if provided
+      if (profileImageFile) {
+        const result = await uploadFile(profileImageFile, "profile_pictures", "profiles");
+        payload.profile_image_url = result.publicUrl;
+      }
       if (form.membership_fee_registration)
-        fd.append(
-          "membership_fee_registration",
-          String(form.membership_fee_registration)
-        );
+        payload.membership_fee_registration = String(form.membership_fee_registration);
       if (form.membership_fee_annual)
-        fd.append("membership_fee_annual", String(form.membership_fee_annual));
-      fd.append(
-        "membership_pay_now",
-        form.membership_pay_now ? "true" : "false"
-      );
+        payload.membership_fee_annual = String(form.membership_fee_annual);
+      payload.membership_pay_now = form.membership_pay_now ? "true" : "false";
       if (form.payment_reference)
-        fd.append("payment_reference", form.payment_reference);
+        payload.payment_reference = form.payment_reference;
 
       const res = await fetch(`/api/admin/members/${activeMember.id}`, {
         method: "PUT",
-        body: fd,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {

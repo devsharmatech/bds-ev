@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
+import { uploadFile } from "@/lib/uploadClient";
 import {
   Plus,
   Edit3,
@@ -168,21 +169,32 @@ export default function ManageTestimonials() {
     const loadingId = toast.loading(editing ? "Updating testimonial..." : "Creating testimonial...");
 
     try {
-      const formData = new FormData();
-      if (form.profile_image) formData.append("profile_image", form.profile_image);
-      formData.append("name", form.name.trim());
-      formData.append("rating", String(form.rating));
-      formData.append("message", form.message.trim());
-      formData.append("status", String(form.status));
+      let profile_image_url = null;
+      if (form.profile_image && form.profile_image instanceof File) {
+        const result = await uploadFile(form.profile_image, "media", "testimonials");
+        profile_image_url = result.publicUrl;
+      }
+
+      const payload = {
+        name: form.name.trim(),
+        rating: form.rating,
+        message: form.message.trim(),
+        status: form.status,
+      };
+      if (profile_image_url) payload.profile_image_url = profile_image_url;
 
       const endpoint = editing ? "/api/admin/testimonials/update" : "/api/admin/testimonials/create";
       const method = editing ? "PUT" : "POST";
 
       if (editing) {
-        formData.append("id", editing.id);
+        payload.id = editing.id;
       }
 
-      const res = await fetch(endpoint, { method, body: formData });
+      const res = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const json = await res.json();
 
       if (json.success) {

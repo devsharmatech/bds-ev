@@ -107,7 +107,8 @@ async function deleteImage(imageUrl, folder) {
 export async function PUT(request, { params }) {
   try {
     const { id } = await params;
-    const formData = await request.formData();
+    const contentType = request.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
 
     // Check if event exists
     const { data: existingEvent, error: fetchError } = await supabase
@@ -126,48 +127,104 @@ export async function PUT(request, { params }) {
       }, { status: 404 });
     }
 
-    // Parse event data
-    const title = formData.get('title');
-    const description = formData.get('description');
-    const start_datetime = formData.get('start_datetime');
-    const end_datetime = formData.get('end_datetime');
-    const timezone = formData.get('timezone');
-    const venue_name = formData.get('venue_name');
-    const address = formData.get('address');
-    const city = formData.get('city');
-    const created_by = formData.get('created_by');
-    const province = formData.get('province');
-    const pin_code = formData.get('pin_code');
-    const google_map_url = formData.get('google_map_url');
-    const capacity = formData.get('capacity') ? parseInt(formData.get('capacity')) : null;
-    const is_paid = formData.get('is_paid') === 'true';
-    const regular_price = formData.get('regular_price') ? parseFloat(formData.get('regular_price')) : null;
-    const member_price = formData.get('member_price') ? parseFloat(formData.get('member_price')) : null;
-    const student_price = formData.get('student_price') ? parseFloat(formData.get('student_price')) : null;
-    const hygienist_price = formData.get('hygienist_price') ? parseFloat(formData.get('hygienist_price')) : null;
-    const regular_standard_price = formData.get('regular_standard_price') ? parseFloat(formData.get('regular_standard_price')) : null;
-    const member_standard_price = formData.get('member_standard_price') ? parseFloat(formData.get('member_standard_price')) : null;
-    const student_standard_price = formData.get('student_standard_price') ? parseFloat(formData.get('student_standard_price')) : null;
-    const hygienist_standard_price = formData.get('hygienist_standard_price') ? parseFloat(formData.get('hygienist_standard_price')) : null;
-    const regular_onsite_price = formData.get('regular_onsite_price') ? parseFloat(formData.get('regular_onsite_price')) : null;
-    const member_onsite_price = formData.get('member_onsite_price') ? parseFloat(formData.get('member_onsite_price')) : null;
-    const student_onsite_price = formData.get('student_onsite_price') ? parseFloat(formData.get('student_onsite_price')) : null;
-    const hygienist_onsite_price = formData.get('hygienist_onsite_price') ? parseFloat(formData.get('hygienist_onsite_price')) : null;
-    const early_bird_deadline = formData.get('early_bird_deadline');
-    const status = formData.get('status');
-    const bannerImage = formData.get('banner_image');
-    const removeBanner = formData.get('remove_banner') === 'true';
-    const nera_cme_hours = formData.get('nera_cme_hours');
-    const nera_code = formData.get('nera_code');
-    
-    // Parse agendas and hosts data
-    const agendasJson = formData.get('agendas');
-    const agendas = agendasJson ? JSON.parse(agendasJson) : [];
-    const updateAgendas = formData.get('update_agendas') === 'true';
-    
-    const hostsJson = formData.get('hosts');
-    const hosts = hostsJson ? JSON.parse(hostsJson) : [];
-    const updateHosts = formData.get('update_hosts') === 'true';
+    let title, description, start_datetime, end_datetime, timezone, venue_name, address, city,
+        created_by, province, pin_code, google_map_url, capacity, is_paid,
+        regular_price, member_price, student_price, hygienist_price,
+        regular_standard_price, member_standard_price, student_standard_price, hygienist_standard_price,
+        regular_onsite_price, member_onsite_price, student_onsite_price, hygienist_onsite_price,
+        early_bird_deadline, status, nera_cme_hours, nera_code;
+    let bannerImage = null;
+    let removeBanner = false;
+    let bannerImageUrl = null;
+    let agendas = [];
+    let updateAgendas = false;
+    let hosts = [];
+    let updateHosts = false;
+    let hostImageFiles = {};
+
+    if (isJson) {
+      const body = await request.json();
+      title = body.title;
+      description = body.description;
+      start_datetime = body.start_datetime;
+      end_datetime = body.end_datetime;
+      timezone = body.timezone;
+      venue_name = body.venue_name;
+      address = body.address;
+      city = body.city;
+      created_by = body.created_by;
+      province = body.province;
+      pin_code = body.pin_code;
+      google_map_url = body.google_map_url;
+      capacity = body.capacity ? parseInt(body.capacity) : undefined;
+      is_paid = body.is_paid !== undefined ? (body.is_paid === true || body.is_paid === 'true') : undefined;
+      regular_price = body.regular_price !== undefined ? (body.regular_price ? parseFloat(body.regular_price) : null) : undefined;
+      member_price = body.member_price !== undefined ? (body.member_price ? parseFloat(body.member_price) : null) : undefined;
+      student_price = body.student_price !== undefined ? (body.student_price ? parseFloat(body.student_price) : null) : undefined;
+      hygienist_price = body.hygienist_price !== undefined ? (body.hygienist_price ? parseFloat(body.hygienist_price) : null) : undefined;
+      regular_standard_price = body.regular_standard_price !== undefined ? (body.regular_standard_price ? parseFloat(body.regular_standard_price) : null) : undefined;
+      member_standard_price = body.member_standard_price !== undefined ? (body.member_standard_price ? parseFloat(body.member_standard_price) : null) : undefined;
+      student_standard_price = body.student_standard_price !== undefined ? (body.student_standard_price ? parseFloat(body.student_standard_price) : null) : undefined;
+      hygienist_standard_price = body.hygienist_standard_price !== undefined ? (body.hygienist_standard_price ? parseFloat(body.hygienist_standard_price) : null) : undefined;
+      regular_onsite_price = body.regular_onsite_price !== undefined ? (body.regular_onsite_price ? parseFloat(body.regular_onsite_price) : null) : undefined;
+      member_onsite_price = body.member_onsite_price !== undefined ? (body.member_onsite_price ? parseFloat(body.member_onsite_price) : null) : undefined;
+      student_onsite_price = body.student_onsite_price !== undefined ? (body.student_onsite_price ? parseFloat(body.student_onsite_price) : null) : undefined;
+      hygienist_onsite_price = body.hygienist_onsite_price !== undefined ? (body.hygienist_onsite_price ? parseFloat(body.hygienist_onsite_price) : null) : undefined;
+      early_bird_deadline = body.early_bird_deadline;
+      status = body.status;
+      nera_cme_hours = body.nera_cme_hours;
+      nera_code = body.nera_code;
+      removeBanner = body.remove_banner === true;
+      bannerImageUrl = body.banner_image_url || null;
+      agendas = body.agendas || [];
+      updateAgendas = body.update_agendas === true;
+      hosts = body.hosts || [];
+      updateHosts = body.update_hosts === true;
+    } else {
+      const formData = await request.formData();
+      title = formData.get('title');
+      description = formData.get('description');
+      start_datetime = formData.get('start_datetime');
+      end_datetime = formData.get('end_datetime');
+      timezone = formData.get('timezone');
+      venue_name = formData.get('venue_name');
+      address = formData.get('address');
+      city = formData.get('city');
+      created_by = formData.get('created_by');
+      province = formData.get('province');
+      pin_code = formData.get('pin_code');
+      google_map_url = formData.get('google_map_url');
+      capacity = formData.get('capacity') ? parseInt(formData.get('capacity')) : null;
+      is_paid = formData.get('is_paid') === 'true';
+      regular_price = formData.get('regular_price') ? parseFloat(formData.get('regular_price')) : null;
+      member_price = formData.get('member_price') ? parseFloat(formData.get('member_price')) : null;
+      student_price = formData.get('student_price') ? parseFloat(formData.get('student_price')) : null;
+      hygienist_price = formData.get('hygienist_price') ? parseFloat(formData.get('hygienist_price')) : null;
+      regular_standard_price = formData.get('regular_standard_price') ? parseFloat(formData.get('regular_standard_price')) : null;
+      member_standard_price = formData.get('member_standard_price') ? parseFloat(formData.get('member_standard_price')) : null;
+      student_standard_price = formData.get('student_standard_price') ? parseFloat(formData.get('student_standard_price')) : null;
+      hygienist_standard_price = formData.get('hygienist_standard_price') ? parseFloat(formData.get('hygienist_standard_price')) : null;
+      regular_onsite_price = formData.get('regular_onsite_price') ? parseFloat(formData.get('regular_onsite_price')) : null;
+      member_onsite_price = formData.get('member_onsite_price') ? parseFloat(formData.get('member_onsite_price')) : null;
+      student_onsite_price = formData.get('student_onsite_price') ? parseFloat(formData.get('student_onsite_price')) : null;
+      hygienist_onsite_price = formData.get('hygienist_onsite_price') ? parseFloat(formData.get('hygienist_onsite_price')) : null;
+      early_bird_deadline = formData.get('early_bird_deadline');
+      status = formData.get('status');
+      bannerImage = formData.get('banner_image');
+      removeBanner = formData.get('remove_banner') === 'true';
+      nera_cme_hours = formData.get('nera_cme_hours');
+      nera_code = formData.get('nera_code');
+      const agendasJson = formData.get('agendas');
+      agendas = agendasJson ? JSON.parse(agendasJson) : [];
+      updateAgendas = formData.get('update_agendas') === 'true';
+      const hostsJson = formData.get('hosts');
+      hosts = hostsJson ? JSON.parse(hostsJson) : [];
+      updateHosts = formData.get('update_hosts') === 'true';
+      for (const [index] of hosts.entries()) {
+        const hostImage = formData.get(`host_profile_image_${index}`);
+        if (hostImage && hostImage.size > 0) hostImageFiles[index] = hostImage;
+      }
+    }
 
     // Prepare event update data
     const updateData = {};
@@ -217,13 +274,17 @@ export async function PUT(request, { params }) {
     if (removeBanner && existingEvent.banner_url) {
       await deleteImage(existingEvent.banner_url, 'events');
       updateData.banner_url = null;
-    } else if (bannerImage && bannerImage.size > 0) {
-      // Delete old banner if exists
+    } else if (bannerImageUrl) {
+      // JSON path: client already uploaded, just use the URL
       if (existingEvent.banner_url) {
         await deleteImage(existingEvent.banner_url, 'events');
       }
-
-      // Upload new banner
+      updateData.banner_url = bannerImageUrl;
+    } else if (bannerImage && bannerImage.size > 0) {
+      // Legacy FormData path
+      if (existingEvent.banner_url) {
+        await deleteImage(existingEvent.banner_url, 'events');
+      }
       try {
         updateData.banner_url = await uploadImage(bannerImage, 'events');
       } catch (error) {
@@ -292,29 +353,35 @@ export async function PUT(request, { params }) {
       for (const [index, host] of hosts.entries()) {
         let profile_image = host.profile_image || null;
         
-        // Check if this host has a new profile image in formData
-        const hostImageKey = `host_profile_image_${index}`;
-        const hostImage = formData.get(hostImageKey);
-        
-        if (hostImage && hostImage.size > 0) {
-          // Upload new image
-          try {
-            profile_image = await uploadImage(hostImage, 'hosts');
-          } catch (error) {
-            return NextResponse.json({
-              success: false,
-              error: `Host ${index + 1}: ${error.message}`
-            }, { status: 400 });
-          }
-        } else if (host.remove_profile_image === true) {
-          // Delete old image if remove flag is set
-          if (host.profile_image) {
-            await deleteImage(host.profile_image, 'hosts');
+        if (isJson) {
+          // JSON path: client already uploaded, use profile_image_url if provided
+          if (host.profile_image_url) {
+            profile_image = host.profile_image_url;
+          } else if (host.remove_profile_image === true) {
+            if (host.profile_image) {
+              await deleteImage(host.profile_image, 'hosts');
+            }
             profile_image = null;
           }
+        } else {
+          // Legacy FormData path
+          const hostImage = hostImageFiles[index];
+          if (hostImage && hostImage.size > 0) {
+            try {
+              profile_image = await uploadImage(hostImage, 'hosts');
+            } catch (error) {
+              return NextResponse.json({
+                success: false,
+                error: `Host ${index + 1}: ${error.message}`
+              }, { status: 400 });
+            }
+          } else if (host.remove_profile_image === true) {
+            if (host.profile_image) {
+              await deleteImage(host.profile_image, 'hosts');
+              profile_image = null;
+            }
+          }
         }
-        // If host.profile_image exists and no new image uploaded and no remove flag,
-        // it will keep the existing image
         
         processedHosts.push({
           ...host,

@@ -2,14 +2,28 @@ import { supabase } from "@/lib/supabaseAdmin";
 
 export async function PUT(req) {
   try {
-    const formData = await req.formData();
+    const contentType = req.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
 
-    const id = formData.get("id");
-    const name = formData.get("name");
-    const rating = Number(formData.get("rating"));
-    const message = formData.get("message");
-    const status = formData.get("status") === "true";
-    const newImage = formData.get("profile_image");
+    let id, name, rating, message, status, newImage, profileImageUrl;
+
+    if (isJson) {
+      const body = await req.json();
+      id = body.id;
+      name = body.name;
+      rating = Number(body.rating);
+      message = body.message;
+      status = body.status === true || body.status === 'true';
+      profileImageUrl = body.profile_image_url || null;
+    } else {
+      const formData = await req.formData();
+      id = formData.get("id");
+      name = formData.get("name");
+      rating = Number(formData.get("rating"));
+      message = formData.get("message");
+      status = formData.get("status") === "true";
+      newImage = formData.get("profile_image");
+    }
 
     if (!id) {
       return Response.json({ success: false, error: "ID required" }, { status: 400 });
@@ -28,15 +42,20 @@ export async function PUT(req) {
 
     let profile_image = existing.profile_image;
 
-    // ----------- OPTIONAL NEW IMAGE UPLOAD -------------
-    if (newImage && newImage.name) {
-      // delete old image
+    if (isJson && profileImageUrl) {
+      // JSON path: client already uploaded
+      const oldPath = existing.profile_image?.split("/storage/v1/object/public/media/")[1];
+      if (oldPath) {
+        await supabase.storage.from("media").remove([oldPath]);
+      }
+      profile_image = profileImageUrl;
+    } else if (newImage && newImage.name) {
+      // Legacy FormData path
       const oldPath = existing.profile_image?.split("/storage/v1/object/public/media/")[1];
       if (oldPath) {
         await supabase.storage.from("media").remove([oldPath]);
       }
 
-      // upload new file
       const ext = newImage.name.split(".").pop();
       const fileName = `testimonial_${Date.now()}.${ext}`;
       const fileBuffer = Buffer.from(await newImage.arrayBuffer());

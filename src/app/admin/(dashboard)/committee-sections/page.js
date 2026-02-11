@@ -36,6 +36,7 @@ import toast, { Toaster } from "react-hot-toast";
 import Modal from "@/components/Modal";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import DeleteModal2 from "@/components/DeleteModal2";
+import { uploadFile } from "@/lib/uploadClient";
 
 export default function AdminCommitteeSectionsPage() {
 	const [loading, setLoading] = useState(true);
@@ -199,20 +200,25 @@ export default function AdminCommitteeSectionsPage() {
 				return;
 			}
 
-			const formData = new FormData();
-			formData.append("committee_id", form.committee_id);
-			formData.append("title", form.title);
-			formData.append("content", form.content || "");
-			formData.append("image_url", form.image_url || "");
-			formData.append("image_alignment", form.image_alignment || "left");
-			formData.append("button_label", form.button_label || "");
-			formData.append("button_url", form.button_url || "");
-			formData.append("show_button", form.show_button ? "true" : "false");
-			formData.append("sort_order", String(Number(form.sort_order) || 0));
-			formData.append("is_active", form.is_active ? "true" : "false");
+			// Upload image directly to Supabase if a new file was selected
+			let imageUrl = form.image_url || null;
 			if (imageFile) {
-				formData.append("image", imageFile);
+				const result = await uploadFile(imageFile, "media", form.committee_id);
+				imageUrl = result.publicUrl;
 			}
+
+			const payload = {
+				committee_id: form.committee_id,
+				title: form.title,
+				content: form.content || "",
+				image_url: imageUrl,
+				image_alignment: form.image_alignment || "left",
+				button_label: form.button_label || "",
+				button_url: form.button_url || "",
+				show_button: !!form.show_button,
+				sort_order: Number(form.sort_order) || 0,
+				is_active: !!form.is_active,
+			};
 
 			const res = await fetch(
 				editing 
@@ -220,7 +226,8 @@ export default function AdminCommitteeSectionsPage() {
 					: "/api/admin/committee-pages",
 				{
 					method: editing ? "PUT" : "POST",
-					body: formData,
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
 					credentials: "include",
 				}
 			);

@@ -26,6 +26,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { uploadFile } from "@/lib/uploadClient";
 
 // Bahrain flag SVG
 const BahrainFlag = () => (
@@ -836,7 +837,74 @@ export default function EventModal({
     setLoading(true);
 
     try {
-      const formDataToSend = formatFormData();
+      // Upload files directly to Supabase Storage first
+      let bannerImageUrl = null;
+      const hostImageUrls = {};
+
+      if (bannerFile) {
+        toast.loading("Uploading banner image...", { id: "event-upload" });
+        const result = await uploadFile(bannerFile, "event-banners", "banners");
+        bannerImageUrl = result.publicUrl;
+      }
+
+      // Upload host profile images
+      const hostImageKeys = Object.keys(hostImages);
+      for (const index of hostImageKeys) {
+        const hostImage = hostImages[index];
+        if (hostImage?.file) {
+          toast.loading(`Uploading host image ${parseInt(index) + 1}...`, { id: "event-upload" });
+          const result = await uploadFile(hostImage.file, "event-banners", "hosts");
+          hostImageUrls[index] = result.publicUrl;
+        }
+      }
+      toast.dismiss("event-upload");
+
+      // Build JSON body instead of FormData
+      const jsonBody = {};
+      const priceFields = [
+        'regular_price', 'member_price', 'student_price', 'hygienist_price',
+        'regular_standard_price', 'member_standard_price', 'student_standard_price', 'hygienist_standard_price',
+        'regular_onsite_price', 'member_onsite_price', 'student_onsite_price', 'hygienist_onsite_price'
+      ];
+      const dateTimeFields = ['start_datetime', 'end_datetime', 'early_bird_deadline'];
+
+      Object.keys(formData).forEach((key) => {
+        if (formData[key] !== null && formData[key] !== undefined) {
+          if (priceFields.includes(key) && !formData.is_paid) {
+            jsonBody[key] = "";
+          } else if (dateTimeFields.includes(key) && formData[key]) {
+            jsonBody[key] = convertInputToBahrainISO(formData[key]);
+          } else if (key === "created_by") {
+            jsonBody[key] = mode === "edit" ? formData.created_by : userInfo?.id || formData.created_by;
+          } else {
+            jsonBody[key] = formData[key];
+          }
+        }
+      });
+
+      if (bannerImageUrl) {
+        jsonBody.banner_image_url = bannerImageUrl;
+      }
+      if (removeBanner) {
+        jsonBody.remove_banner = true;
+      }
+
+      if (hosts.length > 0) {
+        // Merge pre-uploaded host image URLs into hosts data
+        const hostsWithUrls = hosts.map((host, idx) => {
+          if (hostImageUrls[idx]) {
+            return { ...host, profile_image_url: hostImageUrls[idx] };
+          }
+          return host;
+        });
+        jsonBody.hosts = hostsWithUrls;
+        jsonBody.update_hosts = true;
+      }
+
+      if (agendas.length > 0) {
+        jsonBody.agendas = agendas;
+        jsonBody.update_agendas = true;
+      }
 
       const url =
         mode === "create"
@@ -846,7 +914,8 @@ export default function EventModal({
 
       const response = await fetch(url, {
         method,
-        body: formDataToSend,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(jsonBody),
         credentials: "include",
       });
 
@@ -863,6 +932,7 @@ export default function EventModal({
         toast.error(data.error || "Operation failed");
       }
     } catch (error) {
+      toast.dismiss("event-upload");
       console.error("Error submitting form:", error);
       toast.error("Failed to save event");
     } finally {

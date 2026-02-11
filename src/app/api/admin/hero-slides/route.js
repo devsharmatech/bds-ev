@@ -37,46 +37,63 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const formData = await request.formData();
-    const title = (formData.get('title') || '').toString().trim();
-    const subtitle = (formData.get('subtitle') || '').toString().trim();
-    const description = (formData.get('description') || '').toString().trim();
-    const buttonText = (formData.get('button_text') || '').toString().trim();
-    const buttonUrl = (formData.get('button_url') || '').toString().trim();
-    const secondaryButtonText = (formData.get('secondary_button_text') || '').toString().trim();
-    const secondaryButtonUrl = (formData.get('secondary_button_url') || '').toString().trim();
-    const slideType = (formData.get('slide_type') || 'content').toString().trim() || 'content';
-    const showStatsRow = (formData.get('show_stats_row') || 'true').toString() === 'true';
-    const image = formData.get('image');
+    const contentType = request.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
 
-    if (!title && !description && !image) {
-      return NextResponse.json({ success: false, error: 'At least title, description or image is required' }, { status: 400 });
+    let title, subtitle, description, buttonText, buttonUrl, secondaryButtonText, secondaryButtonUrl, slideType, showStatsRow, imageUrl;
+
+    if (isJson) {
+      const body = await request.json();
+      title = (body.title || '').trim();
+      subtitle = (body.subtitle || '').trim();
+      description = (body.description || '').trim();
+      buttonText = (body.button_text || '').trim();
+      buttonUrl = (body.button_url || '').trim();
+      secondaryButtonText = (body.secondary_button_text || '').trim();
+      secondaryButtonUrl = (body.secondary_button_url || '').trim();
+      slideType = (body.slide_type || 'content').trim() || 'content';
+      showStatsRow = body.show_stats_row !== false;
+      imageUrl = body.image_url || null;
+    } else {
+      const formData = await request.formData();
+      title = (formData.get('title') || '').toString().trim();
+      subtitle = (formData.get('subtitle') || '').toString().trim();
+      description = (formData.get('description') || '').toString().trim();
+      buttonText = (formData.get('button_text') || '').toString().trim();
+      buttonUrl = (formData.get('button_url') || '').toString().trim();
+      secondaryButtonText = (formData.get('secondary_button_text') || '').toString().trim();
+      secondaryButtonUrl = (formData.get('secondary_button_url') || '').toString().trim();
+      slideType = (formData.get('slide_type') || 'content').toString().trim() || 'content';
+      showStatsRow = (formData.get('show_stats_row') || 'true').toString() === 'true';
+      const image = formData.get('image');
+
+      if (image && typeof image === 'object' && image.size > 0) {
+        const ext = image.name.split('.').pop();
+        const filename = `hero-slide-${uuidv4()}.${ext}`;
+        const filePath = `hero-slides/${filename}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('media')
+          .upload(filePath, image, {
+            contentType: image.type,
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error('[HERO-SLIDES] Upload error:', uploadError);
+          return NextResponse.json({ success: false, error: 'Failed to upload image' }, { status: 500 });
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('media')
+          .getPublicUrl(filePath);
+
+        imageUrl = urlData.publicUrl || null;
+      }
     }
 
-    let imageUrl = null;
-
-    if (image && typeof image === 'object' && image.size > 0) {
-      const ext = image.name.split('.').pop();
-      const filename = `hero-slide-${uuidv4()}.${ext}`;
-      const filePath = `hero-slides/${filename}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, image, {
-          contentType: image.type,
-          upsert: true,
-        });
-
-      if (uploadError) {
-        console.error('[HERO-SLIDES] Upload error:', uploadError);
-        return NextResponse.json({ success: false, error: 'Failed to upload image' }, { status: 500 });
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('media')
-        .getPublicUrl(filePath);
-
-      imageUrl = urlData.publicUrl || null;
+    if (!title && !description && !imageUrl) {
+      return NextResponse.json({ success: false, error: 'At least title, description or image is required' }, { status: 400 });
     }
 
     // Determine next sort_order
@@ -129,24 +146,48 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
-    const formData = await request.formData();
-    const id = (formData.get('id') || '').toString();
+    const contentType = request.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+
+    let id, title, subtitle, description, buttonText, buttonUrl, secondaryButtonText, secondaryButtonUrl, slideType, isActive, showStatsRow, removeImage, newImageUrl;
+    let image = null;
+
+    if (isJson) {
+      const body = await request.json();
+      id = (body.id || '').toString();
+      title = body.title !== undefined ? body.title : null;
+      subtitle = body.subtitle !== undefined ? body.subtitle : null;
+      description = body.description !== undefined ? body.description : null;
+      buttonText = body.button_text !== undefined ? body.button_text : null;
+      buttonUrl = body.button_url !== undefined ? body.button_url : null;
+      secondaryButtonText = body.secondary_button_text !== undefined ? body.secondary_button_text : null;
+      secondaryButtonUrl = body.secondary_button_url !== undefined ? body.secondary_button_url : null;
+      slideType = body.slide_type !== undefined ? body.slide_type : null;
+      isActive = body.is_active !== undefined ? body.is_active : null;
+      showStatsRow = body.show_stats_row !== undefined ? body.show_stats_row : null;
+      removeImage = body.remove_image === true;
+      newImageUrl = body.image_url || null;
+    } else {
+      const formData = await request.formData();
+      id = (formData.get('id') || '').toString();
+      title = formData.get('title');
+      subtitle = formData.get('subtitle');
+      description = formData.get('description');
+      buttonText = formData.get('button_text');
+      buttonUrl = formData.get('button_url');
+      secondaryButtonText = formData.get('secondary_button_text');
+      secondaryButtonUrl = formData.get('secondary_button_url');
+      slideType = formData.get('slide_type');
+      isActive = formData.get('is_active');
+      showStatsRow = formData.get('show_stats_row');
+      image = formData.get('image');
+      removeImage = (formData.get('remove_image') || '').toString() === 'true';
+    }
+
     if (!id) {
       return NextResponse.json({ success: false, error: 'Slide id is required' }, { status: 400 });
     }
 
-    const title = formData.get('title');
-    const subtitle = formData.get('subtitle');
-    const description = formData.get('description');
-    const buttonText = formData.get('button_text');
-    const buttonUrl = formData.get('button_url');
-    const secondaryButtonText = formData.get('secondary_button_text');
-    const secondaryButtonUrl = formData.get('secondary_button_url');
-    const slideType = formData.get('slide_type');
-    const isActive = formData.get('is_active');
-    const showStatsRow = formData.get('show_stats_row');
-    const image = formData.get('image');
-    const removeImage = (formData.get('remove_image') || '').toString() === 'true';
     const { data: slides, error: fetchError } = await supabase
       .from('hero_slides')
       .select('*')
@@ -168,8 +209,8 @@ export async function PUT(request) {
     if (secondaryButtonText !== null) slide.secondary_button_text = secondaryButtonText.toString().trim();
     if (secondaryButtonUrl !== null) slide.secondary_button_url = secondaryButtonUrl.toString().trim();
     if (slideType !== null && slideType.toString().trim()) slide.slide_type = slideType.toString().trim();
-    if (isActive !== null) slide.is_active = isActive === 'true';
-    if (showStatsRow !== null) slide.show_stats_row = showStatsRow === 'true';
+    if (isActive !== null) slide.is_active = isActive === 'true' || isActive === true;
+    if (showStatsRow !== null) slide.show_stats_row = showStatsRow === 'true' || showStatsRow === true;
 
     if (removeImage) {
       const path = getMediaPathFromUrl(slide.image_url);
@@ -178,7 +219,15 @@ export async function PUT(request) {
       }
       slide.image_url = null;
     }
-    if (!removeImage && image && typeof image === 'object' && image.size > 0) {
+    if (!removeImage && newImageUrl) {
+      // JSON path: client already uploaded
+      const oldPath = getMediaPathFromUrl(slide.image_url);
+      if (oldPath) {
+        await supabase.storage.from('media').remove([oldPath]);
+      }
+      slide.image_url = newImageUrl;
+    }
+    if (!removeImage && !newImageUrl && image && typeof image === 'object' && image.size > 0) {
       const ext = image.name.split('.').pop();
       const filename = `hero-slide-${id}-${uuidv4()}.${ext}`;
       const filePath = `hero-slides/${filename}`;

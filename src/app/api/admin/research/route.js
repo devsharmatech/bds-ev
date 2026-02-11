@@ -144,6 +144,13 @@ export async function POST(request) {
         external_link: body.external_link || null,
         more_information: body.more_information || {}
       };
+      // JSON path: client already uploaded files directly
+      if (body.featured_image_url) {
+        researchData.featured_image_url = body.featured_image_url;
+      }
+      if (body.research_content_url) {
+        researchData.research_content_url = body.research_content_url;
+      }
     }
 
     // Validation

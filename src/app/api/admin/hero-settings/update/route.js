@@ -8,13 +8,26 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export async function POST(request) {
   try {
-    const formData = await request.formData();
-    const video = formData.get('video');
-    const poster = formData.get('poster');
-    const videoUrl = formData.get('video_url'); // For URL input
-    const posterUrl = formData.get('poster_url'); // For URL input
-    const removeVideo = (formData.get('remove_video') || '').toString() === 'true';
-    const removePoster = (formData.get('remove_poster') || '').toString() === 'true';
+    const contentType = request.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+
+    let video = null, poster = null, videoUrl = null, posterUrl = null, removeVideo = false, removePoster = false;
+
+    if (isJson) {
+      const body = await request.json();
+      videoUrl = body.video_url || null;
+      posterUrl = body.poster_url || null;
+      removeVideo = body.remove_video === true;
+      removePoster = body.remove_poster === true;
+    } else {
+      const formData = await request.formData();
+      video = formData.get('video');
+      poster = formData.get('poster');
+      videoUrl = formData.get('video_url');
+      posterUrl = formData.get('poster_url');
+      removeVideo = (formData.get('remove_video') || '').toString() === 'true';
+      removePoster = (formData.get('remove_poster') || '').toString() === 'true';
+    }
 
     const updates = [];
 

@@ -141,6 +141,33 @@ export async function PUT(request, { params }) {
       if (body.researcher_name !== undefined) updateData.researcher_name = body.researcher_name;
       if (body.external_link !== undefined) updateData.external_link = body.external_link || null;
       if (body.more_information !== undefined) updateData.more_information = body.more_information || {};
+
+      // JSON path: client already uploaded files directly
+      if (body.featured_image_url) {
+        // Delete old image if exists
+        if (existingResearch.featured_image_url) {
+          const oldPath = existingResearch.featured_image_url.split('/').slice(-2).join('/');
+          await supabase.storage.from('research').remove([oldPath]);
+        }
+        updateData.featured_image_url = body.featured_image_url;
+      }
+      if (body.remove_featured_image && existingResearch.featured_image_url) {
+        const oldPath = existingResearch.featured_image_url.split('/').slice(-2).join('/');
+        await supabase.storage.from('research').remove([oldPath]);
+        updateData.featured_image_url = null;
+      }
+      if (body.research_content_url) {
+        if (existingResearch.research_content_url) {
+          const oldPath = existingResearch.research_content_url.split('/').slice(-2).join('/');
+          await supabase.storage.from('research').remove([oldPath]);
+        }
+        updateData.research_content_url = body.research_content_url;
+      }
+      if (body.remove_research_content && existingResearch.research_content_url) {
+        const oldPath = existingResearch.research_content_url.split('/').slice(-2).join('/');
+        await supabase.storage.from('research').remove([oldPath]);
+        updateData.research_content_url = null;
+      }
     }
 
     // Handle featured image removal

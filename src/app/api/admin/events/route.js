@@ -118,48 +118,103 @@ export async function GET(request) {
 // POST create new event with hosts and agendas
 export async function POST(request) {
   try {
-    const formData = await request.formData();
-    
-    // Parse event data
-    const title = formData.get('title');
-    const description = formData.get('description');
-    const start_datetime = formData.get('start_datetime');
-    const end_datetime = formData.get('end_datetime');
-    const timezone = formData.get('timezone');
-    const venue_name = formData.get('venue_name');
-    const address = formData.get('address');
-    const city = formData.get('city');
-    const created_by = formData.get('created_by');
-    const province = formData.get('province');
-    const pin_code = formData.get('pin_code');
-    const google_map_url = formData.get('google_map_url');
-    const capacity = formData.get('capacity') ? parseInt(formData.get('capacity')) : null;
-    const is_paid = formData.get('is_paid') === 'true';
-    const regular_price = formData.get('regular_price') ? parseFloat(formData.get('regular_price')) : null;
-    const member_price = formData.get('member_price') ? parseFloat(formData.get('member_price')) : null;
-    const student_price = formData.get('student_price') ? parseFloat(formData.get('student_price')) : null;
-    const hygienist_price = formData.get('hygienist_price') ? parseFloat(formData.get('hygienist_price')) : null;
-    const regular_standard_price = formData.get('regular_standard_price') ? parseFloat(formData.get('regular_standard_price')) : null;
-    const member_standard_price = formData.get('member_standard_price') ? parseFloat(formData.get('member_standard_price')) : null;
-    const student_standard_price = formData.get('student_standard_price') ? parseFloat(formData.get('student_standard_price')) : null;
-    const hygienist_standard_price = formData.get('hygienist_standard_price') ? parseFloat(formData.get('hygienist_standard_price')) : null;
-    const regular_onsite_price = formData.get('regular_onsite_price') ? parseFloat(formData.get('regular_onsite_price')) : null;
-    const member_onsite_price = formData.get('member_onsite_price') ? parseFloat(formData.get('member_onsite_price')) : null;
-    const student_onsite_price = formData.get('student_onsite_price') ? parseFloat(formData.get('student_onsite_price')) : null;
-    const hygienist_onsite_price = formData.get('hygienist_onsite_price') ? parseFloat(formData.get('hygienist_onsite_price')) : null;
-    const early_bird_deadline = formData.get('early_bird_deadline');
-    const status = formData.get('status') || 'upcoming';
-    const bannerImage = formData.get('banner_image');
-    const nera_cme_hours = formData.get('nera_cme_hours') ? parseFloat(formData.get('nera_cme_hours')) : null;
-    const nera_code = formData.get('nera_code') || null;
-    
-    // Parse agendas data
-    const agendasJson = formData.get('agendas');
-    const agendas = agendasJson ? JSON.parse(agendasJson) : [];
-    
-    // Parse hosts data
-    const hostsJson = formData.get('hosts');
-    const hosts = hostsJson ? JSON.parse(hostsJson) : [];
+    const contentType = request.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+
+    let title, description, start_datetime, end_datetime, timezone, venue_name, address, city,
+        created_by, province, pin_code, google_map_url, capacity, is_paid,
+        regular_price, member_price, student_price, hygienist_price,
+        regular_standard_price, member_standard_price, student_standard_price, hygienist_standard_price,
+        regular_onsite_price, member_onsite_price, student_onsite_price, hygienist_onsite_price,
+        early_bird_deadline, status, nera_cme_hours, nera_code;
+    let agendas = [];
+    let hosts = [];
+    let banner_url = null;
+    let bannerImage = null;
+    let hostImageFiles = {};
+
+    if (isJson) {
+      // ─── NEW: JSON body with pre-uploaded file URLs ───
+      const body = await request.json();
+      title = body.title;
+      description = body.description || null;
+      start_datetime = body.start_datetime;
+      end_datetime = body.end_datetime || null;
+      timezone = body.timezone || 'Asia/Bahrain';
+      venue_name = body.venue_name || null;
+      address = body.address || null;
+      city = body.city || null;
+      created_by = body.created_by || null;
+      province = body.province || null;
+      pin_code = body.pin_code || null;
+      google_map_url = body.google_map_url || null;
+      capacity = body.capacity ? parseInt(body.capacity) : null;
+      is_paid = body.is_paid === true || body.is_paid === 'true';
+      regular_price = body.regular_price ? parseFloat(body.regular_price) : null;
+      member_price = body.member_price ? parseFloat(body.member_price) : null;
+      student_price = body.student_price ? parseFloat(body.student_price) : null;
+      hygienist_price = body.hygienist_price ? parseFloat(body.hygienist_price) : null;
+      regular_standard_price = body.regular_standard_price ? parseFloat(body.regular_standard_price) : null;
+      member_standard_price = body.member_standard_price ? parseFloat(body.member_standard_price) : null;
+      student_standard_price = body.student_standard_price ? parseFloat(body.student_standard_price) : null;
+      hygienist_standard_price = body.hygienist_standard_price ? parseFloat(body.hygienist_standard_price) : null;
+      regular_onsite_price = body.regular_onsite_price ? parseFloat(body.regular_onsite_price) : null;
+      member_onsite_price = body.member_onsite_price ? parseFloat(body.member_onsite_price) : null;
+      student_onsite_price = body.student_onsite_price ? parseFloat(body.student_onsite_price) : null;
+      hygienist_onsite_price = body.hygienist_onsite_price ? parseFloat(body.hygienist_onsite_price) : null;
+      early_bird_deadline = body.early_bird_deadline || null;
+      status = body.status || 'upcoming';
+      nera_cme_hours = body.nera_cme_hours ? parseFloat(body.nera_cme_hours) : null;
+      nera_code = body.nera_code || null;
+      agendas = body.agendas || [];
+      hosts = body.hosts || [];
+      // Pre-uploaded banner URL
+      banner_url = body.banner_image_url || null;
+      if (body.remove_banner) banner_url = null;
+    } else {
+      // ─── LEGACY: multipart/form-data ───
+      const formData = await request.formData();
+      title = formData.get('title');
+      description = formData.get('description');
+      start_datetime = formData.get('start_datetime');
+      end_datetime = formData.get('end_datetime');
+      timezone = formData.get('timezone');
+      venue_name = formData.get('venue_name');
+      address = formData.get('address');
+      city = formData.get('city');
+      created_by = formData.get('created_by');
+      province = formData.get('province');
+      pin_code = formData.get('pin_code');
+      google_map_url = formData.get('google_map_url');
+      capacity = formData.get('capacity') ? parseInt(formData.get('capacity')) : null;
+      is_paid = formData.get('is_paid') === 'true';
+      regular_price = formData.get('regular_price') ? parseFloat(formData.get('regular_price')) : null;
+      member_price = formData.get('member_price') ? parseFloat(formData.get('member_price')) : null;
+      student_price = formData.get('student_price') ? parseFloat(formData.get('student_price')) : null;
+      hygienist_price = formData.get('hygienist_price') ? parseFloat(formData.get('hygienist_price')) : null;
+      regular_standard_price = formData.get('regular_standard_price') ? parseFloat(formData.get('regular_standard_price')) : null;
+      member_standard_price = formData.get('member_standard_price') ? parseFloat(formData.get('member_standard_price')) : null;
+      student_standard_price = formData.get('student_standard_price') ? parseFloat(formData.get('student_standard_price')) : null;
+      hygienist_standard_price = formData.get('hygienist_standard_price') ? parseFloat(formData.get('hygienist_standard_price')) : null;
+      regular_onsite_price = formData.get('regular_onsite_price') ? parseFloat(formData.get('regular_onsite_price')) : null;
+      member_onsite_price = formData.get('member_onsite_price') ? parseFloat(formData.get('member_onsite_price')) : null;
+      student_onsite_price = formData.get('student_onsite_price') ? parseFloat(formData.get('student_onsite_price')) : null;
+      hygienist_onsite_price = formData.get('hygienist_onsite_price') ? parseFloat(formData.get('hygienist_onsite_price')) : null;
+      early_bird_deadline = formData.get('early_bird_deadline');
+      status = formData.get('status') || 'upcoming';
+      nera_cme_hours = formData.get('nera_cme_hours') ? parseFloat(formData.get('nera_cme_hours')) : null;
+      nera_code = formData.get('nera_code') || null;
+      bannerImage = formData.get('banner_image');
+      const agendasJson = formData.get('agendas');
+      agendas = agendasJson ? JSON.parse(agendasJson) : [];
+      const hostsJson = formData.get('hosts');
+      hosts = hostsJson ? JSON.parse(hostsJson) : [];
+      // Collect host image files
+      for (const [index] of hosts.entries()) {
+        const hostImage = formData.get(`host_profile_image_${index}`);
+        if (hostImage && hostImage.size > 0) hostImageFiles[index] = hostImage;
+      }
+    }
 
     // Validation
     if (!title || !start_datetime) {
@@ -196,9 +251,8 @@ export async function POST(request) {
     // Create slug from title
     const slug = createSlug(title);
 
-    // Upload event banner image if provided
-    let banner_url = null;
-    if (bannerImage && bannerImage.size > 0) {
+    // Upload event banner image if provided (legacy FormData path only)
+    if (!isJson && bannerImage && bannerImage.size > 0) {
       try {
         banner_url = await uploadImage(bannerImage, 'events');
       } catch (error) {
@@ -213,19 +267,22 @@ export async function POST(request) {
     const processedHosts = [];
     for (const [index, host] of hosts.entries()) {
       let profile_image = null;
-      
-      // Check if this host has a profile image in formData
-      const hostImageKey = `host_profile_image_${index}`;
-      const hostImage = formData.get(hostImageKey);
-      
-      if (hostImage && hostImage.size > 0) {
-        try {
-          profile_image = await uploadImage(hostImage, 'hosts');
-        } catch (error) {
-          return NextResponse.json({
-            success: false,
-            error: `Host ${index + 1}: ${error.message}`
-          }, { status: 400 });
+
+      if (isJson) {
+        // JSON path: host already has profile_image_url from client
+        profile_image = host.profile_image_url || host.profile_image || null;
+      } else {
+        // Legacy FormData path: upload from form
+        const hostImage = hostImageFiles[index];
+        if (hostImage) {
+          try {
+            profile_image = await uploadImage(hostImage, 'hosts');
+          } catch (error) {
+            return NextResponse.json({
+              success: false,
+              error: `Host ${index + 1}: ${error.message}`
+            }, { status: 400 });
+          }
         }
       }
       

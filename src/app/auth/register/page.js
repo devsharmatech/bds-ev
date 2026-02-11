@@ -417,11 +417,13 @@ function RegisterPageContent() {
 
       if (idCardFile) {
         toast.loading("Uploading ID Card...", { id: loadingToastId });
-        id_card_url = await uploadFile(idCardFile, "profile_pictures", "verification");
+        const result = await uploadFile(idCardFile, "profile_pictures", "verification");
+        id_card_url = result.publicUrl;
       }
       if (personalPhotoFile) {
         toast.loading("Uploading Personal Photo...", { id: loadingToastId });
-        personal_photo_url = await uploadFile(personalPhotoFile, "profile_pictures", "verification");
+        const result = await uploadFile(personalPhotoFile, "profile_pictures", "verification");
+        personal_photo_url = result.publicUrl;
       }
 
       toast.loading("Creating your account...", { id: loadingToastId });

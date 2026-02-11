@@ -2,9 +2,20 @@ import { supabase } from "@/lib/supabaseAdmin";
 
 export async function PUT(req) {
   try {
-    const formData = await req.formData();
-    const user_id = formData.get("id");
-    const newImage = formData.get("profile_picture");
+    const contentType = req.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+
+    let user_id, newImage, profileImageUrl;
+
+    if (isJson) {
+      const body = await req.json();
+      user_id = body.id;
+      profileImageUrl = body.profile_image_url || null;
+    } else {
+      const formData = await req.formData();
+      user_id = formData.get("id");
+      newImage = formData.get("profile_picture");
+    }
 
     // -----------------------------
     // VALIDATION: ID REQUIRED
@@ -32,10 +43,19 @@ export async function PUT(req) {
 
     let newUrl = user.profile_image;
 
-    // -----------------------------
-    // VALIDATE IMAGE FILE
-    // -----------------------------
-    if (newImage && newImage.name) {
+    if (isJson && profileImageUrl) {
+      // JSON path: client already uploaded directly
+      if (user.profile_image) {
+        const path = user.profile_image.split(
+          "/storage/v1/object/public/profile_pictures/"
+        )[1];
+        if (path) {
+          await supabase.storage.from("profile_pictures").remove([path]);
+        }
+      }
+      newUrl = profileImageUrl;
+    } else if (newImage && newImage.name) {
+      // Legacy FormData path
       const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
       if (!allowedTypes.includes(newImage.type)) {
@@ -45,7 +65,6 @@ export async function PUT(req) {
         );
       }
 
-      // Max size: 5MB
       const maxSize = 5 * 1024 * 1024;
       if (newImage.size > maxSize) {
         return Response.json(
@@ -54,22 +73,15 @@ export async function PUT(req) {
         );
       }
 
-      // -----------------------------
-      // DELETE OLD IMAGE
-      // -----------------------------
       if (user.profile_image) {
         const path = user.profile_image.split(
           "/storage/v1/object/public/profile_pictures/"
         )[1];
-
         if (path) {
           await supabase.storage.from("profile_pictures").remove([path]);
         }
       }
 
-      // -----------------------------
-      // UPLOAD NEW IMAGE
-      // -----------------------------
       const ext = newImage.name.split(".").pop();
       const fileName = `user_${Date.now()}.${ext}`;
       const fileBuffer = Buffer.from(await newImage.arrayBuffer());
