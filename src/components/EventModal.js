@@ -843,7 +843,7 @@ export default function EventModal({
 
       if (bannerFile) {
         toast.loading("Uploading banner image...", { id: "event-upload" });
-        const result = await uploadFile(bannerFile, "event-banners", "banners");
+        const result = await uploadFile(bannerFile, "events", "banners");
         bannerImageUrl = result.publicUrl;
       }
 
@@ -853,7 +853,7 @@ export default function EventModal({
         const hostImage = hostImages[index];
         if (hostImage?.file) {
           toast.loading(`Uploading host image ${parseInt(index) + 1}...`, { id: "event-upload" });
-          const result = await uploadFile(hostImage.file, "event-banners", "hosts");
+          const result = await uploadFile(hostImage.file, "events", "hosts");
           hostImageUrls[index] = result.publicUrl;
         }
       }
