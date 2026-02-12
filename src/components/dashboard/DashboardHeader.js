@@ -26,6 +26,7 @@ export default function DashboardHeader({ onMenuToggle }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [planName, setPlanName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -144,6 +145,17 @@ export default function DashboardHeader({ onMenuToggle }) {
     return user.full_name.split(" ")[0];
   };
 
+  const profileImageUrl =
+    typeof user?.profile_image === "string" && user.profile_image.trim()
+      ? user.profile_image.trim()
+      : typeof user?.profile_image_url === "string" && user.profile_image_url.trim()
+      ? user.profile_image_url.trim()
+      : "";
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [profileImageUrl]);
+
   // Quick actions for mobile menu
   const quickActions = [
     {
@@ -240,10 +252,19 @@ export default function DashboardHeader({ onMenuToggle }) {
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">
-                      {getUserInitials()}
-                    </span>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center overflow-hidden">
+                    {profileImageUrl && !avatarLoadError ? (
+                      <img
+                        src={profileImageUrl}
+                        alt={user?.full_name || "Member"}
+                        className="w-full h-full object-cover"
+                        onError={() => setAvatarLoadError(true)}
+                      />
+                    ) : (
+                      <span className="text-white text-xs font-bold">
+                        {getUserInitials()}
+                      </span>
+                    )}
                   </div>
                   <div className="hidden md:block text-left">
                     <p className="text-sm font-medium text-gray-900">

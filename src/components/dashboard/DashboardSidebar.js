@@ -28,6 +28,7 @@ export default function DashboardSidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [user, setUser] = useState(null)
+  const [avatarLoadError, setAvatarLoadError] = useState(false)
   const [planName, setPlanName] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const fetchedRef = useRef(false)
@@ -139,6 +140,17 @@ export default function DashboardSidebar() {
     setIsMobileMenuOpen(false)
   }, [pathname])
 
+  const profileImageUrl =
+    typeof user?.profile_image === 'string' && user.profile_image.trim()
+      ? user.profile_image.trim()
+      : typeof user?.profile_image_url === 'string' && user.profile_image_url.trim()
+      ? user.profile_image_url.trim()
+      : ''
+
+  useEffect(() => {
+    setAvatarLoadError(false)
+  }, [profileImageUrl])
+
   if (isLoading) {
     return (
       <aside className="fixed lg:static inset-y-0 left-0 z-[1000] w-64 bg-white border-r border-gray-200 h-full flex items-center justify-center">
@@ -237,8 +249,17 @@ export default function DashboardSidebar() {
               onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
               className="w-full flex items-center space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors mb-4"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center">
-                <span className="text-white font-bold">{getUserInitials()}</span>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center overflow-hidden">
+                {profileImageUrl && !avatarLoadError ? (
+                  <img
+                    src={profileImageUrl}
+                    alt={user?.full_name || 'Member'}
+                    className="w-full h-full object-cover"
+                    onError={() => setAvatarLoadError(true)}
+                  />
+                ) : (
+                  <span className="text-white font-bold">{getUserInitials()}</span>
+                )}
               </div>
               <div className="flex-1 min-w-0 text-left">
                 <p className="font-semibold text-gray-900 truncate">

@@ -81,6 +81,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [user, setUser] = useState(null)
+  const [avatarLoadError, setAvatarLoadError] = useState(false)
   const [stats, setStats] = useState({})
   const [upcomingEvents, setUpcomingEvents] = useState([])
   const [recentActivities, setRecentActivities] = useState([])
@@ -215,6 +216,17 @@ export default function DashboardPage() {
       console.error('Error fetching notifications:', error)
     }
   }
+
+  const profileImageUrl =
+    typeof user?.profile_image === 'string' && user.profile_image.trim()
+      ? user.profile_image.trim()
+      : typeof user?.profile_image_url === 'string' && user.profile_image_url.trim()
+      ? user.profile_image_url.trim()
+      : ''
+
+  useEffect(() => {
+    setAvatarLoadError(false)
+  }, [profileImageUrl])
 
   const handleRefresh = () => {
     setRefreshing(true)
@@ -549,10 +561,19 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-start gap-3 md:gap-4 lg:gap-6">
               {/* Avatar Section */}
               <div className="flex flex-col items-center sm:items-start">
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center mb-3">
-                  <span className="text-white font-bold text-lg md:text-xl">
-                    {user?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
-                  </span>
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-[#03215F] to-[#03215F] flex items-center justify-center mb-3 overflow-hidden">
+                  {profileImageUrl && !avatarLoadError ? (
+                    <img
+                      src={profileImageUrl}
+                      alt={user?.full_name || 'Member'}
+                      className="w-full h-full object-cover"
+                      onError={() => setAvatarLoadError(true)}
+                    />
+                  ) : (
+                    <span className="text-white font-bold text-lg md:text-xl">
+                      {user?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+                    </span>
+                  )}
                 </div>
                 <div className="text-center sm:text-left">
                   <h3 className="font-bold text-gray-900 text-lg md:text-xl mb-1">

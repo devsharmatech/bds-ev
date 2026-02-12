@@ -38,6 +38,7 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [user, setUser] = useState(null);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const fetchedRef = useRef(false);
@@ -96,6 +97,17 @@ export default function Navbar() {
   }, []);
 
   const [committeesMenu, setCommitteesMenu] = useState([]);
+
+  const profileImageUrl =
+    typeof user?.profile_image === "string" && user.profile_image.trim()
+      ? user.profile_image.trim()
+      : typeof user?.profile_image_url === "string" && user.profile_image_url.trim()
+      ? user.profile_image_url.trim()
+      : "";
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [profileImageUrl]);
 
   useEffect(() => {
     const loadCommittees = async () => {
@@ -571,7 +583,18 @@ export default function Navbar() {
                       onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                       className="flex items-center space-x-2 px-2 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition w-full justify-center text-sm"
                     >
-                      <User className="w-5 h-5" />
+                      <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                        {profileImageUrl && !avatarLoadError ? (
+                          <img
+                            src={profileImageUrl}
+                            alt={user?.full_name || "Member"}
+                            className="w-full h-full object-cover"
+                            onError={() => setAvatarLoadError(true)}
+                          />
+                        ) : (
+                          <User className="w-4 h-4" />
+                        )}
+                      </div>
                       <span className="font-medium">
                         {user.full_name?.split(" ")[0]}
                       </span>
