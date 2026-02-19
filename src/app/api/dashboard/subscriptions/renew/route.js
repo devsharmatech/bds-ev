@@ -82,9 +82,19 @@ export async function POST(request) {
 
     // If free or waived, renew immediately
     if (plan.name === 'free' || annualFee === 0) {
-      const newExpiryDate = currentSubscription.expires_at 
-        ? new Date(new Date(currentSubscription.expires_at).setFullYear(new Date(currentSubscription.expires_at).getFullYear() + 1))
-        : new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+      // Use user's actual membership_expiry_date as the base for renewal
+      const { data: userData } = await supabase
+        .from('users')
+        .select('membership_expiry_date')
+        .eq('id', userId)
+        .single();
+
+      const userExpiryDate = userData?.membership_expiry_date;
+      const baseExpiry = userExpiryDate
+        ? new Date(userExpiryDate)
+        : (currentSubscription.expires_at ? new Date(currentSubscription.expires_at) : new Date());
+      const newExpiryDate = new Date(baseExpiry);
+      newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);
 
       // Update subscription
       const { data: renewedSubscription, error: renewError } = await supabase
@@ -154,7 +164,7 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Renew subscription error:', error);
-    
+
     if (error.name === 'JsonWebTokenError') {
       return NextResponse.json(
         { success: false, message: 'Invalid token' },

@@ -41,36 +41,36 @@ const planIcons = {
 };
 
 const planColors = {
-  free: { 
-    primary: "#6B7280", 
+  free: {
+    primary: "#6B7280",
     secondary: "#F3F4F6",
     gradient: "from-gray-100 to-gray-200",
     text: "text-gray-700",
     bg: "bg-gradient-to-br from-gray-50 to-gray-100"
   },
-  active: { 
-    primary: "#03215F", 
+  active: {
+    primary: "#03215F",
     secondary: "#9cc2ed",
     gradient: "from-[#03215F] to-[#9cc2ed]",
     text: "text-white",
     bg: "bg-gradient-to-br from-[#03215F] to-[#03215F]"
   },
-  associate: { 
-    primary: "#03215F", 
+  associate: {
+    primary: "#03215F",
     secondary: "#ECCF0F",
     gradient: "from-[#03215F] to-[#ECCF0F]",
     text: "text-white",
     bg: "bg-gradient-to-br from-[#03215F] to-[#03215F]"
   },
-  honorary: { 
-    primary: "#AE9B66", 
+  honorary: {
+    primary: "#AE9B66",
     secondary: "#ECCF0F",
     gradient: "from-[#AE9B66] to-[#ECCF0F]",
     text: "text-white",
     bg: "bg-gradient-to-br from-[#AE9B66] to-[#AE9B66]"
   },
-  student: { 
-    primary: "#7C3AED", 
+  student: {
+    primary: "#7C3AED",
     secondary: "#C4B5FD",
     gradient: "from-purple-600 to-purple-400",
     text: "text-white",
@@ -99,6 +99,35 @@ const formatDate = (dateString) => {
   });
 };
 
+const getTimeRemaining = (expiryDate) => {
+  if (!expiryDate) return null;
+  const now = new Date();
+  const expiry = new Date(expiryDate);
+  const isExpired = expiry < now;
+  const start = isExpired ? expiry : now;
+  const end = isExpired ? now : expiry;
+
+  let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+  let days = end.getDate() - start.getDate();
+  if (days < 0) {
+    months -= 1;
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+
+  const parts = [];
+  if (months > 0) parts.push(`${months} month${months !== 1 ? 's' : ''}`);
+  if (days > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+  const timeStr = parts.length > 0 ? parts.join(' ') : 'today';
+
+  return {
+    isExpired,
+    months,
+    days,
+    label: isExpired ? `Overdue: ${timeStr}` : `Remaining: ${timeStr}`,
+  };
+};
+
 export default function SubscriptionsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -118,7 +147,7 @@ export default function SubscriptionsPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const success = urlParams.get('success');
     const error = urlParams.get('error');
-    
+
     if (success === 'payment_completed') {
       toast.success("Payment completed successfully! Your subscription has been activated.", {
         duration: 5000,
@@ -273,10 +302,12 @@ export default function SubscriptionsPage() {
 
   const handleRenew = async () => {
     if (processing || !currentSubscription) return;
-    // Disallow renew if not expired
-    const expired =
-      currentSubscription?.expires_at &&
-      new Date(currentSubscription.expires_at) < new Date();
+    // Disallow renew if not expired - check both user membership date and subscription date
+    const membershipExpiryDate = user?.membership_expiry_date;
+    const subscriptionExpiryDate = currentSubscription?.expires_at;
+    const membershipExpired = membershipExpiryDate && new Date(membershipExpiryDate) < new Date();
+    const subscriptionExpired = subscriptionExpiryDate && new Date(subscriptionExpiryDate) < new Date();
+    const expired = membershipExpired || subscriptionExpired;
     if (!expired) {
       toast.error("Your membership is not expired yet.");
       return;
@@ -435,8 +466,8 @@ export default function SubscriptionsPage() {
       currentPlan = plans.find(p => p.id === currentSubscription.subscription_plan_id);
     }
     if (!currentPlan && currentSubscription.subscription_plan_name) {
-      currentPlan = plans.find(p => 
-        p.display_name === currentSubscription.subscription_plan_name || 
+      currentPlan = plans.find(p =>
+        p.display_name === currentSubscription.subscription_plan_name ||
         p.name === currentSubscription.subscription_plan_name.toLowerCase().replace(/\s+/g, '_')
       );
     }
@@ -446,8 +477,8 @@ export default function SubscriptionsPage() {
       currentPlan = plans.find(p => p.id === userMembership.plan_id);
     }
     if (!currentPlan && userMembership.plan_name) {
-      currentPlan = plans.find(p => 
-        p.display_name === userMembership.plan_name || 
+      currentPlan = plans.find(p =>
+        p.display_name === userMembership.plan_name ||
         p.name === userMembership.plan_name.toLowerCase().replace(/\s+/g, '_')
       );
     }
@@ -480,7 +511,7 @@ export default function SubscriptionsPage() {
                 </div>
               </div>
             </div>
-            
+
             {(() => {
               if (!currentSubscription) return null;
               const expired =
@@ -488,20 +519,20 @@ export default function SubscriptionsPage() {
                 new Date(currentSubscription.expires_at) < new Date();
               if (!expired) return null;
               return (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleRenew}
-                disabled={processing}
-                className="px-8 py-4 bg-gradient-to-r from-[#AE9B66] to-[#ECCF0F] text-[#03215F] rounded-2xl font-bold hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg"
-              >
-                {processing ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-5 h-5" />
-                )}
-                <span className="text-lg">Renew Subscription</span>
-              </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleRenew}
+                  disabled={processing}
+                  className="px-8 py-4 bg-gradient-to-r from-[#AE9B66] to-[#ECCF0F] text-[#03215F] rounded-2xl font-bold hover:shadow-2xl transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg"
+                >
+                  {processing ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-5 h-5" />
+                  )}
+                  <span className="text-lg">Renew Subscription</span>
+                </motion.button>
               );
             })()}
           </div>
@@ -516,7 +547,7 @@ export default function SubscriptionsPage() {
             className="bg-gradient-to-br from-white to-gray-50 rounded-xl sm:rounded-2xl shadow-xl border-2 border-[#03215F]/10 p-4 sm:p-6 lg:p-8"
           >
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 sm:mb-6 lg:mb-8">
-              <div className="space-y-2" style={{width: '100%'}}>
+              <div className="space-y-2" style={{ width: '100%' }}>
                 <div className="flex items-center gap-2 sm:gap-3">
                   <BadgeCheck className="w-6 h-6 sm:w-8 sm:h-8 text-[#03215F]" />
                   <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Current Membership</h2>
@@ -525,11 +556,10 @@ export default function SubscriptionsPage() {
                   <span className="text-base sm:text-lg lg:text-xl font-bold text-[#03215F]">
                     {currentSubscription.subscription_plan?.display_name || currentSubscription.subscription_plan_name || "No Plan"}
                   </span>
-                  <span className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold ${
-                    currentSubscription.status === 'active'
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-400 text-white shadow-md'
-                      : 'bg-gray-200 text-gray-700'
-                  }`}>
+                  <span className={`px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold ${currentSubscription.status === 'active'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-400 text-white shadow-md'
+                    : 'bg-gray-200 text-gray-700'
+                    }`}>
                     {currentSubscription.status === 'active' ? 'Active' : currentSubscription.status}
                   </span>
                 </div>
@@ -537,7 +567,7 @@ export default function SubscriptionsPage() {
             </div>
 
             {/* Stats Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5 border border-blue-200">
                 <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
                   <div className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-white shadow-sm">
@@ -562,6 +592,15 @@ export default function SubscriptionsPage() {
                     <p className="font-bold text-gray-900 text-xs sm:text-sm lg:text-base truncate">
                       {currentSubscription.expires_at ? formatDate(currentSubscription.expires_at) : "Lifetime"}
                     </p>
+                    {(() => {
+                      const timeInfo = getTimeRemaining(user?.membership_expiry_date || currentSubscription.expires_at);
+                      if (!timeInfo) return null;
+                      return (
+                        <p className={`text-xs font-semibold mt-1 ${timeInfo.isExpired ? 'text-red-600' : 'text-emerald-600'}`}>
+                          {timeInfo.label}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -577,10 +616,10 @@ export default function SubscriptionsPage() {
                       {isCurrentFreePlan || isFreeMember
                         ? "No Payment"
                         : currentSubscription.registration_paid && currentSubscription.annual_paid
-                        ? "Fully Paid"
-                        : currentSubscription.registration_paid || currentSubscription.annual_paid
-                        ? "Partly Paid"
-                        : "No Payment"}
+                          ? "Fully Paid"
+                          : currentSubscription.registration_paid || currentSubscription.annual_paid
+                            ? "Partly Paid"
+                            : "No Payment"}
                     </p>
                   </div>
                 </div>
@@ -600,6 +639,51 @@ export default function SubscriptionsPage() {
                 </div>
               </div>
             </div>
+
+            {/* Membership Expiry Strip */}
+            {(() => {
+              const timeInfo = getTimeRemaining(user?.membership_expiry_date || currentSubscription.expires_at);
+              if (!timeInfo) return null;
+
+              if (timeInfo.isExpired) {
+                return (
+                  <div className="mt-4 sm:mt-6 p-4 rounded-xl bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-red-100 rounded-lg mt-0.5">
+                        <AlertCircle className="w-5 h-5 text-red-600" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-red-800 text-sm md:text-base">Your membership has expired</div>
+                        <div className="text-sm text-red-600 mt-0.5 font-medium">{timeInfo.label}</div>
+                        {currentPlan?.annual_fee > 0 && (
+                          <div className="text-xs text-gray-700 mt-1">Renewal cost: <span className="font-bold text-[#03215F]">{currentPlan.annual_fee} BHD</span></div>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleRenew}
+                      disabled={processing}
+                      className="px-5 py-2.5 bg-gradient-to-r from-[#AE9B66] to-[#ECCF0F] text-[#03215F] rounded-lg font-bold hover:shadow-lg transition-all text-sm whitespace-nowrap flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      {currentPlan?.annual_fee > 0 ? `Renew · ${currentPlan.annual_fee} BHD` : 'Renew Now'}
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="mt-4 sm:mt-6 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 flex items-center gap-3">
+                  <div className="p-2 bg-emerald-100 rounded-lg">
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-emerald-800 text-sm md:text-base">Membership Active</div>
+                    <div className="text-sm text-emerald-600 font-medium">{timeInfo.label}</div>
+                  </div>
+                </div>
+              );
+            })()}
           </motion.div>
         )}
 
@@ -639,7 +723,7 @@ export default function SubscriptionsPage() {
                     <div className={`relative overflow-hidden rounded-t-2xl p-4 sm:p-5 lg:p-6 ${colors.bg} text-center`}>
                       <div className="absolute -top-10 -right-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10" />
                       <div className="absolute -bottom-10 -left-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10" />
-                      
+
                       <div className="relative z-10">
                         <div className="inline-flex p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-sm mb-3 sm:mb-4">
                           <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${colors.text}`} />
@@ -706,7 +790,7 @@ export default function SubscriptionsPage() {
                           const expired =
                             currentSubscription?.expires_at &&
                             new Date(currentSubscription.expires_at) < new Date();
-                          
+
                           if (expired) {
                             return (
                               <button
@@ -723,7 +807,7 @@ export default function SubscriptionsPage() {
                               </button>
                             );
                           }
-                          
+
                           return (
                             <div className="w-full py-2.5 sm:py-3 lg:py-4 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base lg:text-lg bg-gradient-to-r from-green-500 to-emerald-400 text-white flex items-center justify-center gap-2 sm:gap-3 shadow-lg">
                               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -762,15 +846,14 @@ export default function SubscriptionsPage() {
                         className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 hover:shadow-xl transition-all h-full flex flex-col p-4 sm:p-5"
                       >
                         <div className="mb-4">
-                          <div className={`inline-flex items-center px-3 py-1 rounded-full mb-3 text-xs ${
-                            plan.name === "active"
-                              ? "bg-[#9cc2ed] text-[#03215F]"
-                              : plan.name === "associate"
+                          <div className={`inline-flex items-center px-3 py-1 rounded-full mb-3 text-xs ${plan.name === "active"
+                            ? "bg-[#9cc2ed] text-[#03215F]"
+                            : plan.name === "associate"
                               ? "bg-[#ECCF0F] text-[#03215F]"
                               : plan.name === "honorary"
-                              ? "bg-[#AE9B66] text-white"
-                              : "bg-purple-100 text-purple-700"
-                          }`}>
+                                ? "bg-[#AE9B66] text-white"
+                                : "bg-purple-100 text-purple-700"
+                            }`}>
                             <Icon className="w-3 h-3 mr-1" />
                             <span className="font-medium">{plan.subtitle || plan.display_name}</span>
                           </div>
@@ -892,15 +975,14 @@ export default function SubscriptionsPage() {
                       className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 hover:shadow-xl transition-all h-full flex flex-col p-4 sm:p-5"
                     >
                       <div className="mb-4">
-                        <div className={`inline-flex items-center px-3 py-1 rounded-full mb-3 text-xs ${
-                          plan.name === "active"
-                            ? "bg-[#9cc2ed] text-[#03215F]"
-                            : plan.name === "associate"
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full mb-3 text-xs ${plan.name === "active"
+                          ? "bg-[#9cc2ed] text-[#03215F]"
+                          : plan.name === "associate"
                             ? "bg-[#ECCF0F] text-[#03215F]"
                             : plan.name === "honorary"
-                            ? "bg-[#AE9B66] text-white"
-                            : "bg-purple-100 text-purple-700"
-                        }`}>
+                              ? "bg-[#AE9B66] text-white"
+                              : "bg-purple-100 text-purple-700"
+                          }`}>
                           <Icon className="w-3 h-3 mr-1" />
                           <span className="font-medium">{plan.subtitle || plan.display_name}</span>
                         </div>
@@ -1009,7 +1091,7 @@ export default function SubscriptionsPage() {
               <Clock className="w-8 h-8 text-[#03215F]" />
               <h2 className="text-3xl font-bold text-gray-900">Subscription History</h2>
             </div>
-            
+
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -1042,11 +1124,10 @@ export default function SubscriptionsPage() {
                           </div>
                         </td>
                         <td className="py-5 px-6">
-                          <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${
-                            sub.status === 'active'
-                              ? 'bg-gradient-to-r from-green-500 to-emerald-400 text-white'
-                              : 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700'
-                          }`}>
+                          <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${sub.status === 'active'
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-400 text-white'
+                            : 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-700'
+                            }`}>
                             {sub.status}
                           </span>
                         </td>
@@ -1070,10 +1151,10 @@ export default function SubscriptionsPage() {
                             const badgeClass = isFreeHistoryPlan
                               ? 'bg-gray-100 text-gray-700'
                               : isFullyPaid
-                              ? 'bg-green-100 text-green-700'
-                              : isPartlyPaid
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-gray-100 text-gray-700';
+                                ? 'bg-green-100 text-green-700'
+                                : isPartlyPaid
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-gray-100 text-gray-700';
 
                             let label = 'No Payment';
                             if (!isFreeHistoryPlan) {

@@ -50,6 +50,35 @@ import PaymentMethodModal from "@/components/modals/PaymentMethodModal";
 import PlanSelectionModal from "@/components/modals/PlanSelectionModal";
 import { uploadFile } from "@/lib/uploadClient";
 
+const getTimeRemaining = (expiryDate) => {
+  if (!expiryDate) return null;
+  const now = new Date();
+  const expiry = new Date(expiryDate);
+  const isExpired = expiry < now;
+  const start = isExpired ? expiry : now;
+  const end = isExpired ? now : expiry;
+
+  let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+  let days = end.getDate() - start.getDate();
+  if (days < 0) {
+    months -= 1;
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+
+  const parts = [];
+  if (months > 0) parts.push(`${months} month${months !== 1 ? 's' : ''}`);
+  if (days > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
+  const timeStr = parts.length > 0 ? parts.join(' ') : 'today';
+
+  return {
+    isExpired,
+    months,
+    days,
+    label: isExpired ? `Overdue: ${timeStr}` : `Remaining: ${timeStr}`,
+  };
+};
+
 // Membership Card Component
 function MembershipCard({
   user,
@@ -89,10 +118,10 @@ function MembershipCard({
   const formatDate = (date) =>
     date
       ? new Date(date).toLocaleDateString("en-BH", {
-          month: "numeric",
-          year: "numeric",
-          timeZone: "Asia/Bahrain",
-        })
+        month: "numeric",
+        year: "numeric",
+        timeZone: "Asia/Bahrain",
+      })
       : "N/A";
 
   return (
@@ -315,8 +344,8 @@ function MembershipCard({
               flexWrap: isNarrow ? "wrap" : "nowrap",
             }}
           >
-                {/* Only show Membership ID for active paid members */}
-                {!isFreeMember && user?.membership_status === "active" && user?.membership_code && (
+            {/* Only show Membership ID for active paid members */}
+            {!isFreeMember && user?.membership_status === "active" && user?.membership_code && (
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p
                   style={{
@@ -677,14 +706,14 @@ export default function MembershipCardPage() {
     if (processing) return;
 
     // If we have an active/current subscription locally, ensure it's expired before attempting renew.
-    if (currentSubscription) {
-      const expired =
-        currentSubscription?.expires_at &&
-        new Date(currentSubscription.expires_at) < new Date();
-      if (!expired) {
-        toast.error("Your membership is not expired yet.");
-        return;
-      }
+    // Check both user membership date and subscription date
+    const membershipExpiryDate = user?.membership_expiry_date;
+    const subscriptionExpiryDate = currentSubscription?.expires_at;
+    const membershipExpired = membershipExpiryDate && new Date(membershipExpiryDate) < new Date();
+    const subscriptionExpired = subscriptionExpiryDate && new Date(subscriptionExpiryDate) < new Date();
+    if (currentSubscription && !membershipExpired && !subscriptionExpired) {
+      toast.error("Your membership is not expired yet.");
+      return;
     }
 
     setProcessing(true);
@@ -1297,9 +1326,8 @@ export default function MembershipCardPage() {
       const pngUrl = canvas.toDataURL("image/png");
       const downloadLink = document.createElement("a");
       downloadLink.href = pngUrl;
-      downloadLink.download = `BDS-Membership-Card-${
-        user?.membership_code || "card"
-      }.png`;
+      downloadLink.download = `BDS-Membership-Card-${user?.membership_code || "card"
+        }.png`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
@@ -1803,6 +1831,50 @@ export default function MembershipCardPage() {
           </div>
         </div>
 
+        {/* Membership Expiry Strip — for paid members only */}
+        {!isFreeMember && (() => {
+          const expirySource = user?.membership_expiry_date || currentSubscription?.expires_at;
+          const timeInfo = getTimeRemaining(expirySource);
+          if (!timeInfo) return null;
+
+          if (timeInfo.isExpired) {
+            return (
+              <div className="p-4 rounded-xl bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-red-100 rounded-lg mt-0.5">
+                    <AlertCircle className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-red-800 text-sm md:text-base">Your membership has expired</div>
+                    <div className="text-sm text-red-600 mt-0.5 font-medium">{timeInfo.label}</div>
+                    <div className="text-xs text-gray-600 mt-1">Renew now to restore access to premium features and your membership card.</div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleRenew}
+                  disabled={processing}
+                  className="px-5 py-2.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors text-sm whitespace-nowrap flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Clock className="w-4 h-4" />
+                  Renew Membership
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 flex items-center gap-3">
+              <div className="p-2 bg-emerald-100 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <div className="font-bold text-emerald-800 text-sm md:text-base">Membership Active</div>
+                <div className="text-sm text-emerald-600 font-medium">{timeInfo.label}</div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Upgrade Banner for Free Members */}
         {isFreeMember && (
           <div className="bg-gradient-to-r from-[#ECCF0F]/10 to-[#ECCF0F]/10 rounded-xl p-6 border border-[#ECCF0F]/20">
@@ -1929,11 +2001,10 @@ export default function MembershipCardPage() {
                           />
                           <label
                             htmlFor="id-card-upload"
-                            className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg transition-colors ${
-                              verificationData?.is_member_verified
-                                ? "cursor-not-allowed opacity-50 bg-gray-100"
-                                : "cursor-pointer hover:bg-gray-50"
-                            }`}
+                            className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg transition-colors ${verificationData?.is_member_verified
+                              ? "cursor-not-allowed opacity-50 bg-gray-100"
+                              : "cursor-pointer hover:bg-gray-50"
+                              }`}
                           >
                             {idCardPreview ? (
                               <div className="relative w-full h-full">
@@ -2001,11 +2072,10 @@ export default function MembershipCardPage() {
                           />
                           <label
                             htmlFor="personal-photo-upload"
-                            className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg transition-colors ${
-                              verificationData?.is_member_verified
-                                ? "cursor-not-allowed opacity-50 bg-gray-100"
-                                : "cursor-pointer hover:bg-gray-50"
-                            }`}
+                            className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg transition-colors ${verificationData?.is_member_verified
+                              ? "cursor-not-allowed opacity-50 bg-gray-100"
+                              : "cursor-pointer hover:bg-gray-50"
+                              }`}
                           >
                             {personalPhotoPreview ? (
                               <div className="relative w-full h-full">
@@ -2021,7 +2091,7 @@ export default function MembershipCardPage() {
                                       setPersonalPhotoFile(null);
                                       setPersonalPhotoPreview(
                                         verificationData?.personal_photo_url ||
-                                          null,
+                                        null,
                                       );
                                     }}
                                     className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
@@ -2115,9 +2185,8 @@ export default function MembershipCardPage() {
                     <span className="text-gray-600">Type</span>
                   </div>
                   <span
-                    className={`font-semibold ${
-                      !isFreeMember ? "text-[#03215F]" : "text-[#03215F]"
-                    }`}
+                    className={`font-semibold ${!isFreeMember ? "text-[#03215F]" : "text-[#03215F]"
+                      }`}
                   >
                     {planName || (!isFreeMember ? planName : "Free Membership")}
                   </span>
@@ -2149,40 +2218,52 @@ export default function MembershipCardPage() {
                   <span className="font-semibold text-gray-900">
                     {currentSubscription?.started_at
                       ? new Date(
-                          currentSubscription.started_at,
-                        ).toLocaleDateString("en-BH", {
-                          year: "numeric",
-                          month: "short",
-                        })
+                        currentSubscription.started_at,
+                      ).toLocaleDateString("en-BH", {
+                        year: "numeric",
+                        month: "short",
+                      })
                       : user?.membership_date
                         ? new Date(user.membership_date).toLocaleDateString(
-                            "en-BH",
-                            {
-                              year: "numeric",
-                              month: "short",
-                            },
-                          )
+                          "en-BH",
+                          {
+                            year: "numeric",
+                            month: "short",
+                          },
+                        )
                         : "N/A"}
                   </span>
                 </div>
 
-                {currentSubscription?.expires_at && (
-                  <div className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg">
-                    <div className="flex items-center">
-                      <Clock className="w-4 h-4 text-gray-500 mr-3" />
-                      <span className="text-gray-600">Expires</span>
+                {currentSubscription?.expires_at && (() => {
+                  const timeInfo = getTimeRemaining(user?.membership_expiry_date || currentSubscription.expires_at);
+                  return (
+                    <div className="flex flex-col p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg gap-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <Clock className="w-4 h-4 text-gray-500 mr-3" />
+                          <span className="text-gray-600">Expires</span>
+                        </div>
+                        <span className="font-semibold text-gray-900">
+                          {new Date(
+                            currentSubscription.expires_at,
+                          ).toLocaleDateString("en-BH", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+                      {timeInfo && (
+                        <div className={`text-xs font-semibold px-2 py-1 rounded-md inline-flex items-center gap-1 self-start ${timeInfo.isExpired ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                          }`}>
+                          <Clock className="w-3 h-3" />
+                          {timeInfo.label}
+                        </div>
+                      )}
                     </div>
-                    <span className="font-semibold text-gray-900">
-                      {new Date(
-                        currentSubscription.expires_at,
-                      ).toLocaleDateString("en-BH", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Renew/Upgrade/Downgrade Buttons - only when expired */}
@@ -2313,9 +2394,9 @@ export default function MembershipCardPage() {
               (p) =>
                 p.display_name === currentSubscription.subscription_plan_name ||
                 p.name ===
-                  currentSubscription.subscription_plan_name
-                    .toLowerCase()
-                    .replace(/\s+/g, "_"),
+                currentSubscription.subscription_plan_name
+                  .toLowerCase()
+                  .replace(/\s+/g, "_"),
             )?.id) ||
           null
         }
