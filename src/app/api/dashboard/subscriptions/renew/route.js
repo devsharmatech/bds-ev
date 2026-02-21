@@ -77,23 +77,42 @@ export async function POST(request) {
 
     const plan = currentSubscription.subscription_plan;
 
-    // Calculate renewal fees (only annual fee for renewal)
-    const annualFee = plan.annual_waived ? 0 : plan.annual_fee;
+    // Fetch user's actual membership_expiry_date for overdue calculation
+    const { data: userData } = await supabase
+      .from('users')
+      .select('membership_expiry_date')
+      .eq('id', userId)
+      .single();
+
+    const userExpiryDate = userData?.membership_expiry_date;
+    const baseExpiry = userExpiryDate
+      ? new Date(userExpiryDate)
+      : (currentSubscription.expires_at ? new Date(currentSubscription.expires_at) : new Date());
+
+    // Calculate overdue duration in years
+    const now = new Date();
+    const overdueMs = now.getTime() - baseExpiry.getTime();
+    const overdueYears = overdueMs > 0 ? overdueMs / (365.25 * 24 * 60 * 60 * 1000) : 0;
+
+    // Determine fee multiplier: number of missed years (rounded up), minimum 1
+    const feeMultiplier = overdueYears > 0 ? Math.ceil(overdueYears) : 1;
+
+    // Calculate renewal fees
+    const baseAnnualFee = plan.annual_waived ? 0 : plan.annual_fee;
+    const annualFee = baseAnnualFee * feeMultiplier;
+
+    console.log('[RENEW] Overdue calculation:', {
+      user_expiry: userExpiryDate,
+      overdue_years: overdueYears.toFixed(2),
+      fee_multiplier: feeMultiplier,
+      base_fee: baseAnnualFee,
+      total_fee: annualFee
+    });
 
     // If free or waived, renew immediately
     if (plan.name === 'free' || annualFee === 0) {
-      // Use user's actual membership_expiry_date as the base for renewal
-      const { data: userData } = await supabase
-        .from('users')
-        .select('membership_expiry_date')
-        .eq('id', userId)
-        .single();
-
-      const userExpiryDate = userData?.membership_expiry_date;
-      const baseExpiry = userExpiryDate
-        ? new Date(userExpiryDate)
-        : (currentSubscription.expires_at ? new Date(currentSubscription.expires_at) : new Date());
-      const newExpiryDate = new Date(baseExpiry);
+      // New expiry is always today + 1 year
+      const newExpiryDate = new Date();
       newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);
 
       // Update subscription
@@ -127,7 +146,11 @@ export async function POST(request) {
       });
     }
 
-    // For paid renewals, create payment record
+    // Calculate the new expiry date for the payment record
+    const newExpiryDate = new Date(baseExpiry);
+    newExpiryDate.setFullYear(newExpiryDate.getFullYear() + feeMultiplier);
+
+    // For paid renewals, create payment record with multiplied amount
     const { data: paymentRecord, error: paymentError } = await supabase
       .from('membership_payments')
       .insert({
@@ -137,7 +160,12 @@ export async function POST(request) {
         amount: annualFee,
         currency: 'BHD',
         paid: false,
-        reference: `SUB-RENEW-${currentSubscription.id.substring(0, 8).toUpperCase()}`
+        reference: `SUB-RENEW-${currentSubscription.id.substring(0, 8).toUpperCase()}`,
+        membership_start_date: baseExpiry.toISOString(),
+        membership_end_date: newExpiryDate.toISOString(),
+        notes: feeMultiplier > 1
+          ? `Membership renewal - ${plan.display_name || plan.name}. Base fee: ${baseAnnualFee} BHD × ${feeMultiplier}x multiplier (${overdueYears.toFixed(1)} years overdue) = ${annualFee} BHD`
+          : `Membership renewal - ${plan.display_name || plan.name}. Annual fee: ${annualFee} BHD`
       })
       .select()
       .single();
@@ -156,6 +184,9 @@ export async function POST(request) {
       subscription: currentSubscription,
       payment: {
         amount: annualFee,
+        base_amount: baseAnnualFee,
+        fee_multiplier: feeMultiplier,
+        overdue_years: Math.floor(overdueYears),
         currency: 'BHD',
         payment_id: paymentRecord.id,
         subscription_id: currentSubscription.id

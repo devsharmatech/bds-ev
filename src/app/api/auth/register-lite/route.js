@@ -173,15 +173,6 @@ export async function POST(request) {
       );
     }
 
-    // Assign membership code in format BDS-00001 (no year)
-    const membershipCode = await generateMembershipCode();
-    if (membershipCode) {
-      await supabase
-        .from("users")
-        .update({ membership_code: membershipCode })
-        .eq("id", newUser.id);
-    }
-
     // Handle optional student ID card upload (for student category)
     let idCardUrl = null;
 

@@ -173,7 +173,9 @@ export async function POST(request) {
           amount: registrationFee,
           currency: 'BHD',
           paid: false,
-          reference: `SUB-REG-${pendingSubscription.id.substring(0, 8).toUpperCase()}`
+          reference: `SUB-REG-${pendingSubscription.id.substring(0, 8).toUpperCase()}`,
+          membership_start_date: startDate.toISOString(),
+          membership_end_date: endDate.toISOString()
         })
         .select()
         .single();
@@ -195,7 +197,9 @@ export async function POST(request) {
           amount: annualFee,
           currency: 'BHD',
           paid: false,
-          reference: `SUB-ANN-${pendingSubscription.id.substring(0, 8).toUpperCase()}`
+          reference: `SUB-ANN-${pendingSubscription.id.substring(0, 8).toUpperCase()}`,
+          membership_start_date: startDate.toISOString(),
+          membership_end_date: endDate.toISOString()
         })
         .select()
         .single();
@@ -236,7 +240,7 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Upgrade subscription error:', error);
-    
+
     if (error.name === 'JsonWebTokenError') {
       return NextResponse.json(
         { success: false, message: 'Invalid token' },

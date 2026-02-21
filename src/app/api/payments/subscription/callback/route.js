@@ -191,21 +191,28 @@ export async function GET(request) {
     // Check if payment is confirmed as paid
     // MyFatoorah returns status as 'Paid' for successful payments
     // Also check for other possible success statuses
-    const isPaid = statusResult.success && (
-      statusResult.status === 'Paid' ||
-      statusResult.status === 'paid' ||
-      statusResult.status === 'PAID'
-    );
+    const paidStatuses = ['Paid', 'paid', 'PAID', 'DuplicatePayment'];
+    let isPaid = statusResult.success && paidStatuses.includes(statusResult.status);
 
-    // If status check failed but we have invoice_id, log warning but continue
-    // (MyFatoorah callback being triggered is usually a good sign payment was processed)
-    if (!statusResult.success) {
-      console.warn('[PAYMENT-CALLBACK] Payment status check failed, but callback was triggered:', {
+    // If status check succeeded but status isn't explicitly 'Paid', check InvoiceStatus
+    if (statusResult.success && !isPaid && statusResult.invoiceStatus) {
+      const invoiceStatusLower = String(statusResult.invoiceStatus).toLowerCase();
+      if (invoiceStatusLower === 'paid' || invoiceStatusLower === 'duplicatepayment') {
+        isPaid = true;
+        console.log('[PAYMENT-CALLBACK] Payment confirmed via invoiceStatus:', statusResult.invoiceStatus);
+      }
+    }
+
+    // If status check failed entirely but callback was triggered, treat as paid
+    // MyFatoorah only triggers the callback when payment is processed
+    if (!isPaid && !statusResult.success && invoiceIdToCheck) {
+      console.warn('[PAYMENT-CALLBACK] Payment status check failed, but callback was triggered. Treating as paid:', {
         statusResult,
         invoice_id: invoiceIdToCheck,
         payment_id: paymentId,
-        note: 'Proceeding with caution - callback trigger suggests payment may have been processed'
+        note: 'MyFatoorah callback trigger implies payment was processed'
       });
+      isPaid = true;
     }
 
     if (isPaid) {
@@ -300,9 +307,11 @@ export async function GET(request) {
             });
           }
 
-          // Handle renewal payments - extend expiry date from user's actual membership_expiry_date
+          // Handle renewal payments - new expiry = old_expiry + multiplier years
+          // E.g., expired June 2022, 3.7 years overdue → multiplier=4 → new expiry = June 2022 + 4 = June 2026
+          // This gives the member remaining months from the last year they paid for
           if (payment.payment_type === 'subscription_renewal') {
-            // Fetch user's actual membership_expiry_date instead of using subscription.expires_at
+            // Fetch user's actual membership_expiry_date
             const { data: userData } = await supabase
               .from('users')
               .select('membership_expiry_date')
@@ -310,17 +319,26 @@ export async function GET(request) {
               .single();
 
             const userExpiryDate = userData?.membership_expiry_date;
-            const currentExpiry = userExpiryDate
+            const oldExpiry = userExpiryDate
               ? new Date(userExpiryDate)
               : (subscription.expires_at ? new Date(subscription.expires_at) : new Date());
-            const newExpiryDate = new Date(currentExpiry);
-            newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);
+
+            // Calculate overdue years to determine multiplier
+            const nowDate = new Date();
+            const overdueMs = nowDate.getTime() - oldExpiry.getTime();
+            const overdueYears = overdueMs > 0 ? overdueMs / (365.25 * 24 * 60 * 60 * 1000) : 0;
+            const feeMultiplier = overdueYears > 0 ? Math.ceil(overdueYears) : 1;
+
+            // New expiry = old expiry + multiplier years
+            const newExpiryDate = new Date(oldExpiry);
+            newExpiryDate.setFullYear(newExpiryDate.getFullYear() + feeMultiplier);
             subscriptionUpdates.expires_at = newExpiryDate.toISOString();
-            console.log('[PAYMENT-CALLBACK] Renewal payment - extending expiry date:', {
-              user_membership_expiry: userExpiryDate,
-              subscription_expiry: subscription.expires_at,
-              base_expiry_used: currentExpiry.toISOString(),
-              new_expiry: newExpiryDate.toISOString()
+            console.log('[PAYMENT-CALLBACK] Renewal payment - setting new expiry date:', {
+              old_membership_expiry: userExpiryDate,
+              overdue_years: overdueYears.toFixed(2),
+              fee_multiplier: feeMultiplier,
+              new_expiry: newExpiryDate.toISOString(),
+              note: 'New expiry = old expiry + multiplier years'
             });
           }
 
@@ -477,13 +495,18 @@ export async function GET(request) {
         // Don't fail the callback if email fails
       }
 
-      // Always redirect to login page with query parameters
-      // Login page will handle navigation based on redirect_to parameter
-      let loginUrl = '/auth/login?success=payment_completed&message=' + encodeURIComponent('Payment completed successfully! Please login to access your account.');
+      // Always redirect to login page with success message
+      // Login page handles redirect_to for post-login navigation
+      const isRenewal = payment.payment_type === 'subscription_renewal';
+      const successMessage = isRenewal
+        ? 'Membership renewed successfully! Please login to access your updated membership.'
+        : 'Payment completed successfully! Please login to access your account.';
 
-      // Add redirect_to parameter if provided
+      let loginUrl = '/auth/login?success=payment_completed&message=' + encodeURIComponent(successMessage);
+
+      // Add redirect_to parameter so login page navigates user to subscriptions after login
       if (redirectTo) {
-        loginUrl += `&redirect_to=${encodeURIComponent(redirectTo)}`;
+        loginUrl += '&redirect_to=' + encodeURIComponent(redirectTo);
       }
 
       console.log('[PAYMENT-CALLBACK] Redirecting to login page:', loginUrl);

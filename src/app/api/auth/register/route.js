@@ -15,7 +15,7 @@ export async function POST(req) {
 
     if (isMultipart) {
       const formData = await req.formData();
-      
+
       // Extract form fields
       body = {
         fullNameEng: formData.get("fullNameEng"),
@@ -176,7 +176,7 @@ export async function POST(req) {
     // IMPORTANT: If payment is required, user status should be "pending" until payment is confirmed
     const membershipTypeValue = isPaid ? "paid" : "free";
     const membershipStatus = isPaid ? "pending" : "active"; // Pending until payment is confirmed
-    
+
     const { data: user, error: userError } = await supabase
       .from("users")
       .insert({
@@ -198,15 +198,6 @@ export async function POST(req) {
 
     if (userError) throw userError;
 
-    // Assign membership code in format BDS-00001 (no year)
-    const membershipCode = await generateMembershipCode();
-    if (membershipCode) {
-      await supabase
-        .from("users")
-        .update({ membership_code: membershipCode })
-        .eq("id", user.id);
-      user.membership_code = membershipCode;
-    }
 
     // --------------------------------------------------
     // HANDLE FILE UPLOADS (if provided)
@@ -409,7 +400,9 @@ export async function POST(req) {
                 amount: registrationFee,
                 currency: 'BHD',
                 paid: false,
-                reference: `SUB-REG-${newSubscription.id.substring(0, 8).toUpperCase()}`
+                reference: `SUB-REG-${newSubscription.id.substring(0, 8).toUpperCase()}`,
+                membership_start_date: startDate ? startDate.toISOString() : new Date().toISOString(),
+                membership_end_date: endDate ? endDate.toISOString() : null
               })
               .select()
               .single();
@@ -431,7 +424,9 @@ export async function POST(req) {
                 amount: annualFee,
                 currency: 'BHD',
                 paid: false,
-                reference: `SUB-ANN-${newSubscription.id.substring(0, 8).toUpperCase()}`
+                reference: `SUB-ANN-${newSubscription.id.substring(0, 8).toUpperCase()}`,
+                membership_start_date: startDate ? startDate.toISOString() : new Date().toISOString(),
+                membership_end_date: endDate ? endDate.toISOString() : null
               })
               .select()
               .single();
@@ -468,7 +463,7 @@ export async function POST(req) {
 
     if (subscriptionPlan && isPaid && newSubscription) {
       subscriptionId = newSubscription.id;
-      
+
       // If payment IDs weren't set (e.g., due to errors), try to fetch them
       if (!registrationPaymentId && !annualPaymentId) {
         const { data: payments } = await supabase

@@ -71,10 +71,17 @@ const getTimeRemaining = (expiryDate) => {
   if (days > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
   const timeStr = parts.length > 0 ? parts.join(' ') : 'today';
 
+  // Calculate overdue years and fee multiplier
+  const overdueMs = isExpired ? (now.getTime() - expiry.getTime()) : 0;
+  const overdueYears = overdueMs / (365.25 * 24 * 60 * 60 * 1000);
+  const feeMultiplier = overdueYears > 0 ? Math.ceil(overdueYears) : 1;
+
   return {
     isExpired,
     months,
     days,
+    overdueYears,
+    feeMultiplier,
     label: isExpired ? `Overdue: ${timeStr}` : `Remaining: ${timeStr}`,
   };
 };
@@ -1838,6 +1845,12 @@ export default function MembershipCardPage() {
           if (!timeInfo) return null;
 
           if (timeInfo.isExpired) {
+            // Calculate projected new expiry date (old expiry + multiplier years)
+            const oldExpiry = new Date(expirySource);
+            const projectedExpiry = new Date(oldExpiry);
+            projectedExpiry.setFullYear(projectedExpiry.getFullYear() + timeInfo.feeMultiplier);
+            const projectedExpiryStr = projectedExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
             return (
               <div className="p-4 rounded-xl bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
@@ -1847,7 +1860,25 @@ export default function MembershipCardPage() {
                   <div>
                     <div className="font-bold text-red-800 text-sm md:text-base">Your membership has expired</div>
                     <div className="text-sm text-red-600 mt-0.5 font-medium">{timeInfo.label}</div>
-                    <div className="text-xs text-gray-600 mt-1">Renew now to restore access to premium features and your membership card.</div>
+                    {currentSubscription?.subscription_plan?.annual_fee > 0 && (() => {
+                      const baseFee = currentSubscription.subscription_plan.annual_fee;
+                      const totalCost = baseFee * timeInfo.feeMultiplier;
+                      return (
+                        <div className="text-xs text-gray-700 mt-1.5 space-y-0.5">
+                          <div>
+                            Renewal cost: <span className="font-bold text-[#03215F]">{totalCost} BHD</span>
+                            {timeInfo.feeMultiplier > 1 && (
+                              <span className="ml-1.5 px-1.5 py-0.5 bg-red-100 text-red-700 rounded font-bold text-[10px]">
+                                {timeInfo.feeMultiplier}x ({baseFee} BHD × {timeInfo.feeMultiplier} {timeInfo.feeMultiplier === 1 ? 'yr' : 'yrs'} overdue)
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            New expiry if renewed today: <span className="font-bold text-emerald-700">{projectedExpiryStr}</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
                 <button

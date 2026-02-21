@@ -11,7 +11,7 @@ import { initiateSubscriptionPayment } from '@/lib/myfatoorah';
 export async function POST(request) {
   const startTime = Date.now();
   let requestData = null;
-  
+
   try {
     requestData = await request.json();
     const { subscription_id, payment_id, amount, payment_type, redirect_to } = requestData;
@@ -33,8 +33,8 @@ export async function POST(request) {
         requestData
       });
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'subscription_id, payment_id, and amount are required',
           details: {
             missing_fields: {
@@ -51,12 +51,12 @@ export async function POST(request) {
     // Get payment record first to verify it exists and get user_id
     // Add retry logic for connection timeouts
     console.log('[CREATE-INVOICE] Fetching payment record:', { payment_id });
-    
+
     let payment = null;
     let paymentError = null;
     const maxRetries = 3;
     const retryDelay = 1000; // Start with 1 second
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const result = await Promise.race([
@@ -66,29 +66,29 @@ export async function POST(request) {
             .eq('id', payment_id)
             .single()
             .then(result => ({ data: result.data, error: result.error })),
-          new Promise((_, reject) => 
+          new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Database query timeout')), 15000)
           )
         ]);
-        
+
         paymentError = result.error;
         payment = result.data;
-        
+
         if (!paymentError && payment) {
           break; // Success, exit retry loop
         }
-        
+
         // If it's not a timeout/connection error, don't retry
-        const isTimeoutError = paymentError?.message?.includes('timeout') || 
-                              paymentError?.message?.includes('ECONNREFUSED') || 
-                              paymentError?.message?.includes('ConnectTimeoutError') ||
-                              paymentError?.code === 'PGRST116' ||
-                              paymentError?.code === 'PGRST301';
-        
+        const isTimeoutError = paymentError?.message?.includes('timeout') ||
+          paymentError?.message?.includes('ECONNREFUSED') ||
+          paymentError?.message?.includes('ConnectTimeoutError') ||
+          paymentError?.code === 'PGRST116' ||
+          paymentError?.code === 'PGRST301';
+
         if (!isTimeoutError) {
           break; // Don't retry for non-timeout errors
         }
-        
+
         if (attempt < maxRetries) {
           const delay = retryDelay * Math.pow(2, attempt - 1); // Exponential backoff
           console.warn(`[CREATE-INVOICE] Retry attempt ${attempt}/${maxRetries} after ${delay}ms:`, {
@@ -99,12 +99,12 @@ export async function POST(request) {
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       } catch (error) {
-        const isTimeoutError = error.message?.includes('timeout') || 
-                              error.message?.includes('ECONNREFUSED') || 
-                              error.message?.includes('ConnectTimeoutError');
-        
+        const isTimeoutError = error.message?.includes('timeout') ||
+          error.message?.includes('ECONNREFUSED') ||
+          error.message?.includes('ConnectTimeoutError');
+
         paymentError = error;
-        
+
         if (attempt < maxRetries && isTimeoutError) {
           const delay = retryDelay * Math.pow(2, attempt - 1);
           console.warn(`[CREATE-INVOICE] Retry attempt ${attempt}/${maxRetries} after ${delay}ms:`, {
@@ -128,17 +128,17 @@ export async function POST(request) {
         payment_id,
         attempts: maxRetries
       });
-      
+
       // Check if it's a connection timeout error
-      const isTimeoutError = paymentError.message?.includes('timeout') || 
-                            paymentError.message?.includes('ECONNREFUSED') || 
-                            paymentError.message?.includes('ConnectTimeoutError');
-      
+      const isTimeoutError = paymentError.message?.includes('timeout') ||
+        paymentError.message?.includes('ECONNREFUSED') ||
+        paymentError.message?.includes('ConnectTimeoutError');
+
       return NextResponse.json(
-        { 
-          success: false, 
-          message: isTimeoutError 
-            ? 'Database connection timeout. Please try again in a moment.' 
+        {
+          success: false,
+          message: isTimeoutError
+            ? 'Database connection timeout. Please try again in a moment.'
             : 'Payment record not found',
           error: {
             code: paymentError.code || 'CONNECTION_ERROR',
@@ -150,12 +150,12 @@ export async function POST(request) {
         { status: isTimeoutError ? 503 : 404 }
       );
     }
-    
+
     if (!payment) {
       console.error('[CREATE-INVOICE] Payment record not found:', { payment_id });
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'Payment record not found',
           error: {
             code: 'NOT_FOUND',
@@ -190,8 +190,8 @@ export async function POST(request) {
         paid_at: payment.paid_at
       });
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'Payment has already been processed',
           payment_id,
           paid_at: payment.paid_at
@@ -208,8 +208,8 @@ export async function POST(request) {
         payment_id
       });
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'Payment does not match subscription',
           details: {
             payment_subscription_id: payment.subscription_id,
@@ -245,7 +245,9 @@ export async function POST(request) {
             amount: amount,
             currency: payment.currency || 'BHD',
             paid: false,
-            reference: `SUB-REG-ANN-${(subscription_id || '').toString().substring(0,8).toUpperCase()}`,
+            reference: `SUB-REG-ANN-${(subscription_id || '').toString().substring(0, 8).toUpperCase()}`,
+            membership_start_date: new Date().toISOString(),
+            membership_end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
             notes: 'Combined registration and annual payment (created at invoice initiation)'
           })
           .select()
@@ -336,8 +338,8 @@ export async function POST(request) {
         user_id: userId
       });
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'User not found',
           error: {
             code: userError.code,
@@ -384,8 +386,8 @@ export async function POST(request) {
         user_id: userId
       });
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'Subscription not found',
           error: {
             code: subError.code,
@@ -423,7 +425,7 @@ export async function POST(request) {
     // Create payment invoice
     // Get base URL from environment or request headers
     let baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
-    
+
     // If not set, try to get from request headers (for production)
     if (!baseUrl || baseUrl.includes('localhost')) {
       const origin = request.headers.get('origin') || request.headers.get('host');
@@ -441,10 +443,10 @@ export async function POST(request) {
         baseUrl = 'https://bds-ev.vercel.app';
       }
     }
-    
+
     // Ensure baseUrl doesn't have trailing slash
     baseUrl = baseUrl.replace(/\/$/, '');
-    
+
     console.log('[CREATE-INVOICE] Base URL determined:', {
       baseUrl,
       envNextPublic: process.env.NEXT_PUBLIC_APP_URL,
@@ -452,13 +454,13 @@ export async function POST(request) {
       origin: request.headers.get('origin'),
       host: request.headers.get('host')
     });
-    
+
     // Build callback URL with redirect_to parameter if provided
     let callbackUrl = `${baseUrl}/api/payments/subscription/callback?payment_id=${payment_id}`;
     if (redirect_to) {
       callbackUrl += `&redirect_to=${encodeURIComponent(redirect_to)}`;
     }
-    
+
     // Use login page for registration flow, member dashboard for logged-in users
     const isAuthenticated = token && userId === payment.user_id;
     const errorUrl = isAuthenticated
@@ -467,13 +469,13 @@ export async function POST(request) {
 
     // Create invoice items - MyFatoorah requires specific format (same as event payments)
     const invoiceItems = [{
-      ItemName: payment_type === 'subscription_registration' 
+      ItemName: payment_type === 'subscription_registration'
         ? `Registration Fee - ${subscription.subscription_plan.display_name}`
         : payment_type === 'subscription_renewal'
-        ? `Renewal Fee - ${subscription.subscription_plan.display_name}`
-        : payment_type === 'subscription_combined'
-        ? `Membership Fee - ${subscription.subscription_plan.display_name}`
-        : `Annual Fee - ${subscription.subscription_plan.display_name}`,
+          ? `Renewal Fee - ${subscription.subscription_plan.display_name}`
+          : payment_type === 'subscription_combined'
+            ? `Membership Fee - ${subscription.subscription_plan.display_name}`
+            : `Annual Fee - ${subscription.subscription_plan.display_name}`,
       Quantity: 1,
       UnitPrice: amount
     }];
@@ -496,7 +498,7 @@ export async function POST(request) {
 
     // Ensure customerMobile is a valid string (not null or undefined)
     const customerMobile = (user.mobile || user.phone || '').trim() || null;
-    
+
     console.log('[CREATE-INVOICE] Calling MyFatoorah InitiatePayment with:', {
       invoiceAmount: amount,
       customerName: user.full_name,
@@ -534,8 +536,8 @@ export async function POST(request) {
         user_id: userId
       });
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: initiateResult.message || 'Failed to initiate payment',
           error: initiateResult.error || initiateResult.message,
           payment_id,
@@ -594,11 +596,11 @@ export async function POST(request) {
       duration_ms: duration,
       timestamp: new Date().toISOString()
     });
-    
+
     if (error.name === 'JsonWebTokenError') {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'Invalid token',
           error: {
             name: error.name,
@@ -611,8 +613,8 @@ export async function POST(request) {
 
     if (error instanceof SyntaxError) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'Invalid request data',
           error: {
             name: error.name,
@@ -624,8 +626,8 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Failed to create payment invoice',
         error: {
           name: error.name,
