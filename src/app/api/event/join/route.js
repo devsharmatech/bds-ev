@@ -182,6 +182,7 @@ export async function POST(req) {
               year: 'numeric',
               hour: '2-digit',
               minute: '2-digit',
+              hour12: true,
               timeZone: 'Asia/Bahrain'
             })
             : null,

@@ -543,6 +543,7 @@ export async function GET(request) {
                 year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
+                hour12: true,
                 timeZone: 'Asia/Bahrain'
               })
               : null,
