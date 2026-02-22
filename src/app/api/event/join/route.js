@@ -176,12 +176,13 @@ export async function POST(req) {
           name: userData.full_name || 'Member',
           event_name: eventData?.title || 'Event',
           event_date: eventData?.start_datetime
-            ? new Date(eventData.start_datetime).toLocaleDateString('en-GB', {
+            ? new Date(eventData.start_datetime).toLocaleString('en-GB', {
               day: '2-digit',
               month: 'short',
               year: 'numeric',
               hour: '2-digit',
-              minute: '2-digit'
+              minute: '2-digit',
+              timeZone: 'Asia/Bahrain'
             })
             : null,
           event_location: eventData?.venue_name || null,
