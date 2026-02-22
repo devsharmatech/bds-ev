@@ -42,7 +42,7 @@ export async function GET(request) {
       .select(`
         *,
         event:events (
-          id, title, is_paid, start_datetime, early_bird_deadline,
+          id, title, is_paid, start_datetime, venue_name, early_bird_deadline,
           regular_price, regular_standard_price, regular_onsite_price,
           member_price, member_standard_price, member_onsite_price,
           student_price, student_standard_price, student_onsite_price,
@@ -78,7 +78,7 @@ export async function GET(request) {
           .select(`
             *,
             event:events (
-              id, title, is_paid, start_datetime, early_bird_deadline,
+              id, title, is_paid, start_datetime, venue_name, early_bird_deadline,
               regular_price, regular_standard_price, regular_onsite_price,
               member_price, member_standard_price, member_onsite_price,
               student_price, student_standard_price, student_onsite_price,
@@ -142,7 +142,7 @@ export async function GET(request) {
       const { data: event } = await supabase
         .from('events')
         .select(`
-          id, title, is_paid, start_datetime, early_bird_deadline,
+          id, title, is_paid, start_datetime, venue_name, early_bird_deadline,
           regular_price, regular_standard_price, regular_onsite_price,
           member_price, member_standard_price, member_onsite_price,
           student_price, student_standard_price, student_onsite_price,
@@ -191,7 +191,7 @@ export async function GET(request) {
           .select(`
             *,
             event:events (
-              id, title, is_paid, start_datetime, early_bird_deadline,
+              id, title, is_paid, start_datetime, venue_name, early_bird_deadline,
               regular_price, regular_standard_price, regular_onsite_price,
               member_price, member_standard_price, member_onsite_price,
               student_price, student_standard_price, student_onsite_price,
@@ -536,8 +536,17 @@ export async function GET(request) {
           await sendEventJoinEmail(eventMember.user.email, {
             name: eventMember.user.full_name || 'Member',
             event_name: eventMember.event?.title || 'Event',
-            event_date: eventMember.event?.start_datetime || null,
-            event_location: null,
+            event_date: eventMember.event?.start_datetime
+              ? new Date(eventMember.event.start_datetime).toLocaleString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Asia/Bahrain'
+              })
+              : null,
+            event_location: eventMember.event?.venue_name || null,
             event_code: eventMember.token,
             price_paid: amount
           });
