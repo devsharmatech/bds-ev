@@ -148,6 +148,7 @@ export async function GET(req) {
         checked_in,
         checked_in_at,
         price_paid,
+        payment_status,
         events (
           id,
           title,
@@ -170,10 +171,10 @@ export async function GET(req) {
 
     const formattedUpcomingEvents = (upcomingEvents || []).map(item => {
       const isPaidEvent = item.events?.is_paid;
-      const pricePaid = item.price_paid || 0;
-      // Payment is pending if it's a paid event but user hasn't paid yet
-      const paymentPending = isPaidEvent && pricePaid === 0;
-      
+      const ps = item.payment_status;
+      // Payment is pending if it's a paid event and status is not completed/free and no price paid
+      const paymentPending = isPaidEvent && ps !== 'completed' && ps !== 'free' && !(item.price_paid != null && Number(item.price_paid) > 0);
+
       return {
         id: item.events?.id,
         title: item.events?.title,
@@ -187,6 +188,7 @@ export async function GET(req) {
         banner_url: item.events?.banner_url,
         checked_in: item.checked_in,
         price_paid: item.price_paid,
+        payment_status: ps,
         is_paid: item.events?.is_paid,
         payment_pending: paymentPending
       };
@@ -201,6 +203,7 @@ export async function GET(req) {
         checked_in,
         checked_in_at,
         price_paid,
+        payment_status,
         events (
           title,
           is_paid
@@ -216,18 +219,18 @@ export async function GET(req) {
     const formattedActivities = (recentActivities || []).map(item => {
       const isCheckIn = item.checked_in;
       const isPaidEvent = item.events?.is_paid;
-      const pricePaid = item.price_paid || 0;
-      const paymentPending = isPaidEvent && pricePaid === 0;
-      
+      const ps = item.payment_status;
+      const paymentPending = isPaidEvent && ps !== 'completed' && ps !== 'free' && !(item.price_paid != null && Number(item.price_paid) > 0);
+
       let action = '';
       let status = 'success';
-      
+
       if (isCheckIn) {
         action = `Attended ${item.events?.title || 'event'}`;
       } else if (paymentPending) {
         action = `Payment pending for ${item.events?.title || 'event'}`;
         status = 'warning';
-      } else if (!isPaidEvent) {
+      } else if (!isPaidEvent || ps === 'free') {
         action = `Registered for ${item.events?.title || 'event'} (Free)`;
         status = 'pending';
       } else {
@@ -311,7 +314,7 @@ export async function GET(req) {
         is_premium: user.membership_type === 'paid',
         is_active: user.membership_status === 'active',
         expiry_date: user.membership_expiry_date,
-        days_until_expiry: user.membership_expiry_date 
+        days_until_expiry: user.membership_expiry_date
           ? calculateDaysUntil(user.membership_expiry_date)
           : null
       }
@@ -330,8 +333,8 @@ export async function GET(req) {
     }
 
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: "Failed to fetch dashboard data",
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
       },
@@ -353,7 +356,7 @@ function formatTimeAgo(dateString) {
   if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
   if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  
+
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

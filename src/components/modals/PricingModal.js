@@ -55,11 +55,11 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
     const deadline = new Date(event.early_bird_deadline);
     const now = new Date();
     if (now >= deadline) return null;
-    
+
     const diff = deadline - now;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
+
     if (days > 0) return `${days} day${days > 1 ? 's' : ''} left`;
     if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} left`;
     return 'Ending soon!';
@@ -210,11 +210,10 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
                         </div>
                       </th>
                       <th
-                        className={`border border-gray-200 px-3 py-2.5 text-center font-semibold ${
-                          allPrices.currentTier === "earlybird"
+                        className={`border border-gray-200 px-3 py-2.5 text-center font-semibold ${allPrices.currentTier === "earlybird"
                             ? "bg-green-100 text-green-700"
                             : "text-gray-700"
-                        }`}
+                          }`}
                       >
                         Early Bird
                         {allPrices.currentTier === "earlybird" && (
@@ -222,11 +221,10 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
                         )}
                       </th>
                       <th
-                        className={`border border-gray-200 px-3 py-2.5 text-center font-semibold ${
-                          allPrices.currentTier === "standard"
+                        className={`border border-gray-200 px-3 py-2.5 text-center font-semibold ${allPrices.currentTier === "standard"
                             ? "bg-green-100 text-green-700"
                             : "text-gray-700"
-                        }`}
+                          }`}
                       >
                         Standard
                         {allPrices.currentTier === "standard" && (
@@ -234,11 +232,10 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
                         )}
                       </th>
                       <th
-                        className={`border border-gray-200 px-3 py-2.5 text-center font-semibold ${
-                          allPrices.currentTier === "onsite"
+                        className={`border border-gray-200 px-3 py-2.5 text-center font-semibold ${allPrices.currentTier === "onsite"
                             ? "bg-green-100 text-green-700"
                             : "text-gray-700"
-                        }`}
+                          }`}
                       >
                         On-site
                         {allPrices.currentTier === "onsite" && (
@@ -269,13 +266,12 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
                             </div>
                           </td>
                           <td
-                            className={`border border-gray-200 px-3 py-2.5 text-center ${
-                              allPrices.currentTier === "earlybird" && isUserCategory
+                            className={`border border-gray-200 px-3 py-2.5 text-center ${allPrices.currentTier === "earlybird" && isUserCategory
                                 ? "bg-green-100 font-bold text-green-700"
                                 : "text-gray-700"
-                            }`}
+                              }`}
                           >
-                            {cat.earlybird ? (
+                            {cat.earlybird != null ? (
                               <div className="flex items-center justify-center gap-1">
                                 <BahrainFlag />
                                 {formatBHD(cat.earlybird)}
@@ -285,13 +281,12 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
                             )}
                           </td>
                           <td
-                            className={`border border-gray-200 px-3 py-2.5 text-center ${
-                              allPrices.currentTier === "standard" && isUserCategory
+                            className={`border border-gray-200 px-3 py-2.5 text-center ${allPrices.currentTier === "standard" && isUserCategory
                                 ? "bg-green-100 font-bold text-green-700"
                                 : "text-gray-700"
-                            }`}
+                              }`}
                           >
-                            {cat.standard ? (
+                            {cat.standard != null ? (
                               <div className="flex items-center justify-center gap-1">
                                 <BahrainFlag />
                                 {formatBHD(cat.standard)}
@@ -301,11 +296,10 @@ export default function PricingModal({ event, user, isOpen, onClose }) {
                             )}
                           </td>
                           <td
-                            className={`border border-gray-200 px-3 py-2.5 text-center ${
-                              allPrices.currentTier === "onsite" && isUserCategory
+                            className={`border border-gray-200 px-3 py-2.5 text-center ${allPrices.currentTier === "onsite" && isUserCategory
                                 ? "bg-green-100 font-bold text-green-700"
                                 : "text-gray-700"
-                            }`}
+                              }`}
                           >
                             {cat.onsite ? (
                               <div className="flex items-center justify-center gap-1">

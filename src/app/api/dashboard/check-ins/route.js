@@ -32,6 +32,7 @@ export async function GET(request) {
         checked_in_at,
         joined_at,
         price_paid,
+        payment_status,
         is_member,
         event:events (
           id,
@@ -63,7 +64,7 @@ export async function GET(request) {
 
     // Fetch all attendance logs for these event members
     const eventMemberIds = eventMembers?.map(em => em.id) || [];
-    
+
     let attendanceLogs = [];
     if (eventMemberIds.length > 0) {
       const { data: logs, error: logsError } = await supabase
@@ -127,11 +128,21 @@ export async function GET(request) {
     }
 
     // Combine event members with their attendance logs and feedback
-    const checkIns = eventMembers?.map(eventMember => {
+    // Filter out payment-pending members (they haven't completed payment yet)
+    const validEventMembers = (eventMembers || []).filter(em => {
+      const isPaidEvent = em.event?.is_paid;
+      const ps = em.payment_status;
+      if (isPaidEvent && ps !== 'completed' && ps !== 'free' && !(em.price_paid != null && Number(em.price_paid) > 0)) {
+        return false; // Payment pending, don't show in check-ins
+      }
+      return true;
+    });
+
+    const checkIns = validEventMembers.map(eventMember => {
       const logs = attendanceLogs.filter(
         log => log.event_member_id === eventMember.id
       );
-      
+
       const feedback = feedbackData.filter(
         fb => fb.event_member_id === eventMember.id
       );
@@ -143,13 +154,14 @@ export async function GET(request) {
         checked_in_at: eventMember.checked_in_at,
         joined_at: eventMember.joined_at,
         price_paid: eventMember.price_paid,
+        payment_status: eventMember.payment_status,
         is_member: eventMember.is_member,
         event: eventMember.event,
         attendance_logs: logs,
         feedback: feedback,
         total_check_ins: logs.length
       };
-    }) || [];
+    });
 
     // Separate checked-in and not checked-in
     const checkedInEvents = checkIns.filter(ci => ci.checked_in);
@@ -172,7 +184,7 @@ export async function GET(request) {
 
   } catch (error) {
     console.error('Check-ins API error:', error);
-    
+
     if (error.name === 'JsonWebTokenError') {
       return NextResponse.json(
         { success: false, message: 'Invalid token' },

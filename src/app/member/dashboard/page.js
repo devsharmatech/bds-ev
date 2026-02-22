@@ -766,19 +766,23 @@ export default function DashboardPage() {
                           <div className="mt-1.5">
                             <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${event.checked_in
                               ? 'bg-[#AE9B66] text-white'
-                              : event.payment_pending
-                                ? 'bg-orange-100 text-orange-700'
-                                : event.is_paid && event.price_paid > 0
+                              : event.payment_status === 'free'
+                                ? 'bg-green-100 text-green-700'
+                                : event.payment_status === 'completed' || (event.is_paid && event.price_paid > 0)
                                   ? 'bg-green-100 text-green-700'
-                                  : 'bg-[#9cc2ed] text-[#03215F]'
+                                  : event.payment_pending
+                                    ? 'bg-orange-100 text-orange-700'
+                                    : 'bg-[#9cc2ed] text-[#03215F]'
                               }`}>
                               {event.checked_in
                                 ? 'Attended'
-                                : event.payment_pending
-                                  ? 'Payment Pending'
-                                  : event.is_paid && event.price_paid > 0
+                                : event.payment_status === 'free'
+                                  ? 'Free'
+                                  : event.payment_status === 'completed' || (event.is_paid && event.price_paid > 0)
                                     ? 'Paid'
-                                    : 'Free'}
+                                    : event.payment_pending
+                                      ? 'Payment Pending'
+                                      : 'Free'}
                             </span>
                           </div>
                         </div>

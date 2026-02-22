@@ -1,0 +1,22 @@
+{
+  "categories": [
+    "Dentist",
+    "other",
+    "Dental Assistant",
+    "Dental Hygienist",
+    "Student - Postgraduate",
+    "Student - Undergraduate",
+    "Dental Technologist"
+  ],
+  "positions": [
+    "General Dentist",
+    "Specialist",
+    "others",
+    "Consultant",
+    "Dental Hygienist",
+    "Dental hygienist",
+    null,
+    "Student",
+    "Dental Technologist"
+  ]
+}

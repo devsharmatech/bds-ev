@@ -23,19 +23,19 @@
  */
 export function getPricingTier(event) {
   if (!event) return 'earlybird';
-  
+
   const now = new Date();
   const startDate = event.start_datetime ? new Date(event.start_datetime) : null;
-  
+
   // Check if event has early_bird_deadline set
   const earlyBirdDeadline = event.early_bird_deadline ? new Date(event.early_bird_deadline) : null;
   const standardDeadline = event.standard_deadline ? new Date(event.standard_deadline) : null;
-  
+
   // If early_bird_deadline is set and we're before it, use Early Bird
   if (earlyBirdDeadline && now < earlyBirdDeadline) {
     return 'earlybird';
   }
-  
+
   // If early_bird_deadline has passed, check for Standard pricing
   if (earlyBirdDeadline && now >= earlyBirdDeadline) {
     // If standard_deadline is set and we're before it, use Standard
@@ -49,7 +49,7 @@ export function getPricingTier(event) {
     // If standard_deadline has passed or event has started, use On-site (for display purposes)
     return 'onsite';
   }
-  
+
   // If no early_bird_deadline set, check standard_deadline
   if (standardDeadline) {
     if (now < standardDeadline) {
@@ -58,13 +58,13 @@ export function getPricingTier(event) {
     }
     return 'onsite';
   }
-  
+
   // Fallback: If no deadlines set, use event start date
   // Early Bird: More than 14 days before event
   // Standard: 0-14 days before event (until event starts)
   if (startDate) {
     const daysUntilEvent = Math.ceil((startDate - now) / (1000 * 60 * 60 * 24));
-    
+
     if (daysUntilEvent > 14) {
       return 'earlybird';
     } else if (daysUntilEvent > 0) {
@@ -74,7 +74,7 @@ export function getPricingTier(event) {
       return 'onsite';
     }
   }
-  
+
   return 'earlybird'; // Default
 }
 
@@ -99,25 +99,33 @@ export function getTierDisplayName(tier) {
  */
 export function getUserPricingCategory(user) {
   if (!user) return 'regular';
-  
+
+  // If the user has an active, paid membership, they receive 'member' pricing.
+  // This takes precedence over their student or hygienist status if they bought a membership.
+  const now = new Date();
+  const membershipValid = user.membership_type === 'paid' && user.membership_status === 'active' && (!user.membership_expiry_date || new Date(user.membership_expiry_date) > now);
+  if (membershipValid) {
+    return 'member';
+  }
+
   // Check user's category and position (from member_profiles)
   const category = (user.category || user.member_category || '').toLowerCase();
   const position = (user.position || '').toLowerCase();
-  
+
   // Student categories - check both category and position
   if (
-    category.includes('student') || 
+    category.includes('student') ||
     category.includes('undergraduate') ||
     category.includes('postgraduate') ||
     position === 'student'
   ) {
     return 'student';
   }
-  
+
   // Hygienist/Assistant/Technician categories - check both category and position
   if (
-    category.includes('hygienist') || 
-    category.includes('assistant') || 
+    category.includes('hygienist') ||
+    category.includes('assistant') ||
     category.includes('technician') ||
     category.includes('dental assistant') ||
     category.includes('dental hygienist') ||
@@ -128,33 +136,8 @@ export function getUserPricingCategory(user) {
   ) {
     return 'hygienist';
   }
-  
-  // BDS Member (paid membership) - only applies if user is a dentist
-  // Check if user is a dentist based on category or position
-  const isDentist = 
-    category === 'dentist' ||
-    category.includes('dentist') ||
-    position.includes('dentist') ||
-    position.includes('specialist') ||
-    position.includes('consultant') ||
-    position.includes('resident') ||
-    position.includes('intern') ||
-    position.includes('hod') ||
-    position.includes('lead') ||
-    position.includes('faculty') ||
-    position.includes('lecturer');
-  
-  // Ensure membership is active and not expired before granting member category
-  const now = new Date();
-  const membershipValid = user.membership_type === 'paid' && user.membership_status === 'active' && (!user.membership_expiry_date || new Date(user.membership_expiry_date) > now);
-  if (isDentist && membershipValid) {
-    return 'member';
-  }
-  
-  // Non-dental / Others - treat as regular (non-member) pricing
-  // This includes "Others (Non Dental)" category
-  
-  // Default to regular (non-member dentist pricing)
+
+  // Default to regular (non-member pricing)
   return 'regular';
 }
 
@@ -182,7 +165,7 @@ export function getCategoryDisplayName(category) {
  */
 export function getPriceForCategoryAndTier(event, category, tier) {
   if (!event || !event.is_paid) return null;
-  
+
   const priceMap = {
     member: {
       earlybird: event.member_price,
@@ -205,25 +188,30 @@ export function getPriceForCategoryAndTier(event, category, tier) {
       onsite: event.hygienist_onsite_price,
     },
   };
-  
+
   const categoryPrices = priceMap[category] || priceMap.regular;
   let price = categoryPrices[tier];
-  
+
   // Fallback: If specific tier price not set, try earlier tiers
   if (price === null || price === undefined) {
     if (tier === 'onsite') {
-      price = categoryPrices.standard || categoryPrices.earlybird;
+      price = categoryPrices.standard ?? categoryPrices.earlybird;
     } else if (tier === 'standard') {
       price = categoryPrices.earlybird;
     }
   }
-  
-  // Ultimate fallback: Use regular price
+
+  // Ultimate fallback: if category-specific price is blank
+  // For 'member' category, blank explicitly means Free (0).
+  // For others, fallback to regular price.
   if (price === null || price === undefined) {
-    const regularPrices = priceMap.regular;
-    price = regularPrices[tier] || regularPrices.standard || regularPrices.earlybird;
+    if (category === 'member') {
+      price = 0;
+    } else {
+      price = priceMap.regular[tier] ?? priceMap.regular.standard ?? priceMap.regular.earlybird ?? 0;
+    }
   }
-  
+
   return price;
 }
 
@@ -244,18 +232,18 @@ export function getUserEventPrice(event, user) {
       isFree: true,
     };
   }
-  
+
   const category = getUserPricingCategory(user);
   const tier = getPricingTier(event);
   const price = getPriceForCategoryAndTier(event, category, tier);
-  
+
   return {
     price,
     category,
     tier,
     categoryDisplay: getCategoryDisplayName(category),
     tierDisplay: getTierDisplayName(tier),
-    isFree: false,
+    isFree: price === 0 || price === null,
   };
 }
 
@@ -267,19 +255,19 @@ export function getUserEventPrice(event, user) {
  */
 export function calculateSavings(event, user) {
   if (!event || !event.is_paid || !user) return 0;
-  
+
   const tier = getPricingTier(event);
   const category = getUserPricingCategory(user);
-  
+
   if (category === 'regular') return 0; // No savings for regular price
-  
+
   const userPrice = getPriceForCategoryAndTier(event, category, tier);
   const regularPrice = getPriceForCategoryAndTier(event, 'regular', tier);
-  
+
   if (userPrice !== null && regularPrice !== null && regularPrice > userPrice) {
     return regularPrice - userPrice;
   }
-  
+
   return 0;
 }
 
@@ -292,9 +280,9 @@ export function getAllEventPrices(event) {
   if (!event || !event.is_paid) {
     return null;
   }
-  
+
   const currentTier = getPricingTier(event);
-  
+
   return {
     currentTier,
     currentTierDisplay: getTierDisplayName(currentTier),
@@ -353,12 +341,12 @@ export function formatBHD(amount) {
  */
 export function hasMultiplePricingTiers(event) {
   if (!event || !event.is_paid) return false;
-  
-  const hasStandard = event.regular_standard_price || event.member_standard_price || 
-                      event.student_standard_price || event.hygienist_standard_price;
+
+  const hasStandard = event.regular_standard_price || event.member_standard_price ||
+    event.student_standard_price || event.hygienist_standard_price;
   const hasOnsite = event.regular_onsite_price || event.member_onsite_price ||
-                    event.student_onsite_price || event.hygienist_onsite_price;
-  
+    event.student_onsite_price || event.hygienist_onsite_price;
+
   return !!(hasStandard || hasOnsite);
 }
 
@@ -369,6 +357,6 @@ export function hasMultiplePricingTiers(event) {
  */
 export function hasCategoryPricing(event) {
   if (!event || !event.is_paid) return false;
-  
+
   return !!(event.student_price || event.hygienist_price);
 }

@@ -16,7 +16,7 @@ async function uploadImage(file, folder, maxSize = 5 * 1024 * 1024) {
   if (!file || file.size === 0) return null;
 
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  
+
   if (!allowedTypes.includes(file.type)) {
     throw new Error('Only JPEG, JPG, PNG, and WebP images are allowed');
   }
@@ -122,11 +122,11 @@ export async function POST(request) {
     const isJson = contentType.includes('application/json');
 
     let title, description, start_datetime, end_datetime, timezone, venue_name, address, city,
-        created_by, province, pin_code, google_map_url, capacity, is_paid,
-        regular_price, member_price, student_price, hygienist_price,
-        regular_standard_price, member_standard_price, student_standard_price, hygienist_standard_price,
-        regular_onsite_price, member_onsite_price, student_onsite_price, hygienist_onsite_price,
-        early_bird_deadline, status, nera_cme_hours, nera_code;
+      created_by, province, pin_code, google_map_url, capacity, is_paid,
+      regular_price, member_price, student_price, hygienist_price,
+      regular_standard_price, member_standard_price, student_standard_price, hygienist_standard_price,
+      regular_onsite_price, member_onsite_price, student_onsite_price, hygienist_onsite_price,
+      early_bird_deadline, status, nera_cme_hours, nera_code;
     let agendas = [];
     let hosts = [];
     let banner_url = null;
@@ -150,18 +150,19 @@ export async function POST(request) {
       google_map_url = body.google_map_url || null;
       capacity = body.capacity ? parseInt(body.capacity) : null;
       is_paid = body.is_paid === true || body.is_paid === 'true';
-      regular_price = body.regular_price ? parseFloat(body.regular_price) : null;
-      member_price = body.member_price ? parseFloat(body.member_price) : null;
-      student_price = body.student_price ? parseFloat(body.student_price) : null;
-      hygienist_price = body.hygienist_price ? parseFloat(body.hygienist_price) : null;
-      regular_standard_price = body.regular_standard_price ? parseFloat(body.regular_standard_price) : null;
-      member_standard_price = body.member_standard_price ? parseFloat(body.member_standard_price) : null;
-      student_standard_price = body.student_standard_price ? parseFloat(body.student_standard_price) : null;
-      hygienist_standard_price = body.hygienist_standard_price ? parseFloat(body.hygienist_standard_price) : null;
-      regular_onsite_price = body.regular_onsite_price ? parseFloat(body.regular_onsite_price) : null;
-      member_onsite_price = body.member_onsite_price ? parseFloat(body.member_onsite_price) : null;
-      student_onsite_price = body.student_onsite_price ? parseFloat(body.student_onsite_price) : null;
-      hygienist_onsite_price = body.hygienist_onsite_price ? parseFloat(body.hygienist_onsite_price) : null;
+      const parsePrice = (val) => (val === null || val === undefined || val === '') ? null : (isNaN(parseFloat(val)) ? null : parseFloat(val));
+      regular_price = parsePrice(body.regular_price);
+      member_price = parsePrice(body.member_price);
+      student_price = parsePrice(body.student_price);
+      hygienist_price = parsePrice(body.hygienist_price);
+      regular_standard_price = parsePrice(body.regular_standard_price);
+      member_standard_price = parsePrice(body.member_standard_price);
+      student_standard_price = parsePrice(body.student_standard_price);
+      hygienist_standard_price = parsePrice(body.hygienist_standard_price);
+      regular_onsite_price = parsePrice(body.regular_onsite_price);
+      member_onsite_price = parsePrice(body.member_onsite_price);
+      student_onsite_price = parsePrice(body.student_onsite_price);
+      hygienist_onsite_price = parsePrice(body.hygienist_onsite_price);
       early_bird_deadline = body.early_bird_deadline || null;
       status = body.status || 'upcoming';
       nera_cme_hours = body.nera_cme_hours ? parseFloat(body.nera_cme_hours) : null;
@@ -188,18 +189,19 @@ export async function POST(request) {
       google_map_url = formData.get('google_map_url');
       capacity = formData.get('capacity') ? parseInt(formData.get('capacity')) : null;
       is_paid = formData.get('is_paid') === 'true';
-      regular_price = formData.get('regular_price') ? parseFloat(formData.get('regular_price')) : null;
-      member_price = formData.get('member_price') ? parseFloat(formData.get('member_price')) : null;
-      student_price = formData.get('student_price') ? parseFloat(formData.get('student_price')) : null;
-      hygienist_price = formData.get('hygienist_price') ? parseFloat(formData.get('hygienist_price')) : null;
-      regular_standard_price = formData.get('regular_standard_price') ? parseFloat(formData.get('regular_standard_price')) : null;
-      member_standard_price = formData.get('member_standard_price') ? parseFloat(formData.get('member_standard_price')) : null;
-      student_standard_price = formData.get('student_standard_price') ? parseFloat(formData.get('student_standard_price')) : null;
-      hygienist_standard_price = formData.get('hygienist_standard_price') ? parseFloat(formData.get('hygienist_standard_price')) : null;
-      regular_onsite_price = formData.get('regular_onsite_price') ? parseFloat(formData.get('regular_onsite_price')) : null;
-      member_onsite_price = formData.get('member_onsite_price') ? parseFloat(formData.get('member_onsite_price')) : null;
-      student_onsite_price = formData.get('student_onsite_price') ? parseFloat(formData.get('student_onsite_price')) : null;
-      hygienist_onsite_price = formData.get('hygienist_onsite_price') ? parseFloat(formData.get('hygienist_onsite_price')) : null;
+      const parsePriceF = (val) => (val === null || val === undefined || val === '') ? null : (isNaN(parseFloat(val)) ? null : parseFloat(val));
+      regular_price = parsePriceF(formData.get('regular_price'));
+      member_price = parsePriceF(formData.get('member_price'));
+      student_price = parsePriceF(formData.get('student_price'));
+      hygienist_price = parsePriceF(formData.get('hygienist_price'));
+      regular_standard_price = parsePriceF(formData.get('regular_standard_price'));
+      member_standard_price = parsePriceF(formData.get('member_standard_price'));
+      student_standard_price = parsePriceF(formData.get('student_standard_price'));
+      hygienist_standard_price = parsePriceF(formData.get('hygienist_standard_price'));
+      regular_onsite_price = parsePriceF(formData.get('regular_onsite_price'));
+      member_onsite_price = parsePriceF(formData.get('member_onsite_price'));
+      student_onsite_price = parsePriceF(formData.get('student_onsite_price'));
+      hygienist_onsite_price = parsePriceF(formData.get('hygienist_onsite_price'));
       early_bird_deadline = formData.get('early_bird_deadline');
       status = formData.get('status') || 'upcoming';
       nera_cme_hours = formData.get('nera_cme_hours') ? parseFloat(formData.get('nera_cme_hours')) : null;
@@ -285,7 +287,7 @@ export async function POST(request) {
           }
         }
       }
-      
+
       processedHosts.push({
         ...host,
         profile_image: profile_image || host.profile_image || null

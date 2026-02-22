@@ -188,7 +188,7 @@ export default function MyEventsPage() {
         if (filters.type === "paid") {
           return event.is_paid && event.price_paid > 0;
         } else if (filters.type === "free") {
-          return !event.is_paid;
+          return !event.is_paid || event.payment_status === 'free';
         } else if (filters.type === "pending") {
           return event.payment_pending;
         }
@@ -212,7 +212,7 @@ export default function MyEventsPage() {
   const isEventCompleted = (event) => {
     const now = new Date();
     // Event is completed if status is "completed" or end_datetime has passed
-    return event.event_status === 'completed' || 
+    return event.event_status === 'completed' ||
       (event.end_datetime && new Date(event.end_datetime) < now);
   }
 
@@ -259,7 +259,7 @@ export default function MyEventsPage() {
             // If certificate not found in API, use event data as fallback
             toast.dismiss();
             toast.error("Certificate data not found. Using event data.");
-            
+
             const fallbackCertificate = {
               id: event.id,
               event_id: event.id,
@@ -271,7 +271,7 @@ export default function MyEventsPage() {
               city: event.city,
               state: event.state,
             };
-            
+
             setSelectedCertificate(fallbackCertificate);
             setShowCertificateModal(true);
           }
@@ -493,15 +493,14 @@ export default function MyEventsPage() {
                             {event.title}
                           </h3>
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
-                              status.color === "green"
-                                ? "bg-[#AE9B66] text-white"
-                                : status.color === "blue"
+                            className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${status.color === "green"
+                              ? "bg-[#AE9B66] text-white"
+                              : status.color === "blue"
                                 ? "bg-[#9cc2ed] text-[#03215F]"
                                 : status.color === "red"
-                                ? "bg-[#b8352d] text-white"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
+                                  ? "bg-[#b8352d] text-white"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
                           >
                             {status.icon}
                             {status.label}
@@ -523,15 +522,24 @@ export default function MyEventsPage() {
                           )}
 
                           <div className="flex items-center text-gray-600">
+                            <Users className="w-4 h-4 mr-2" />
+                            Registered as: <span className="ml-1 capitalize font-medium">{event.registration_category || 'N/A'}</span>
+                          </div>
+
+                          <div className="flex items-center text-gray-600">
                             <Ticket className="w-4 h-4 mr-2" />
-                            {event.payment_pending 
+                            {event.payment_pending
                               ? <span className="text-orange-600 font-medium">Payment Pending</span>
-                              : event.price_paid > 0 
-                              ? "Paid Event" 
-                              : "Free Event"}
+                              : event.payment_status === 'free'
+                                ? "Free Event"
+                                : event.payment_status === 'completed'
+                                  ? <span className="text-green-600 font-medium">Payment Completed</span>
+                                  : event.price_paid > 0
+                                    ? "Paid Event"
+                                    : "Free Event"}
                             {event.price_paid > 0 && (
                               <span className="ml-2 font-medium">
-                                BHD {event.price_paid}
+                                (BHD {event.price_paid})
                               </span>
                             )}
                           </div>
@@ -571,7 +579,7 @@ export default function MyEventsPage() {
                         </button>
                       </Link>
                     )}
-                    
+
                     {event.checked_in && isEventCompleted(event) && (
                       <button
                         onClick={() => handleViewCertificate(event)}

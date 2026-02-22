@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getPaymentStatus } from '@/lib/myfatoorah';
 import { redirect } from 'next/navigation';
 import { sendEventJoinEmail } from '@/lib/email';
-import { getUserEventPrice } from '@/lib/eventPricing';
+import { getUserEventPrice, getUserPricingCategory } from '@/lib/eventPricing';
 
 /**
  * GET /api/payments/event/callback
@@ -11,7 +11,7 @@ import { getUserEventPrice } from '@/lib/eventPricing';
  */
 export async function GET(request) {
   const startTime = Date.now();
-  
+
   try {
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get('event_id');
@@ -34,7 +34,7 @@ export async function GET(request) {
     // Get event member record
     // Handle case where multiple records exist (get the most recent one or the one with payment)
     console.log('[EVENT-PAYMENT-CALLBACK] Fetching event member record:', { event_id: eventId, user_id: userId });
-    
+
     // Fetch all event member records (not using .single() or .maybeSingle() to handle multiple records)
     // Use .limit() to ensure we get an array response, not a single object
     let { data: eventMembers, error: memberError } = await supabase
@@ -57,14 +57,14 @@ export async function GET(request) {
       .eq('user_id', userId)
       .order('joined_at', { ascending: false })
       .limit(10); // Limit to prevent too many results, but ensures array response
-    
+
     let eventMember = null;
-    
+
     // Ensure eventMembers is always an array
     if (!Array.isArray(eventMembers)) {
       eventMembers = eventMembers ? [eventMembers] : [];
     }
-    
+
     if (memberError) {
       // If error is about multiple rows, that's expected - we'll handle it
       if (memberError.code === 'PGRST116' && memberError.message?.includes('multiple')) {
@@ -85,7 +85,7 @@ export async function GET(request) {
               hygienist_price, hygienist_standard_price, hygienist_onsite_price
             ),
             user:users (
-              id, full_name, email, membership_type,
+              id, full_name, email, membership_type, membership_status, membership_expiry_date,
               member_profiles!member_profiles_user_id_fkey(category, position, specialty)
             )
           `)
@@ -93,7 +93,7 @@ export async function GET(request) {
           .eq('user_id', userId)
           .order('joined_at', { ascending: false })
           .limit(10);
-        
+
         if (retryError) {
           console.error('[EVENT-PAYMENT-CALLBACK] Error fetching event members after retry:', {
             error: retryError,
@@ -113,12 +113,12 @@ export async function GET(request) {
         });
       }
     }
-    
+
     // Process the results
     if (!memberError && eventMembers && eventMembers.length > 0) {
       // If multiple records exist, prefer the one with payment, otherwise the most recent
       eventMember = eventMembers.find(m => m.price_paid && parseFloat(m.price_paid) > 0) || eventMembers[0];
-      
+
       if (eventMembers.length > 1) {
         console.warn('[EVENT-PAYMENT-CALLBACK] Multiple event member records found, using:', {
           selected_id: eventMember.id,
@@ -137,7 +137,7 @@ export async function GET(request) {
     // If event member doesn't exist, create it (payment was successful, so create the record)
     if (!eventMember) {
       console.log('[EVENT-PAYMENT-CALLBACK] Event member not found, creating record after successful payment');
-      
+
       // Get event and user details to create the record - include all pricing fields
       const { data: event } = await supabase
         .from('events')
@@ -150,11 +150,11 @@ export async function GET(request) {
         `)
         .eq('id', eventId)
         .single();
-      
+
       const { data: user } = await supabase
         .from('users')
         .select(`
-          id, full_name, email, membership_type,
+          id, full_name, email, membership_type, membership_status, membership_expiry_date,
           member_profiles!member_profiles_user_id_fkey(category, position, specialty)
         `)
         .eq('id', userId)
@@ -167,12 +167,14 @@ export async function GET(request) {
           user.position = user.member_profiles.position;
           user.specialty = user.member_profiles.specialty;
         }
-        
+
         const now = new Date();
         const membershipValid = user && user.membership_type === 'paid' && user.membership_status === 'active' && (!user.membership_expiry_date || new Date(user.membership_expiry_date) > now);
         const isMember = membershipValid;
         const eventMemberToken = `EVT-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-        
+
+        const registration_category = getUserPricingCategory(user);
+
         // Create event member record
         const { data: newMember, error: createError } = await supabase
           .from('event_members')
@@ -182,7 +184,9 @@ export async function GET(request) {
             token: eventMemberToken,
             is_member: isMember,
             price_paid: 0, // Will be updated below
-            joined_at: new Date().toISOString()
+            joined_at: new Date().toISOString(),
+            registration_category,
+            payment_status: "pending"
           })
           .select(`
             *,
@@ -194,7 +198,7 @@ export async function GET(request) {
               hygienist_price, hygienist_standard_price, hygienist_onsite_price
             ),
             user:users (
-              id, full_name, email, membership_type,
+              id, full_name, email, membership_type, membership_status, membership_expiry_date,
               member_profiles!member_profiles_user_id_fkey(category, position, specialty)
             )
           `)
@@ -224,7 +228,7 @@ export async function GET(request) {
         return redirect('/events?error=payment_not_found');
       }
     }
-    
+
     // If we still don't have an event member, redirect with error
     if (!eventMember) {
       console.error('[EVENT-PAYMENT-CALLBACK] Event member not found and could not be created:', {
@@ -280,9 +284,9 @@ export async function GET(request) {
     // The InvoiceId from ExecutePayment response is the numeric ID (e.g., 6392538)
     // But the callback URL might have a different format (e.g., 07076392538322682974)
     // Try multiple approaches to verify payment
-    
+
     let statusResult = null;
-    
+
     // First, try as InvoiceId (the numeric ID from ExecutePayment)
     // Extract numeric part if it's in a longer format
     const numericInvoiceId = invoiceIdToCheck.replace(/^0+/, ''); // Remove leading zeros
@@ -290,13 +294,13 @@ export async function GET(request) {
       console.log('[EVENT-PAYMENT-CALLBACK] Trying InvoiceId format (numeric):', numericInvoiceId);
       statusResult = await getPaymentStatus(numericInvoiceId, false, 'InvoiceId');
     }
-    
+
     // If that fails, try the original ID as InvoiceId
     if (!statusResult || !statusResult.success) {
       console.log('[EVENT-PAYMENT-CALLBACK] Trying InvoiceId format (original):', invoiceIdToCheck);
       statusResult = await getPaymentStatus(invoiceIdToCheck, false, 'InvoiceId');
     }
-    
+
     // If that fails, try as PaymentId (the longer ID from callback URL)
     if (!statusResult || !statusResult.success) {
       if (invoiceIdToCheck && invoiceIdToCheck.length > 10) {
@@ -319,7 +323,7 @@ export async function GET(request) {
 
     // Check if payment is confirmed as paid
     const isPaid = statusResult && statusResult.success && (
-      statusResult.status === 'Paid' || 
+      statusResult.status === 'Paid' ||
       statusResult.status === 'paid' ||
       statusResult.status === 'PAID'
     );
@@ -334,7 +338,7 @@ export async function GET(request) {
         event_id: eventId,
         note: 'MyFatoorah callback was triggered. Payment status verification failed, but callback suggests payment may have been processed.'
       });
-      
+
       // If status check completely failed, we can't verify payment
       // Don't update the record without verification
       // User should contact support if payment was deducted
@@ -379,11 +383,11 @@ export async function GET(request) {
           userForPricing.position = userForPricing.member_profiles.position;
           userForPricing.specialty = userForPricing.member_profiles.specialty;
         }
-        
+
         // Use the same pricing utility as execute-payment
         const priceInfo = getUserEventPrice(eventMember.event, userForPricing);
         amount = priceInfo.price;
-        
+
         console.log('[EVENT-PAYMENT-CALLBACK] Price calculated using getUserEventPrice:', {
           user_category: priceInfo.category,
           pricing_tier: priceInfo.tier,
@@ -422,8 +426,13 @@ export async function GET(request) {
       // Update price_paid to confirm payment (this is the main indicator)
       // price_paid > 0 means payment is confirmed
       const updateData = {
-        price_paid: amount
+        price_paid: amount,
+        payment_status: "completed",
+        registration_category: typeof priceInfo !== 'undefined' ? priceInfo.category : undefined
       };
+
+      // Remove undefined fields
+      Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
       const { error: updateError } = await supabase
         .from('event_members')
@@ -552,19 +561,19 @@ export async function GET(request) {
         event_id: eventId,
         current_price_paid: eventMember.price_paid
       });
-      
+
       // If we have an invoice ID and callback was triggered, but status check failed,
       // it could mean:
       // 1. Payment is still processing
       // 2. Payment failed
       // 3. Status check API is having issues
-      
+
       // Check if payment was already processed (price_paid > 0)
       if (eventMember.price_paid && parseFloat(eventMember.price_paid) > 0) {
         console.log('[EVENT-PAYMENT-CALLBACK] Payment already confirmed in database, redirecting to success');
         return redirect(`/events?success=payment_completed&event=${encodeURIComponent(eventMember.event?.title || 'Event')}`);
       }
-      
+
       // Log failed / unverified event payment attempt in payment_history
       try {
         await supabase.from('payment_history').insert({
@@ -608,7 +617,7 @@ export async function GET(request) {
       duration_ms: duration,
       timestamp: new Date().toISOString()
     });
-    
+
     return redirect('/events?error=payment_error');
   }
 }

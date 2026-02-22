@@ -209,9 +209,8 @@ const MemoizedInput = ({
         name={name}
         value={value}
         onChange={onChange}
-        className={`w-full px-4 py-3 bg-gray-50 border ${
-          error ? "border-[#b8352d]" : "border-gray-200"
-        } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all ${className}`}
+        className={`w-full px-4 py-3 bg-gray-50 border ${error ? "border-[#b8352d]" : "border-gray-200"
+          } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all ${className}`}
         placeholder={placeholder}
         {...props}
         aria-invalid={!!error}
@@ -246,9 +245,8 @@ const MemoizedTextarea = ({
         value={value}
         onChange={onChange}
         rows={rows}
-        className={`w-full px-4 py-3 bg-gray-50 border ${
-          error ? "border-[#b8352d]" : "border-gray-200"
-        } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all resize-none ${className}`}
+        className={`w-full px-4 py-3 bg-gray-50 border ${error ? "border-[#b8352d]" : "border-gray-200"
+          } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent transition-all resize-none ${className}`}
         placeholder={placeholder}
         {...props}
         aria-invalid={!!error}
@@ -324,7 +322,7 @@ export default function EventModal({
   const fetchedRef = useRef(false);
   const [userLoaded, setUserLoaded] = useState(false);
   // Get user info from JWT token
-  
+
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
@@ -394,18 +392,18 @@ export default function EventModal({
         google_map_url: event.google_map_url || "",
         capacity: event.capacity || "",
         is_paid: event.is_paid || false,
-        regular_price: event.regular_price || "",
-        member_price: event.member_price || "",
-        student_price: event.student_price || "",
-        hygienist_price: event.hygienist_price || "",
-        regular_standard_price: event.regular_standard_price || "",
-        member_standard_price: event.member_standard_price || "",
-        student_standard_price: event.student_standard_price || "",
-        hygienist_standard_price: event.hygienist_standard_price || "",
-        regular_onsite_price: event.regular_onsite_price || "",
-        member_onsite_price: event.member_onsite_price || "",
-        student_onsite_price: event.student_onsite_price || "",
-        hygienist_onsite_price: event.hygienist_onsite_price || "",
+        regular_price: event.regular_price !== null ? event.regular_price : "",
+        member_price: event.member_price !== null ? event.member_price : "",
+        student_price: event.student_price !== null ? event.student_price : "",
+        hygienist_price: event.hygienist_price !== null ? event.hygienist_price : "",
+        regular_standard_price: event.regular_standard_price !== null ? event.regular_standard_price : "",
+        member_standard_price: event.member_standard_price !== null ? event.member_standard_price : "",
+        student_standard_price: event.student_standard_price !== null ? event.student_standard_price : "",
+        hygienist_standard_price: event.hygienist_standard_price !== null ? event.hygienist_standard_price : "",
+        regular_onsite_price: event.regular_onsite_price !== null ? event.regular_onsite_price : "",
+        member_onsite_price: event.member_onsite_price !== null ? event.member_onsite_price : "",
+        student_onsite_price: event.student_onsite_price !== null ? event.student_onsite_price : "",
+        hygienist_onsite_price: event.hygienist_onsite_price !== null ? event.hygienist_onsite_price : "",
         early_bird_deadline: formatDateTimeForInput(event.early_bird_deadline),
         status: event.status || "upcoming",
         created_by: event.created_by || "",
@@ -466,7 +464,7 @@ export default function EventModal({
         (name === "start_datetime" || name === "end_datetime") &&
         e.target.value &&
         formData[
-          name === "start_datetime" ? "end_datetime" : "start_datetime"
+        name === "start_datetime" ? "end_datetime" : "start_datetime"
         ] &&
         agendas.length === 0 &&
         activeTab !== "agendas"
@@ -500,8 +498,7 @@ export default function EventModal({
       setShowGenerateAgendaPrompt(false);
       setActiveTab("agendas");
       toast.success(
-        `Generated ${generatedSlots.length} agenda slot${
-          generatedSlots.length > 1 ? "s" : ""
+        `Generated ${generatedSlots.length} agenda slot${generatedSlots.length > 1 ? "s" : ""
         } automatically`
       );
     }
@@ -967,7 +964,7 @@ export default function EventModal({
             {userInfo.role}
           </span>
         </div>
-       
+
       </div>
     );
   }, [userInfo]);
@@ -1044,11 +1041,10 @@ export default function EventModal({
             <button
               type="button"
               onClick={() => setActiveTab("basic")}
-              className={`py-3 px-1 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                activeTab === "basic"
+              className={`py-3 px-1 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${activeTab === "basic"
                   ? "border-[#03215F] text-[#03215F]"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4" />
@@ -1059,11 +1055,10 @@ export default function EventModal({
             <button
               type="button"
               onClick={() => setActiveTab("hosts")}
-              className={`py-3 px-1 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                activeTab === "hosts"
+              className={`py-3 px-1 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${activeTab === "hosts"
                   ? "border-[#03215F] text-[#03215F]"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2">
                 <Mic className="w-4 h-4" />
@@ -1077,11 +1072,10 @@ export default function EventModal({
             <button
               type="button"
               onClick={() => setActiveTab("agendas")}
-              className={`py-3 px-1 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                activeTab === "agendas"
+              className={`py-3 px-1 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${activeTab === "agendas"
                   ? "border-[#03215F] text-[#03215F]"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2">
                 <ListChecks className="w-4 h-4" />
@@ -1095,11 +1089,10 @@ export default function EventModal({
             <button
               type="button"
               onClick={() => setActiveTab("finance")}
-              className={`py-3 px-1 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                activeTab === "finance"
+              className={`py-3 px-1 sm:px-4 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${activeTab === "finance"
                   ? "border-[#03215F] text-[#03215F]"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
@@ -1389,9 +1382,9 @@ export default function EventModal({
             <p className="text-sm text-gray-600 mt-1">
               {formData.start_datetime && formData.end_datetime
                 ? `Event Dates: ${getDateRangeDisplay(
-                    formData.start_datetime,
-                    formData.end_datetime
-                  )}`
+                  formData.start_datetime,
+                  formData.end_datetime
+                )}`
                 : "Set event dates first to generate agenda automatically"}
             </p>
           </div>
@@ -1496,11 +1489,10 @@ export default function EventModal({
                         onChange={(e) =>
                           updateAgenda(index, "agenda_date", e.target.value)
                         }
-                        className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 border ${
-                          errors[`agenda_${index}_date`]
+                        className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 border ${errors[`agenda_${index}_date`]
                             ? "border-[#b8352d]"
                             : "border-gray-200"
-                        } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent`}
+                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent`}
                       />
                     </div>
                     {errors[`agenda_${index}_date`] && (
@@ -1712,7 +1704,7 @@ export default function EventModal({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                    NHRA Code
+                      NHRA Code
                     </label>
                     <MemoizedInput
                       name="nera_code"
@@ -2275,7 +2267,7 @@ export default function EventModal({
                   </tbody>
                 </table>
               </div>
-              
+
               {errors.regular_price && (
                 <p className="text-[#b8352d] text-sm flex items-center gap-1 mt-3">
                   <AlertCircle className="w-4 h-4" />
@@ -2363,7 +2355,7 @@ export default function EventModal({
           <div className="flex-shrink-0 px-4 sm:px-6">{NavigationTabs}</div>
 
           {/* Form Content - Scrollable Area */}
-          <div 
+          <div
             className="flex-1 px-4 sm:px-6 py-0"
             style={{
               flex: "1 1 auto",

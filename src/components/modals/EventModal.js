@@ -1,18 +1,18 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { 
-  X, 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  Users, 
-  DollarSign, 
-  Shield, 
-  Mail, 
-  Phone, 
-  User, 
-  ArrowRight, 
+import {
+  X,
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  DollarSign,
+  Shield,
+  Mail,
+  Phone,
+  User,
+  ArrowRight,
   CheckCircle,
   ChevronRight,
   ChevronLeft,
@@ -210,7 +210,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
     }
-    
+
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
@@ -245,28 +245,28 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
     }
 
     if (event.joined) {
-      // For paid events, allow completing payment if joined record exists but payment isn't completed
-      if (event.is_paid) {
+      // For paid events (where price > 0 for this user), allow completing payment if joined record exists but payment isn't completed
+      if (event.is_paid && !userPriceInfo.isFree) {
         setPaymentStep(2)
         handleInitiatePayment()
         return
       }
-      // Free events: already joined
+      // Free events or already paid: already joined
       toast.success('You have already joined this event!')
       onClose()
       return
     }
 
-    // If event is paid, initiate payment flow
-    if (event.is_paid) {
+    // If event is paid and the user's price is greater than 0, initiate payment flow
+    if (event.is_paid && !userPriceInfo.isFree) {
       setPaymentStep(2)
       handleInitiatePayment()
       return
     }
 
-    // Free event - join directly
+    // Free event (or free category for a paid event) - join directly
     setLoading(true)
-    
+
     try {
       const response = await fetch('/api/event/join', {
         method: 'POST',
@@ -278,14 +278,14 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
           payment_reference: null
         })
       })
-      
+
       const data = await response.json()
-      
+
       if (data.success) {
         // Show confetti and success modal
         setShowConfetti(true)
         setShowSuccess(true)
-        
+
         // Wait for animation to complete
         setTimeout(() => {
           setShowConfetti(false)
@@ -312,7 +312,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
 
     setLoadingMethods(true)
     setError(null)
-    
+
     try {
       const response = await fetch('/api/payments/event/create-invoice', {
         method: 'POST',
@@ -395,7 +395,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
 
     setProcessing(true)
     setError(null)
-    
+
     try {
       const response = await fetch('/api/payments/event/execute-payment', {
         method: 'POST',
@@ -444,11 +444,11 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
     const deadline = new Date(event.early_bird_deadline);
     const now = new Date();
     if (now >= deadline) return null;
-    
+
     const diff = deadline - now;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
+
     if (days > 0) return `${days} day${days > 1 ? 's' : ''} left`;
     if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} left`;
     return 'Ending soon!';
@@ -466,7 +466,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
     }
     return userPriceInfo.price || 0;
   };
-  
+
   const getDisplayCategoryInfo = () => {
     if (selectedPreviewCategory && allPrices?.categories) {
       const selectedCat = allPrices.categories.find(c => c.id === selectedPreviewCategory);
@@ -499,7 +499,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         {/* Custom Confetti */}
         {showConfetti && <Confetti />}
-        
+
         {/* Success Modal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -509,7 +509,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
         >
           {/* Animated Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#AE9B66]/10 via-[#AE9B66]/5 to-transparent"></div>
-          
+
           {/* Success Content */}
           <div className="relative p-8 text-center">
             {/* Celebration Icons */}
@@ -524,54 +524,54 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                   <PartyPopper className="w-16 h-16 text-white" />
                 </motion.div>
               </div>
-              
+
               {/* Floating Stars */}
-              <motion.div 
+              <motion.div
                 className="absolute -top-5 -left-5"
-                animate={{ 
+                animate={{
                   rotate: 360,
                   y: [0, -10, 0]
                 }}
-                transition={{ 
+                transition={{
                   rotate: { duration: 3, repeat: Infinity, ease: "linear" },
                   y: { duration: 1, repeat: Infinity, ease: "easeInOut" }
                 }}
               >
                 <Star className="w-8 h-8 text-[#ECCF0F] fill-[#ECCF0F]" />
               </motion.div>
-              <motion.div 
+              <motion.div
                 className="absolute -top-5 -right-5"
-                animate={{ 
+                animate={{
                   rotate: 360,
                   y: [0, -10, 0]
                 }}
-                transition={{ 
+                transition={{
                   rotate: { duration: 3, repeat: Infinity, ease: "linear" },
                   y: { duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.2 }
                 }}
               >
                 <Sparkles className="w-8 h-8 text-[#b8352d]" />
               </motion.div>
-              <motion.div 
+              <motion.div
                 className="absolute -bottom-5 left-10"
-                animate={{ 
+                animate={{
                   rotate: 360,
                   y: [0, -10, 0]
                 }}
-                transition={{ 
+                transition={{
                   rotate: { duration: 3, repeat: Infinity, ease: "linear" },
                   y: { duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.4 }
                 }}
               >
                 <Star className="w-8 h-8 text-[#9cc2ed] fill-[#9cc2ed]" />
               </motion.div>
-              <motion.div 
+              <motion.div
                 className="absolute -bottom-5 right-10"
-                animate={{ 
+                animate={{
                   rotate: 360,
                   y: [0, -10, 0]
                 }}
-                transition={{ 
+                transition={{
                   rotate: { duration: 3, repeat: Infinity, ease: "linear" },
                   y: { duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.6 }
                 }}
@@ -582,7 +582,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
 
             {/* Main Message */}
             <div className="mt-32 mb-8">
-              <motion.h2 
+              <motion.h2
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
@@ -590,7 +590,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
               >
                 🎉 You're In!
               </motion.h2>
-              <motion.p 
+              <motion.p
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
@@ -598,7 +598,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
               >
                 Successfully joined
               </motion.p>
-              <motion.p 
+              <motion.p
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
@@ -606,9 +606,9 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
               >
                 {event.title}
               </motion.p>
-              
+
               {/* Event Details */}
-              <motion.div 
+              <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
@@ -631,7 +631,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
               </motion.div>
 
               {/* Confirmation Message */}
-              <motion.div 
+              <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.6 }}
@@ -649,7 +649,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
             </div>
 
             {/* Countdown */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
@@ -700,16 +700,16 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col overflow-y-auto max-h-[95vh] border border-white/20 relative"
         style={{
-         
+
           WebkitOverflowScrolling: "touch",
-          
+
           display: 'flex',
           flexDirection: 'column',
         }}
       >
         {/* Glowing Top Border */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#03215F] via-[#03215F] to-[#03215F] z-20"></div>
-        
+
         {/* Close Button - Fixed Position */}
         <button
           onClick={onClose}
@@ -719,112 +719,112 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
         </button>
 
         {/* Scrollable Content Container */}
-        <div 
+        <div
           className="flex-1"
           style={{
-           
+
             WebkitOverflowScrolling: 'touch',
           }}
         >
           {/* Header with Event Banner - RESPONSIVE HEIGHT for small screens */}
           <div className="relative h-24 sm:h-32 md:h-40 lg:h-48 bg-gradient-to-r from-[#03215F] to-[#03215F] overflow-hidden">
-          {event.banner_url ? (
-            <div className="w-full h-full">
-              <img
-                src={event.banner_url}
-                alt={event.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-            </div>
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#03215F] via-[#03215F] to-[#03215F] flex items-center justify-center">
-              <Calendar className="w-12 h-12 md:w-16 md:h-16 text-white/50" />
-            </div>
-          )}
-          
-          {/* Event Title and Badges */}
-          <div className="absolute bottom-4 py-4 px-4 md:px-6 left-0 right-0">
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-3 line-clamp-2 capitalize">
-              {event.title}
-            </h2>
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Early Bird Badge */}
-              {isEarlyBird && event.is_paid && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="px-2 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-green-400 to-emerald-500 backdrop-blur-sm text-white rounded-full text-xs md:text-sm font-bold flex items-center gap-1.5 shadow-lg"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  EARLY BIRD
-                  {earlyBirdCountdown && (
-                    <span className="flex items-center gap-1 ml-1 pl-1.5 border-l border-white/30 text-[10px] md:text-xs font-normal">
-                      <Clock className="w-3 h-3" />
-                      {earlyBirdCountdown}
-                    </span>
-                  )}
-                </motion.span>
-              )}
-              <span className="px-2 py-1 md:px-3 md:py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-xs md:text-sm font-medium border border-white/30">
-                {event.is_paid ? formatBHD(priceToPay) : '🎟️ FREE'}
-              </span>
-              {memberSavings > 0 && (
-                <span className="px-2 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm text-white rounded-full text-xs md:text-sm font-medium">
-                  Save {formatBHD(memberSavings)}
+            {event.banner_url ? (
+              <div className="w-full h-full">
+                <img
+                  src={event.banner_url}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+              </div>
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[#03215F] via-[#03215F] to-[#03215F] flex items-center justify-center">
+                <Calendar className="w-12 h-12 md:w-16 md:h-16 text-white/50" />
+              </div>
+            )}
+
+            {/* Event Title and Badges */}
+            <div className="absolute bottom-4 py-4 px-4 md:px-6 left-0 right-0">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-2 md:mb-3 line-clamp-2 capitalize">
+                {event.title}
+              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Early Bird Badge */}
+                {isEarlyBird && event.is_paid && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="px-2 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-green-400 to-emerald-500 backdrop-blur-sm text-white rounded-full text-xs md:text-sm font-bold flex items-center gap-1.5 shadow-lg"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    EARLY BIRD
+                    {earlyBirdCountdown && (
+                      <span className="flex items-center gap-1 ml-1 pl-1.5 border-l border-white/30 text-[10px] md:text-xs font-normal">
+                        <Clock className="w-3 h-3" />
+                        {earlyBirdCountdown}
+                      </span>
+                    )}
+                  </motion.span>
+                )}
+                <span className="px-2 py-1 md:px-3 md:py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-xs md:text-sm font-medium border border-white/30">
+                  {event.is_paid ? formatBHD(priceToPay) : '🎟️ FREE'}
                 </span>
-              )}
-              <span className="px-2 py-1 md:px-3 md:py-1.5 bg-[#9cc2ed]/20 backdrop-blur-sm text-white rounded-full text-xs md:text-sm">
-                {formatDate(event.start_datetime)}
-              </span>
+                {memberSavings > 0 && (
+                  <span className="px-2 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] backdrop-blur-sm text-white rounded-full text-xs md:text-sm font-medium">
+                    Save {formatBHD(memberSavings)}
+                  </span>
+                )}
+                <span className="px-2 py-1 md:px-3 md:py-1.5 bg-[#9cc2ed]/20 backdrop-blur-sm text-white rounded-full text-xs md:text-sm">
+                  {formatDate(event.start_datetime)}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
           {/* Tabs */}
           <div className="border-b border-gray-200 bg-white">
-          <div className="flex">
-            <button
-              onClick={() => setActiveTab('details')}
-              className={`flex-1 py-3 md:py-4 text-center font-medium transition-all ${activeTab === 'details' 
-                ? 'text-[#03215F] border-b-2 border-[#03215F] bg-gradient-to-t from-[#03215F]/5 to-transparent' 
-                : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <List className="w-4 h-4" />
-                <span className="hidden xs:inline">Details</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('agenda')}
-              className={`flex-1 py-3 md:py-4 text-center font-medium transition-all ${activeTab === 'agenda' 
-                ? 'text-[#03215F] border-b-2 border-[#03215F] bg-gradient-to-t from-[#03215F]/5 to-transparent' 
-                : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span className="hidden xs:inline">Agenda</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('hosts')}
-              className={`flex-1 py-3 md:py-4 text-center font-medium transition-all ${activeTab === 'hosts' 
-                ? 'text-[#03215F] border-b-2 border-[#03215F] bg-gradient-to-t from-[#03215F]/5 to-transparent' 
-                : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Mic className="w-4 h-4" />
-                <span className="hidden xs:inline">Hosts</span>
-              </div>
-            </button>
+            <div className="flex">
+              <button
+                onClick={() => setActiveTab('details')}
+                className={`flex-1 py-3 md:py-4 text-center font-medium transition-all ${activeTab === 'details'
+                  ? 'text-[#03215F] border-b-2 border-[#03215F] bg-gradient-to-t from-[#03215F]/5 to-transparent'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <List className="w-4 h-4" />
+                  <span className="hidden xs:inline">Details</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('agenda')}
+                className={`flex-1 py-3 md:py-4 text-center font-medium transition-all ${activeTab === 'agenda'
+                  ? 'text-[#03215F] border-b-2 border-[#03215F] bg-gradient-to-t from-[#03215F]/5 to-transparent'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span className="hidden xs:inline">Agenda</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('hosts')}
+                className={`flex-1 py-3 md:py-4 text-center font-medium transition-all ${activeTab === 'hosts'
+                  ? 'text-[#03215F] border-b-2 border-[#03215F] bg-gradient-to-t from-[#03215F]/5 to-transparent'
+                  : 'text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Mic className="w-4 h-4" />
+                  <span className="hidden xs:inline">Hosts</span>
+                </div>
+              </button>
+            </div>
           </div>
-        </div>
 
           {/* Content Area */}
-          <div 
+          <div
             ref={contentRef}
             className="p-4 md:p-6"
           >
@@ -851,13 +851,8 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                         </p>
                       </div>
                     </div>
-                    {user?.membership_type === 'paid' && (
-                      <div className="px-2 py-1 md:px-3 md:py-1.5 bg-gradient-to-r from-[#ECCF0F] to-[#ECCF0F] rounded-full text-xs font-semibold text-white whitespace-nowrap">
-                        🌟 Premium Member
-                      </div>
-                    )}
                   </div>
-                  
+
                   {event.joined ? (
                     <div className="mt-3 p-3 bg-gradient-to-r from-[#AE9B66]/20 to-[#AE9B66]/20 rounded-lg">
                       <div className="flex items-center gap-2 text-[#AE9B66]">
@@ -871,11 +866,10 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                         <div className="flex items-center gap-2 flex-wrap">
                           <span>{displayCategoryInfo.isPreview ? 'Preview Price' : 'Your Price'}</span>
                           {user && (
-                            <span className={`px-2 py-0.5 text-[10px] md:text-xs rounded-full font-medium ${
-                              displayCategoryInfo.isPreview 
-                                ? 'bg-amber-100 text-amber-700 border border-amber-300' 
-                                : 'bg-[#03215F]/10 text-[#03215F]'
-                            }`}>
+                            <span className={`px-2 py-0.5 text-[10px] md:text-xs rounded-full font-medium ${displayCategoryInfo.isPreview
+                              ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                              : 'bg-[#03215F]/10 text-[#03215F]'
+                              }`}>
                               {displayCategoryInfo.categoryDisplay} • {displayCategoryInfo.tierDisplay}
                             </span>
                           )}
@@ -890,11 +884,10 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                           </span>
                         )}
                       </div>
-                      <div className={`text-2xl md:text-3xl font-bold ${
-                        displayCategoryInfo.isPreview 
-                          ? 'text-amber-600' 
-                          : 'bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent'
-                      }`}>
+                      <div className={`text-2xl md:text-3xl font-bold ${displayCategoryInfo.isPreview
+                        ? 'text-amber-600'
+                        : 'bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent'
+                        }`}>
                         {formatBHD(priceToPay)}
                       </div>
                       {displayCategoryInfo.isPreview && (
@@ -929,7 +922,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                         Select a category below to see the price you would pay
                       </p>
                     )}
-                    
+
                     <div className="overflow-x-auto -mx-4 px-4">
                       <table className="w-full text-xs md:text-sm border-collapse min-w-[400px]">
                         <thead>
@@ -937,21 +930,18 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                             <th className="border border-gray-200 px-2 py-2 text-left text-gray-700 font-semibold">
                               Category
                             </th>
-                            <th className={`border border-gray-200 px-2 py-2 text-center font-semibold ${
-                              allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' : 'text-gray-700'
-                            }`}>
+                            <th className={`border border-gray-200 px-2 py-2 text-center font-semibold ${allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' : 'text-gray-700'
+                              }`}>
                               Early Bird
                               {allPrices.currentTier === 'earlybird' && <span className="block text-[9px] font-normal">(Current)</span>}
                             </th>
-                            <th className={`border border-gray-200 px-2 py-2 text-center font-semibold ${
-                              allPrices.currentTier === 'standard' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
-                            }`}>
+                            <th className={`border border-gray-200 px-2 py-2 text-center font-semibold ${allPrices.currentTier === 'standard' ? 'bg-blue-100 text-blue-700' : 'text-gray-700'
+                              }`}>
                               Standard
                               {allPrices.currentTier === 'standard' && <span className="block text-[9px] font-normal">(Current)</span>}
                             </th>
-                            <th className={`border border-gray-200 px-2 py-2 text-center font-semibold ${
-                              allPrices.currentTier === 'onsite' ? 'bg-orange-100 text-orange-700' : 'text-gray-700'
-                            }`}>
+                            <th className={`border border-gray-200 px-2 py-2 text-center font-semibold ${allPrices.currentTier === 'onsite' ? 'bg-orange-100 text-orange-700' : 'text-gray-700'
+                              }`}>
                               On-site
                               {allPrices.currentTier === 'onsite' && <span className="block text-[9px] font-normal">(Current)</span>}
                             </th>
@@ -970,17 +960,15 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                             // Disable selection if user is logged in
                             const canSelect = !user;
                             return (
-                              <tr 
-                                key={cat.id} 
-                                className={`transition-colors ${
-                                  canSelect ? 'cursor-pointer' : 'cursor-default'
-                                } ${
-                                  isSelectedPreview && canSelect
-                                    ? 'bg-[#03215F]/10 ring-2 ring-[#03215F] ring-inset' 
-                                    : isUserCategory 
-                                      ? 'bg-blue-50' 
+                              <tr
+                                key={cat.id}
+                                className={`transition-colors ${canSelect ? 'cursor-pointer' : 'cursor-default'
+                                  } ${isSelectedPreview && canSelect
+                                    ? 'bg-[#03215F]/10 ring-2 ring-[#03215F] ring-inset'
+                                    : isUserCategory
+                                      ? 'bg-blue-50'
                                       : canSelect ? 'hover:bg-gray-100' : ''
-                                }`}
+                                  }`}
                                 onClick={() => canSelect && setSelectedPreviewCategory(cat.id)}
                               >
                                 <td className="border border-gray-200 px-2 py-2 text-gray-700 font-medium">
@@ -1002,32 +990,29 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                                     )}
                                   </div>
                                 </td>
-                                <td className={`border border-gray-200 px-2 py-2 text-center ${
-                                  allPrices.currentTier === 'earlybird' && isSelectedPreview
-                                    ? 'bg-green-200 font-bold text-green-700'
-                                    : allPrices.currentTier === 'earlybird' && isUserCategory
-                                      ? 'bg-green-100 font-bold text-green-700'
-                                      : 'text-gray-700'
-                                }`}>
-                                  {cat.earlybird ? formatBHD(cat.earlybird) : '-'}
+                                <td className={`border border-gray-200 px-2 py-2 text-center ${allPrices.currentTier === 'earlybird' && isSelectedPreview
+                                  ? 'bg-green-200 font-bold text-green-700'
+                                  : allPrices.currentTier === 'earlybird' && isUserCategory
+                                    ? 'bg-green-100 font-bold text-green-700'
+                                    : 'text-gray-700'
+                                  }`}>
+                                  {cat.earlybird != null ? formatBHD(cat.earlybird) : '-'}
                                 </td>
-                                <td className={`border border-gray-200 px-2 py-2 text-center ${
-                                  allPrices.currentTier === 'standard' && isSelectedPreview
-                                    ? 'bg-blue-200 font-bold text-blue-700'
-                                    : allPrices.currentTier === 'standard' && isUserCategory
-                                      ? 'bg-blue-100 font-bold text-blue-700'
-                                      : 'text-gray-700'
-                                }`}>
-                                  {cat.standard ? formatBHD(cat.standard) : '-'}
+                                <td className={`border border-gray-200 px-2 py-2 text-center ${allPrices.currentTier === 'standard' && isSelectedPreview
+                                  ? 'bg-blue-200 font-bold text-blue-700'
+                                  : allPrices.currentTier === 'standard' && isUserCategory
+                                    ? 'bg-blue-100 font-bold text-blue-700'
+                                    : 'text-gray-700'
+                                  }`}>
+                                  {cat.standard != null ? formatBHD(cat.standard) : '-'}
                                 </td>
-                                <td className={`border border-gray-200 px-2 py-2 text-center ${
-                                  allPrices.currentTier === 'onsite' && isSelectedPreview
-                                    ? 'bg-orange-200 font-bold text-orange-700'
-                                    : allPrices.currentTier === 'onsite' && isUserCategory
-                                      ? 'bg-orange-100 font-bold text-orange-700'
-                                      : 'text-gray-700'
-                                }`}>
-                                  {cat.onsite ? formatBHD(cat.onsite) : '-'}
+                                <td className={`border border-gray-200 px-2 py-2 text-center ${allPrices.currentTier === 'onsite' && isSelectedPreview
+                                  ? 'bg-orange-200 font-bold text-orange-700'
+                                  : allPrices.currentTier === 'onsite' && isUserCategory
+                                    ? 'bg-orange-100 font-bold text-orange-700'
+                                    : 'text-gray-700'
+                                  }`}>
+                                  {cat.onsite != null ? formatBHD(cat.onsite) : '-'}
                                 </td>
                               </tr>
                             );
@@ -1043,24 +1028,22 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                       const previewPrice = selectedCat[allPrices.currentTier] || selectedCat.earlybird || selectedCat.standard || selectedCat.onsite || 0;
                       const isActualUserCategory = user ? userPriceInfo.category === selectedPreviewCategory : selectedPreviewCategory === 'regular';
                       const tierLabels = { earlybird: 'Early Bird', standard: 'Standard', onsite: 'On-site' };
-                      
+
                       return (
-                        <div className={`mt-4 p-4 rounded-lg border-2 ${
-                          isActualUserCategory 
-                            ? 'bg-gradient-to-r from-[#03215F]/10 to-[#03215F]/5 border-[#03215F]' 
-                            : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-400'
-                        }`}>
+                        <div className={`mt-4 p-4 rounded-lg border-2 ${isActualUserCategory
+                          ? 'bg-gradient-to-r from-[#03215F]/10 to-[#03215F]/5 border-[#03215F]'
+                          : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-400'
+                          }`}>
                           <div className="flex items-center justify-between flex-wrap gap-2">
                             <div>
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="text-sm font-semibold text-gray-700">
                                   {selectedCat.name}
                                 </span>
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                                  allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' :
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${allPrices.currentTier === 'earlybird' ? 'bg-green-100 text-green-700' :
                                   allPrices.currentTier === 'standard' ? 'bg-blue-100 text-blue-700' :
-                                  'bg-orange-100 text-orange-700'
-                                }`}>
+                                    'bg-orange-100 text-orange-700'
+                                  }`}>
                                   {tierLabels[allPrices.currentTier] || 'Current'}
                                 </span>
                                 {isActualUserCategory && (
@@ -1102,7 +1085,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                       </div>
                     </div>
                   </div>
- <div className="flex items-start p-3 md:p-4 bg-white rounded-xl border border-gray-200/50">
+                  <div className="flex items-start p-3 md:p-4 bg-white rounded-xl border border-gray-200/50">
                     <Calendar className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 mt-0.5 text-[#03215F] flex-shrink-0" />
                     <div>
                       <div className="font-semibold text-gray-900 text-sm md:text-base">End Date</div>
@@ -1121,9 +1104,9 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                       </div>
                     </div>
                   </div>
-                 
 
-                 
+
+
 
                   <div className="flex items-start p-3 md:p-4 bg-white rounded-xl border border-gray-200/50">
                     <MapPin className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 mt-0.5 text-[#03215F] flex-shrink-0" />
@@ -1140,7 +1123,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                     </div>
                   </div>
 
-                
+
                 </div>
 
                 {/* Description */}
@@ -1165,14 +1148,14 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                   <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
                   <h3 className="font-bold text-gray-900 text-sm md:text-base">Event Agenda</h3>
                 </div>
-                
+
                 {event.event_agendas && event.event_agendas.length > 0 ? (
                   <div className="space-y-3 md:space-y-4">
                     {event.event_agendas.map((agenda, index) => (
                       <div key={index} className="relative">
                         {/* Timeline */}
                         <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#03215F] via-[#03215F] to-transparent"></div>
-                        
+
                         <div className="ml-5 md:ml-6">
                           <div className="flex items-start flex-wrap gap-3 md:gap-4 p-3 md:p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200/50">
                             {/* Time Badge */}
@@ -1182,7 +1165,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                                 {agenda.end_time && ` - ${formatAgendaTime(agenda.end_time)}`}
                               </div>
                             </div>
-                            
+
                             {/* Agenda Details */}
                             <div className="flex-1 min-w-0">
                               <h4 className="font-semibold text-gray-900 mb-1 text-sm md:text-base">
@@ -1222,7 +1205,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                   <Mic className="w-4 h-4 md:w-5 md:h-5 text-[#03215F]" />
                   <h3 className="font-bold text-gray-900 text-sm md:text-base">Event Hosts</h3>
                 </div>
-                
+
                 {event.event_hosts && event.event_hosts.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                     {event.event_hosts.map((host, index) => (
@@ -1247,7 +1230,7 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
                               </div>
                             )}
                           </div>
-                          
+
                           {/* Host Info */}
                           <div className="flex-1 min-w-0">
                             <h4 className="font-bold text-gray-900 text-sm md:text-base">
@@ -1288,251 +1271,249 @@ export default function EventModal({ event, isOpen, onClose, user, onLoginRequir
 
           {/* Footer with Action Buttons */}
           <div className="border-t border-gray-200 p-2 sm:p-3 md:p-4 lg:p-6 bg-gradient-to-t from-white to-gray-50">
-          {/* Payment Methods Selection - Step 2 */}
-          {paymentStep === 2 && paymentMethods.length > 0 && (
-            <div className="space-y-4">
-              <div className="mb-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Select Payment Method</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Choose your preferred payment method</p>
-              </div>
-
-              {/* Error Message */}
-              {error && (
-                <div className="p-3 bg-[#b8352d] border border-[#b8352d] rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
-                    <p className="text-white text-xs sm:text-sm font-medium">{error}</p>
-                  </div>
+            {/* Payment Methods Selection - Step 2 */}
+            {paymentStep === 2 && paymentMethods.length > 0 && (
+              <div className="space-y-4">
+                <div className="mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Select Payment Method</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">Choose your preferred payment method</p>
                 </div>
-              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 max-h-48 sm:max-h-64 overflow-y-auto">
-                {paymentMethods.map((method) => (
-                  <button
-                    key={method.id}
-                    onClick={() => handleSelectMethod(method)}
-                    className={`p-3 sm:p-4 border-2 rounded-lg transition-all text-left ${
-                      selectedMethod?.id === method.id
+                {/* Error Message */}
+                {error && (
+                  <div className="p-3 bg-[#b8352d] border border-[#b8352d] rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
+                      <p className="text-white text-xs sm:text-sm font-medium">{error}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 max-h-48 sm:max-h-64 overflow-y-auto">
+                  {paymentMethods.map((method) => (
+                    <button
+                      key={method.id}
+                      onClick={() => handleSelectMethod(method)}
+                      className={`p-3 sm:p-4 border-2 rounded-lg transition-all text-left ${selectedMethod?.id === method.id
                         ? 'border-[#03215F] bg-[#03215F]/5 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
+                        }`}
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        {method.imageUrl && (
+                          <div className="flex-shrink-0">
+                            <img
+                              src={method.imageUrl}
+                              alt={method.name}
+                              className="w-10 h-7 sm:w-12 sm:h-8 object-contain"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{method.name}</div>
+
+                        </div>
+                        {selectedMethod?.id === method.id && (
+                          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#03215F] flex-shrink-0" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {selectedMethod && (
+                  <button
+                    onClick={handleExecutePayment}
+                    disabled={processing}
+                    className="w-full py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-semibold hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                   >
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      {method.imageUrl && (
-                        <div className="flex-shrink-0">
-                          <img
-                            src={method.imageUrl}
-                            alt={method.name}
-                            className="w-10 h-7 sm:w-12 sm:h-8 object-contain"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                          />
+                    {processing ? (
+                      <>
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm sm:text-base">Processing Payment...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="text-sm sm:text-base">Pay with {selectedMethod.name}</span>
+                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </>
+                    )}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setPaymentStep(1);
+                    setSelectedMethod(null);
+                    setPaymentMethods([]);
+                    setError(null);
+                  }}
+                  className="w-full py-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
+                >
+                  ← Back
+                </button>
+              </div>
+            )}
+
+            {/* Processing - Step 3 */}
+            {paymentStep === 3 && (
+              <div className="text-center py-6">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#03215F] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-600 text-sm sm:text-base">Redirecting to payment gateway...</p>
+              </div>
+            )}
+
+            {/* Default Join Button - Step 1 */}
+            {paymentStep === 1 && (
+              <>
+                {/* Pricing Summary */}
+                <div className="mb-3 sm:mb-4 md:mb-6">
+                  <div className="flex items-center justify-between mb-2 md:mb-3">
+                    <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-gray-700">
+                      Registration Summary
+                      {isEarlyBird && event.is_paid && (
+                        <span className="px-2 py-0.5 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full text-[10px] font-bold flex items-center gap-1 ml-2">
+                          <Sparkles className="w-3 h-3" /> EARLY BIRD
+                          {earlyBirdCountdown && (
+                            <span className="flex items-center gap-1 ml-1 pl-1.5 border-l border-white/30">
+                              <Clock className="w-3 h-3" />
+                              {earlyBirdCountdown}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
+                      {appliedCoupon ? formatBHD(appliedCoupon.final_amount) : formatBHD(priceToPay)}
+                    </div>
+                  </div>
+                  {event.is_paid && (
+                    <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">
+                          Base Price ({displayCategoryInfo.categoryDisplay})
+                        </span>
+                        <span className="text-gray-700">
+                          {formatBHD(priceToPay)}
+                        </span>
+                      </div>
+                      {user?.membership_type === 'paid' && event.member_price && (
+                        <div className="flex items-center justify-between text-[#AE9B66]">
+                          <span className="flex items-center gap-1">
+                            <Gift className="w-3 h-3 md:w-4 md:h-4" />
+                            Member Discount
+                          </span>
+                          <span>-{formatBHD(memberSavings)}</span>
                         </div>
                       )}
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{method.name}</div>
-                        
-                      </div>
-                      {selectedMethod?.id === method.id && (
-                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-[#03215F] flex-shrink-0" />
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {selectedMethod && (
-                <button
-                  onClick={handleExecutePayment}
-                  disabled={processing}
-                  className="w-full py-3 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-semibold hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                >
-                  {processing ? (
-                    <>
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span className="text-sm sm:text-base">Processing Payment...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span className="text-sm sm:text-base">Pay with {selectedMethod.name}</span>
-                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </>
-                  )}
-                </button>
-              )}
-
-              <button
-                onClick={() => {
-                  setPaymentStep(1);
-                  setSelectedMethod(null);
-                  setPaymentMethods([]);
-                  setError(null);
-                }}
-                className="w-full py-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
-              >
-                ← Back
-              </button>
-            </div>
-          )}
-
-          {/* Processing - Step 3 */}
-          {paymentStep === 3 && (
-            <div className="text-center py-6">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-[#03215F] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-600 text-sm sm:text-base">Redirecting to payment gateway...</p>
-            </div>
-          )}
-
-          {/* Default Join Button - Step 1 */}
-          {paymentStep === 1 && (
-            <>
-              {/* Pricing Summary */}
-              <div className="mb-3 sm:mb-4 md:mb-6">
-                <div className="flex items-center justify-between mb-2 md:mb-3">
-                  <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-gray-700">
-                    Registration Summary
-                    {isEarlyBird && event.is_paid && (
-                      <span className="px-2 py-0.5 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full text-[10px] font-bold flex items-center gap-1 ml-2">
-                        <Sparkles className="w-3 h-3" /> EARLY BIRD
-                        {earlyBirdCountdown && (
-                          <span className="flex items-center gap-1 ml-1 pl-1.5 border-l border-white/30">
-                            <Clock className="w-3 h-3" />
-                            {earlyBirdCountdown}
+                      {appliedCoupon && (
+                        <div className="flex items-center justify-between text-emerald-600">
+                          <span className="flex items-center gap-1">
+                            <Tag className="w-3 h-3 md:w-4 md:h-4" />
+                            Coupon {appliedCoupon.code}
                           </span>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-[#03215F] to-[#03215F] bg-clip-text text-transparent">
-                    {appliedCoupon ? formatBHD(appliedCoupon.final_amount) : formatBHD(priceToPay)}
-                  </div>
+                          <span>-{formatBHD(appliedCoupon.discount_amount)}</span>
+                        </div>
+                      )}
+                      <div className="border-t border-gray-200 pt-1 md:pt-2 mt-1 md:mt-2">
+                        <div className="flex items-center justify-between font-semibold">
+                          <span>Amount to Pay</span>
+                          <span className="flex items-center gap-1">
+                            <BahrainFlag />
+                            {appliedCoupon ? formatBHD(appliedCoupon.final_amount) : formatBHD(priceToPay)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {event.is_paid && (
-                  <div className="space-y-1 md:space-y-2 text-xs md:text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">
-                        Base Price ({displayCategoryInfo.categoryDisplay})
-                      </span>
-                      <span className="text-gray-700">
-                        {formatBHD(priceToPay)}
-                      </span>
+
+                {event.is_paid && user && (
+                  <div className="mb-4 space-y-2">
+                    <div className="flex items-center justify-between text-xs text-gray-600">
+                      <span>Have a coupon code?</span>
                     </div>
-                    {user?.membership_type === 'paid' && event.member_price && (
-                      <div className="flex items-center justify-between text-[#AE9B66]">
-                        <span className="flex items-center gap-1">
-                          <Gift className="w-3 h-3 md:w-4 md:h-4" />
-                          Member Discount
-                        </span>
-                        <span>-{formatBHD(memberSavings)}</span>
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="ENTER CODE"
+                        className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent tracking-widest uppercase"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={applyingCoupon}
+                        className="px-3 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl text-xs md:text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {applyingCoupon ? 'Applying...' : 'Apply'}
+                      </button>
+                    </div>
                     {appliedCoupon && (
-                      <div className="flex items-center justify-between text-emerald-600">
-                        <span className="flex items-center gap-1">
-                          <Tag className="w-3 h-3 md:w-4 md:h-4" />
-                          Coupon {appliedCoupon.code}
-                        </span>
-                        <span>-{formatBHD(appliedCoupon.discount_amount)}</span>
-                      </div>
+                      <p className="text-[11px] text-emerald-700">
+                        Coupon {appliedCoupon.code} applied. New amount: {formatBHD(appliedCoupon.final_amount)}
+                      </p>
                     )}
-                    <div className="border-t border-gray-200 pt-1 md:pt-2 mt-1 md:mt-2">
-                      <div className="flex items-center justify-between font-semibold">
-                        <span>Amount to Pay</span>
-                        <span className="flex items-center gap-1">
-                          <BahrainFlag />
-                          {appliedCoupon ? formatBHD(appliedCoupon.final_amount) : formatBHD(priceToPay)}
-                        </span>
-                      </div>
-                    </div>
                   </div>
                 )}
-              </div>
 
-              {event.is_paid && user && (
-                <div className="mb-4 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-gray-600">
-                    <span>Have a coupon code?</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      placeholder="ENTER CODE"
-                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-[#03215F] focus:border-transparent tracking-widest uppercase"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleApplyCoupon}
-                      disabled={applyingCoupon}
-                      className="px-3 py-2 bg-gradient-to-r from-[#03215F] to-[#03215F] text-white rounded-xl text-xs md:text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {applyingCoupon ? 'Applying...' : 'Apply'}
-                    </button>
-                  </div>
-                  {appliedCoupon && (
-                    <p className="text-[11px] text-emerald-700">
-                      Coupon {appliedCoupon.code} applied. New amount: {formatBHD(appliedCoupon.final_amount)}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Join Button */}
-              <button
-                onClick={handleJoinEvent}
-                disabled={loading || event.joined || loadingMethods || derivedStatus !== 'upcoming'}
-                className={`w-full py-2.5 sm:py-3 md:py-4 rounded-xl font-bold text-sm sm:text-base md:text-lg transition-all relative overflow-hidden group ${
-                  event.joined || derivedStatus !== 'upcoming'
+                {/* Join Button */}
+                <button
+                  onClick={handleJoinEvent}
+                  disabled={loading || event.joined || loadingMethods || derivedStatus !== 'upcoming'}
+                  className={`w-full py-2.5 sm:py-3 md:py-4 rounded-xl font-bold text-sm sm:text-base md:text-lg transition-all relative overflow-hidden group ${event.joined || derivedStatus !== 'upcoming'
                     ? "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66] text-white cursor-not-allowed"
                     : loading || loadingMethods
-                    ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed"
-                    : user
-                    ? "bg-gradient-to-r from-[#03215F] to-[#03215F] hover:from-[#03215F] hover:to-[#03215F] text-white hover:shadow-lg"
-                    : "bg-gradient-to-r from-[#03215F] to-[#03215F] hover:from-[#03215F] hover:to-[#9cc2ed] text-white hover:shadow-lg"
-                }`}
-              >
-                {loading || loadingMethods ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span className="text-xs sm:text-sm md:text-base">Processing...</span>
-                  </div>
-                ) : event.joined || derivedStatus !== 'upcoming' ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                    <span className="text-xs sm:text-sm md:text-base">
-                      {event.joined ? 'Already Joined' : 'Registration Closed'}
-                    </span>
-                  </div>
-                ) : user ? (
-                  <>
-                    <span className="text-xs sm:text-sm md:text-base">
-                      {event.is_paid ? (
-                        `Pay ${formatBHD(appliedCoupon ? appliedCoupon.final_amount : priceToPay)} & Join Now`
-                      ) : (
-                        'Join Event for Free'
-                      )}
-                    </span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 group-hover:translate-x-full transition-transform duration-1000"></div>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <LogIn className="w-4 h-4 md:w-5 md:h-5" />
-                    <span className="text-xs sm:text-sm md:text-base">Login to Join</span>
-                  </div>
-                )}
-              </button>
+                      ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed"
+                      : user
+                        ? "bg-gradient-to-r from-[#03215F] to-[#03215F] hover:from-[#03215F] hover:to-[#03215F] text-white hover:shadow-lg"
+                        : "bg-gradient-to-r from-[#03215F] to-[#03215F] hover:from-[#03215F] hover:to-[#9cc2ed] text-white hover:shadow-lg"
+                    }`}
+                >
+                  {loading || loadingMethods ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span className="text-xs sm:text-sm md:text-base">Processing...</span>
+                    </div>
+                  ) : event.joined || derivedStatus !== 'upcoming' ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
+                      <span className="text-xs sm:text-sm md:text-base">
+                        {event.joined ? 'Already Joined' : 'Registration Closed'}
+                      </span>
+                    </div>
+                  ) : user ? (
+                    <>
+                      <span className="text-xs sm:text-sm md:text-base">
+                        {event.is_paid ? (
+                          `Pay ${formatBHD(appliedCoupon ? appliedCoupon.final_amount : priceToPay)} & Join Now`
+                        ) : (
+                          'Join Event for Free'
+                        )}
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 group-hover:translate-x-full transition-transform duration-1000"></div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <LogIn className="w-4 h-4 md:w-5 md:h-5" />
+                      <span className="text-xs sm:text-sm md:text-base">Login to Join</span>
+                    </div>
+                  )}
+                </button>
 
-              {/* Security Notice */}
-              <div className="mt-2 sm:mt-3 md:mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
-                <Lock className="w-3 h-3" />
-                <span className="hidden xs:inline">Secure registration • Powered by MyFatoorah • 256-bit SSL</span>
-                <span className="xs:hidden">Secure registration</span>
-              </div>
-            </>
-          )}
+                {/* Security Notice */}
+                <div className="mt-2 sm:mt-3 md:mt-4 flex items-center justify-center gap-2 text-xs text-gray-500">
+                  <Lock className="w-3 h-3" />
+                  <span className="hidden xs:inline">Secure registration • Powered by MyFatoorah • 256-bit SSL</span>
+                  <span className="xs:hidden">Secure registration</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </motion.div>

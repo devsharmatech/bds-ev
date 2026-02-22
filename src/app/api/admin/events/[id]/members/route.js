@@ -50,6 +50,8 @@ export async function GET(req, { params }) {
         joined_at,
         is_member,
         price_paid,
+        registration_category,
+        payment_status,
         users (
           id,
           full_name,

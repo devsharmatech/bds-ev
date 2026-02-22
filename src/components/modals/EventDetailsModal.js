@@ -203,8 +203,8 @@ const MobileTabsMenu = ({ activeTab, setActiveTab, event }) => (
       <button
         onClick={() => setActiveTab("overview")}
         className={`flex flex-col items-center p-2 rounded-lg ${activeTab === "overview"
-            ? "bg-[#9cc2ed] text-[#03215F]"
-            : "text-gray-500"
+          ? "bg-[#9cc2ed] text-[#03215F]"
+          : "text-gray-500"
           }`}
       >
         <BookOpen className="w-5 h-5 mb-1" />
@@ -213,8 +213,8 @@ const MobileTabsMenu = ({ activeTab, setActiveTab, event }) => (
       <button
         onClick={() => setActiveTab("agenda")}
         className={`flex flex-col items-center p-2 rounded-lg ${activeTab === "agenda"
-            ? "bg-[#9cc2ed] text-[#03215F]"
-            : "text-gray-500"
+          ? "bg-[#9cc2ed] text-[#03215F]"
+          : "text-gray-500"
           }`}
       >
         <List className="w-5 h-5 mb-1" />
@@ -223,8 +223,8 @@ const MobileTabsMenu = ({ activeTab, setActiveTab, event }) => (
       <button
         onClick={() => setActiveTab("hosts")}
         className={`flex flex-col items-center p-2 rounded-lg ${activeTab === "hosts"
-            ? "bg-[#9cc2ed] text-[#03215F]"
-            : "text-gray-500"
+          ? "bg-[#9cc2ed] text-[#03215F]"
+          : "text-gray-500"
           }`}
       >
         <TeamIcon className="w-5 h-5 mb-1" />
@@ -234,8 +234,8 @@ const MobileTabsMenu = ({ activeTab, setActiveTab, event }) => (
         <button
           onClick={() => setActiveTab("myticket")}
           className={`flex flex-col items-center p-2 rounded-lg ${activeTab === "myticket"
-              ? "bg-[#9cc2ed] text-[#03215F]"
-              : "text-gray-500"
+            ? "bg-[#9cc2ed] text-[#03215F]"
+            : "text-gray-500"
             }`}
         >
           <Ticket className="w-5 h-5 mb-1" />
@@ -426,10 +426,10 @@ export default function EventDetailsModal({
                     <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                       <span
                         className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-xs md:text-sm font-medium backdrop-blur-sm flex items-center gap-1 ${derivedStatus === "upcoming"
-                            ? "bg-[#9cc2ed]/80 text-white"
-                            : derivedStatus === "ongoing"
-                              ? "bg-[#AE9B66]/80 text-white"
-                              : "bg-gray-500/80 text-white"
+                          ? "bg-[#9cc2ed]/80 text-white"
+                          : derivedStatus === "ongoing"
+                            ? "bg-[#AE9B66]/80 text-white"
+                            : "bg-gray-500/80 text-white"
                           }`}
                       >
                         {derivedStatus.charAt(0).toUpperCase() +
@@ -438,7 +438,7 @@ export default function EventDetailsModal({
                       <span className="px-2 py-1 md:px-3 md:py-1.5 bg-white/20 backdrop-blur-sm text-white rounded-full text-xs md:text-sm">
                         {eventType}
                       </span>
-                     
+
                     </div>
                   </div>
                   <div className="flex items-center gap-1 md:gap-2 self-end md:self-auto">
@@ -474,8 +474,8 @@ export default function EventDetailsModal({
                   <div className="flex items-center gap-2 md:gap-3">
                     <div
                       className={`p-1.5 md:p-2 rounded-lg ${event?.joined
-                          ? "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66]"
-                          : "bg-gradient-to-r from-[#9cc2ed] to-[#9cc2ed]"
+                        ? "bg-gradient-to-r from-[#AE9B66] to-[#AE9B66]"
+                        : "bg-gradient-to-r from-[#9cc2ed] to-[#9cc2ed]"
                         }`}
                     >
                       {event?.joined ? (
@@ -559,44 +559,40 @@ export default function EventDetailsModal({
               <div className="flex flex-wrap gap-2 p-3">
                 <button
                   onClick={() => setActiveTab("overview")}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${
-                    activeTab === "overview"
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${activeTab === "overview"
                       ? "bg-[#9cc2ed] text-[#03215F]"
                       : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <BookOpen className="w-3.5 h-3.5" />
                   Overview
                 </button>
                 <button
                   onClick={() => setActiveTab("agenda")}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${
-                    activeTab === "agenda"
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${activeTab === "agenda"
                       ? "bg-[#9cc2ed] text-[#03215F]"
                       : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <List className="w-3.5 h-3.5" />
                   Agenda
                 </button>
                 <button
                   onClick={() => setActiveTab("hosts")}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${
-                    activeTab === "hosts"
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${activeTab === "hosts"
                       ? "bg-[#9cc2ed] text-[#03215F]"
                       : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <TeamIcon className="w-3.5 h-3.5" />
                   Hosts
                 </button>
                 <button
                   onClick={() => setActiveTab("details")}
-                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${
-                    activeTab === "details"
+                  className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${activeTab === "details"
                       ? "bg-[#9cc2ed] text-[#03215F]"
                       : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <Target className="w-3.5 h-3.5" />
                   Details
@@ -604,11 +600,10 @@ export default function EventDetailsModal({
                 {event?.joined && (
                   <button
                     onClick={() => setActiveTab("myticket")}
-                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${
-                      activeTab === "myticket"
+                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg flex-shrink-0 ${activeTab === "myticket"
                         ? "bg-[#9cc2ed] text-[#03215F]"
                         : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
-                    }`}
+                      }`}
                   >
                     <Ticket className="w-3.5 h-3.5" />
                     My Ticket
@@ -623,8 +618,8 @@ export default function EventDetailsModal({
                 <button
                   onClick={() => setActiveTab("overview")}
                   className={`flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap ${activeTab === "overview"
-                      ? "text-[#03215F] border-b-2 border-[#03215F]"
-                      : "text-gray-500 hover:text-gray-700"
+                    ? "text-[#03215F] border-b-2 border-[#03215F]"
+                    : "text-gray-500 hover:text-gray-700"
                     }`}
                 >
                   <BookOpen className="w-4 h-4" />
@@ -633,8 +628,8 @@ export default function EventDetailsModal({
                 <button
                   onClick={() => setActiveTab("agenda")}
                   className={`flex items-center gap-2 px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium whitespace-nowrap ${activeTab === "agenda"
-                      ? "text-[#03215F] border-b-2 border-[#03215F]"
-                      : "text-gray-500 hover:text-gray-700"
+                    ? "text-[#03215F] border-b-2 border-[#03215F]"
+                    : "text-gray-500 hover:text-gray-700"
                     }`}
                 >
                   <List className="w-4 h-4" />
@@ -643,8 +638,8 @@ export default function EventDetailsModal({
                 <button
                   onClick={() => setActiveTab("hosts")}
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap ${activeTab === "hosts"
-                      ? "text-[#03215F] border-b-2 border-[#03215F]"
-                      : "text-gray-500 hover:text-gray-700"
+                    ? "text-[#03215F] border-b-2 border-[#03215F]"
+                    : "text-gray-500 hover:text-gray-700"
                     }`}
                 >
                   <TeamIcon className="w-4 h-4" />
@@ -653,8 +648,8 @@ export default function EventDetailsModal({
                 <button
                   onClick={() => setActiveTab("details")}
                   className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap ${activeTab === "details"
-                      ? "text-[#03215F] border-b-2 border-[#03215F]"
-                      : "text-gray-500 hover:text-gray-700"
+                    ? "text-[#03215F] border-b-2 border-[#03215F]"
+                    : "text-gray-500 hover:text-gray-700"
                     }`}
                 >
                   <Target className="w-4 h-4" />
@@ -664,8 +659,8 @@ export default function EventDetailsModal({
                   <button
                     onClick={() => setActiveTab("myticket")}
                     className={`flex items-center gap-2 px-6 py-4 text-sm font-medium whitespace-nowrap ${activeTab === "myticket"
-                        ? "text-[#03215F] border-b-2 border-[#03215F]"
-                        : "text-gray-500 hover:text-gray-700"
+                      ? "text-[#03215F] border-b-2 border-[#03215F]"
+                      : "text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     <Ticket className="w-4 h-4" />
@@ -692,7 +687,7 @@ export default function EventDetailsModal({
                             Start Date
                           </div>
                           <div className="font-semibold text-sm md:text-base text-gray-900 truncate">
-                            {formatDate(event?.start_datetime)} 
+                            {formatDate(event?.start_datetime)}
                             &nbsp;
                             {formatTime(event?.start_datetime)}
                           </div>
@@ -709,11 +704,11 @@ export default function EventDetailsModal({
                           <div className="font-semibold text-sm md:text-base text-gray-900 truncate">
                             {formatDate(event?.end_datetime)}
                             {event?.end_datetime &&
-                          `  ${formatTime(event.end_datetime)}`}
+                              `  ${formatTime(event.end_datetime)}`}
                           </div>
                         </div>
                       </div>
-                     
+
                     </div>
 
                     <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 md:p-4">
@@ -736,7 +731,7 @@ export default function EventDetailsModal({
                       </div>
                     </div>
 
-                   
+
                   </div>
 
                   {/* Description */}
@@ -822,13 +817,13 @@ export default function EventDetailsModal({
                                     )}
                                   </td>
                                   <td className={`border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-center ${allPrices.currentTier === 'earlybird' && isUserCategory ? 'bg-green-100 font-bold text-green-700' : 'text-gray-700'}`}>
-                                    {cat.earlybird ? formatBHDPrice(cat.earlybird) : '-'}
+                                    {cat.earlybird != null ? formatBHDPrice(cat.earlybird) : '-'}
                                   </td>
                                   <td className={`border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-center ${allPrices.currentTier === 'standard' && isUserCategory ? 'bg-green-100 font-bold text-green-700' : 'text-gray-700'}`}>
-                                    {cat.standard ? formatBHDPrice(cat.standard) : '-'}
+                                    {cat.standard != null ? formatBHDPrice(cat.standard) : '-'}
                                   </td>
                                   <td className={`border border-gray-200 px-2 md:px-3 py-1.5 md:py-2 text-center ${allPrices.currentTier === 'onsite' && isUserCategory ? 'bg-green-100 font-bold text-green-700' : 'text-gray-700'}`}>
-                                    {cat.onsite ? formatBHDPrice(cat.onsite) : '-'}
+                                    {cat.onsite != null ? formatBHDPrice(cat.onsite) : '-'}
                                   </td>
                                 </tr>
                               );

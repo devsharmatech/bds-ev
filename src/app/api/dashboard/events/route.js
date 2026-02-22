@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabaseAdmin";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { getUserEventPrice } from "@/lib/eventPricing";
 
 export async function GET(req) {
   try {
@@ -20,6 +21,23 @@ export async function GET(req) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.user_id;
 
+    // Fetch user details for pricing
+    const { data: userProfile } = await supabase
+      .from("users")
+      .select("*, member_profiles(category, position, specialty)")
+      .eq("id", userId)
+      .single();
+
+    let loggedInUser = null;
+    if (userProfile) {
+      loggedInUser = { ...userProfile };
+      if (userProfile.member_profiles) {
+        loggedInUser.category = userProfile.member_profiles.category;
+        loggedInUser.position = userProfile.member_profiles.position;
+        loggedInUser.specialty = userProfile.member_profiles.specialty;
+      }
+    }
+
     // Fetch user's events with all related data
     const { data: events, error } = await supabase
       .from("event_members")
@@ -30,6 +48,8 @@ export async function GET(req) {
         price_paid,
         token,
         joined_at,
+        registration_category,
+        payment_status,
         events (
           id,
           title,
@@ -78,9 +98,30 @@ export async function GET(req) {
     // Format events data
     const formattedEvents = (events || []).map(item => {
       const isPaidEvent = item.events?.is_paid;
-      const pricePaid = item.price_paid || 0;
-      const paymentPending = isPaidEvent && pricePaid === 0;
-      
+
+      let isActuallyFreeForUser = false;
+      if (isPaidEvent && loggedInUser && item.events) {
+        const priceInfo = getUserEventPrice(item.events, loggedInUser);
+        if (priceInfo.isFree) {
+          isActuallyFreeForUser = true;
+        }
+      }
+
+      let paymentPending = false;
+      if (isPaidEvent && !isActuallyFreeForUser) {
+        if (
+          item.payment_status === 'completed' ||
+          item.payment_status === 'free' ||
+          (item.price_paid && Number(item.price_paid) > 0 && item.payment_status !== 'pending' && item.payment_status !== 'failed')
+        ) {
+          paymentPending = false;
+        } else {
+          paymentPending = true;
+        }
+      } else {
+        paymentPending = false;
+      }
+
       return {
         id: item.events?.id,
         event_member_id: item.id,
@@ -104,6 +145,8 @@ export async function GET(req) {
         checked_in: item.checked_in,
         checked_in_at: item.checked_in_at,
         price_paid: item.price_paid,
+        payment_status: item.payment_status,
+        registration_category: item.registration_category,
         payment_pending: paymentPending,
         token: item.token,
         joined_at: item.joined_at,
@@ -120,7 +163,7 @@ export async function GET(req) {
 
   } catch (error) {
     console.error("EVENTS API ERROR:", error);
-    
+
     if (error.name === 'JsonWebTokenError') {
       return NextResponse.json(
         { success: false, message: "Invalid token" },

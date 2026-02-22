@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabaseAdmin';
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { getUserEventPrice } from '@/lib/eventPricing';
 
 /* ================= HELPERS ================= */
 
@@ -81,12 +82,16 @@ export async function GET(request, { params }) {
         if (userId) {
           const { data: user } = await supabase
             .from('users')
-            .select('id, membership_type, email, full_name')
+            .select('id, membership_type, membership_status, membership_expiry_date, email, full_name, member_profiles!member_profiles_user_id_fkey(category)')
             .eq('id', userId)
             .single();
 
           if (user) {
-            loggedInUser = user;
+            loggedInUser = { ...user };
+            if (user.member_profiles) {
+              const profile = Array.isArray(user.member_profiles) ? user.member_profiles[0] : user.member_profiles;
+              loggedInUser.category = profile?.category;
+            }
             // Event membership will be checked after we fetch the event
           }
         }
@@ -191,7 +196,7 @@ export async function GET(request, { params }) {
     if (loggedInUser) {
       const { data: eventMember } = await supabase
         .from('event_members')
-        .select('event_id, token, checked_in, joined_at, id, price_paid')
+        .select('event_id, token, checked_in, joined_at, id, price_paid, payment_status')
         .eq('user_id', loggedInUser.id)
         .eq('event_id', event.id)
         .maybeSingle();
@@ -203,33 +208,48 @@ export async function GET(request, { params }) {
           joined_at: eventMember.joined_at,
           event_member_id: eventMember.id,
           price_paid: eventMember.price_paid,
+          payment_status: eventMember.payment_status,
         };
       }
     }
 
     /* ---------- TRANSFORM ---------- */
-    // For paid events, only mark as joined if payment is confirmed (price_paid > 0)
-    // For free events, joined is true if event_member record exists
     let joined = false;
     let paymentPending = false;
-    
+
     if (userEventMemberData) {
-      if (event.is_paid) {
-        // Paid event: check if payment is confirmed
-        const pricePaid = parseFloat(userEventMemberData.price_paid) || 0;
-        joined = pricePaid > 0;
-        paymentPending = !joined; // Has record but no payment
+      let isActuallyFreeForUser = false;
+      if (event.is_paid && loggedInUser) {
+        const priceInfo = getUserEventPrice(event, loggedInUser);
+        if (priceInfo.isFree) {
+          isActuallyFreeForUser = true;
+        }
+      }
+
+      if (event.is_paid && !isActuallyFreeForUser) {
+        if (
+          userEventMemberData.payment_status === 'completed' ||
+          userEventMemberData.payment_status === 'free' ||
+          (userEventMemberData.price_paid && Number(userEventMemberData.price_paid) > 0 && userEventMemberData.payment_status !== 'pending' && userEventMemberData.payment_status !== 'failed')
+        ) {
+          joined = true;
+          paymentPending = false;
+        } else {
+          joined = false;
+          paymentPending = true;
+        }
       } else {
-        // Free event: joined if record exists
         joined = true;
+        paymentPending = false;
       }
     }
-    
+
     let price_to_show = "FREE";
 
     if (event.is_paid) {
-      if (loggedInUser?.membership_type === "paid") {
-        price_to_show = formatBHD(event.member_price || event.regular_price);
+      if (loggedInUser) {
+        const priceInfo = getUserEventPrice(event, loggedInUser);
+        price_to_show = priceInfo.price > 0 ? formatBHD(priceInfo.price) : "FREE";
       } else {
         price_to_show = formatBHD(event.regular_price);
       }

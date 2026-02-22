@@ -184,7 +184,7 @@ export default function EventMembersPage() {
         try {
           const statsResponse = await fetch(`/api/admin/events/${eventId}/stats`);
           const statsData = await statsResponse.json();
-          
+
           if (statsData.success) {
             const paymentPending = statsData.stats.payment_pending_members || 0;
             setStats({
@@ -201,7 +201,7 @@ export default function EventMembersPage() {
             const checkedIn = data.members.filter((m) => m.checked_in).length;
             const paid = data.members.filter((m) => m.price_paid && m.price_paid > 0).length;
             // Payment pending = members with no payment on a paid event
-            const paymentPending = event?.is_paid ? data.members.filter((m) => !m.price_paid || m.price_paid === 0).length : 0;
+            const paymentPending = event?.is_paid ? data.members.filter((m) => m.price_paid == null).length : 0;
             setStats({
               total,
               checkedIn,
@@ -217,7 +217,7 @@ export default function EventMembersPage() {
           const total = data.pagination.total;
           const checkedIn = data.members.filter((m) => m.checked_in).length;
           const paid = data.members.filter((m) => m.price_paid && m.price_paid > 0).length;
-          const paymentPending = event?.is_paid ? data.members.filter((m) => !m.price_paid || m.price_paid === 0).length : 0;
+          const paymentPending = event?.is_paid ? data.members.filter((m) => m.price_paid == null).length : 0;
           setStats({
             total,
             checkedIn,
@@ -245,7 +245,7 @@ export default function EventMembersPage() {
   // Auto-refresh members list every 30 seconds and when page becomes visible
   useEffect(() => {
     if (!eventId) return;
-    
+
     const interval = setInterval(() => {
       fetchMembers();
     }, 30000); // Refresh every 30 seconds
@@ -296,7 +296,7 @@ export default function EventMembersPage() {
 
   // Handle check-in/out
   const handleCheckInOut = (member) => {
-    if (event?.is_paid && (!member.price_paid || member.price_paid <= 0)) {
+    if (event?.is_paid && member.price_paid == null) {
       toast.error("Cannot check in unpaid attendee. Payment pending.");
       return;
     }
@@ -444,11 +444,13 @@ export default function EventMembersPage() {
       member.token,
       member.checked_in ? "Checked In" : "Not Checked In",
       member.checked_in_at ? formatTimeBH(member.checked_in_at) : "",
-      member.price_paid 
-        ? formatBHD(member.price_paid) 
-        : event?.is_paid 
-        ? "Payment Pending" 
-        : "Free",
+      member.price_paid != null && member.price_paid > 0
+        ? formatBHD(member.price_paid)
+        : member.price_paid === 0
+          ? "Free"
+          : event?.is_paid
+            ? "Payment Pending"
+            : "Free",
     ]);
 
     return [headers, ...rows].map((row) => row.join(",")).join("\n");
@@ -478,14 +480,14 @@ export default function EventMembersPage() {
       return;
     }
 
-    if (event.is_paid && (!member.price_paid || member.price_paid <= 0)) {
+    if (event.is_paid && member.price_paid == null) {
       toast.error("Cannot print badge for unpaid attendee. Payment pending.");
       return;
     }
 
     // Create a new window with the badge content
     const printWindow = window.open('', '_blank', 'width=800,height=600');
-    
+
     const badgeHTML = `
       <!DOCTYPE html>
       <html>
@@ -752,19 +754,19 @@ export default function EventMembersPage() {
               <div class="event-title">${event.title}</div>
               <div class="event-details">
                 <div class="event-date">Start: ${new Date(event.start_datetime).toLocaleDateString('en-BH', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  timeZone: 'Asia/Bahrain'
-                })}</div>
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'Asia/Bahrain'
+    })}</div>
                 ${event.end_datetime ? '<div class="event-end-date">End: ' + new Date(event.end_datetime).toLocaleDateString('en-BH', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  timeZone: 'Asia/Bahrain'
-                }) + '</div>' : ''}
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'Asia/Bahrain'
+    }) + '</div>' : ''}
                 ${event.venue_name ? '<div class="event-venue">' + event.venue_name + '</div>' : ''}
               </div>
             </div>
@@ -802,7 +804,7 @@ export default function EventMembersPage() {
         </body>
       </html>
     `;
-    
+
     printWindow.document.write(badgeHTML);
     printWindow.document.close();
   };
@@ -1280,58 +1282,85 @@ export default function EventMembersPage() {
                               <Calendar className="w-3 h-3 text-[#03215F]" />
                               {formatDateBH(member.joined_at)}
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-sm sm:text-base">
-                          <div className="space-y-1">
-                            <div
-                              className={`inline-flex items-center gap-1 text-sm font-medium ${
-                                member.price_paid
-                                  ? "text-[#AE9B66]"
-                                  : event?.is_paid && !member.price_paid
-                                  ? "text-orange-600"
-                                  : "text-gray-600"
-                              }`}
-                            >
-                              <CreditCard className={`w-3 h-3 ${
-                                member.price_paid
-                                  ? "text-[#AE9B66]"
-                                  : event?.is_paid && !member.price_paid
-                                  ? "text-orange-600"
-                                  : "text-gray-600"
-                              }`} />
-                              {member.price_paid
-                                ? formatBHD(member.price_paid)
-                                : event?.is_paid
-                                ? "Payment Pending"
-                                : "Free"}
-                            </div>
-                            {member.is_member && (
-                              <div className="inline-flex items-center gap-1 text-xs text-[#03215F] bg-[#9cc2ed] px-2 py-1 rounded-full">
-                                <Shield className="w-3 h-3 text-[#03215F]" />
-                                Member
+                            {member.registration_category && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600 capitalize">
+                                <User className="w-3 h-3 text-[#03215F]" />
+                                {member.registration_category}
                               </div>
                             )}
                           </div>
                         </td>
                         <td className="py-4 px-6 text-sm sm:text-base">
+                          <div className="space-y-1">
+                            {(() => {
+                              const ps = member.payment_status;
+                              const isPaid = event?.is_paid;
+                              const isCompleted = ps === 'completed';
+                              const isFreeStatus = ps === 'free';
+                              const hasPaid = member.price_paid != null && Number(member.price_paid) > 0;
+                              const isPending = isPaid && !isCompleted && !isFreeStatus && !hasPaid;
+
+                              let label = 'Free';
+                              let colorClass = 'text-green-600';
+                              let iconColor = 'text-green-600';
+
+                              if (hasPaid) {
+                                label = formatBHD(member.price_paid);
+                                colorClass = 'text-[#AE9B66]';
+                                iconColor = 'text-[#AE9B66]';
+                              } else if (isFreeStatus) {
+                                label = 'Free';
+                                colorClass = 'text-green-600';
+                                iconColor = 'text-green-600';
+                              } else if (isPending) {
+                                label = 'Payment Pending';
+                                colorClass = 'text-orange-600';
+                                iconColor = 'text-orange-600';
+                              } else if (!isPaid) {
+                                label = 'Free';
+                                colorClass = 'text-green-600';
+                                iconColor = 'text-green-600';
+                              }
+
+                              return (
+                                <>
+                                  <div className={`inline-flex items-center gap-1 text-sm font-medium ${colorClass}`}>
+                                    <CreditCard className={`w-3 h-3 ${iconColor}`} />
+                                    {label}
+                                  </div>
+                                  {member.is_member && (
+                                    <div className="inline-flex items-center gap-1 text-xs text-[#03215F] bg-[#9cc2ed] px-2 py-1 rounded-full">
+                                      <Shield className="w-3 h-3 text-[#03215F]" />
+                                      Member
+                                    </div>
+                                  )}
+                                  {ps && (
+                                    <div className={`mt-1 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${isCompleted || isFreeStatus ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                      <span className="capitalize">{ps}</span>
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-sm sm:text-base">
                           <div className="flex flex-col gap-2">
                             <div
-                              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium w-fit ${
-                                member.checked_in
-                                  ? "bg-[#AE9B66] text-white"
-                                  : "bg-[#b8352d] text-white"
-                              }`}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium w-fit ${member.checked_in
+                                ? "bg-[#AE9B66] text-white"
+                                : "bg-[#b8352d] text-white"
+                                }`}
                             >
                               {member.checked_in ? (
                                 <div className="flex items-center gap-2">
-                                  <CheckCircle className="w-4 h-4" title="Checked In"/>
-                                  
+                                  <CheckCircle className="w-4 h-4" title="Checked In" />
+
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-2">
-                                  <XCircle className="w-4 h-4" title="Not Checked In"/>
-                                  
+                                  <XCircle className="w-4 h-4" title="Not Checked In" />
+
                                 </div>
                               )}
                             </div>
@@ -1351,7 +1380,7 @@ export default function EventMembersPage() {
                             >
                               <Eye className="w-4 h-4 text-[#03215F]" />
                             </button>
-                            {(!event?.is_paid || (Number(member.price_paid) > 0)) && (
+                            {(!event?.is_paid || member.payment_status === 'completed' || member.payment_status === 'free' || Number(member.price_paid) > 0) && (
                               <button
                                 onClick={() => handlePrintBadge(member)}
                                 className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors hover:scale-110 active:scale-95"
@@ -1380,12 +1409,13 @@ export default function EventMembersPage() {
                               </button>
                             )}
                             {(() => {
-                              const paymentPending = event?.is_paid && (!member.price_paid || member.price_paid <= 0);
+                              const ps = member.payment_status;
+                              const paymentPending = event?.is_paid && ps !== 'completed' && ps !== 'free' && !(member.price_paid != null && Number(member.price_paid) > 0);
                               const checkInClass = member.checked_in
                                 ? "p-2 rounded-lg bg-[#b8352d] text-white hover:bg-[#b8352d]/90 transition-colors hover:scale-110 active:scale-95"
                                 : paymentPending
-                                ? "p-2 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed"
-                                : "p-2 rounded-lg bg-[#AE9B66] text-white hover:bg-[#AE9B66]/90 transition-colors hover:scale-110 active:scale-95";
+                                  ? "p-2 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed"
+                                  : "p-2 rounded-lg bg-[#AE9B66] text-white hover:bg-[#AE9B66]/90 transition-colors hover:scale-110 active:scale-95";
 
                               return (
                                 <button
@@ -1458,11 +1488,10 @@ export default function EventMembersPage() {
                             <button
                               key={pageNum}
                               onClick={() => handlePageChange(pageNum)}
-                              className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${
-                                pagination.page === pageNum
-                                  ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white"
-                                  : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:bg-gray-200"
-                              }`}
+                              className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-all ${pagination.page === pageNum
+                                ? "bg-gradient-to-r from-[#03215F] to-[#03215F] text-white"
+                                : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:bg-gray-200"
+                                }`}
                             >
                               {pageNum}
                             </button>

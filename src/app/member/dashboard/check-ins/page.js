@@ -92,7 +92,7 @@ export default function CheckInsPage() {
         const allCheckIns = data.data.all || [];
         setCheckIns(allCheckIns);
         setStats(data.data.stats || {});
-        
+
         // Extract feedback from check-ins data
         const allFeedback = [];
         allCheckIns.forEach(checkIn => {
@@ -274,32 +274,29 @@ export default function CheckInsPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setFilter("all")}
-                className={`px-4 py-2.5 rounded-lg font-medium transition-colors ${
-                  filter === "all"
+                className={`px-4 py-2.5 rounded-lg font-medium transition-colors ${filter === "all"
                     ? "bg-[#03215F] text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 All
               </button>
               <button
                 onClick={() => setFilter("checked_in")}
-                className={`px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                  filter === "checked_in"
+                className={`px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 ${filter === "checked_in"
                     ? "bg-[#AE9B66] text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 <CheckCircle className="w-4 h-4" />
                 Checked In
               </button>
               <button
                 onClick={() => setFilter("not_checked_in")}
-                className={`px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                  filter === "not_checked_in"
+                className={`px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 ${filter === "not_checked_in"
                     ? "bg-[#ECCF0F] text-[#03215F]"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 <Clock className="w-4 h-4" />
                 Not Checked In
@@ -379,11 +376,10 @@ export default function CheckInsPage() {
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <span
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${
-                          checkIn.checked_in
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${checkIn.checked_in
                             ? "bg-[#AE9B66] text-white"
                             : "bg-[#ECCF0F] text-[#03215F]"
-                        }`}
+                          }`}
                       >
                         {checkIn.checked_in ? (
                           <>
@@ -397,7 +393,7 @@ export default function CheckInsPage() {
                           </>
                         )}
                       </span>
-                      {checkIn.token && (
+                      {checkIn.token && (checkIn.payment_status === 'completed' || checkIn.payment_status === 'free' || !checkIn.event?.is_paid || (checkIn.price_paid != null && Number(checkIn.price_paid) > 0)) && (
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
                           <QrCode className="w-4 h-4 text-gray-600" />
                           <span className="text-sm font-mono text-gray-700">
@@ -493,166 +489,165 @@ export default function CheckInsPage() {
                         </div>
                       )}
 
-                      {/* Feedback Section */}
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                          <h5 className="font-bold text-lg text-[#03215F] flex items-center gap-2">
-                            <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" />
-                            Your Feedback
-                          </h5>
-                          <button
-                            onClick={() => handleAddFeedback(checkIn)}
-                            className="px-4 py-2.5 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 text-sm sm:text-base shadow-md"
-                          >
-                            {feedbackData.find(
-                              (f) => f.event_member_id === checkIn.event_member_id
-                            ) ? (
-                              <>
-                                <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                                <span>Edit Feedback</span>
-                              </>
-                            ) : (
-                              <>
-                                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
-                                <span>Add Feedback</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
+                    {/* Feedback Section */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <h5 className="font-bold text-lg text-[#03215F] flex items-center gap-2">
+                          <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" />
+                          Your Feedback
+                        </h5>
+                        <button
+                          onClick={() => handleAddFeedback(checkIn)}
+                          className="px-4 py-2.5 bg-gradient-to-r from-[#03215F] to-[#AE9B66] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 text-sm sm:text-base shadow-md"
+                        >
+                          {feedbackData.find(
+                            (f) => f.event_member_id === checkIn.event_member_id
+                          ) ? (
+                            <>
+                              <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                              <span>Edit Feedback</span>
+                            </>
+                          ) : (
+                            <>
+                              <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
+                              <span>Add Feedback</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
 
-                        {/* Display Existing Feedback */}
-                        {feedbackData
-                          .filter((f) => f.event_member_id === checkIn.event_member_id)
-                          .map((feedback, idx) => (
-                            <div
-                              key={feedback.id || idx}
-                              className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-4 sm:p-5 border-2 border-[#03215F]/20 mb-4 shadow-md hover:shadow-lg transition-all"
-                            >
-                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1">
-                                  {feedback.rating && (
-                                    <div className="flex items-center gap-1 bg-[#ECCF0F]/20 px-3 py-1.5 rounded-lg w-fit">
-                                      {[1, 2, 3, 4, 5].map((star) => (
-                                        <Star
-                                          key={star}
-                                          className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                                            star <= feedback.rating
-                                              ? "text-[#ECCF0F] fill-[#ECCF0F]"
-                                              : "text-gray-300"
+                      {/* Display Existing Feedback */}
+                      {feedbackData
+                        .filter((f) => f.event_member_id === checkIn.event_member_id)
+                        .map((feedback, idx) => (
+                          <div
+                            key={feedback.id || idx}
+                            className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-4 sm:p-5 border-2 border-[#03215F]/20 mb-4 shadow-md hover:shadow-lg transition-all"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1">
+                                {feedback.rating && (
+                                  <div className="flex items-center gap-1 bg-[#ECCF0F]/20 px-3 py-1.5 rounded-lg w-fit">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        className={`w-4 h-4 sm:w-5 sm:h-5 ${star <= feedback.rating
+                                            ? "text-[#ECCF0F] fill-[#ECCF0F]"
+                                            : "text-gray-300"
                                           }`}
-                                        />
-                                      ))}
-                                    </div>
-                                  )}
-                                  <span className="text-xs sm:text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg w-fit">
-                                    {new Date(
-                                      feedback.feedback_date
-                                    ).toLocaleDateString("en-BH", {
-                                      weekday: "short",
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                      timeZone: "Asia/Bahrain",
-                                    })}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 sm:gap-3">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedFeedback(feedback);
-                                      setSelectedCheckIn(checkIn);
-                                      setFeedbackModalOpen(true);
-                                    }}
-                                    className="px-4 py-2 bg-[#03215F] text-white rounded-lg hover:bg-[#03215F]/90 transition-colors flex items-center gap-2 text-sm font-semibold shadow-sm hover:shadow-md flex-1 sm:flex-none justify-center"
-                                    title="Edit feedback"
-                                  >
-                                    <Edit2 className="w-4 h-4" />
-                                    <span>Edit</span>
-                                  </button>
-                                  <button
-                                    onClick={async () => {
-                                      if (
-                                        window.confirm(
-                                          "Are you sure you want to delete this feedback? This action cannot be undone."
-                                        )
-                                      ) {
-                                        try {
-                                          const response = await fetch(
-                                            `/api/dashboard/feedback?id=${feedback.id}`,
-                                            {
-                                              method: "DELETE",
-                                              credentials: "include",
-                                            }
-                                          );
-                                          const data = await response.json();
-                                          if (data.success) {
-                                            toast.success(
-                                              "Feedback deleted successfully"
-                                            );
-                                            handleFeedbackSuccess();
-                                          } else {
-                                            toast.error(
-                                              data.message ||
-                                                "Failed to delete feedback"
-                                            );
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                                <span className="text-xs sm:text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg w-fit">
+                                  {new Date(
+                                    feedback.feedback_date
+                                  ).toLocaleDateString("en-BH", {
+                                    weekday: "short",
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                    timeZone: "Asia/Bahrain",
+                                  })}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 sm:gap-3">
+                                <button
+                                  onClick={() => {
+                                    setSelectedFeedback(feedback);
+                                    setSelectedCheckIn(checkIn);
+                                    setFeedbackModalOpen(true);
+                                  }}
+                                  className="px-4 py-2 bg-[#03215F] text-white rounded-lg hover:bg-[#03215F]/90 transition-colors flex items-center gap-2 text-sm font-semibold shadow-sm hover:shadow-md flex-1 sm:flex-none justify-center"
+                                  title="Edit feedback"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    if (
+                                      window.confirm(
+                                        "Are you sure you want to delete this feedback? This action cannot be undone."
+                                      )
+                                    ) {
+                                      try {
+                                        const response = await fetch(
+                                          `/api/dashboard/feedback?id=${feedback.id}`,
+                                          {
+                                            method: "DELETE",
+                                            credentials: "include",
                                           }
-                                        } catch (error) {
-                                          console.error(
-                                            "Error deleting feedback:",
-                                            error
+                                        );
+                                        const data = await response.json();
+                                        if (data.success) {
+                                          toast.success(
+                                            "Feedback deleted successfully"
                                           );
+                                          handleFeedbackSuccess();
+                                        } else {
                                           toast.error(
+                                            data.message ||
                                             "Failed to delete feedback"
                                           );
                                         }
+                                      } catch (error) {
+                                        console.error(
+                                          "Error deleting feedback:",
+                                          error
+                                        );
+                                        toast.error(
+                                          "Failed to delete feedback"
+                                        );
                                       }
-                                    }}
-                                    className="px-4 py-2 bg-[#b8352d] text-white rounded-lg hover:bg-[#b8352d]/90 transition-colors flex items-center gap-2 text-sm font-semibold shadow-sm hover:shadow-md flex-1 sm:flex-none justify-center"
-                                    title="Delete feedback"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    <span>Delete</span>
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="bg-white rounded-lg p-3 sm:p-4 mb-3 border border-gray-200">
-                                <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
-                                  {feedback.feedback_text}
-                                </p>
-                              </div>
-                              <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 pt-3 border-t border-gray-200">
-                                <div>
-                                  {feedback.updated_at !== feedback.created_at ? (
-                                    <span className="text-[#AE9B66] font-medium">
-                                      Last updated: {new Date(feedback.updated_at).toLocaleString("en-BH", {
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        timeZone: "Asia/Bahrain",
-                                      })}
-                                    </span>
-                                  ) : (
-                                    <span>
-                                      Submitted: {new Date(feedback.created_at).toLocaleString("en-BH", {
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        timeZone: "Asia/Bahrain",
-                                      })}
-                                    </span>
-                                  )}
-                                </div>
+                                    }
+                                  }}
+                                  className="px-4 py-2 bg-[#b8352d] text-white rounded-lg hover:bg-[#b8352d]/90 transition-colors flex items-center gap-2 text-sm font-semibold shadow-sm hover:shadow-md flex-1 sm:flex-none justify-center"
+                                  title="Delete feedback"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>Delete</span>
+                                </button>
                               </div>
                             </div>
-                          ))}
+                            <div className="bg-white rounded-lg p-3 sm:p-4 mb-3 border border-gray-200">
+                              <p className="text-gray-700 leading-relaxed text-sm sm:text-base">
+                                {feedback.feedback_text}
+                              </p>
+                            </div>
+                            <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 pt-3 border-t border-gray-200">
+                              <div>
+                                {feedback.updated_at !== feedback.created_at ? (
+                                  <span className="text-[#AE9B66] font-medium">
+                                    Last updated: {new Date(feedback.updated_at).toLocaleString("en-BH", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      timeZone: "Asia/Bahrain",
+                                    })}
+                                  </span>
+                                ) : (
+                                  <span>
+                                    Submitted: {new Date(feedback.created_at).toLocaleString("en-BH", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      timeZone: "Asia/Bahrain",
+                                    })}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
 
-                        {!feedbackData.find(
-                          (f) => f.event_member_id === checkIn.event_member_id
-                        ) && (
+                      {!feedbackData.find(
+                        (f) => f.event_member_id === checkIn.event_member_id
+                      ) && (
                           <div className="bg-gray-50 rounded-lg p-6 border-2 border-dashed border-gray-300 text-center">
                             <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                             <p className="text-sm sm:text-base text-gray-600 font-medium mb-2">
@@ -670,8 +665,8 @@ export default function CheckInsPage() {
                             </button>
                           </div>
                         )}
-                      </div>
                     </div>
+                  </div>
                 )}
 
                 {/* Not Checked In Message */}

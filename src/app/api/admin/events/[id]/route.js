@@ -59,7 +59,7 @@ async function uploadImage(file, folder, maxSize = 5 * 1024 * 1024) {
   if (!file || file.size === 0) return null;
 
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  
+
   if (!allowedTypes.includes(file.type)) {
     throw new Error('Only JPEG, JPG, PNG, and WebP images are allowed');
   }
@@ -94,7 +94,7 @@ async function uploadImage(file, folder, maxSize = 5 * 1024 * 1024) {
 // Helper function to delete image
 async function deleteImage(imageUrl, folder) {
   if (!imageUrl) return;
-  
+
   const fileName = imageUrl.split('/').pop();
   if (fileName) {
     await supabase.storage
@@ -128,11 +128,11 @@ export async function PUT(request, { params }) {
     }
 
     let title, description, start_datetime, end_datetime, timezone, venue_name, address, city,
-        created_by, province, pin_code, google_map_url, capacity, is_paid,
-        regular_price, member_price, student_price, hygienist_price,
-        regular_standard_price, member_standard_price, student_standard_price, hygienist_standard_price,
-        regular_onsite_price, member_onsite_price, student_onsite_price, hygienist_onsite_price,
-        early_bird_deadline, status, nera_cme_hours, nera_code;
+      created_by, province, pin_code, google_map_url, capacity, is_paid,
+      regular_price, member_price, student_price, hygienist_price,
+      regular_standard_price, member_standard_price, student_standard_price, hygienist_standard_price,
+      regular_onsite_price, member_onsite_price, student_onsite_price, hygienist_onsite_price,
+      early_bird_deadline, status, nera_cme_hours, nera_code;
     let bannerImage = null;
     let removeBanner = false;
     let bannerImageUrl = null;
@@ -158,18 +158,19 @@ export async function PUT(request, { params }) {
       google_map_url = body.google_map_url;
       capacity = body.capacity ? parseInt(body.capacity) : undefined;
       is_paid = body.is_paid !== undefined ? (body.is_paid === true || body.is_paid === 'true') : undefined;
-      regular_price = body.regular_price !== undefined ? (body.regular_price ? parseFloat(body.regular_price) : null) : undefined;
-      member_price = body.member_price !== undefined ? (body.member_price ? parseFloat(body.member_price) : null) : undefined;
-      student_price = body.student_price !== undefined ? (body.student_price ? parseFloat(body.student_price) : null) : undefined;
-      hygienist_price = body.hygienist_price !== undefined ? (body.hygienist_price ? parseFloat(body.hygienist_price) : null) : undefined;
-      regular_standard_price = body.regular_standard_price !== undefined ? (body.regular_standard_price ? parseFloat(body.regular_standard_price) : null) : undefined;
-      member_standard_price = body.member_standard_price !== undefined ? (body.member_standard_price ? parseFloat(body.member_standard_price) : null) : undefined;
-      student_standard_price = body.student_standard_price !== undefined ? (body.student_standard_price ? parseFloat(body.student_standard_price) : null) : undefined;
-      hygienist_standard_price = body.hygienist_standard_price !== undefined ? (body.hygienist_standard_price ? parseFloat(body.hygienist_standard_price) : null) : undefined;
-      regular_onsite_price = body.regular_onsite_price !== undefined ? (body.regular_onsite_price ? parseFloat(body.regular_onsite_price) : null) : undefined;
-      member_onsite_price = body.member_onsite_price !== undefined ? (body.member_onsite_price ? parseFloat(body.member_onsite_price) : null) : undefined;
-      student_onsite_price = body.student_onsite_price !== undefined ? (body.student_onsite_price ? parseFloat(body.student_onsite_price) : null) : undefined;
-      hygienist_onsite_price = body.hygienist_onsite_price !== undefined ? (body.hygienist_onsite_price ? parseFloat(body.hygienist_onsite_price) : null) : undefined;
+      const parsePrice = (val) => { if (val === undefined) return undefined; return (val === null || val === '') ? null : (isNaN(parseFloat(val)) ? null : parseFloat(val)); };
+      regular_price = parsePrice(body.regular_price);
+      member_price = parsePrice(body.member_price);
+      student_price = parsePrice(body.student_price);
+      hygienist_price = parsePrice(body.hygienist_price);
+      regular_standard_price = parsePrice(body.regular_standard_price);
+      member_standard_price = parsePrice(body.member_standard_price);
+      student_standard_price = parsePrice(body.student_standard_price);
+      hygienist_standard_price = parsePrice(body.hygienist_standard_price);
+      regular_onsite_price = parsePrice(body.regular_onsite_price);
+      member_onsite_price = parsePrice(body.member_onsite_price);
+      student_onsite_price = parsePrice(body.student_onsite_price);
+      hygienist_onsite_price = parsePrice(body.hygienist_onsite_price);
       early_bird_deadline = body.early_bird_deadline;
       status = body.status;
       nera_cme_hours = body.nera_cme_hours;
@@ -196,18 +197,19 @@ export async function PUT(request, { params }) {
       google_map_url = formData.get('google_map_url');
       capacity = formData.get('capacity') ? parseInt(formData.get('capacity')) : null;
       is_paid = formData.get('is_paid') === 'true';
-      regular_price = formData.get('regular_price') ? parseFloat(formData.get('regular_price')) : null;
-      member_price = formData.get('member_price') ? parseFloat(formData.get('member_price')) : null;
-      student_price = formData.get('student_price') ? parseFloat(formData.get('student_price')) : null;
-      hygienist_price = formData.get('hygienist_price') ? parseFloat(formData.get('hygienist_price')) : null;
-      regular_standard_price = formData.get('regular_standard_price') ? parseFloat(formData.get('regular_standard_price')) : null;
-      member_standard_price = formData.get('member_standard_price') ? parseFloat(formData.get('member_standard_price')) : null;
-      student_standard_price = formData.get('student_standard_price') ? parseFloat(formData.get('student_standard_price')) : null;
-      hygienist_standard_price = formData.get('hygienist_standard_price') ? parseFloat(formData.get('hygienist_standard_price')) : null;
-      regular_onsite_price = formData.get('regular_onsite_price') ? parseFloat(formData.get('regular_onsite_price')) : null;
-      member_onsite_price = formData.get('member_onsite_price') ? parseFloat(formData.get('member_onsite_price')) : null;
-      student_onsite_price = formData.get('student_onsite_price') ? parseFloat(formData.get('student_onsite_price')) : null;
-      hygienist_onsite_price = formData.get('hygienist_onsite_price') ? parseFloat(formData.get('hygienist_onsite_price')) : null;
+      const parsePriceF = (val) => (val === null || val === undefined || val === '') ? null : (isNaN(parseFloat(val)) ? null : parseFloat(val));
+      regular_price = parsePriceF(formData.get('regular_price'));
+      member_price = parsePriceF(formData.get('member_price'));
+      student_price = parsePriceF(formData.get('student_price'));
+      hygienist_price = parsePriceF(formData.get('hygienist_price'));
+      regular_standard_price = parsePriceF(formData.get('regular_standard_price'));
+      member_standard_price = parsePriceF(formData.get('member_standard_price'));
+      student_standard_price = parsePriceF(formData.get('student_standard_price'));
+      hygienist_standard_price = parsePriceF(formData.get('hygienist_standard_price'));
+      regular_onsite_price = parsePriceF(formData.get('regular_onsite_price'));
+      member_onsite_price = parsePriceF(formData.get('member_onsite_price'));
+      student_onsite_price = parsePriceF(formData.get('student_onsite_price'));
+      hygienist_onsite_price = parsePriceF(formData.get('hygienist_onsite_price'));
       early_bird_deadline = formData.get('early_bird_deadline');
       status = formData.get('status');
       bannerImage = formData.get('banner_image');
@@ -349,10 +351,10 @@ export async function PUT(request, { params }) {
     if (updateHosts) {
       // Process hosts with their profile images
       const processedHosts = [];
-      
+
       for (const [index, host] of hosts.entries()) {
         let profile_image = host.profile_image || null;
-        
+
         if (isJson) {
           // JSON path: client already uploaded, use profile_image_url if provided
           if (host.profile_image_url) {
@@ -382,7 +384,7 @@ export async function PUT(request, { params }) {
             }
           }
         }
-        
+
         processedHosts.push({
           ...host,
           profile_image: profile_image

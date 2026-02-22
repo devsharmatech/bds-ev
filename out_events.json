@@ -1,0 +1,35 @@
+[
+  {
+    "id": "1aa6da61-ce1d-42ba-8dbc-d8cc0ee6b933",
+    "title": "Test Event By Developer",
+    "regular_price": 2,
+    "member_price": null,
+    "student_price": 3,
+    "hygienist_price": 3,
+    "early_bird_deadline": "2026-04-01T07:00:00+00:00",
+    "regular_standard_price": 3,
+    "member_standard_price": null
+  },
+  {
+    "id": "e9507ba9-ed8a-4082-adf3-d3dbdfb2d12e",
+    "title": "تميز في سوق العمل - ورشة عمل",
+    "regular_price": null,
+    "member_price": null,
+    "student_price": null,
+    "hygienist_price": null,
+    "early_bird_deadline": null,
+    "regular_standard_price": null,
+    "member_standard_price": null
+  },
+  {
+    "id": "aef32c06-5fe6-448e-86b6-fe156b455d91",
+    "title": "The 6th Bahrain Dental Society Conference & Exhibition",
+    "regular_price": 70,
+    "member_price": 50,
+    "student_price": 30,
+    "hygienist_price": 40,
+    "early_bird_deadline": "2026-02-28T18:30:00+00:00",
+    "regular_standard_price": 90,
+    "member_standard_price": 70
+  }
+]
