@@ -27,6 +27,8 @@ const formatDate = (dateString) => {
     day: "numeric",
     month: "short",
     year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
     timeZone: "Asia/Bahrain",
   });
 };
@@ -242,7 +244,7 @@ export default function HistoryPage() {
             <div className="p-2 bg-[#9cc2ed] rounded-lg">
               <CreditCard className="w-6 h-6 text-[#03215F]" />
             </div>
-            <span className="text-2xl font-bold">{stats.total}</span>
+            <span className="text-lg lg:text-xl font-bold truncate block">{stats.total}</span>
           </div>
           <p className="text-gray-600 text-sm">
             Total Payments
@@ -254,7 +256,7 @@ export default function HistoryPage() {
             <div className="p-2 bg-[#AE9B66] rounded-lg">
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold">{stats.paid}</span>
+            <span className="text-lg lg:text-xl font-bold truncate block">{stats.paid}</span>
           </div>
           <p className="text-gray-600 text-sm">Completed</p>
         </div>
@@ -264,7 +266,7 @@ export default function HistoryPage() {
             <div className="p-2 bg-[#ECCF0F] rounded-lg">
               <Clock className="w-6 h-6 text-[#03215F]" />
             </div>
-            <span className="text-2xl font-bold">{stats.pending}</span>
+            <span className="text-lg lg:text-xl font-bold truncate block">{stats.pending}</span>
           </div>
           <p className="text-gray-600 text-sm">Pending</p>
         </div>
@@ -274,7 +276,7 @@ export default function HistoryPage() {
             <div className="p-2 bg-[#03215F] rounded-lg">
               <DollarSign className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-bold">
+            <span className="text-lg lg:text-xl font-bold truncate block" title={formatBHD(stats.amount)}>
               {formatBHD(stats.amount)}
             </span>
           </div>
@@ -429,11 +431,10 @@ export default function HistoryPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            payment.payment_type === "membership"
-                              ? "bg-[#9cc2ed] text-[#03215F]"
-                              : "bg-[#AE9B66] text-white"
-                          }`}
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${payment.payment_type === "membership"
+                            ? "bg-[#9cc2ed] text-[#03215F]"
+                            : "bg-[#AE9B66] text-white"
+                            }`}
                         >
                           {payment.payment_type === "membership"
                             ? "Membership"
@@ -451,24 +452,22 @@ export default function HistoryPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div
-                            className={`mr-2 ${
-                              statusColor === "green"
-                                ? "text-[#AE9B66]"
-                                : statusColor === "red"
+                            className={`mr-2 ${statusColor === "green"
+                              ? "text-[#AE9B66]"
+                              : statusColor === "red"
                                 ? "text-[#b8352d]"
                                 : "text-[#ECCF0F]"
-                            }`}
+                              }`}
                           >
                             {statusIcon}
                           </div>
                           <span
-                            className={`font-medium ${
-                              statusColor === "green"
-                                ? "text-[#AE9B66]"
-                                : statusColor === "red"
+                            className={`font-medium ${statusColor === "green"
+                              ? "text-[#AE9B66]"
+                              : statusColor === "red"
                                 ? "text-[#b8352d]"
                                 : "text-[#ECCF0F]"
-                            }`}
+                              }`}
                           >
                             {statusText}
                           </span>
@@ -609,8 +608,12 @@ export default function HistoryPage() {
                 <DollarSign className="w-5 h-5 text-[#03215F] mr-2" />
                 <h4 className="font-semibold">Total Amount</h4>
               </div>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-gray-900">
+              <div className="space-y-2 overflow-hidden">
+                <div className="text-lg lg:text-xl font-bold text-gray-900 truncate block" title={formatBHD(
+                  filteredPayments
+                    .filter((p) => p.paid)
+                    .reduce((sum, p) => sum + (p.amount || 0), 0)
+                )}>
                   {formatBHD(
                     filteredPayments
                       .filter((p) => p.paid)

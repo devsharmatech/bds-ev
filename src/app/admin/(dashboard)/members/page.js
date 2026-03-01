@@ -275,8 +275,8 @@ const VerificationFileUpload = ({
                 />
               )}
               <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 text-white text-xs rounded-lg">
-                {file && file.type ? (file.type.includes('image') ? 'Image' : 'PDF') : 
-                 existingUrl && existingUrl.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Image'}
+                {file && file.type ? (file.type.includes('image') ? 'Image' : 'PDF') :
+                  existingUrl && existingUrl.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Image'}
               </div>
             </div>
           </motion.div>
@@ -288,7 +288,7 @@ const VerificationFileUpload = ({
 
 export default function MembersPage() {
   const router = useRouter();
-  
+
   // Option constants (same as RegistrationLiteModal)
   const COUNTRY_OPTIONS = [
     { label: "Bahrain", code: "BH", dial: "+973" },
@@ -371,7 +371,7 @@ export default function MembersPage() {
     expiringSoon: 0,
   });
   const [planStats, setPlanStats] = useState([]);
-  
+
   // Country options state (for nationality dropdown)
   const [countryOptions, setCountryOptions] = useState(COUNTRY_OPTIONS);
 
@@ -385,6 +385,8 @@ export default function MembersPage() {
   const [activeMember, setActiveMember] = useState(null);
   const [viewFeeSummary, setViewFeeSummary] = useState(null);
   const [viewAttendanceLogs, setViewAttendanceLogs] = useState([]);
+  const [viewPaymentHistory, setViewPaymentHistory] = useState([]);
+  const [viewMembershipPayments, setViewMembershipPayments] = useState([]);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [verifyIdCard, setVerifyIdCard] = useState(null);
   const [verifyPersonalPhoto, setVerifyPersonalPhoto] = useState(null);
@@ -815,7 +817,7 @@ export default function MembersPage() {
     );
     const natCode = foundCountry?.code || "BH";
     const natDial = foundCountry?.dial || "+973";
-    
+
     setForm({
       ...initialForm,
       email: member.email || "",
@@ -833,12 +835,12 @@ export default function MembersPage() {
         (member.current_subscription_plan_name || "").toLowerCase().includes("active")
           ? "active"
           : (member.current_subscription_plan_name || "").toLowerCase().includes("associate")
-          ? "associate"
-          : (member.current_subscription_plan_name || "").toLowerCase().includes("honorary")
-          ? "honorary"
-          : (member.current_subscription_plan_name || "").toLowerCase().includes("student")
-          ? "student"
-          : "",
+            ? "associate"
+            : (member.current_subscription_plan_name || "").toLowerCase().includes("honorary")
+              ? "honorary"
+              : (member.current_subscription_plan_name || "").toLowerCase().includes("student")
+                ? "student"
+                : "",
       membership_expiry_date: member.membership_expiry_date
         ? formatDateISO(member.membership_expiry_date)
         : "",
@@ -967,6 +969,8 @@ export default function MembersPage() {
     setShowViewModal(true);
     setViewFeeSummary(null);
     setViewAttendanceLogs([]);
+    setViewPaymentHistory([]);
+    setViewMembershipPayments([]);
     (async () => {
       try {
         setViewLoading(true);
@@ -983,6 +987,12 @@ export default function MembersPage() {
           }
           if (Array.isArray(data.attendance_logs)) {
             setViewAttendanceLogs(data.attendance_logs);
+          }
+          if (Array.isArray(data.payment_history)) {
+            setViewPaymentHistory(data.payment_history);
+          }
+          if (Array.isArray(data.membership_payments)) {
+            setViewMembershipPayments(data.membership_payments);
           }
         } else {
           toast.error(data.error || "Failed to load member details");
@@ -1444,25 +1454,25 @@ export default function MembersPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3 self-start sm:self-auto justify-start sm:justify-end">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleExportCSV}
-                  disabled={exporting}
-                  className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200 flex items-center gap-2 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {exporting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Exporting...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-5 h-5" />
-                      Export CSV
-                    </>
-                  )}
-                </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleExportCSV}
+                disabled={exporting}
+                className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200 flex items-center gap-2 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {exporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-5 h-5" />
+                    Export CSV
+                  </>
+                )}
+              </motion.button>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -1506,38 +1516,38 @@ export default function MembersPage() {
             <div className="w-full xl:w-2/3 flex flex-col gap-3 items-stretch">
               <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
                 <div className="flex flex-wrap gap-2 items-center">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="blocked">Blocked</option>
-                  <option value="pending">Pending</option>
-                </select>
-                <select
-                  value={planFilter}
-                  onChange={(e) => { setPlanFilter(e.target.value); setPage(1); }}
-                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm"
-                >
-                  <option value="all">All Plans</option>
-                  <option value="active">Active</option>
-                  <option value="associate">Associate</option>
-                  <option value="student">Student</option>
-                  <option value="honorary">Honorary</option>
-                  <option value="free">Free</option>
-                </select>
-                <select
-                  value={verifiedFilter}
-                  onChange={(e) => { setVerifiedFilter(e.target.value); setPage(1); }}
-                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm"
-                >
-                  <option value="all">All Verification</option>
-                  <option value="verified">Verified</option>
-                  <option value="unverified">Unverified</option>
-                </select>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                    className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="blocked">Blocked</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                  <select
+                    value={planFilter}
+                    onChange={(e) => { setPlanFilter(e.target.value); setPage(1); }}
+                    className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm"
+                  >
+                    <option value="all">All Plans</option>
+                    <option value="active">Active</option>
+                    <option value="associate">Associate</option>
+                    <option value="student">Student</option>
+                    <option value="honorary">Honorary</option>
+                    <option value="free">Free</option>
+                  </select>
+                  <select
+                    value={verifiedFilter}
+                    onChange={(e) => { setVerifiedFilter(e.target.value); setPage(1); }}
+                    className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-sm"
+                  >
+                    <option value="all">All Verification</option>
+                    <option value="verified">Verified</option>
+                    <option value="unverified">Unverified</option>
+                  </select>
                 </div>
                 <div className="flex flex-wrap gap-2 justify-start lg:justify-end">
                   <motion.button
@@ -2547,8 +2557,8 @@ export default function MembersPage() {
 
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${activeMember.membership_status === "active"
-                            ? "bg-[#10B981]/10 text-[#10B981]"
-                            : "bg-[#F59E0B]/10 text-[#F59E0B]"
+                          ? "bg-[#10B981]/10 text-[#10B981]"
+                          : "bg-[#F59E0B]/10 text-[#F59E0B]"
                           }`}
                       >
                         {activeMember.membership_status}
@@ -2658,8 +2668,8 @@ export default function MembersPage() {
                 <div
                   key={item.label}
                   className={`p-4 rounded-xl border ${item.file
-                      ? "bg-green-50 border-green-200"
-                      : "bg-gray-100 border-gray-200"
+                    ? "bg-green-50 border-green-200"
+                    : "bg-gray-100 border-gray-200"
                     }`}
                 >
                   <div className="flex justify-between items-center">
@@ -2668,8 +2678,8 @@ export default function MembersPage() {
                     </span>
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${item.file
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-200 text-gray-800"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-200 text-gray-800"
                         }`}
                     >
                       {item.file ? "Ready" : "Pending"}
@@ -2790,10 +2800,10 @@ export default function MembersPage() {
                     <div className="absolute -bottom-2 -right-2">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${activeMember.membership_status === "active"
-                            ? "bg-[#10B981] text-white"
-                            : activeMember.membership_status === "inactive"
-                              ? "bg-[#ECCF0F] text-[#03215F]"
-                              : "bg-[#b8352d] text-white"
+                          ? "bg-[#10B981] text-white"
+                          : activeMember.membership_status === "inactive"
+                            ? "bg-[#ECCF0F] text-[#03215F]"
+                            : "bg-[#b8352d] text-white"
                           }`}
                       >
                         {activeMember.membership_status}
@@ -3134,6 +3144,66 @@ export default function MembersPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Payment History Section */}
+                {viewPaymentHistory && viewPaymentHistory.length > 0 && (
+                  <div className="bg-white rounded-xl p-5 border border-gray-200 mt-6 lg:col-span-2 text-left">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-[#03215F]/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#03215F]">
+                          <rect width="20" height="14" x="2" y="5" rx="2" />
+                          <line x1="2" x2="22" y1="10" y2="10" />
+                        </svg>
+                      </div>
+                      Payment History
+                    </h4>
+                    <div className="overflow-x-auto w-full">
+                      <table className="w-full text-left text-sm text-gray-600">
+                        <thead className="bg-gray-50 text-gray-700 font-medium">
+                          <tr>
+                            <th className="px-4 py-3 rounded-tl-lg">Date</th>
+                            <th className="px-4 py-3">Reason</th>
+                            <th className="px-4 py-3">Amount</th>
+                            <th className="px-4 py-3">Status</th>
+                            <th className="px-4 py-3 rounded-tr-lg">Invoice ID</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {viewPaymentHistory.map((payment, idx) => (
+                            <tr key={payment.id || idx} className="hover:bg-gray-50/50">
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                {new Date(payment.created_at).toLocaleDateString("en-BH", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                })}
+                              </td>
+                              <td className="px-4 py-3 capitalize">
+                                {payment.payment_for ? payment.payment_for.replace(/_/g, " ") : "-"}
+                              </td>
+                              <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                                {Number(payment.amount).toFixed(3)} {payment.currency || "BHD"}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${payment.status === 'completed' ? 'bg-[#10B981]/10 text-[#10B981]' :
+                                  payment.status === 'failed' ? 'bg-[#b8352d]/10 text-[#b8352d]' :
+                                    'bg-[#F59E0B]/10 text-[#F59E0B]'
+                                  }`}>
+                                  {payment.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-xs font-mono text-gray-500 whitespace-nowrap">
+                                {payment.invoice_id || "-"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {/* Verification Documents */}
                 <div className="bg-white rounded-xl p-5 border border-gray-200">

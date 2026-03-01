@@ -65,225 +65,157 @@ export default function CertificateTemplate({ certificate, user }) {
           }
         }
       `}</style>
-      {/* Certificate Container */}
-      <div className="relative bg-white h-full flex flex-col" style={{ border: 'none' }}>
-        {/* Top Decorative Wave - Blue and Gold */}
-        <div
-          className="relative h-24 overflow-hidden flex-shrink-0"
-          style={{
-            background:
-              "#fff",
-            transform: 'rotate(180deg)'
-          }}
-        >
-          <svg
-            className="absolute bottom-0 w-full h-full"
-            viewBox="0 0 1200 120"
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <linearGradient id="waveGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#03215F" stopOpacity="0.99" />
-                <stop offset="100%" stopColor="#03215F" stopOpacity="0.00" />
-              </linearGradient>
-            </defs>
 
-            {/* Back soft wave */}
+      {/* Certificate Border Overlay */}
+      <div className="absolute top-0 left-0" style={{ width: '816px', height: '1056px', pointerEvents: 'none' }}>
+        <svg width="816" height="1056" viewBox="0 0 816 1056" style={{ display: 'block' }}>
+          <g transform="translate(32, 32)">
+            {/* Outer Rectangle */}
+            <rect x="0" y="0" width="752" height="992" fill="none" stroke="#B19756" strokeWidth="2" />
+
+            {/* Inner Rectangle with Rounded Corners */}
             <path
-              d="M0,60 Q300,20 600,60 T1200,60 L1200,120 L0,120 Z"
-              fill="#03215F"
-              opacity="0.88"
+              d="
+                 M 6 18 
+                 L 6 974 
+                 A 12 12 0 0 0 18 986 
+                 L 734 986 
+                 A 12 12 0 0 0 746 974 
+                 L 746 18 
+                 A 12 12 0 0 0 734 6 
+                 L 18 6 
+                 A 12 12 0 0 0 6 18 
+                 Z
+                "
+              fill="none"
+              stroke="#B19756"
+              strokeWidth="1"
             />
 
-            {/* Middle wave */}
-            <path
-              d="M0,70 Q300,35 600,70 T1200,70 L1200,120 L0,120 Z"
-              fill="url(#waveGradient)"
-            />
+            {/* Corner Arcs */}
+            <path d="M 6 18 A 12 12 0 0 0 18 6" fill="none" stroke="#B19756" strokeWidth="1" />
+            <path d="M 734 6 A 12 12 0 0 0 746 18" fill="none" stroke="#B19756" strokeWidth="1" />
+            <path d="M 746 974 A 12 12 0 0 0 734 986" fill="none" stroke="#B19756" strokeWidth="1" />
+            <path d="M 18 986 A 12 12 0 0 0 6 974" fill="none" stroke="#B19756" strokeWidth="1" />
+          </g>
+        </svg>
+      </div>
 
-            {/* Front sharp wave */}
-            <path
-              d="M0,85 Q300,55 600,85 T1200,85 L1200,120 L0,120 Z"
-              fill="#03215F"
-              opacity="0.18"
-            />
-          </svg>
+      {/* Watermark Logo (Centered, very low opacity) */}
+      <div
+        className="absolute inset-0 flex items-center justify-center"
+        style={{ zIndex: 1, pointerEvents: 'none', opacity: 0.03 }}
+      >
+        <img
+          src="/logo2-r.png"
+          alt="Watermark"
+          style={{ width: '480px', height: 'auto', filter: 'grayscale(100%) blur(1px)' }}
+        />
+      </div>
+
+      {/* Main Content Flow */}
+      <div className="relative w-full h-full flex flex-col items-center px-20 py-14 text-center" style={{ zIndex: 10 }}>
+
+        {/* Logo */}
+        <div className="mt-8 mb-10">
+          <img
+            src="/logo2-r.png"
+            alt="Bahrain Dental Society"
+            className="h-28 object-contain drop-shadow-sm"
+          />
         </div>
 
+        {/* Title */}
+        <h1 className="text-[58px] font-bold mb-1 mt-2 tracking-[0.1em]" style={{ fontFamily: 'Georgia, serif', color: '#0B1A42' }}>
+          CERTIFICATE
+        </h1>
+        <h2 className="text-[30px] font-semibold tracking-[0.15em] mb-3" style={{ fontFamily: 'Georgia, serif', color: '#B8860B' }}>
+          OF ATTENDANCE
+        </h2>
 
-        <div className="grid grid-cols-3 items-center px-12 pt-6 pb-3 flex-shrink-0">
+        {/* Line + Diamond Separator */}
+        <svg width="340" height="24" viewBox="0 0 340 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-8">
+          {/* Horizontal lines */}
+          <line x1="0" y1="12" x2="148" y2="12" stroke="#B19756" strokeWidth="1" />
+          <line x1="192" y1="12" x2="340" y2="12" stroke="#B19756" strokeWidth="1" />
 
-          {/* Left: BDS Logo */}
-          <div className="flex items-center justify-start">
-            <img
-              src="/long-logo2.png"
-              alt="Bahrain Dental Society Logo"
-              className="h-14 object-contain"
-            />
-          </div>
+          {/* Center diamond (larger) */}
+          <g transform="translate(170, 12)">
+            <rect x="-6" y="-6" width="12" height="12" transform="rotate(45)" fill="none" stroke="#B19756" strokeWidth="1.5" />
+            <rect x="-3" y="-3" width="6" height="6" transform="rotate(45)" fill="none" stroke="#B19756" strokeWidth="1" />
+          </g>
 
-          {/* Center: Bahrain Emblem (TRUE CENTER) */}
-          <div className="flex items-center justify-center">
-            <img
-              src="/kbh.png"
-              alt="Bahrain Emblem"
-              className="h-22 object-contain"
-            />
-          </div>
+          {/* Left diamond */}
+          <g transform="translate(155, 12)">
+            <rect x="-4" y="-4" width="8" height="8" transform="rotate(45)" fill="none" stroke="#B19756" strokeWidth="1" />
+          </g>
 
-          {/* Right: NHRA Logo */}
-          <div className="flex items-center justify-end">
-            <img
-              src="/nera-logo.png"
-              alt="NHRA Logo"
-              className="h-20 object-contain"
-            />
-          </div>
+          {/* Right diamond */}
+          <g transform="translate(185, 12)">
+            <rect x="-4" y="-4" width="8" height="8" transform="rotate(45)" fill="none" stroke="#B19756" strokeWidth="1" />
+          </g>
+        </svg>
 
+        {/* Presentation Text */}
+        <p className="text-lg mb-3" style={{ fontFamily: 'Georgia, serif', color: '#444444' }}>
+          This certificate is proudly presented to:
+        </p>
+
+        {/* Dynamic Name */}
+        <h3 className="text-[28px] font-bold mb-6 min-h-[40px]" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#0B1A42' }}>
+          {displayName}
+        </h3>
+
+        <p className="text-lg font-semibold mb-4" style={{ fontFamily: 'Georgia, serif', color: '#222222' }}>
+          In recognition of successfully attending
+        </p>
+
+        {/* Dynamic Event */}
+        <h4 className="text-[22px] font-bold max-w-[85%] mx-auto mb-6" style={{ fontFamily: 'Georgia, serif', color: '#111111', lineHeight: '1.4' }}>
+          {certificate?.event_title || '_____________________________________'}
+        </h4>
+
+        {/* Date and Venue */}
+        <div className="mb-auto">
+          {certificate?.checked_in_at || certificate?.event_date ? (
+            <p className="text-[19px] mb-2" style={{ fontFamily: 'Georgia, serif', color: '#333333' }}>
+              On <span className="font-semibold">{formatDate(certificate?.checked_in_at || certificate?.event_date)}</span>
+            </p>
+          ) : null}
+          {certificate?.venue_name ? (
+            <p className="text-[17px]" style={{ fontFamily: 'Georgia, serif', color: '#444444' }}>
+              Held at {certificate.venue_name}
+            </p>
+          ) : null}
         </div>
 
+        {/* Add minimal padding to push footer down */}
+        <div className="flex-1" />
 
-        {/* Main Certificate Content */}
-        <div className="px-12 py-6 flex-1 flex flex-col justify-between" style={{ minHeight: 0 }}>
-          {/* Title */}
-          <div className="text-center mb-5">
-            <h1 className="text-5xl font-bold mb-2 pb-3" style={{ fontFamily: 'serif', letterSpacing: '2px', color: '#03215F' }}>
-              CERTIFICATE
-            </h1>
-            <div className="flex items-center justify-center gap-4" style={{ marginBottom: '10px' }}>
-              <div className="h-px flex-1 max-w-[200px]" style={{ backgroundColor: '#AE9B66' }}></div>
-              <div className="w-3 h-3 transform" style={{ backgroundColor: '#AE9B66', transform: 'rotate(45deg)' }}></div>
-              <div className="h-px flex-1 max-w-[200px]" style={{ backgroundColor: '#AE9B66' }}></div>
-            </div>
-            <h2 className="text-3xl font-semibold mt-2" style={{ fontFamily: 'serif', letterSpacing: '1px', color: '#AE9B66' }}>
-              OF ATTENDANCE
-            </h2>
-          </div>
-
-          {/* Recipient Name */}
-          <div className="text-center mb-4">
-            <p className="text-lg mb-3" style={{ fontFamily: 'serif', color: '#374151' }}>
-              This certificate is proudly presented to:
+        {/* NHRA/CME Optional Meta Data */}
+        <div className="mb-8 space-y-1.5 text-center">
+          {nhraHours && (
+            <p className="text-[15px]" style={{ fontFamily: 'Georgia, serif', color: '#222222' }}>
+              <strong style={{ color: '#0B1A42' }}>NHRA Approved Credits:</strong> {nhraHours} CME Credit Hours
             </p>
-            <h3 className="text-4xl font-bold mb-2" style={{ fontFamily: 'serif', fontStyle: 'italic', color: '#03215F' }}>
-              {displayName}
-            </h3>
-          </div>
-
-          {/* Recognition Statement */}
-          <div className="text-center mb-4">
-            <p className="text-lg mb-3" style={{ fontFamily: 'serif', color: '#374151' }}>
-              In recognition of successfully attending
+          )}
+          {nhraCodeExplicit && (
+            <p className="text-[15px]" style={{ fontFamily: 'Georgia, serif', color: '#222222' }}>
+              <strong style={{ color: '#0B1A42' }}>Accreditation Code:</strong> {nhraCodeExplicit}
             </p>
-            <h4 className="text-2xl font-semibold mb-3 px-8" style={{ fontFamily: 'serif', color: '#AE9B66' }}>
-              {certificate?.event_title || 'Early treatment of Class 3 Malocclusion, a necessity or unnecessary hassle?'}
-            </h4>
-            <p className="text-lg mb-2" style={{ fontFamily: 'serif', color: '#374151' }}>
-              Lecture in the Scientific Program of Bahrain Dental Society
-            </p>
-            <p className="text-lg font-semibold" style={{ fontFamily: 'serif', color: '#374151' }}>
-              On {formatDate(certificate?.checked_in_at || certificate?.event_date || new Date())}
-            </p>
-          </div>
-
-          {/* Accreditation Info */}
-          <div className="mt-5 mb-4 space-y-2">
-            {nhraHours ?
-              <p className="text-base" style={{ fontFamily: 'serif', color: '#374151' }}>
-                <span className="font-semibold">NHRA Approved Credits:</span>{' '}
-                <span className="font-bold" style={{ color: '#b8352d' }}>
-                  {nhraHours ? `${nhraHours} CME Credit Hours.` : ''}
-                </span>
-              </p>
-              : null}
-            {nhraCodeExplicit ?
-              <p className="text-base" style={{ fontFamily: 'serif', color: '#374151' }}>
-                <span className="font-semibold">NHRA Accreditation Code:</span>{' '}
-                <span className="font-mono" style={{ color: '#b8352d' }}>
-                  {nhraCodeExplicit || ''}
-                </span>
-              </p>
-              : null}
-            <p className="text-base" style={{ fontFamily: 'serif', color: '#374151' }}>
-              Held in {certificate?.venue_name || ''}.
-            </p>
-          </div>
-
-          {/* Disclaimer */}
-          <div
-            className="mt-4 mb-4 p-3"
-            style={{ backgroundColor: "#f9fafb", borderLeft: "4px solid #03215F" }}
-          >
-            <p
-              className="text-sm italic"
-              style={{ fontFamily: "serif", color: "#6b7280" }}
-            >
-              This certificate is an attendance certificate of a CPD activity only that
-              should &amp; can be used towards your CPD requirements for Professional
-              License renewal. It is by no means an academic certificate.
-            </p>
-          </div>
-
-          <div
-            className="mb-4 p-3"
-            style={{ backgroundColor: "#f9fafb", borderLeft: "4px solid #03215F" }}
-          >
-            <p
-              className="text-sm italic"
-              style={{ fontFamily: "serif", color: "#6b7280" }}
-            >
-              This is a digitally issued certificate and does not require a handwritten
-              signature. The digital authorization is valid and acceptable for official
-              use.
-            </p>
-          </div>
-
-
-
+          )}
         </div>
 
-        {/* Bottom Decorative Wave - Blue and Gold */}
-        <div
-          className="relative h-24 overflow-hidden flex-shrink-0"
-          style={{
-            background:
-              "#fff"
-          }}
-        >
-          <svg
-            className="absolute bottom-0 w-full h-full"
-            viewBox="0 0 1200 120"
-            preserveAspectRatio="none"
-
-          >
-            <defs>
-              <linearGradient id="waveGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#03215F" stopOpacity="0.99" />
-                <stop offset="100%" stopColor="#03215F" stopOpacity="0.00" />
-              </linearGradient>
-            </defs>
-
-            {/* Back soft wave */}
-            <path
-              d="M0,60 Q300,20 600,60 T1200,60 L1200,120 L0,120 Z"
-              fill="#03215F"
-              opacity="0.88"
-            />
-
-            {/* Middle wave */}
-            <path
-              d="M0,70 Q300,35 600,70 T1200,70 L1200,120 L0,120 Z"
-              fill="url(#waveGradient)"
-            />
-
-            {/* Front sharp wave */}
-            <path
-              d="M0,85 Q300,55 600,85 T1200,85 L1200,120 L0,120 Z"
-              fill="#03215F"
-              opacity="0.18"
-            />
-          </svg>
+        {/* Legal Footer (matching image) */}
+        <div className="max-w-[90%] text-center pb-2 opacity-80">
+          <p className="text-[10px] leading-relaxed mb-2 uppercase tracking-wide" style={{ fontFamily: 'Arial, sans-serif', color: '#555555' }}>
+            This certificate is an attendance certificate of a CPD activity only that should &amp; can be used towards your CPD requirements for Professional License renewal. It is by no means an academic certificate.
+          </p>
+          <p className="text-[10px] leading-relaxed uppercase tracking-wide" style={{ fontFamily: 'Arial, sans-serif', color: '#555555' }}>
+            This is a digitally issued certificate and does not require a handwritten signature. The digital authorization is valid and acceptable for official use.
+          </p>
         </div>
+
       </div>
     </div>
   )

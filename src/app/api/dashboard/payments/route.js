@@ -19,76 +19,37 @@ export async function GET(req) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.user_id;
 
-    // Fetch membership payments
-    const { data: membershipPayments, error: membershipError } = await supabase
-      .from("membership_payments")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+    // Fetch all records directly from payment_history
+    const { data: histPayments, error: histError } = await supabase
+      .from('payment_history')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
-    if (membershipError) throw membershipError;
+    if (histError) throw histError;
 
-    // Fetch event payments
-    const { data: eventPayments, error: eventError } = await supabase
-      .from("event_members")
-      .select(`
-        id,
-        price_paid,
-        joined_at,
-        events (
-          title
-        )
-      `)
-      .eq("user_id", userId)
-      .gt("price_paid", 0)
-      .order("joined_at", { ascending: false });
+    // Format payments for the dashboard timeline
+    const allPayments = (histPayments || []).map(payment => {
+      const isEvent = payment.payment_for === 'event_registration';
+      const isMembership = !isEvent;
 
-    if (eventError) throw eventError;
-
-    // Format membership payments
-    const formattedMembershipPayments = (membershipPayments || [])
-      // Exclude payments that were explicitly marked as merged into a combined payment
-      .filter(p => {
-        const notes = (p.notes || '').toString().toLowerCase();
-        if (!notes) return true;
-        if (notes.includes('merged into combined payment')) return false;
-        if (notes.includes('marked paid as part of combined payment')) return false;
-        return true;
-      })
-      .map(payment => ({
-      id: payment.id,
-      payment_type: 'membership',
-      amount: payment.amount,
-      currency: payment.currency,
-      paid: payment.paid,
-      paid_at: payment.paid_at,
-      status: payment.paid ? 'completed' : payment.status || 'pending',
-      reference: payment.reference,
-      description: `Membership ${payment.membership_start_date ? 'Renewal' : 'Payment'}`,
-      created_at: payment.created_at,
-      period: payment.membership_start_date && payment.membership_end_date 
-        ? `${new Date(payment.membership_start_date).toLocaleDateString('en-BH', { month: 'short', year: 'numeric' })} - ${new Date(payment.membership_end_date).toLocaleDateString('en-BH', { month: 'short', year: 'numeric' })}`
-        : null
-    }));
-
-    // Format event payments
-    const formattedEventPayments = (eventPayments || []).map(payment => ({
-      id: payment.id,
-      payment_type: 'event',
-      amount: payment.price_paid,
-      currency: 'BHD',
-      paid: true,
-      paid_at: payment.joined_at,
-      status: 'completed',
-      reference: `EVT-${payment.id.slice(0, 8).toUpperCase()}`,
-      description: `Event: ${payment.events?.title || 'Event Registration'}`,
-      created_at: payment.joined_at,
-      event_title: payment.events?.title
-    }));
-
-    // Combine and sort all payments
-    const allPayments = [...formattedMembershipPayments, ...formattedEventPayments]
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      return {
+        id: payment.id,
+        payment_type: isEvent ? 'event' : 'membership',
+        amount: payment.amount,
+        currency: payment.currency || 'BHD',
+        paid: payment.status === 'completed',
+        paid_at: payment.status === 'completed' ? payment.created_at : null,
+        status: payment.status,
+        reference: payment.invoice_id || `${isEvent ? 'EVT' : 'MEM'}-${String(payment.id).slice(0, 8).toUpperCase()}`,
+        description: isEvent
+          ? `Event: ${payment.details?.event_title || 'Registration'}`
+          : `Membership ${payment.payment_for ? payment.payment_for.replace(/_/g, " ") : ''}`,
+        created_at: payment.created_at,
+        event_title: isEvent ? payment.details?.event_title : undefined,
+        period: isMembership && payment.details?.plan_name ? payment.details.plan_name : null
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -98,7 +59,7 @@ export async function GET(req) {
 
   } catch (error) {
     console.error("PAYMENTS API ERROR:", error);
-    
+
     if (error.name === 'JsonWebTokenError') {
       return NextResponse.json(
         { success: false, message: "Invalid token" },

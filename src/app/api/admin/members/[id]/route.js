@@ -112,35 +112,47 @@ export async function GET(request, { params }) {
       if (logErr) throw logErr;
       attendance = logs;
     }
-
-    // fee summary (from view or compute)
-    // try view member_fee_summary first
-    let feeSummary = null;
-    const { data: feeData, error: feeErr } = await supabase
-      .from('member_fee_summary')
+    // compute fee summary strictly from payment_history
+    const { data: histPayments } = await supabase
+      .from('payment_history')
       .select('*')
       .eq('user_id', id)
-      .single();
+      .order('created_at', { ascending: false });
 
-    if (!feeErr && feeData) {
-      feeSummary = feeData;
-    } else {
-      // fallback: compute from membership_payments
-      const { data: payments } = await supabase
-        .from('membership_payments')
-        .select('payment_type, amount, paid')
-        .eq('user_id', id);
+    // 1. Membership Payments
+    const { data: memPayments } = await supabase
+      .from('membership_payments')
+      .select('*')
+      .eq('user_id', id)
+      .order('created_at', { ascending: false });
 
-      const regPaid = (payments || []).filter(p => p.payment_type === 'registration').reduce((s, p) => s + Number(p.amount || 0), 0);
-      const annPaid = (payments || []).filter(p => p.payment_type === 'annual').reduce((s, p) => s + Number(p.amount || 0), 0);
-      const totalPaid = (payments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
-      feeSummary = {
-        user_id: id,
-        registration_paid: regPaid,
-        annual_paid: annPaid,
-        total_paid: totalPaid
-      };
-    }
+    let regPaid = 0;
+    let annPaid = 0;
+    let eventTotal = 0;
+    let totalPaid = 0;
+
+    const completedHist = (histPayments || []).filter(p => p.status === 'completed');
+
+    completedHist.forEach(p => {
+      const amt = Number(p.amount || 0);
+      totalPaid += amt;
+
+      if (p.payment_for === 'event_registration') {
+        eventTotal += amt;
+      } else if (p.payment_for === 'registration' || p.payment_for === 'membership_payment' || p.payment_for === 'subscription_registration' || p.payment_for === 'subscription_combined') {
+        regPaid += amt;
+      } else if (p.payment_for?.includes('subscription') || p.payment_for?.includes('annual')) {
+        annPaid += amt;
+      }
+    });
+
+    let feeSummary = {
+      user_id: id,
+      registration_paid: regPaid,
+      annual_paid: annPaid,
+      total_paid: totalPaid,
+      event_paid: eventTotal
+    };
 
     return NextResponse.json({
       success: true,
@@ -148,7 +160,9 @@ export async function GET(request, { params }) {
       member: user, // Keep for backward compatibility
       joined_events: joined,
       attendance_logs: attendance,
-      fee_summary: feeSummary
+      fee_summary: feeSummary,
+      payment_history: histPayments,
+      membership_payments: memPayments
     });
   } catch (err) {
     console.error('Member GET Error:', err);
@@ -240,9 +254,9 @@ export async function PUT(request, { params }) {
       // Only capture profile fields that are actually present in the form
       profileData = {};
       const profileKeys = [
-        'gender','dob','address','city','state','pin_code','cpr_id','nationality',
-        'type_of_application','membership_date','work_sector','employer','position',
-        'specialty','category','license_number','years_of_experience'
+        'gender', 'dob', 'address', 'city', 'state', 'pin_code', 'cpr_id', 'nationality',
+        'type_of_application', 'membership_date', 'work_sector', 'employer', 'position',
+        'specialty', 'category', 'license_number', 'years_of_experience'
       ];
       for (const key of profileKeys) {
         if (formData.has(key)) {
@@ -330,9 +344,9 @@ export async function PUT(request, { params }) {
         profileData = body.member_profile;
       } else {
         const profileKeys = [
-          'gender','dob','address','city','state','pin_code','cpr_id','nationality',
-          'type_of_application','membership_date','work_sector','employer','position',
-          'specialty','category','license_number','years_of_experience'
+          'gender', 'dob', 'address', 'city', 'state', 'pin_code', 'cpr_id', 'nationality',
+          'type_of_application', 'membership_date', 'work_sector', 'employer', 'position',
+          'specialty', 'category', 'license_number', 'years_of_experience'
         ];
         for (const key of profileKeys) {
           if (body[key] !== undefined) {
@@ -492,7 +506,7 @@ export async function PUT(request, { params }) {
         .select('personal_photo_url')
         .eq('user_id', id)
         .single();
-      
+
       if (existingProfile?.personal_photo_url) {
         updateUser.profile_image = existingProfile.personal_photo_url;
       }

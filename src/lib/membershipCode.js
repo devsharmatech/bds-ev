@@ -31,6 +31,5 @@ export async function generateMembershipCode() {
   }
 
   const nextNumber = maxNumber + 1;
-  const padded = String(nextNumber).padStart(5, "0");
-  return `BDS-${padded}`;
+  return `BDS-${nextNumber}`;
 }

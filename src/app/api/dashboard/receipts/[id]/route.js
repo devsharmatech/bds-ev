@@ -39,21 +39,21 @@ export async function GET(req, { params }) {
         },
       };
     } else {
-      // Event payment
-      const { data: event } = await supabase
-        .from("event_members")
-        .select(`id, price_paid, joined_at, events(title)`)
+      // Event payment from payment_history
+      const { data: eventHistory } = await supabase
+        .from("payment_history")
+        .select("id, amount, created_at, details")
         .eq("id", id)
         .eq("user_id", userId)
         .single();
 
-      if (event) {
+      if (eventHistory) {
         paymentData = {
           type: "event",
-          reference: `EVT-${event.id.slice(0, 8).toUpperCase()}`,
-          description: `Event: ${event.events?.title}`,
-          amount: event.price_paid,
-          paid_at: event.joined_at,
+          reference: `EVT-${String(eventHistory.id).slice(0, 8).toUpperCase()}`,
+          description: `Event: ${eventHistory.details?.event_title || 'Registration'}`,
+          amount: eventHistory.amount,
+          paid_at: eventHistory.created_at,
         };
       }
     }

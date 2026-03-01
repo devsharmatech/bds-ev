@@ -77,29 +77,6 @@ export default function CertificateModal({ certificate, user, isOpen, onClose })
         ignoreElements: (element) => {
           // Ignore elements that might cause issues
           return false
-        },
-        onclone: (clonedDoc) => {
-          // Convert modern color functions to hex/rgb before capturing
-          const style = clonedDoc.createElement('style')
-          style.textContent = `
-            * {
-              color: inherit !important;
-            }
-          `
-          clonedDoc.head.appendChild(style)
-          
-          // Remove any elements with lab() or other modern color functions
-          const allElements = clonedDoc.querySelectorAll('*')
-          allElements.forEach(el => {
-            const computedStyle = window.getComputedStyle(el)
-            // Force standard colors
-            if (el.style.color && el.style.color.includes('lab')) {
-              el.style.color = '#03215F'
-            }
-            if (el.style.backgroundColor && el.style.backgroundColor.includes('lab')) {
-              el.style.backgroundColor = '#ffffff'
-            }
-          })
         }
       })
 
@@ -156,9 +133,9 @@ export default function CertificateModal({ certificate, user, isOpen, onClose })
         {/* Modal */}
         <div className="flex min-h-full items-center justify-center p-4">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="relative bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden"
           >
             {/* Header */}
