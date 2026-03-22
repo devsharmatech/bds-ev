@@ -1,0 +1,1153 @@
+{
+  "info": {
+    "name": "BDS Mobile APIs",
+    "description": "Bahrain Dental Society - Mobile API Collection\n\nAll APIs use Bearer Token auth (no cookies).\n\n**How to use:**\n1. Call Login first → it returns a `token`\n2. The token is automatically saved to the `{{token}}` variable\n3. All protected routes use `Authorization: Bearer {{token}}`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Token saved!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"devsharma10.developer@gmail.com\",\n  \"password\": \"Test@1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register (Full)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Token saved from registration!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullNameEng\": \"Ahmed Al Khalifa\",\n  \"fullNameArb\": \"أحمد الخليفة\",\n  \"email\": \"devsharma10.developer@gmail.com\",\n  \"password\": \"Test@1234\",\n  \"mobile\": \"+97336001234\",\n  \"cpr\": \"010199001\",\n  \"gender\": \"Male\",\n  \"nationality\": \"Bahraini\",\n  \"category\": \"Dentist\",\n  \"workSector\": \"Private\",\n  \"employer\": \"Bahrain Specialist Hospital\",\n  \"position\": \"Senior Dentist\",\n  \"specialty\": \"Orthodontics\",\n  \"address\": \"Building 456, Road 1234, Block 301, Manama, Bahrain\",\n  \"membershipType\": \"free\",\n  \"typeOfApplication\": \"New\",\n  \"licenseNumber\": \"BH-DEN-2024-0567\",\n  \"yearsOfExperience\": \"8\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register Lite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    console.log('Token saved from lite registration!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Fatima Al Doseri\",\n  \"email\": \"devsharma10.developer@gmail.com\",\n  \"phone\": \"+97339112233\",\n  \"password\": \"Test@1234\",\n  \"cpr_id\": \"020288002\",\n  \"gender\": \"Female\",\n  \"nationality\": \"Bahraini\",\n  \"address\": \"Flat 12, Building 789, Juffair, Bahrain\",\n  \"city\": \"Manama\",\n  \"work_sector\": \"Government\",\n  \"employer\": \"Ministry of Health Bahrain\",\n  \"position\": \"Dental Hygienist\",\n  \"specialty\": \"Periodontics\",\n  \"category\": \"Dental Hygienist\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/auth/register-lite",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "auth", "register-lite"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Pending Payment (by email)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/auth/register/pending-payment?email=devsharma10.developer@gmail.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "auth", "register", "pending-payment"],
+              "query": [
+                { "key": "email", "value": "devsharma10.developer@gmail.com" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔑 Forgot Password",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"devsharma10.developer@gmail.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/auth/forgot-password/send-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "auth", "forgot-password", "send-otp"]
+            }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"devsharma10.developer@gmail.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/auth/forgot-password/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "auth", "forgot-password", "verify-otp"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resetToken\": \"<paste_reset_token_from_verify_otp>\",\n  \"newPassword\": \"NewTest@1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/auth/forgot-password/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "auth", "forgot-password", "reset"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Dashboard - Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Ahmed Al Khalifa\",\n  \"phone\": \"+97336001234\",\n  \"mobile\": \"+97336001234\",\n  \"gender\": \"Male\",\n  \"dob\": \"1990-05-15\",\n  \"address\": \"Building 456, Road 1234, Block 301\",\n  \"city\": \"Manama\",\n  \"state\": \"Capital Governorate\",\n  \"pin_code\": \"301\",\n  \"nationality\": \"Bahraini\",\n  \"work_sector\": \"Private\",\n  \"employer\": \"Bahrain Specialist Hospital\",\n  \"position\": \"Senior Dentist\",\n  \"specialty\": \"Orthodontics\",\n  \"category\": \"Dentist\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard - Stats & Info",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Membership Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/membership-info",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "membership-info"]
+            }
+          }
+        },
+        {
+          "name": "Get Membership Card",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/membership-card",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "membership-card"]
+            }
+          }
+        },
+        {
+          "name": "Get Verification Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/verification",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "verification"]
+            }
+          }
+        },
+        {
+          "name": "Update Verification",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_card_url\": \"https://example.com/id_card.jpg\",\n  \"personal_photo_url\": \"https://example.com/photo.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/verification",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "verification"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Dashboard - Events",
+      "item": [
+        {
+          "name": "Get My Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "events"]
+            }
+          }
+        },
+        {
+          "name": "Get My Check-ins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/check-ins",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "check-ins"]
+            }
+          }
+        },
+        {
+          "name": "Get Certificates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/certificates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "certificates"]
+            }
+          }
+        },
+        {
+          "name": "Download Certificate PDF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/certificates/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "certificates", ":id"],
+              "variable": [
+                { "key": "id", "value": "<event_id>" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💬 Dashboard - Feedback",
+      "item": [
+        {
+          "name": "Get My Feedback",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "feedback"]
+            }
+          }
+        },
+        {
+          "name": "Get Feedback by Event",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/feedback?event_id=<event_id>",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "feedback"],
+              "query": [
+                { "key": "event_id", "value": "<event_id>" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Submit Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_member_id\": \"<event_member_id>\",\n  \"event_id\": \"<event_id>\",\n  \"rating\": 5,\n  \"feedback_text\": \"Excellent event! Very informative conference on dental implant techniques.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "feedback"]
+            }
+          }
+        },
+        {
+          "name": "Update Feedback",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"feedback_id\": \"<feedback_id>\",\n  \"rating\": 4,\n  \"feedback_text\": \"Updated: Great session on modern orthodontics practices.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "feedback"]
+            }
+          }
+        },
+        {
+          "name": "Delete Feedback",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/feedback?id=<feedback_id>",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "feedback"],
+              "query": [
+                { "key": "id", "value": "<feedback_id>" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💳 Dashboard - Payments & Subscriptions",
+      "item": [
+        {
+          "name": "Get Payment History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/subscriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "subscriptions"]
+            }
+          }
+        },
+        {
+          "name": "Upgrade Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_id\": \"<subscription_plan_id>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/subscriptions/upgrade",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "subscriptions", "upgrade"]
+            }
+          }
+        },
+        {
+          "name": "Renew Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscription_id\": \"<subscription_id>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/subscriptions/renew",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "subscriptions", "renew"]
+            }
+          }
+        },
+        {
+          "name": "Get Receipt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/receipts/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "receipts", ":id"],
+              "variable": [
+                { "key": "id", "value": "<payment_id>" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Dashboard - Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notification_id\": \"<notification_id>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/notifications?id=<notification_id>",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "notifications"],
+              "query": [
+                { "key": "id", "value": "<notification_id>" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎫 Events",
+      "item": [
+        {
+          "name": "Get Public Events",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/event/public",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "event", "public"]
+            }
+          }
+        },
+        {
+          "name": "Get Event by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/event/:slug",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "event", ":slug"],
+              "variable": [
+                { "key": "slug", "value": "<event_slug>" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Join Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"<event_id>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/event/join",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "event", "join"]
+            }
+          }
+        },
+        {
+          "name": "Apply Coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"<event_id>\",\n  \"coupon_code\": \"BDS2024\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/event/apply-coupon",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "event", "apply-coupon"]
+            }
+          }
+        },
+        {
+          "name": "Event Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"EVT-ABCD1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/event/check-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "event", "check-in"]
+            }
+          }
+        },
+        {
+          "name": "Check-in History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/event/check-in/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "event", "check-in", "history"]
+            }
+          }
+        },
+        {
+          "name": "Search Events",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/search/events?q=dental",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "search", "events"],
+              "query": [
+                { "key": "q", "value": "dental" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "✅ Check-in",
+      "item": [
+        {
+          "name": "Validate Check-in Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"EVT-ABCD1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/check-in/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "check-in", "validate"]
+            }
+          }
+        },
+        {
+          "name": "Perform Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"EVT-ABCD1234\",\n  \"event_id\": \"<event_id>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/check-in/checkin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "check-in", "checkin"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "item": [
+        {
+          "name": "Register Device Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_token\": \"fcm_device_token_here\",\n  \"platform\": \"android\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/notifications/device-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "notifications", "device-token"]
+            }
+          }
+        },
+        {
+          "name": "Remove Device Token",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_token\": \"fcm_device_token_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/notifications/device-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "notifications", "device-token"]
+            }
+          }
+        },
+        {
+          "name": "Expiry Reminder",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/notifications/expiry-reminder",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "notifications", "expiry-reminder"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💰 Payments - Event",
+      "item": [
+        {
+          "name": "Create Event Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"<event_id>\",\n  \"callback_url\": \"{{baseUrl}}/api/mobile/payments/event/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/payments/event/create-invoice",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "payments", "event", "create-invoice"]
+            }
+          }
+        },
+        {
+          "name": "Execute Event Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": \"<myfatoorah_payment_id>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/payments/event/execute-payment",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "payments", "event", "execute-payment"]
+            }
+          }
+        },
+        {
+          "name": "Event Payment Callback",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/payments/event/callback?paymentId=<payment_id>",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "payments", "event", "callback"],
+              "query": [
+                { "key": "paymentId", "value": "<payment_id>" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💰 Payments - Subscription",
+      "item": [
+        {
+          "name": "Create Subscription Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_id\": \"<membership_payment_id>\",\n  \"callback_url\": \"{{baseUrl}}/api/mobile/payments/subscription/callback\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/payments/subscription/create-invoice",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "payments", "subscription", "create-invoice"]
+            }
+          }
+        },
+        {
+          "name": "Execute Subscription Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": \"<myfatoorah_payment_id>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/payments/subscription/execute-payment",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "payments", "subscription", "execute-payment"]
+            }
+          }
+        },
+        {
+          "name": "Subscription Payment Callback",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/payments/subscription/callback?paymentId=<payment_id>",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "payments", "subscription", "callback"],
+              "query": [
+                { "key": "paymentId", "value": "<payment_id>" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏛️ Public - Committees",
+      "item": [
+        {
+          "name": "Get All Committees",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/committees",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "committees"]
+            }
+          }
+        },
+        {
+          "name": "Get Committee by Slug",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/committees/:slug",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "committees", ":slug"],
+              "variable": [
+                { "key": "slug", "value": "executive-committee" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📷 Public - Gallery",
+      "item": [
+        {
+          "name": "Get All Galleries",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/gallery",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "gallery"]
+            }
+          }
+        },
+        {
+          "name": "Get Gallery by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/gallery/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "gallery", ":id"],
+              "variable": [
+                { "key": "id", "value": "<gallery_id>" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 Public - Research & Others",
+      "item": [
+        {
+          "name": "Get Research Papers",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/research",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "research"]
+            }
+          }
+        },
+        {
+          "name": "Submit Research",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Impact of CAD/CAM on Bahraini Dental Practices\",\n  \"abstract\": \"A comprehensive study on digital dentistry adoption in the Kingdom of Bahrain.\",\n  \"authors\": \"Dr. Ahmed Al Khalifa, Dr. Fatima Al Doseri\",\n  \"category\": \"Digital Dentistry\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/research/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "research", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Submit Contact Form",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ahmed Al Khalifa\",\n  \"email\": \"devsharma10.developer@gmail.com\",\n  \"phone\": \"+97336001234\",\n  \"subject\": \"Membership Inquiry\",\n  \"message\": \"I would like to inquire about the annual dental conference in Manama.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/contact/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "contact", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Get Site Members",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/site-members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "site-members"]
+            }
+          }
+        },
+        {
+          "name": "Get Hero Settings",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/site-settings/hero",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "site-settings", "hero"]
+            }
+          }
+        },
+        {
+          "name": "Verify Speaker Badge",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/speaker-badge/verify?code=<badge_code>",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "speaker-badge", "verify"],
+              "query": [
+                { "key": "code", "value": "<badge_code>" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Signed Upload URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filename\": \"profile_photo.jpg\",\n  \"contentType\": \"image/jpeg\",\n  \"folder\": \"profiles\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/upload/signed-url",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "upload", "signed-url"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎤 Speaker Request",
+      "item": [
+        {
+          "name": "Submit Speaker Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"<event_id>\",\n  \"topic\": \"Advanced Endodontic Techniques in Bahrain\",\n  \"bio\": \"Dr. Ahmed Al Khalifa is a senior dentist with 8 years of experience specializing in orthodontics at Bahrain Specialist Hospital.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/events/speaker-request",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "events", "speaker-request"]
+            }
+          }
+        },
+        {
+          "name": "Check Speaker Request Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/events/speaker-request/check?event_id=<event_id>",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "events", "speaker-request", "check"],
+              "query": [
+                { "key": "event_id", "value": "<event_id>" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

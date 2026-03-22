@@ -1,0 +1,73 @@
+import { supabase } from "@/lib/supabaseAdmin";
+import { verifyTokenMobile } from "@/lib/verifyTokenMobile";
+import { NextResponse } from "next/server";
+export async function GET(req, { params }) {
+  try {
+    const decoded = verifyTokenMobile(req);
+    const userId = decoded.user_id;
+    const { id } = await params;
+
+    let paymentData = null;
+
+    // Membership payment
+    const { data: membership } = await supabase
+      .from("membership_payments")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .single();
+
+    if (membership) {
+      paymentData = {
+        type: "membership",
+        reference: `MEM-${membership.id.slice(0, 8).toUpperCase()}`,
+        description: "Membership Payment",
+        amount: membership.amount,
+        paid_at: membership.created_at,
+        period: {
+          start: membership.membership_start_date,
+          end: membership.membership_end_date,
+        },
+      };
+    } else {
+      // Event payment from payment_history
+      const { data: eventHistory } = await supabase
+        .from("payment_history")
+        .select("id, amount, created_at, details")
+        .eq("id", id)
+        .eq("user_id", userId)
+        .single();
+
+      if (eventHistory) {
+        paymentData = {
+          type: "event",
+          reference: `EVT-${String(eventHistory.id).slice(0, 8).toUpperCase()}`,
+          description: `Event: ${eventHistory.details?.event_title || 'Registration'}`,
+          amount: eventHistory.amount,
+          paid_at: eventHistory.created_at,
+        };
+      }
+    }
+
+    if (!paymentData) {
+      return NextResponse.json({ success: false }, { status: 404 });
+    }
+
+    const { data: user } = await supabase
+      .from("users")
+      .select("full_name, email, membership_code, membership_type, membership_status, membership_expiry_date")
+      .eq("id", userId)
+      .single();
+
+    return NextResponse.json({
+      success: true,
+      receipt: {
+        ...paymentData,
+        user,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ success: false }, { status: 500 });
+  }
+}
