@@ -103,7 +103,7 @@ export async function POST(request) {
     }
 
     // Check authentication (optional for registration flow)
-    const authHeader = req?.headers?.get?.("authorization");
+    const authHeader = request?.headers?.get?.("authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
     let userId = payment.user_id;
 

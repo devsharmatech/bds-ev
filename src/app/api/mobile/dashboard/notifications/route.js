@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
  */
 export async function GET(request) {
   try {
-    const decoded = verifyTokenMobile(req);
+    const decoded = verifyTokenMobile(request);
     const userId = decoded.user_id;
 
     const url = new URL(request.url);
@@ -70,7 +70,7 @@ export async function GET(request) {
  */
 export async function PUT(request) {
   try {
-    const decoded = verifyTokenMobile(req);
+    const decoded = verifyTokenMobile(request);
     const userId = decoded.user_id;
 
     const { notification_id, mark_all_read } = await request.json();
@@ -145,7 +145,7 @@ export async function PUT(request) {
  */
 export async function DELETE(request) {
   try {
-    const decoded = verifyTokenMobile(req);
+    const decoded = verifyTokenMobile(request);
     const userId = decoded.user_id;
 
     const url = new URL(request.url);

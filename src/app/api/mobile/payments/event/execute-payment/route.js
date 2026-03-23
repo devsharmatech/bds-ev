@@ -52,7 +52,7 @@ export async function POST(request) {
     }
 
     // Verify authentication
-    const authHeader = req?.headers?.get?.("authorization");
+    const authHeader = request?.headers?.get?.("authorization");
     const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
     
     if (!token) {

@@ -388,6 +388,21 @@
               ]
             }
           }
+        },
+        {
+          "name": "Get Certificate Detail (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/certificates/:id/detail",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "certificates", ":id", "detail"],
+              "variable": [
+                { "key": "id", "value": "<event_id>" }
+              ]
+            }
+          }
         }
       ]
     },
@@ -558,7 +573,7 @@
       "name": "🔔 Dashboard - Notifications",
       "item": [
         {
-          "name": "Get Notifications",
+          "name": "Get All Notifications",
           "request": {
             "method": "GET",
             "header": [],
@@ -570,7 +585,22 @@
           }
         },
         {
-          "name": "Mark Notification Read",
+          "name": "Get Unread Notifications Only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/notifications?unread_only=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "notifications"],
+              "query": [
+                { "key": "unread_only", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark Single Notification Read",
           "request": {
             "method": "PUT",
             "header": [
@@ -588,7 +618,25 @@
           }
         },
         {
-          "name": "Delete Notification",
+          "name": "Mark All Notifications Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mark_all_read\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Delete Single Notification",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -598,6 +646,21 @@
               "path": ["api", "mobile", "dashboard", "notifications"],
               "query": [
                 { "key": "id", "value": "<notification_id>" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Clear All Notifications",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/dashboard/notifications?delete_all=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "dashboard", "notifications"],
+              "query": [
+                { "key": "delete_all", "value": "true" }
               ]
             }
           }
@@ -866,6 +929,47 @@
               "query": [
                 { "key": "paymentId", "value": "<payment_id>" }
               ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "✅ Payment Confirmation",
+      "item": [
+        {
+          "name": "Confirm Event Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": \"<myfatoorah_payment_id>\",\n  \"type\": \"event\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/payments/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "payments", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Confirm Subscription Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": \"<myfatoorah_payment_id>\",\n  \"type\": \"subscription\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mobile/payments/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mobile", "payments", "confirm"]
             }
           }
         }
