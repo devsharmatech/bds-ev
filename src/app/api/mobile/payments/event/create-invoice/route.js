@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabaseAdmin';
-import jwt from "jsonwebtoken";
 import { verifyTokenMobile } from "@/lib/verifyTokenMobile";
 import { NextResponse } from 'next/server';
 import { initiateEventPayment } from '@/lib/myfatoorah';
@@ -15,11 +14,30 @@ export async function POST(request) {
   
   try {
     requestData = await request.json();
-    const { event_id, user_id, coupon_code } = requestData;
+    
+    // Support both snake_case and camelCase for mobile flexibility
+    const event_id = requestData.event_id || requestData.eventId;
+    const body_user_id = requestData.user_id || requestData.userId;
+    const coupon_code = requestData.coupon_code || requestData.couponCode;
+
+    // Verify authentication and get user_id from token
+    let decoded;
+    try {
+      decoded = verifyTokenMobile(request);
+    } catch (error) {
+      console.error('[EVENT-CREATE-INVOICE] Auth error:', error.message);
+      return NextResponse.json(
+        { success: false, message: error.message || 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const user_id = decoded.user_id;
 
     console.log('[EVENT-CREATE-INVOICE] Request received:', {
       event_id,
       user_id,
+      body_user_id,
       timestamp: new Date().toISOString()
     });
 
@@ -27,37 +45,16 @@ export async function POST(request) {
       return NextResponse.json(
         { 
           success: false, 
-          message: 'event_id and user_id are required'
+          message: 'event_id is required'
         },
         { status: 400 }
       );
     }
 
-    // Verify authentication
-    const authHeader = req?.headers?.get?.("authorization");
-    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-    
-    if (!token) {
+    // Verify user matches if both provided
+    if (body_user_id && body_user_id !== user_id) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Verify user matches
-    if (decoded.user_id !== user_id) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized' },
+        { success: false, message: 'Unauthorized: user_id mismatch' },
         { status: 403 }
       );
     }
@@ -145,17 +142,8 @@ export async function POST(request) {
     }
 
     // Calculate price using the new pricing utility
-    // This handles member type, category (student, hygienist), and pricing tier (early bird, standard, onsite)
     const priceInfo = getUserEventPrice(event, user);
     let amount = priceInfo.price;
-
-    console.log('[EVENT-CREATE-INVOICE] Price calculated (before coupon):', {
-      user_category: priceInfo.category,
-      pricing_tier: priceInfo.tier,
-      amount,
-      user_membership_type: user.membership_type,
-      user_profile_category: user.category
-    });
 
     let appliedCoupon = null;
 
@@ -191,7 +179,6 @@ export async function POST(request) {
         );
       }
 
-      // Treat NULL or <= 0 max_uses as unlimited
       if (
         coupon.max_uses != null &&
         Number(coupon.max_uses) > 0 &&
@@ -203,10 +190,6 @@ export async function POST(request) {
         );
       }
 
-      // Check if user already used this coupon for this event
-      // 1) Prefer FINALIZED usages (linked to an event_member)
-      // 2) Fallback: if the user has a paid event_member row for this event
-      //    AND any coupon usage exists for this user/event/coupon, treat as used.
       const { data: existingUsage } = await supabase
         .from('event_coupon_usages')
         .select('id, event_member_id')
@@ -223,32 +206,6 @@ export async function POST(request) {
         );
       }
 
-      const { data: paidMember } = await supabase
-        .from('event_members')
-        .select('id, price_paid')
-        .eq('event_id', event_id)
-        .eq('user_id', user_id)
-        .gt('price_paid', 0)
-        .maybeSingle();
-
-      if (paidMember) {
-        const { data: anyUsage } = await supabase
-          .from('event_coupon_usages')
-          .select('id')
-          .eq('coupon_id', coupon.id)
-          .eq('event_id', event_id)
-          .eq('user_id', user_id)
-          .limit(1)
-          .maybeSingle();
-
-        if (anyUsage) {
-          return NextResponse.json(
-            { success: false, message: 'You have already used this coupon for this event' },
-            { status: 400 }
-          );
-        }
-      }
-
       let discount = 0;
       if (coupon.discount_type === 'fixed') {
         discount = Number(coupon.discount_value) || 0;
@@ -256,46 +213,11 @@ export async function POST(request) {
         discount = (amount * Number(coupon.discount_value || 0)) / 100;
       }
 
-      if (discount <= 0) {
-        return NextResponse.json(
-          { success: false, message: 'Invalid discount configuration' },
-          { status: 400 }
-        );
-      }
-
       if (discount >= amount) discount = amount;
       const finalAmount = amount - discount;
 
-      // Clean up any old provisional usages (e.g. abandoned payments)
-      await supabase
-        .from('event_coupon_usages')
-        .delete()
-        .eq('coupon_id', coupon.id)
-        .eq('event_id', event_id)
-        .eq('user_id', user_id)
-        .is('event_member_id', null);
-
-      // Record a provisional usage row (without payment_id yet)
-      await supabase.from('event_coupon_usages').insert({
-        coupon_id: coupon.id,
-        event_id,
-        user_id,
-        amount_before: amount,
-        discount_amount: discount,
-        amount_after: finalAmount,
-        metadata: { stage: 'invoice_created' },
-      });
-
       appliedCoupon = { ...coupon, discount_amount: discount };
       amount = finalAmount;
-
-      console.log('[EVENT-CREATE-INVOICE] Coupon applied:', {
-        code: coupon.code,
-        discount_type: coupon.discount_type,
-        discount_value: coupon.discount_value,
-        discount_amount: discount,
-        final_amount: amount,
-      });
     }
 
     if (!amount || amount <= 0) {
@@ -308,52 +230,27 @@ export async function POST(request) {
       );
     }
 
-    // Get base URL
-    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
+    // For mobile APIs, always use production URL for MyFatoorah callbacks
+    // Mobile app should intercept the redirect and call the mobile confirm/callback endpoint
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes('localhost'))
+      ? process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')
+      : 'https://bds-ev.vercel.app';
     
-    if (!baseUrl || baseUrl.includes('localhost')) {
-      const origin = request.headers.get('origin') || request.headers.get('host');
-      if (origin) {
-        if (origin.startsWith('http')) {
-          baseUrl = origin;
-        } else {
-          const protocol = request.headers.get('x-forwarded-proto') || 'https';
-          baseUrl = `${protocol}://${origin}`;
-        }
-      } else {
-        baseUrl = 'https://bds-ev.vercel.app';
-      }
-    }
-    
-    baseUrl = baseUrl.replace(/\/$/, '');
-    
-    const callbackUrl = `${baseUrl}/api/payments/event/callback?event_id=${event_id}&user_id=${user_id}`;
-    const errorUrl = `${baseUrl}/events?error=payment_failed`;
+    // Use a mobile-friendly callback URL that the app can intercept
+    const callbackUrl = `${baseUrl}/api/mobile/payments/event/payment-complete?event_id=${event_id}&status=success`;
+    const errorUrl = `${baseUrl}/api/mobile/payments/event/payment-complete?event_id=${event_id}&status=failed`;
 
-    // Create invoice items
-    const invoiceItems = [{
-      ItemName: `Event Registration - ${event.title}` + (appliedCoupon ? ` (Coupon ${appliedCoupon.code})` : ''),
-      Quantity: 1,
-      UnitPrice: amount
-    }];
-
-    const customerMobile = (user.mobile || user.phone || '').trim() || null;
-
-    console.log('[EVENT-CREATE-INVOICE] Calling MyFatoorah InitiatePayment:', {
-      invoiceAmount: amount,
-      customerName: user.full_name,
-      customerEmail: user.email,
-      customerMobile: customerMobile ? '***' : 'NOT_PROVIDED',
-      event_id
-    });
-
-    // Initiate payment to get payment methods
+    // Initiate payment
     const initiateResult = await initiateEventPayment({
       invoiceAmount: amount,
       customerName: user.full_name,
       customerEmail: user.email,
-      customerMobile: customerMobile,
-      invoiceItems,
+      customerMobile: (user.mobile || user.phone || '').trim() || null,
+      invoiceItems: [{
+        ItemName: `Event Registration - ${event.title}` + (appliedCoupon ? ` (Coupon ${appliedCoupon.code})` : ''),
+        Quantity: 1,
+        UnitPrice: amount
+      }],
       callbackUrl,
       errorUrl,
       referenceId: `EVT-${event_id}-${user_id}`,
@@ -361,51 +258,27 @@ export async function POST(request) {
     });
 
     if (!initiateResult.success) {
-      console.error('[EVENT-CREATE-INVOICE] MyFatoorah InitiatePayment failed:', {
-        error: initiateResult.message,
-        event_id,
-        user_id
-      });
       return NextResponse.json(
-        { 
-          success: false, 
-          message: initiateResult.message || 'Failed to initiate payment',
-          error: initiateResult.error || initiateResult.message
-        },
+        { success: false, message: initiateResult.message || 'Failed to initiate payment' },
         { status: 500 }
       );
     }
 
-    console.log('[EVENT-CREATE-INVOICE] MyFatoorah InitiatePayment successful:', {
-      paymentMethodsCount: initiateResult.paymentMethods?.length || 0,
-      event_id
-    });
-
-    // Format payment methods for frontend
-    const formattedPaymentMethods = (initiateResult.paymentMethods || []).map(method => ({
-      id: method.PaymentMethodId,
-      name: method.PaymentMethodEn,
-      nameAr: method.PaymentMethodAr,
-      code: method.PaymentMethodCode,
-      imageUrl: method.ImageUrl,
-      isDirectPayment: method.IsDirectPayment,
-      serviceCharge: method.ServiceCharge,
-      totalAmount: method.TotalAmount,
-      currency: method.CurrencyIso,
-      paymentCurrency: method.PaymentCurrencyIso,
-      isEmbeddedSupported: method.IsEmbeddedSupported
-    }));
-
-    const duration = Date.now() - startTime;
-    console.log('[EVENT-CREATE-INVOICE] Request completed successfully:', {
-      event_id,
-      paymentMethodsCount: formattedPaymentMethods.length,
-      duration_ms: duration
-    });
-
     return NextResponse.json({
       success: true,
-      paymentMethods: formattedPaymentMethods,
+      paymentMethods: (initiateResult.paymentMethods || []).map(method => ({
+        id: method.PaymentMethodId,
+        name: method.PaymentMethodEn,
+        nameAr: method.PaymentMethodAr,
+        code: method.PaymentMethodCode,
+        imageUrl: method.ImageUrl,
+        isDirectPayment: method.IsDirectPayment,
+        serviceCharge: method.ServiceCharge,
+        totalAmount: method.TotalAmount,
+        currency: method.CurrencyIso,
+        paymentCurrency: method.PaymentCurrencyIso,
+        isEmbeddedSupported: method.IsEmbeddedSupported
+      })),
       amount: amount,
       currency: 'BHD',
       event_id: event_id,
@@ -414,30 +287,10 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error('[EVENT-CREATE-INVOICE] Unexpected error:', {
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      },
-      requestData,
-      duration_ms: duration,
-      timestamp: new Date().toISOString()
-    });
-    
+    console.error('[EVENT-CREATE-INVOICE] Unexpected error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Failed to initiate payment',
-        error: {
-          name: error.name,
-          message: error.message,
-          ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-        }
-      },
+      { success: false, message: 'Failed to initiate payment', error: error.message },
       { status: 500 }
     );
   }
 }
-

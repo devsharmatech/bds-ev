@@ -2,37 +2,52 @@ import { supabase } from '@/lib/supabaseAdmin';
 import { verifyTokenMobile } from "@/lib/verifyTokenMobile";
 import { NextResponse } from 'next/server';
 import { getPaymentStatus } from '@/lib/myfatoorah';
-import { redirect } from 'next/navigation';
 import { sendPaymentConfirmationEmail, sendWelcomeEmail } from '@/lib/email';
 
+
 /**
- * GET /api/payments/subscription/callback
- * Handle MyFatoorah payment callback for subscriptions
+ * POST /api/mobile/payments/subscription/callback
+ * Handle MyFatoorah payment callback for mobile subscriptions
+ * Returns JSON responses (not redirects) for mobile clients
  */
-export async function GET(request) {
+export async function POST(request) {
   const startTime = Date.now();
 
   try {
-    const { searchParams } = new URL(request.url);
-    const paymentId = searchParams.get('payment_id');
-    const invoiceId = searchParams.get('paymentId');
-    const redirectTo = searchParams.get('redirect_to');
+    // Verify authentication
+    let decoded;
+    try {
+      decoded = verifyTokenMobile(request);
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, message: error.message || 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const tokenUserId = decoded.user_id;
 
-    console.log('[PAYMENT-CALLBACK] Callback received:', {
+    const body = await request.json();
+    const paymentId = body.payment_id || body.paymentId;
+    const invoiceId = body.invoice_id || body.invoiceId;
+
+
+    console.log('[MOBILE-PAYMENT-CALLBACK] Callback received:', {
       payment_id: paymentId,
-      paymentId: invoiceId,
-      redirect_to: redirectTo,
-      allParams: Object.fromEntries(searchParams.entries()),
+      invoiceId: invoiceId,
+      userId: tokenUserId,
       timestamp: new Date().toISOString()
     });
 
     if (!paymentId) {
-      console.error('[PAYMENT-CALLBACK] Missing payment_id parameter');
-      return redirect('/member/dashboard/subscriptions?error=invalid_callback');
+      return NextResponse.json(
+        { success: false, message: 'payment_id is required' },
+        { status: 400 }
+      );
     }
 
+
     // Get payment record with retry logic for connection timeouts
-    console.log('[PAYMENT-CALLBACK] Fetching payment record:', { payment_id: paymentId });
+    console.log('[MOBILE-PAYMENT-CALLBACK] Fetching payment record:', { payment_id: paymentId });
 
     let payment = null;
     let paymentError = null;
@@ -104,7 +119,7 @@ export async function GET(request) {
     }
 
     if (paymentError) {
-      console.error('[PAYMENT-CALLBACK] Error fetching payment after retries:', {
+      console.error('[MOBILE-PAYMENT-CALLBACK] Error fetching payment after retries:', {
         error: paymentError,
         code: paymentError.code,
         message: paymentError.message,
@@ -112,15 +127,30 @@ export async function GET(request) {
         payment_id: paymentId,
         attempts: maxRetries
       });
-      return redirect('/member/dashboard/subscriptions?error=payment_not_found');
+      return NextResponse.json(
+        { success: false, message: 'Payment record not found', payment_id: paymentId },
+        { status: 404 }
+      );
     }
 
     if (!payment) {
-      console.error('[PAYMENT-CALLBACK] Payment record not found:', { payment_id: paymentId });
-      return redirect('/member/dashboard/subscriptions?error=payment_not_found');
+      console.error('[MOBILE-PAYMENT-CALLBACK] Payment record not found:', { payment_id: paymentId });
+      return NextResponse.json(
+        { success: false, message: 'Payment record not found', payment_id: paymentId },
+        { status: 404 }
+      );
     }
 
-    console.log('[PAYMENT-CALLBACK] Payment record found:', {
+
+    // Verify token user matches payment owner
+    if (tokenUserId !== payment.user_id) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized: payment belongs to another user' },
+        { status: 403 }
+      );
+    }
+
+    console.log('[MOBILE-PAYMENT-CALLBACK] Payment record found:', {
       payment_id: payment.id,
       user_id: payment.user_id,
       subscription_id: payment.subscription_id,
@@ -152,25 +182,24 @@ export async function GET(request) {
     }
 
     if (!invoiceIdToCheck) {
-      console.error('[PAYMENT-CALLBACK] No invoice ID found:', {
+      console.error('[MOBILE-PAYMENT-CALLBACK] No invoice ID found:', {
         payment_invoice_id: payment.invoice_id,
         provided_invoice_id: invoiceId,
         payment_id: paymentId
       });
-      const authHeader = req?.headers?.get?.("authorization");
-    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-      if (token) {
-        return redirect('/member/dashboard/subscriptions?error=invalid_callback');
-      } else {
-        return redirect('/auth/login?error=invalid_callback');
-      }
+      return NextResponse.json(
+        { success: false, message: 'No invoice ID found for this payment' },
+        { status: 400 }
+      );
     }
 
-    console.log('[PAYMENT-CALLBACK] Checking payment status with MyFatoorah:', {
+
+    console.log('[MOBILE-PAYMENT-CALLBACK] Checking payment status with MyFatoorah:', {
       invoice_id: invoiceIdToCheck,
       payment_id: paymentId,
-      url_invoice_id: invoiceId
+      provided_invoice_id: invoiceId
     });
+
 
     // Check payment status with MyFatoorah using InvoiceId
     let statusResult = await getPaymentStatus(invoiceIdToCheck, true, 'InvoiceId');
@@ -181,12 +210,13 @@ export async function GET(request) {
       statusResult = await getPaymentStatus(invoiceId, true, 'PaymentId');
     }
 
-    console.log('[PAYMENT-CALLBACK] Payment status result:', {
+    console.log('[MOBILE-PAYMENT-CALLBACK] Payment status result:', {
       success: statusResult.success,
       status: statusResult.status,
       invoice_id: invoiceIdToCheck,
       fullResult: statusResult
     });
+
 
     // Check if payment is confirmed as paid
     // MyFatoorah returns status as 'Paid' for successful payments
@@ -199,24 +229,26 @@ export async function GET(request) {
       const invoiceStatusLower = String(statusResult.invoiceStatus).toLowerCase();
       if (invoiceStatusLower === 'paid' || invoiceStatusLower === 'duplicatepayment') {
         isPaid = true;
-        console.log('[PAYMENT-CALLBACK] Payment confirmed via invoiceStatus:', statusResult.invoiceStatus);
+        console.log('[MOBILE-PAYMENT-CALLBACK] Payment confirmed via invoiceStatus:', statusResult.invoiceStatus);
       }
+
     }
 
     // If status check failed entirely but callback was triggered, treat as paid
     // MyFatoorah only triggers the callback when payment is processed
     if (!isPaid && !statusResult.success && invoiceIdToCheck) {
-      console.warn('[PAYMENT-CALLBACK] Payment status check failed, but callback was triggered. Treating as paid:', {
+      console.warn('[MOBILE-PAYMENT-CALLBACK] Payment status check failed:', {
         statusResult,
         invoice_id: invoiceIdToCheck,
-        payment_id: paymentId,
-        note: 'MyFatoorah callback trigger implies payment was processed'
+        payment_id: paymentId
       });
-      isPaid = true;
+      // Don't auto-treat as paid for mobile — return the actual status
     }
 
+
     if (isPaid) {
-      console.log('[PAYMENT-CALLBACK] Payment confirmed as paid, updating records');
+      console.log('[MOBILE-PAYMENT-CALLBACK] Payment confirmed as paid, updating records');
+
 
       // Payment successful - update records
       const updatePromises = [];
@@ -249,7 +281,7 @@ export async function GET(request) {
           subscriptionUpdates.annual_paid = true;
           subscriptionUpdates.registration_payment_id = paymentId;
           subscriptionUpdates.annual_payment_id = paymentId;
-          console.log('[PAYMENT-CALLBACK] Combined payment - marking both registration and annual as paid');
+          console.log('[MOBILE-PAYMENT-CALLBACK] Combined payment - marking both registration and annual as paid');
 
           // Also mark any other unpaid payments for this subscription as paid
           const { data: otherPayments } = await supabase
@@ -273,7 +305,7 @@ export async function GET(request) {
                   .eq('id', otherPayment.id)
               );
             }
-            console.log('[PAYMENT-CALLBACK] Marking additional payments as paid:', otherPayments.map(p => p.id));
+            console.log('[MOBILE-PAYMENT-CALLBACK] Marking additional payments as paid:', otherPayments.map(p => p.id));
           }
         }
 
@@ -295,12 +327,12 @@ export async function GET(request) {
             // For registration or combined payments, always activate the account after payment
             // User can pay annual fee later, but should be able to login after registration payment
             shouldActivate = true;
-            console.log('[PAYMENT-CALLBACK] Registration/Combined payment confirmed - activating account');
+            console.log('[MOBILE-PAYMENT-CALLBACK] Registration/Combined payment confirmed - activating account');
           } else if (payment.payment_type === 'subscription_annual' || payment.payment_type === 'subscription_renewal') {
             // For annual payments, activate only if registration is already paid/waived
             const registrationPaidOrWaived = subscription.registration_paid || subscription.subscription_plan?.registration_waived;
             shouldActivate = registrationPaidOrWaived || subscription.status === 'active';
-            console.log('[PAYMENT-CALLBACK] Annual payment confirmed - checking if should activate:', {
+            console.log('[MOBILE-PAYMENT-CALLBACK] Annual payment confirmed - checking if should activate:', {
               registrationPaidOrWaived,
               currentStatus: subscription.status,
               shouldActivate
@@ -333,13 +365,14 @@ export async function GET(request) {
             const newExpiryDate = new Date(oldExpiry);
             newExpiryDate.setFullYear(newExpiryDate.getFullYear() + feeMultiplier);
             subscriptionUpdates.expires_at = newExpiryDate.toISOString();
-            console.log('[PAYMENT-CALLBACK] Renewal payment - setting new expiry date:', {
+            console.log('[MOBILE-PAYMENT-CALLBACK] Renewal payment - setting new expiry date:', {
               old_membership_expiry: userExpiryDate,
               overdue_years: overdueYears.toFixed(2),
               fee_multiplier: feeMultiplier,
               new_expiry: newExpiryDate.toISOString(),
               note: 'New expiry = old expiry + multiplier years'
             });
+
           }
 
           // Also check if subscription will be fully paid after this payment
@@ -369,19 +402,20 @@ export async function GET(request) {
                 .eq('id', payment.user_id)
             );
 
-            console.log('[PAYMENT-CALLBACK] User account will be activated:', {
+            console.log('[MOBILE-PAYMENT-CALLBACK] User account will be activated:', {
               user_id: payment.user_id,
               reason: shouldActivate ? 'payment_type_requires_activation' : willBeFullyPaid ? 'fully_paid' : 'already_active',
               expiry_date: finalExpiryDate
             });
           } else {
-            console.log('[PAYMENT-CALLBACK] Account not activated - waiting for additional payments:', {
+            console.log('[MOBILE-PAYMENT-CALLBACK] Account not activated - waiting for additional payments:', {
               payment_type: payment.payment_type,
               registration_paid: subscription.registration_paid,
               annual_paid: subscription.annual_paid,
               registration_waived: subscription.subscription_plan?.registration_waived,
               annual_waived: subscription.subscription_plan?.annual_waived
             });
+
           }
 
           if (Object.keys(subscriptionUpdates).length > 0) {
@@ -400,30 +434,22 @@ export async function GET(request) {
       // Check for update errors
       const updateErrors = updateResults.filter(result => result.error);
       if (updateErrors.length > 0) {
-        console.error('[PAYMENT-CALLBACK] Some updates failed:', {
+        console.error('[MOBILE-PAYMENT-CALLBACK] Some updates failed:', {
           errors: updateErrors.map(e => e.error),
           payment_id: paymentId
         });
       }
 
-      console.log('[PAYMENT-CALLBACK] Records updated:', {
+      console.log('[MOBILE-PAYMENT-CALLBACK] Records updated:', {
         payment_id: paymentId,
         updates_count: updateResults.length,
         errors_count: updateErrors.length,
-        duration_ms: Date.now() - startTime,
-        update_results: updateResults.map((result, index) => ({
-          index,
-          success: !result.error,
-          error: result.error ? {
-            code: result.error.code,
-            message: result.error.message
-          } : null
-        }))
+        duration_ms: Date.now() - startTime
       });
+
 
       // Log successful payment in payment_history table
       try {
-        // Fetch subscription and plan details for richer context
         const { data: subscriptionData } = await supabase
           .from('user_subscriptions')
           .select('*, subscription_plan:subscription_plans(*)')
@@ -442,22 +468,22 @@ export async function GET(request) {
           payment_for: payment.payment_type || 'membership_payment',
           details: {
             type: 'membership',
+            source: 'mobile',
             subscription_id: payment.subscription_id,
             plan_id: subscriptionData?.subscription_plan_id,
             plan_name: planName,
-            redirect_to: redirectTo || null,
             user_name: payment.user?.full_name || null,
             user_email: payment.user?.email || null
           }
         });
       } catch (historyError) {
-        console.error('[PAYMENT-CALLBACK] Failed to log payment_history record:', historyError);
+        console.error('[MOBILE-PAYMENT-CALLBACK] Failed to log payment_history record:', historyError);
       }
+
 
       // Send payment confirmation email
       try {
         if (payment.user?.email) {
-          // Get subscription details for email
           const { data: subscriptionData } = await supabase
             .from('user_subscriptions')
             .select('*, subscription_plan:subscription_plans(*)')
@@ -469,7 +495,6 @@ export async function GET(request) {
             ? new Date(subscriptionData.expires_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
             : 'N/A';
 
-          // Send payment confirmation email
           await sendPaymentConfirmationEmail(payment.user.email, {
             name: payment.user.full_name || 'Member',
             plan_name: planName,
@@ -479,7 +504,6 @@ export async function GET(request) {
             invoice_id: payment.invoice_id
           });
 
-          // If this is a registration payment, also send welcome email
           if (payment.payment_type === 'subscription_registration') {
             await sendWelcomeEmail(payment.user.email, {
               name: payment.user.full_name || 'Member',
@@ -488,31 +512,25 @@ export async function GET(request) {
             });
           }
 
-          console.log('[PAYMENT-CALLBACK] Confirmation emails sent to:', payment.user.email);
+          console.log('[MOBILE-PAYMENT-CALLBACK] Confirmation emails sent to:', payment.user.email);
         }
       } catch (emailError) {
-        console.error('[PAYMENT-CALLBACK] Failed to send confirmation email:', emailError);
-        // Don't fail the callback if email fails
+        console.error('[MOBILE-PAYMENT-CALLBACK] Failed to send confirmation email:', emailError);
       }
 
-      // Always redirect to login page with success message
-      // Login page handles redirect_to for post-login navigation
-      const isRenewal = payment.payment_type === 'subscription_renewal';
-      const successMessage = isRenewal
-        ? 'Membership renewed successfully! Please login to access your updated membership.'
-        : 'Payment completed successfully! Please login to access your account.';
 
-      let loginUrl = '/auth/login?success=payment_completed&message=' + encodeURIComponent(successMessage);
-
-      // Add redirect_to parameter so login page navigates user to subscriptions after login
-      if (redirectTo) {
-        loginUrl += '&redirect_to=' + encodeURIComponent(redirectTo);
-      }
-
-      console.log('[PAYMENT-CALLBACK] Redirecting to login page:', loginUrl);
-      return redirect(loginUrl);
+      // Return JSON success response for mobile
+      return NextResponse.json({
+        success: true,
+        message: 'Payment confirmed successfully',
+        payment_status: 'paid',
+        payment_id: paymentId,
+        subscription_id: payment.subscription_id,
+        amount: payment.amount,
+        payment_type: payment.payment_type
+      });
     } else {
-      console.warn('[PAYMENT-CALLBACK] Payment not confirmed as paid:', {
+      console.warn('[MOBILE-PAYMENT-CALLBACK] Payment not confirmed as paid:', {
         success: statusResult.success,
         status: statusResult.status,
         message: statusResult.message,
@@ -520,7 +538,7 @@ export async function GET(request) {
         payment_id: paymentId
       });
 
-      // Log failed / unconfirmed payment attempt in payment_history
+      // Log failed payment attempt
       try {
         await supabase.from('payment_history').insert({
           user_id: payment?.user_id || null,
@@ -532,64 +550,49 @@ export async function GET(request) {
           payment_for: payment?.payment_type || 'membership_payment',
           details: {
             type: 'membership',
+            source: 'mobile',
             subscription_id: payment?.subscription_id || null,
-            redirect_to: redirectTo || null,
             user_name: payment?.user?.full_name || null,
             user_email: payment?.user?.email || null
           },
           error_message: statusResult?.message || 'Payment not confirmed as paid'
         });
       } catch (historyError) {
-        console.error('[PAYMENT-CALLBACK] Failed to log failed payment_history record:', historyError);
+        console.error('[MOBILE-PAYMENT-CALLBACK] Failed to log failed payment_history record:', historyError);
       }
 
-      // Payment failed - redirect to login page
-      let loginUrl = '/auth/login?error=payment_failed&message=' + encodeURIComponent('Payment was not completed. Please try again.');
-
-      // Add redirect_to parameter if provided
-      if (redirectTo) {
-        loginUrl += `&redirect_to=${encodeURIComponent(redirectTo)}`;
-      }
-
-      return redirect(loginUrl);
+      return NextResponse.json({
+        success: false,
+        message: 'Payment not completed',
+        payment_status: statusResult.status || 'unknown',
+        payment_id: paymentId
+      });
     }
+
   } catch (error) {
-    // Next.js redirect() throws a NEXT_REDIRECT error internally - this is expected behavior
-    // We should not catch it as an error, but if we do, we need to re-throw it
-    if (error.message === 'NEXT_REDIRECT' || error.digest?.startsWith('NEXT_REDIRECT')) {
-      throw error; // Re-throw redirect errors so Next.js can handle them
+    if (error.name === 'JsonWebTokenError') {
+      return NextResponse.json(
+        { success: false, message: 'Invalid token' },
+        { status: 401 }
+      );
     }
 
     const duration = Date.now() - startTime;
-    console.error('[PAYMENT-CALLBACK] Unexpected error:', {
+    console.error('[MOBILE-PAYMENT-CALLBACK] Unexpected error:', {
       error: {
         name: error.name,
         message: error.message,
-        stack: error.stack,
-        cause: error.cause
+        stack: error.stack
       },
       duration_ms: duration,
       timestamp: new Date().toISOString()
     });
 
-    // Error occurred - redirect to login page
-    try {
-      let loginUrl = '/auth/login?error=payment_error&message=' + encodeURIComponent('An error occurred during payment processing. Please try again.');
-
-      // Add redirect_to parameter if provided
-      if (redirectTo) {
-        loginUrl += `&redirect_to=${encodeURIComponent(redirectTo)}`;
-      }
-
-      return redirect(loginUrl);
-    } catch (cookieError) {
-      // If cookieError is also a redirect, re-throw it
-      if (cookieError.message === 'NEXT_REDIRECT' || cookieError.digest?.startsWith('NEXT_REDIRECT')) {
-        throw cookieError;
-      }
-      console.error('[PAYMENT-CALLBACK] Error:', cookieError);
-      return redirect('/auth/login?error=payment_error');
-    }
+    return NextResponse.json(
+      { success: false, message: 'Payment callback processing failed', error: error.message },
+      { status: 500 }
+    );
   }
+
 }
 

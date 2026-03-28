@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabaseAdmin';
-import jwt from "jsonwebtoken";
 import { verifyTokenMobile } from "@/lib/verifyTokenMobile";
 import { NextResponse } from 'next/server';
 import { executeSubscriptionPayment } from '@/lib/myfatoorah';
@@ -14,41 +13,43 @@ export async function POST(request) {
   
   try {
     requestData = await request.json();
-    const { subscription_id, payment_id, payment_method_id, redirect_to, amount: requestedAmount } = requestData;
+    
+    // Support both snake_case and camelCase
+    const subscription_id = requestData.subscription_id || requestData.subscriptionId;
+    const payment_id = requestData.payment_id || requestData.paymentId;
+    const payment_method_id = requestData.payment_method_id || requestData.paymentMethodId;
+    const redirect_to = requestData.redirect_to || requestData.redirectTo;
+    const amount = requestData.amount;
 
     console.log('[EXECUTE-PAYMENT] Request received:', {
       subscription_id,
       payment_id,
       payment_method_id,
-      requestedAmount,
       timestamp: new Date().toISOString()
     });
 
     if (!subscription_id || !payment_id || !payment_method_id) {
-      console.error('[EXECUTE-PAYMENT] Missing required fields:', {
-        has_subscription_id: !!subscription_id,
-        has_payment_id: !!payment_id,
-        has_payment_method_id: !!payment_method_id,
-        requestData
-      });
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'subscription_id, payment_id, and payment_method_id are required',
-          details: {
-            missing_fields: {
-              subscription_id: !subscription_id,
-              payment_id: !payment_id,
-              payment_method_id: !payment_method_id
-            }
-          }
-        },
+        { success: false, message: 'subscription_id, payment_id, and payment_method_id are required' },
         { status: 400 }
       );
     }
 
+    // Verify authentication and get user_id from token
+    let decoded;
+    try {
+      decoded = verifyTokenMobile(request);
+    } catch (error) {
+      console.error('[EXECUTE-PAYMENT] Auth error:', error.message);
+      return NextResponse.json(
+        { success: false, message: error.message || 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const tokenUserId = decoded.user_id;
+
     // Get payment record
-    console.log('[EXECUTE-PAYMENT] Fetching payment record:', { payment_id });
     const { data: payment, error: paymentError } = await supabase
       .from('membership_payments')
       .select('id, user_id, subscription_id, amount, paid, payment_type')
@@ -56,82 +57,39 @@ export async function POST(request) {
       .single();
 
     if (paymentError || !payment) {
-      console.error('[EXECUTE-PAYMENT] Error fetching payment:', {
-        error: paymentError,
-        payment_id
-      });
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Payment record not found',
-          error: paymentError
-        },
+        { success: false, message: 'Payment record not found' },
         { status: 404 }
       );
     }
 
+    // Verify token user matches payment owner
+    if (tokenUserId !== payment.user_id) {
+       return NextResponse.json(
+         { success: false, message: 'Unauthorized: payment belongs to another user' },
+         { status: 403 }
+       );
+    }
+
+    const userId = payment.user_id;
+
     // Verify payment is not already paid
     if (payment.paid) {
-      console.warn('[EXECUTE-PAYMENT] Payment already processed:', {
-        payment_id,
-        paid_at: payment.paid_at
-      });
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Payment has already been processed',
-          payment_id
-        },
+        { success: false, message: 'Payment has already been processed' },
         { status: 400 }
       );
     }
 
     // Verify payment belongs to the subscription
     if (payment.subscription_id !== subscription_id) {
-      console.error('[EXECUTE-PAYMENT] Payment subscription mismatch:', {
-        payment_subscription_id: payment.subscription_id,
-        requested_subscription_id: subscription_id,
-        payment_id
-      });
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Payment does not match subscription'
-        },
+        { success: false, message: 'Payment does not match subscription' },
         { status: 400 }
       );
     }
 
-    // Check authentication (optional for registration flow)
-    const authHeader = request?.headers?.get?.("authorization");
-    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
-    let userId = payment.user_id;
-
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        userId = decoded.user_id;
-        // If token user does not match payment owner, fall back to payment user (avoids false Unauthorized)
-        if (userId !== payment.user_id) {
-          console.warn('[EXECUTE-PAYMENT] Auth user does not match payment user, falling back to payment.user_id', {
-            token_user_id: userId,
-            payment_user_id: payment.user_id,
-            payment_id: payment.id
-          });
-          userId = payment.user_id;
-        }
-      } catch (error) {
-        // Token invalid, but continue for registration flow using payment's user_id
-        console.warn('[EXECUTE-PAYMENT] Invalid token, using payment.user_id instead', {
-          error: error.message,
-          payment_user_id: payment.user_id
-        });
-        userId = payment.user_id;
-      }
-    }
-
     // Get user details
-    console.log('[EXECUTE-PAYMENT] Fetching user details:', { user_id: userId });
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id, full_name, email, phone, mobile')
@@ -139,22 +97,13 @@ export async function POST(request) {
       .single();
 
     if (userError || !user) {
-      console.error('[EXECUTE-PAYMENT] Error fetching user:', {
-        error: userError,
-        user_id: userId
-      });
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'User not found',
-          error: userError
-        },
+        { success: false, message: 'User not found' },
         { status: 404 }
       );
     }
 
     // Get subscription details
-    console.log('[EXECUTE-PAYMENT] Fetching subscription details:', { subscription_id });
     const { data: subscription, error: subError } = await supabase
       .from('user_subscriptions')
       .select(`
@@ -166,83 +115,42 @@ export async function POST(request) {
       .single();
 
     if (subError || !subscription || !subscription.subscription_plan) {
-      console.error('[EXECUTE-PAYMENT] Error fetching subscription:', {
-        error: subError,
-        subscription_id
-      });
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Subscription not found',
-          error: subError
-        },
+        { success: false, message: 'Subscription not found', subscription_id },
         { status: 404 }
       );
     }
 
-    // Get base URL
-    let baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
+    // For mobile APIs, always use production URL for MyFatoorah callbacks
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL && !process.env.NEXT_PUBLIC_APP_URL.includes('localhost'))
+      ? process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')
+      : 'https://bds-ev.vercel.app';
     
-    if (!baseUrl || baseUrl.includes('localhost')) {
-      const origin = request.headers.get('origin') || request.headers.get('host');
-      if (origin) {
-        if (origin.startsWith('http')) {
-          baseUrl = origin;
-        } else {
-          const protocol = request.headers.get('x-forwarded-proto') || 'https';
-          baseUrl = `${protocol}://${origin}`;
-        }
-      } else {
-        baseUrl = 'https://bds-ev.vercel.app';
-      }
-    }
-    
-    baseUrl = baseUrl.replace(/\/$/, '');
-    
-    // Build callback URL with redirect_to parameter if provided
-    let callbackUrl = `${baseUrl}/api/payments/subscription/callback?payment_id=${payment_id}`;
+    // Build callback URL
+    let callbackUrl = `${baseUrl}/api/mobile/payments/subscription/payment-complete?payment_id=${payment_id}&status=success`;
     if (redirect_to) {
       callbackUrl += `&redirect_to=${encodeURIComponent(redirect_to)}`;
     }
     
-    const isAuthenticated = token && userId === payment.user_id;
-    const errorUrl = isAuthenticated
-      ? `${baseUrl}/member/dashboard/subscriptions?error=payment_failed`
-      : `${baseUrl}/auth/login?error=payment_failed`;
+    const errorUrl = `${baseUrl}/api/mobile/payments/subscription/payment-complete?payment_id=${payment_id}&status=failed`;
 
-    // Use requested amount if provided (for combined payments), otherwise use payment record amount
-    const finalAmount = requestedAmount || payment.amount;
-    
-    // Create invoice items
-    const invoiceItems = [{
-      ItemName: payment.payment_type === 'subscription_registration' 
-        ? `Registration Fee - ${subscription.subscription_plan.display_name}`
-        : payment.payment_type === 'subscription_renewal'
-        ? `Renewal Fee - ${subscription.subscription_plan.display_name}`
-        : payment.payment_type === 'subscription_combined'
-        ? `Membership Fee - ${subscription.subscription_plan.display_name}`
-        : `Annual Fee - ${subscription.subscription_plan.display_name}`,
-      Quantity: 1,
-      UnitPrice: finalAmount
-    }];
-
-    const customerMobile = (user.mobile || user.phone || '').trim() || null;
-
-    console.log('[EXECUTE-PAYMENT] Calling MyFatoorah ExecutePayment:', {
-      invoiceAmount: finalAmount,
-      paymentMethodId: payment_method_id,
-      customerName: user.full_name,
-      customerEmail: user.email,
-      customerMobile: customerMobile ? '***' : 'NOT_PROVIDED'
-    });
-
-    // Execute payment with selected method
+    // Execute payment
     const executeResult = await executeSubscriptionPayment({
-      invoiceAmount: finalAmount,
+      invoiceAmount: amount || payment.amount,
       customerName: user.full_name,
       customerEmail: user.email,
-      customerMobile: customerMobile,
-      invoiceItems,
+      customerMobile: (user.mobile || user.phone || '').trim() || null,
+      invoiceItems: [{
+        ItemName: payment.payment_type === 'subscription_registration' 
+          ? `Registration Fee - ${subscription.subscription_plan.display_name}`
+          : payment.payment_type === 'subscription_renewal'
+          ? `Renewal Fee - ${subscription.subscription_plan.display_name}`
+          : payment.payment_type === 'subscription_combined'
+          ? `Membership Fee - ${subscription.subscription_plan.display_name}`
+          : `Annual Fee - ${subscription.subscription_plan.display_name}`,
+        Quantity: 1,
+        UnitPrice: amount || payment.amount
+      }],
       callbackUrl,
       errorUrl,
       referenceId: payment_id,
@@ -251,52 +159,20 @@ export async function POST(request) {
     });
 
     if (!executeResult.success) {
-      console.error('[EXECUTE-PAYMENT] MyFatoorah ExecutePayment failed:', {
-        error: executeResult.message,
-        payment_id,
-        payment_method_id
-      });
       return NextResponse.json(
-        { 
-          success: false, 
-          message: executeResult.message || 'Failed to execute payment',
-          error: executeResult.error || executeResult.message,
-          payment_id
-        },
+        { success: false, message: executeResult.message || 'Failed to execute payment' },
         { status: 500 }
       );
     }
 
-    console.log('[EXECUTE-PAYMENT] MyFatoorah ExecutePayment successful:', {
-      invoiceId: executeResult.invoiceId,
-      paymentUrl: executeResult.paymentUrl ? '***' : null,
-      payment_id
-    });
-
-    // Update payment record with invoice ID
-    const { error: updateError } = await supabase
+    // Update payment record
+    await supabase
       .from('membership_payments')
       .update({
         invoice_id: executeResult.invoiceId,
         payment_gateway: 'myfatoorah'
       })
       .eq('id', payment_id);
-
-    if (updateError) {
-      console.error('[EXECUTE-PAYMENT] Error updating payment record:', {
-        error: updateError,
-        payment_id,
-        invoice_id: executeResult.invoiceId
-      });
-      // Don't fail the request, payment was executed successfully
-    }
-
-    const duration = Date.now() - startTime;
-    console.log('[EXECUTE-PAYMENT] Request completed successfully:', {
-      payment_id,
-      invoice_id: executeResult.invoiceId,
-      duration_ms: duration
-    });
 
     return NextResponse.json({
       success: true,
@@ -306,30 +182,10 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error('[EXECUTE-PAYMENT] Unexpected error:', {
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      },
-      requestData,
-      duration_ms: duration,
-      timestamp: new Date().toISOString()
-    });
-    
+    console.error('[EXECUTE-PAYMENT] Unexpected error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Failed to execute payment',
-        error: {
-          name: error.name,
-          message: error.message,
-          ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-        }
-      },
+      { success: false, message: 'Failed to execute payment', error: error.message },
       { status: 500 }
     );
   }
 }
-
