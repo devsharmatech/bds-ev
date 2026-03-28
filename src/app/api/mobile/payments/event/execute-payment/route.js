@@ -151,6 +151,15 @@ export async function POST(request) {
       priceInfo = getUserEventPrice(event, user);
       amount = priceInfo.price;
     }
+
+    // Allow mobile app to override the amount dynamically
+    if (requestData.amount !== undefined && requestData.amount !== null) {
+      amount = Number(requestData.amount);
+    } else if (requestData.Amount !== undefined && requestData.Amount !== null) {
+      amount = Number(requestData.Amount);
+    }
+
+    console.log('[EVENT-EXECUTE-PAYMENT] Final amount being charged:', amount);
     
     const now = new Date();
     const membershipValid = user && user.membership_type === 'paid' && user.membership_status === 'active' && (!user.membership_expiry_date || new Date(user.membership_expiry_date) > now);

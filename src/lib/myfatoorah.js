@@ -999,6 +999,8 @@ export async function getPaymentStatus(paymentId, isSubscription = false, keyTyp
         success: true,
         status: data.Data.InvoiceStatus,
         invoiceValue: data.Data.InvoiceValue,
+        invoiceDisplayValue: data.Data.InvoiceDisplayValue,
+        invoiceItems: data.Data.InvoiceItems || [],
         invoiceTransactions: data.Data.InvoiceTransactions || []
       };
     } else {

@@ -38,6 +38,8 @@ export async function POST(request) {
       event_id,
       user_id,
       body_user_id,
+      amount: requestData.amount,
+      fullBody: requestData,
       timestamp: new Date().toISOString()
     });
 
@@ -216,9 +218,42 @@ export async function POST(request) {
       if (discount >= amount) discount = amount;
       const finalAmount = amount - discount;
 
+      // Clean up any old provisional usages (e.g. abandoned payments)
+      await supabase
+        .from('event_coupon_usages')
+        .delete()
+        .eq('coupon_id', coupon.id)
+        .eq('event_id', event_id)
+        .eq('user_id', user_id)
+        .is('event_member_id', null);
+
+      // Record a provisional usage row (without payment_id yet)
+      await supabase.from('event_coupon_usages').insert({
+        coupon_id: coupon.id,
+        event_id,
+        user_id,
+        amount_before: amount,
+        discount_amount: discount,
+        amount_after: finalAmount,
+        metadata: { stage: 'invoice_created' },
+      });
+
       appliedCoupon = { ...coupon, discount_amount: discount };
       amount = finalAmount;
     }
+
+    console.log('[EVENT-CREATE-INVOICE] Amount before override logic:', {
+      calculatedAmount: amount,
+      clientProvidedAmount: requestData.amount || requestData.Amount
+    });
+
+    if (requestData.amount !== undefined && requestData.amount !== null) {
+      amount = Number(requestData.amount);
+    } else if (requestData.Amount !== undefined && requestData.Amount !== null) {
+      amount = Number(requestData.Amount);
+    }
+
+    console.log('[EVENT-CREATE-INVOICE] Final amount for MyFatoorah:', amount);
 
     if (!amount || amount <= 0) {
       return NextResponse.json(

@@ -45,14 +45,28 @@ export async function POST(request) {
     // Import MyFatoorah helper dynamically
     const { getPaymentStatus } = await import("@/lib/myfatoorah");
 
+    // Auto-detect KeyType based on paymentId format:
+    // - InvoiceId is short numeric (e.g., "6392538")
+    // - PaymentId is long numeric (e.g., "07076614069339404373")
+    const isSubscriptionType = type === "subscription";
+    const keyType = String(paymentId).length > 15 ? "PaymentId" : "InvoiceId";
+
     // Verify payment with MyFatoorah
     console.log("[MOBILE-PAYMENT-CONFIRM] Verifying payment:", {
       paymentId,
       type,
       userId,
+      keyType,
     });
 
-    const paymentStatus = await getPaymentStatus(paymentId);
+    let paymentStatus = await getPaymentStatus(paymentId, isSubscriptionType, keyType);
+
+    // If first attempt fails, try the other key type
+    if (!paymentStatus || !paymentStatus.success) {
+      const fallbackKeyType = keyType === "PaymentId" ? "InvoiceId" : "PaymentId";
+      console.log("[MOBILE-PAYMENT-CONFIRM] Retrying with fallback KeyType:", fallbackKeyType);
+      paymentStatus = await getPaymentStatus(paymentId, isSubscriptionType, fallbackKeyType);
+    }
 
     if (!paymentStatus || !paymentStatus.success) {
       console.error(
@@ -69,20 +83,22 @@ export async function POST(request) {
       );
     }
 
-    const invoiceStatus = paymentStatus.data?.InvoiceStatus;
-    const invoiceId = paymentStatus.data?.InvoiceId;
-    const paidAmount =
-      paymentStatus.data?.InvoiceValue ||
-      paymentStatus.data?.PaidAmount ||
-      0;
-    const transactionId =
-      paymentStatus.data?.focusTransaction?.TransactionId ||
-      paymentStatus.data?.InvoiceTransactions?.[0]?.TransactionId ||
-      null;
-    const paymentMethod =
-      paymentStatus.data?.focusTransaction?.PaymentGateway ||
-      paymentStatus.data?.InvoiceTransactions?.[0]?.PaymentGateway ||
-      "myfatoorah";
+    // getPaymentStatus returns: { success, status, invoiceValue, invoiceDisplayValue, invoiceTransactions }
+    const invoiceStatus = paymentStatus.status;
+    
+    // MyFatoorah returns invoiceValue in base currency (e.g. KWD) and invoiceDisplayValue in BHD (e.g. "70.000 BHD")
+    let paidAmount = paymentStatus.invoiceValue || 0;
+    if (paymentStatus.invoiceDisplayValue) {
+      const parsedAmount = parseFloat(paymentStatus.invoiceDisplayValue.replace(/[^\d.]/g, ''));
+      if (!isNaN(parsedAmount) && parsedAmount > 0) {
+        paidAmount = parsedAmount;
+      }
+    }
+    
+    const transactions = paymentStatus.invoiceTransactions || [];
+    const transactionId = transactions[0]?.TransactionId || null;
+    const paymentMethod = transactions[0]?.PaymentGateway || "myfatoorah";
+    const invoiceId = paymentStatus.invoiceId || paymentId;
 
     const isPaid = invoiceStatus === "Paid";
 
@@ -102,6 +118,7 @@ export async function POST(request) {
         invoiceId,
       });
     }
+
 
     // --- Handle EVENT payment confirmation ---
     if (type === "event") {
@@ -147,13 +164,45 @@ export async function POST(request) {
         .update({
           price_paid: paidAmount,
           payment_status: "completed",
-          payment_reference: transactionId,
-          payment_method: paymentMethod,
         })
         .eq("event_id", eventId)
         .eq("user_id", userId)
         .select("id, event_id, token, price_paid, payment_status")
         .single();
+
+      if (updatedMember) {
+        // Finalize any provisional coupon usage records
+        try {
+          const { data: provisionalUsages } = await supabase
+            .from("event_coupon_usages")
+            .select("id, coupon_id")
+            .eq("event_id", eventId)
+            .eq("user_id", userId)
+            .is("event_member_id", null);
+
+          if (Array.isArray(provisionalUsages) && provisionalUsages.length > 0) {
+            const usageIds = provisionalUsages.map((u) => u.id);
+
+            await supabase
+              .from("event_coupon_usages")
+              .update({
+                event_member_id: updatedMember.id,
+                payment_id: String(invoiceId),
+                invoice_id: String(invoiceId),
+                metadata: { stage: "paid" },
+              })
+              .in("id", usageIds);
+
+            for (const u of provisionalUsages) {
+              await supabase.rpc("increment_event_coupon_used_count", {
+                coupon_row_id: u.coupon_id,
+              });
+            }
+          }
+        } catch (couponErr) {
+          console.error("[MOBILE-PAYMENT-CONFIRM] Failed to finalize coupon usage:", couponErr);
+        }
+      }
 
       if (updateError) {
         console.error(
@@ -194,6 +243,8 @@ export async function POST(request) {
         .eq("user_id", userId)
         .maybeSingle();
 
+      let targetPayment = payment;
+
       if (paymentError || !payment) {
         // Try matching by user + unpaid
         const { data: fallbackPayment } = await supabase
@@ -219,11 +270,8 @@ export async function POST(request) {
           );
         }
 
-        // Use fallback
-        Object.assign(payment || {}, fallbackPayment);
+        targetPayment = fallbackPayment;
       }
-
-      const targetPayment = payment;
 
       if (targetPayment.paid) {
         return NextResponse.json({
@@ -241,8 +289,7 @@ export async function POST(request) {
         .update({
           paid: true,
           paid_at: new Date().toISOString(),
-          transaction_id: transactionId,
-          payment_method: paymentMethod,
+          payment_gateway: "myfatoorah",
           invoice_id: String(invoiceId),
         })
         .eq("id", targetPayment.id);

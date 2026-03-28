@@ -1,0 +1,327 @@
+{
+  "info": {
+    "name": "BDS Mobile APIs - All Scenarios",
+    "description": "Complete collection of all major mobile flows with pre-filled JSON bodies including Auth, Subscriptions, and Events.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000", "type": "string" },
+    { "key": "jwt_token", "value": "PASTE_TOKEN_VAlUE_HERE_AFTER_LOGIN", "type": "string" },
+    { "key": "payment_id", "value": "PASTE_THE_PAYMENT_ID_HERE", "type": "string" },
+    { "key": "myfatoorah_payment_id", "value": "PASTE_FATOORAH_ID_FROM_URL_HERE", "type": "string" },
+    { "key": "event_id", "value": "PASTE_EVENT_ID_HERE", "type": "string" },
+    { "key": "user_id", "value": "PASTE_USER_ID_HERE", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication Flow",
+      "item": [
+        {
+          "name": "1. Register (New User)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "fullNameEng", "value": "Test User", "type": "text" },
+                { "key": "email", "value": "user_auth@test.com", "type": "text" },
+                { "key": "password", "value": "Password123!", "type": "text" },
+                { "key": "mobile", "value": "33334444", "type": "text" },
+                { "key": "cpr", "value": "999999999", "type": "text" },
+                { "key": "gender", "value": "male", "type": "text" },
+                { "key": "nationality", "value": "Bahraini", "type": "text" },
+                { "key": "category", "value": "dentist", "type": "text" },
+                { "key": "workSector", "value": "private", "type": "text" },
+                { "key": "membershipType", "value": "paid", "type": "text" },
+                { "key": "subscriptionPlanId", "value": "f75eda23-e8c9-4c39-a0ee-ae772ef5ae79", "type": "text" },
+                { "key": "id_card", "type": "file" },
+                { "key": "personal_photo", "type": "file" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "2. Login",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user_auth@test.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "3. Get Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{jwt_token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "4. Forgot Password - Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user_auth@test.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/forgot-password/send-otp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "auth", "forgot-password", "send-otp"]
+            }
+          }
+        },
+        {
+          "name": "5. Forgot Password - Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user_auth@test.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/forgot-password/verify-otp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "auth", "forgot-password", "verify-otp"]
+            }
+          }
+        },
+        {
+          "name": "6. Forgot Password - Reset",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user_auth@test.com\",\n  \"password\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/auth/forgot-password/reset",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "auth", "forgot-password", "reset"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Subscription Renewal Flow",
+      "item": [
+        {
+          "name": "1. Initiate Renewal",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{jwt_token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard/subscriptions/renew",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard", "subscriptions", "renew"]
+            }
+          }
+        },
+        {
+          "name": "2. Create Invoice",
+          "request": {
+            "method": "POST",
+            "header": [ 
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" } 
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscription_id\": \"f75eda23-e8c9-4c39-a0ee-ae772ef5ae79\",\n  \"payment_id\": \"{{payment_id}}\",\n  \"amount\": 70,\n  \"payment_type\": \"subscription_renewal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/payments/subscription/create-invoice",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "payments", "subscription", "create-invoice"]
+            }
+          }
+        },
+        {
+          "name": "3. Execute Payment",
+          "request": {
+            "method": "POST",
+            "header": [ 
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" } 
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_id\": \"{{payment_id}}\",\n  \"payment_method_id\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/payments/subscription/execute-payment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "payments", "subscription", "execute-payment"]
+            }
+          }
+        },
+        {
+          "name": "4. Confirm Payment",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": \"{{myfatoorah_payment_id}}\",\n  \"type\": \"subscription\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/payments/confirm",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "payments", "confirm"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Events Payment Flow",
+      "item": [
+        {
+          "name": "1. Check Available Events",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{jwt_token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "events"]
+            }
+          }
+        },
+        {
+          "name": "2. Create Invoice (Event + Coupon)",
+          "request": {
+            "method": "POST",
+            "header": [ 
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" } 
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"{{event_id}}\",\n  \"user_id\": \"{{user_id}}\",\n  \"coupon_code\": \"WELCOME20\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/payments/event/create-invoice",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "payments", "event", "create-invoice"]
+            }
+          }
+        },
+        {
+          "name": "3. Execute Event Payment",
+          "request": {
+            "method": "POST",
+            "header": [ 
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" } 
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"{{event_id}}\",\n  \"user_id\": \"{{user_id}}\",\n  \"payment_method_id\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/payments/event/execute-payment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "payments", "event", "execute-payment"]
+            }
+          }
+        },
+        {
+          "name": "4. Confirm Event Payment",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": \"{{myfatoorah_payment_id}}\",\n  \"type\": \"event\",\n  \"userId\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/payments/confirm",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "payments", "confirm"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Content & Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Data",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{jwt_token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Get Certificates",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{jwt_token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/dashboard/certificates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "dashboard", "certificates"]
+            }
+          }
+        },
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{jwt_token}}" } ],
+            "url": {
+              "raw": "{{base_url}}/api/mobile/dashboard/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "dashboard", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Read Notification",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{jwt_token}}" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"notificationId\": \"uuid-here\" }"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/mobile/dashboard/notifications/mark-read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "mobile", "dashboard", "notifications", "mark-read"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
