@@ -66,50 +66,12 @@ export default function CertificateTemplate({ certificate, user }) {
         }
       `}</style>
 
-      {/* Certificate Border Overlay */}
-      <div className="absolute top-0 left-0" style={{ width: '816px', height: '1056px', pointerEvents: 'none' }}>
-        <svg width="816" height="1056" viewBox="0 0 816 1056" style={{ display: 'block' }}>
-          <g transform="translate(32, 32)">
-            {/* Outer Rectangle */}
-            <rect x="0" y="0" width="752" height="992" fill="none" stroke="#B19756" strokeWidth="2" />
-
-            {/* Inner Rectangle with Rounded Corners */}
-            <path
-              d="
-                 M 6 18 
-                 L 6 974 
-                 A 12 12 0 0 0 18 986 
-                 L 734 986 
-                 A 12 12 0 0 0 746 974 
-                 L 746 18 
-                 A 12 12 0 0 0 734 6 
-                 L 18 6 
-                 A 12 12 0 0 0 6 18 
-                 Z
-                "
-              fill="none"
-              stroke="#B19756"
-              strokeWidth="1"
-            />
-
-            {/* Corner Arcs */}
-            <path d="M 6 18 A 12 12 0 0 0 18 6" fill="none" stroke="#B19756" strokeWidth="1" />
-            <path d="M 734 6 A 12 12 0 0 0 746 18" fill="none" stroke="#B19756" strokeWidth="1" />
-            <path d="M 746 974 A 12 12 0 0 0 734 986" fill="none" stroke="#B19756" strokeWidth="1" />
-            <path d="M 18 986 A 12 12 0 0 0 6 974" fill="none" stroke="#B19756" strokeWidth="1" />
-          </g>
-        </svg>
-      </div>
-
-      {/* Watermark Logo (Centered, very low opacity) */}
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ zIndex: 1, pointerEvents: 'none', opacity: 0.03 }}
-      >
+      {/* Professional Certificate Background Overlay */}
+      <div className="absolute inset-0" style={{ zIndex: 1, pointerEvents: 'none' }}>
         <img
-          src="/logo2-r.png"
-          alt="Watermark"
-          style={{ width: '480px', height: 'auto', filter: 'grayscale(100%) blur(1px)' }}
+          src="/certificate-bg.png"
+          alt="Certificate Background"
+          className="w-full h-full object-cover"
         />
       </div>
 

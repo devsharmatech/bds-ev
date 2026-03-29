@@ -16,6 +16,7 @@ import {
   Smartphone,
   Users,
   Ticket,
+  CreditCard,
   ShieldCheck,
   Camera,
   Upload,

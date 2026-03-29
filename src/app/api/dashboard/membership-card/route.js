@@ -4,6 +4,9 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import PDFDocument from 'pdfkit';
+import path from 'path';
+
+const getFontPath = (fontName) => path.join(process.cwd(), 'node_modules', 'pdfkit', 'js', 'data', `${fontName}.afm`);
 
 export async function GET(req) {
   try {
@@ -47,77 +50,9 @@ export async function GET(req) {
       );
     }
 
-    /* ---------- GENERATE PDF ---------- */
-    const doc = new PDFDocument({
-      size: 'A4',
-      margin: 50
-    });
-
-    // Set response headers for PDF
-    const headers = new Headers();
-    headers.set('Content-Type', 'application/pdf');
-    headers.set('Content-Disposition', `attachment; filename="BDS-Membership-Card-${user.membership_code}.pdf"`);
-
-    // Collect PDF data
-    const chunks = [];
-    doc.on('data', chunk => chunks.push(chunk));
-    doc.on('end', () => {
-      // This is handled by Next.js response
-    });
-
-    // Add content to PDF
-    // Add BDS logo or header
-    doc.fontSize(24).text('Bahrain Dental Society', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(18).text('MEMBERSHIP CARD', { align: 'center' });
-    doc.moveDown(2);
-    
-    // Member info
-    doc.fontSize(14).text(`Member Name: ${user.full_name}`);
-    doc.moveDown();
-    doc.text(`Membership ID: ${user.membership_code}`);
-    doc.moveDown();
-    doc.text(`Membership Type: ${user.membership_type === 'paid' ? 'Premium' : 'Standard'}`);
-    doc.moveDown();
-    doc.text(`Status: ${user.membership_status === 'active' ? 'Active' : 'Inactive'}`);
-    
-    if (user.membership_expiry_date) {
-      doc.moveDown();
-      const expiryDate = new Date(user.membership_expiry_date).toLocaleDateString('en-BH', { timeZone: 'Asia/Bahrain' });
-      doc.text(`Valid Until: ${expiryDate}`);
-    }
-    
-    doc.moveDown();
-    doc.text(`Specialty: ${user.member_profiles?.[0]?.specialty || 'Not specified'}`);
-    doc.moveDown();
-    doc.text(`Position: ${user.member_profiles?.[0]?.position || 'Not specified'}`);
-    doc.moveDown();
-    doc.text(`Employer: ${user.member_profiles?.[0]?.employer || 'Not specified'}`);
-    
-    // QR Code placeholder
-    doc.moveDown(3);
-    doc.fontSize(12).text('Scan QR code for verification:', { align: 'center' });
-    doc.moveDown();
-    doc.rect(200, doc.y, 200, 200).stroke(); // Placeholder for QR code
-    doc.fontSize(10).text(user.membership_code, 200, doc.y + 210, { width: 200, align: 'center' });
-    
-    // Footer
-    doc.moveDown(4);
-    doc.fontSize(10).text('This is an official membership card of Bahrain Dental Society.', { align: 'center' });
-    doc.text('For verification, visit: bds.bh/verify', { align: 'center' });
-
-    doc.end();
-
-    // Wait for PDF generation to complete
-    return new Promise((resolve) => {
-      doc.on('end', () => {
-        const pdfData = Buffer.concat(chunks);
-        resolve(new NextResponse(pdfData, {
-          status: 200,
-          headers: headers
-        }));
-      });
-    });
+    // Instead of unstable PDFKit, redirect to the professional Canva-style membership card view page
+    const viewUrl = new URL(`/membership-card/view`, req.url);
+    return NextResponse.redirect(viewUrl);
 
   } catch (error) {
     console.error("MEMBERSHIP CARD ERROR:", error);
