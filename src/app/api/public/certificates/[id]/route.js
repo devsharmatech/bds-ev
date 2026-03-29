@@ -1,17 +1,15 @@
-// app/api/mobile/dashboard/certificates/[id]/detail/route.js
-// Returns certificate data as JSON so mobile apps can render/print it
+// app/api/public/certificates/[id]/route.js
+// PUBLIC Endpoint: Returns certificate data as JSON by event_member_id
+// No authentication required.
 import { supabase } from "@/lib/supabaseAdmin";
-import { verifyTokenMobile } from "@/lib/verifyTokenMobile";
 import { NextResponse } from "next/server";
 
 export async function GET(req, { params }) {
   try {
-    const decoded = verifyTokenMobile(req);
-    const userId = decoded.user_id;
     const { id } = await params;
-    const eventId = id;
+    const eventMemberId = id;
 
-    // Verify user attended this event
+    // Fetch certificate data using the event_member_id directly
     const { data: eventMember, error } = await supabase
       .from("event_members")
       .select(`
@@ -51,19 +49,19 @@ export async function GET(req, { params }) {
           profile_image
         )
       `)
-      .eq("event_id", eventId)
-      .eq("user_id", userId)
+      .eq("id", eventMemberId) // Filtering by event_members.id
       .eq("checked_in", true)
       .single();
 
     if (error || !eventMember) {
+      console.error("PUBLIC CERTIFICATE NOT FOUND:", error, eventMemberId);
       return NextResponse.json(
         { success: false, message: "Certificate not found or event not attended" },
         { status: 404 }
       );
     }
 
-    // Check if event is completed
+    // Check if event is completed (standard rule)
     const now = new Date();
     const isCompleted =
       eventMember.events?.status === "completed" ||
@@ -77,7 +75,7 @@ export async function GET(req, { params }) {
       );
     }
 
-    // Format certificate data for mobile rendering
+    // Format certificate data for public rendering
     const certificate = {
       certificate_id: `CERT-${eventMember.id.slice(0, 8).toUpperCase()}`,
       issued_date: new Date().toISOString(),
@@ -121,24 +119,6 @@ export async function GET(req, { params }) {
         joined_at: eventMember.joined_at,
         event_member_token: eventMember.token,
       },
-
-      // Formatted text for display
-      display: {
-        title: "CERTIFICATE OF ATTENDANCE",
-        body: `This certifies that ${eventMember.users?.full_name} has successfully attended "${eventMember.events?.title}"`,
-        event_date: eventMember.events?.start_datetime
-          ? new Date(eventMember.events.start_datetime).toLocaleDateString(
-              "en-BH",
-              {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              }
-            )
-          : null,
-        venue: eventMember.events?.venue_name || null,
-      },
     };
 
     return NextResponse.json({
@@ -146,15 +126,7 @@ export async function GET(req, { params }) {
       certificate,
     });
   } catch (error) {
-    console.error("CERTIFICATE DETAIL ERROR:", error);
-
-    if (error.name === "JsonWebTokenError") {
-      return NextResponse.json(
-        { success: false, message: "Invalid token" },
-        { status: 401 }
-      );
-    }
-
+    console.error("PUBLIC CERTIFICATE DETAIL ERROR:", error);
     return NextResponse.json(
       { success: false, message: "Failed to fetch certificate details" },
       { status: 500 }

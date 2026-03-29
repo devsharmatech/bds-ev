@@ -54,8 +54,8 @@ export async function GET(req, { params }) {
       );
     }
 
-    // Instead of unstable PDFKit, redirect to the professional Canva-style view page
-    const viewUrl = new URL(`/certificates/${eventId}/view`, req.url);
+    // Instead of unstable PDFKit or authenticated views, redirect to the PUBLIC mobile-optimized view page
+    const viewUrl = new URL(`/certificates/public/view/${eventMember.id}`, req.url);
     return NextResponse.redirect(viewUrl);
 
   } catch (error) {
